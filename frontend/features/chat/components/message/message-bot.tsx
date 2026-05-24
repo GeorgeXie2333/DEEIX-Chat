@@ -444,11 +444,6 @@ export function AssistantImageGenerationSkeleton({
           warpAmplitude={72}
           warpSpeed={2.1}
         />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <span className="select-none text-[clamp(1.75rem,7vw,4rem)] font-semibold tracking-[0.18em] text-white/30 mix-blend-overlay drop-shadow-sm">
-            DEEIX
-          </span>
-        </div>
       </div>
     </div>
   );
