@@ -468,13 +468,12 @@ func applyOpenAIImageEditParams(fields map[string]string, model string, options 
 
 func applyOpenAIImageEditStreamParams(fields map[string]string, options map[string]interface{}) {
 	value, ok := modelParamIntValue(options, "partial_images")
-	if ok {
-		if value > 0 {
-			fields["partial_images"] = fmt.Sprintf("%d", value)
-		}
+	if !ok {
 		return
 	}
-	fields["partial_images"] = "1"
+	if value >= 0 {
+		fields["partial_images"] = fmt.Sprintf("%d", value)
+	}
 }
 
 func writeOpenAIMultipartFile(writer *multipart.Writer, fieldName string, fileName string, mimeType string, data []byte) error {
@@ -552,13 +551,12 @@ func applyOpenAIImageGenerationParams(payload map[string]interface{}, model stri
 // applyOpenAIImageGenerationStreamParams 只处理流式图片端点支持的增量参数。
 func applyOpenAIImageGenerationStreamParams(payload map[string]interface{}, options map[string]interface{}) {
 	value, ok := modelParamIntValue(options, "partial_images")
-	if ok {
-		if value > 0 {
-			payload["partial_images"] = value
-		}
+	if !ok {
 		return
 	}
-	payload["partial_images"] = 1
+	if value >= 0 {
+		payload["partial_images"] = value
+	}
 }
 
 func openAIImageGenerationModelSupportsStream(model string) bool {

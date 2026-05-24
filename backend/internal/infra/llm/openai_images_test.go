@@ -65,15 +65,18 @@ func TestBuildOpenAIImageGenerationStreamRequestBody(t *testing.T) {
 	}
 }
 
-func TestBuildOpenAIImageGenerationStreamRequestBodyDefaultsPartialImages(t *testing.T) {
+func TestBuildOpenAIImageGenerationStreamRequestBodyOmitsDefaultPartialImages(t *testing.T) {
 	payload, err := buildOpenAIImageGenerationStreamRequestBody("gpt-image-1", GenerateInput{
 		Messages: []Message{{Role: "user", Content: "A clean product render"}},
 	})
 	if err != nil {
 		t.Fatalf("build image stream request body: %v", err)
 	}
-	if payload["partial_images"] != 1 {
-		t.Fatalf("expected default partial_images=1, got %#v", payload)
+	if payload["stream"] != true {
+		t.Fatalf("expected stream request payload, got %#v", payload)
+	}
+	if _, ok := payload["partial_images"]; ok {
+		t.Fatalf("partial_images must only be sent when explicitly configured, got %#v", payload)
 	}
 }
 
