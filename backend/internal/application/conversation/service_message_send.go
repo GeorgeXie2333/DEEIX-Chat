@@ -1059,6 +1059,29 @@ func (s *Service) sendMessageInternal(
 		effectiveOutputTokens = estimateTokens(assistantText)
 	}
 
+	var generatedImageFiles []model.FileObject
+	var generatedImageAttachmentRows []model.Attachment
+	if upstreamOutput != nil && len(upstreamOutput.GeneratedImages) > 0 {
+		emitEvent(input.OnEvent, "saving_artifact", map[string]interface{}{"message": "saving image"})
+		var imageSaveErr error
+		generatedImageFiles, generatedImageAttachmentRows, imageSaveErr = s.saveAssistantGeneratedImages(ctx, assistantGeneratedImageSaveInput{
+			UserID:         input.UserID,
+			ConversationID: input.ConversationID,
+			MessageID:      assistantMessage.ID,
+			ModelName:      route.PlatformModelName,
+			Images:         upstreamOutput.GeneratedImages,
+		})
+		if imageSaveErr != nil {
+			retErr = imageSaveErr
+			_ = s.repo.UpdateMessageState(ctx, assistantMessage.ID, "error", classifyRunErrorCode(retErr), truncateError(messageErrorSummary(retErr), 255))
+			return nil, imageSaveErr
+		}
+		assistantText = appendGeneratedImageMarkdown(assistantText, generatedImageFiles)
+		if effectiveOutputTokens <= 0 {
+			effectiveOutputTokens = estimateTokens(assistantText)
+		}
+	}
+
 	if strings.TrimSpace(assistantText) == "" {
 		retErr = ErrUpstreamEmptyResponse
 		return nil, retErr
@@ -1135,6 +1158,8 @@ func (s *Service) sendMessageInternal(
 		ResponseID:                upstreamOutput.ResponseID,
 		StatefulPromptFingerprint: statefulPromptFingerprint,
 		ToolCallRows:              toolCallRows,
+		AssistantAttachments:      generatedImageAttachmentRows,
+		GeneratedImageFiles:       generatedImageFiles,
 	})
 	platformtracing.RecordError(persistSpan, err)
 	persistSpan.End()
