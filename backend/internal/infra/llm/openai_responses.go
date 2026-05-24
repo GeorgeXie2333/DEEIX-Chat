@@ -295,6 +295,9 @@ func applyResponsesStreamEvent(
 
 	if call, ok := parseResponsesServerToolStatusEvent(eventType, parsed); ok {
 		appendUniqueToolCall(&result.ServerToolCalls, call)
+		if err := mergeResponsesImageGenerationEvent(result, parsed, onEvent); err != nil {
+			return err
+		}
 		if onEvent != nil {
 			return onEvent(GenerateStreamEvent{
 				ServerToolCall: &call,
@@ -302,6 +305,9 @@ func applyResponsesStreamEvent(
 			})
 		}
 		return nil
+	}
+	if isResponsesImageGenerationPartialEvent(eventType) {
+		return emitResponsesImageGenerationPartial(result, parsed, onEvent)
 	}
 
 	switch eventType {
@@ -461,6 +467,9 @@ func mergeResponsesStreamOutputItem(
 	call := parseResponseServerToolCall(item)
 	appendUniqueToolCall(&result.ServerToolCalls, call)
 	result.Citations = appendUniqueStrings(result.Citations, parseResponseCitations(item)...)
+	if err := mergeResponsesImageGenerationToolItem(result, item, onEvent); err != nil {
+		return err
+	}
 	if onEvent == nil {
 		return nil
 	}
@@ -551,6 +560,7 @@ func mergeResponsesTopLevelToolCalls(result *GenerateOutput, raw interface{}) {
 		if isResponsesServerToolCallItem(item) {
 			appendUniqueToolCall(&result.ServerToolCalls, parseResponseServerToolCall(item))
 			result.Citations = appendUniqueStrings(result.Citations, parseResponseCitations(item)...)
+			_ = mergeResponsesImageGenerationToolItem(result, item, nil)
 			continue
 		}
 		itemType := strings.TrimSpace(getString(item["type"]))
@@ -721,6 +731,7 @@ func mergeResponsesOutputItem(result *GenerateOutput, item map[string]interface{
 	case isResponsesServerToolCallItem(item):
 		appendUniqueToolCall(&result.ServerToolCalls, parseResponseServerToolCall(item))
 		result.Citations = appendUniqueStrings(result.Citations, parseResponseCitations(item)...)
+		_ = mergeResponsesImageGenerationToolItem(result, item, nil)
 	case isResponsesClientToolCallType(itemType):
 		appendUniqueToolCall(&result.ToolCalls, parseResponseToolCall(item))
 	default:
@@ -799,6 +810,9 @@ func parseResponseServerToolCall(item map[string]interface{}) ToolCall {
 		normalizeJSONString(item["result"]),
 		actionOutputJSON,
 	)
+	if isResponsesImageGenerationCallType(itemType) {
+		outputJSON = responsesImageGenerationToolOutputJSON(item, outputJSON)
+	}
 	errorJSON := normalizeJSONString(item["error"])
 	return ToolCall{
 		ToolCallID:    toolCallID,
@@ -906,6 +920,286 @@ func isResponsesServerToolCallType(itemType string) bool {
 		}
 		return false
 	}
+}
+
+func isResponsesImageGenerationCallType(itemType string) bool {
+	switch strings.TrimSpace(itemType) {
+	case "image_generation_call", "image_generation_call_output":
+		return true
+	default:
+		return false
+	}
+}
+
+func isResponsesImageGenerationPartialEvent(eventType string) bool {
+	value := strings.TrimSpace(eventType)
+	return strings.HasPrefix(value, "response.image_generation_call.") && strings.Contains(value, "partial_image")
+}
+
+func mergeResponsesImageGenerationEvent(
+	result *GenerateOutput,
+	parsed map[string]interface{},
+	onEvent func(GenerateStreamEvent) error,
+) error {
+	eventType := strings.TrimSpace(getString(parsed["type"]))
+	if !strings.HasPrefix(eventType, "response.image_generation_call.") || strings.Contains(eventType, "partial_image") {
+		return nil
+	}
+	return mergeResponsesImageGenerationToolItem(result, responsesImageGenerationEventItem(parsed), onEvent)
+}
+
+func emitResponsesImageGenerationPartial(
+	result *GenerateOutput,
+	parsed map[string]interface{},
+	onEvent func(GenerateStreamEvent) error,
+) error {
+	if onEvent == nil {
+		return nil
+	}
+	images := parseResponsesImageGenerationImages(responsesImageGenerationEventItem(parsed))
+	if len(images) == 0 {
+		return nil
+	}
+	index := int(firstNonZero(
+		getInt64FromPath(parsed, "partial_image_index"),
+		getInt64FromPath(parsed, "partial_image", "index"),
+		getInt64FromPath(parsed, "index"),
+	))
+	return onEvent(GenerateStreamEvent{
+		GeneratedImage:        &images[0],
+		GeneratedImageIndex:   index,
+		GeneratedImagePartial: true,
+		ResponseID:            responseIDForStreamEvent(result, parsed),
+	})
+}
+
+func mergeResponsesImageGenerationToolItem(
+	result *GenerateOutput,
+	item map[string]interface{},
+	onEvent func(GenerateStreamEvent) error,
+) error {
+	if result == nil || !isResponsesImageGenerationCallType(getString(item["type"])) {
+		return nil
+	}
+	for _, image := range parseResponsesImageGenerationImages(item) {
+		index, appended := appendUniqueGeneratedImage(&result.GeneratedImages, image)
+		if !appended || onEvent == nil {
+			continue
+		}
+		eventImage := image
+		if err := onEvent(GenerateStreamEvent{
+			GeneratedImage:      &eventImage,
+			GeneratedImageIndex: index,
+			ResponseID:          result.ResponseID,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func responsesImageGenerationEventItem(parsed map[string]interface{}) map[string]interface{} {
+	item := cloneMap(asMap(parsed["item"]))
+	if len(item) == 0 {
+		item = make(map[string]interface{})
+	}
+	mergeMapValueIfEmpty(item, "type", "image_generation_call")
+	for _, key := range []string{"id", "item_id", "call_id", "tool_call_id", "status"} {
+		mergeMapValueIfEmpty(item, key, parsed[key])
+	}
+	for _, key := range []string{"result", "image", "images", "output", "outputs", "data", "content", "partial_image", "partial_image_b64", "b64_json", "url", "mime_type", "media_type", "output_format", "revised_prompt"} {
+		mergeMapValueIfEmpty(item, key, parsed[key])
+	}
+	return item
+}
+
+func responseIDForStreamEvent(result *GenerateOutput, parsed map[string]interface{}) string {
+	if result != nil && strings.TrimSpace(result.ResponseID) != "" {
+		return strings.TrimSpace(result.ResponseID)
+	}
+	return firstNonEmptyString(getString(parsed["response_id"]), getStringFromPath(parsed, "response", "id"), getString(parsed["id"]))
+}
+
+func parseResponsesImageGenerationImages(item map[string]interface{}) []GeneratedImage {
+	if len(item) == 0 {
+		return nil
+	}
+	outputFormat := firstNonEmptyString(
+		getString(item["output_format"]),
+		getStringFromPath(item, "result", "output_format"),
+		getStringFromPath(item, "image", "output_format"),
+	)
+	mimeType := responsesImageGenerationMIMEType(outputFormat, firstNonEmptyString(
+		getString(item["mime_type"]),
+		getString(item["media_type"]),
+		getStringFromPath(item, "result", "mime_type"),
+		getStringFromPath(item, "result", "media_type"),
+		getStringFromPath(item, "image", "mime_type"),
+		getStringFromPath(item, "image", "media_type"),
+	))
+	revisedPrompt := firstNonEmptyString(
+		getString(item["revised_prompt"]),
+		getString(item["revisedPrompt"]),
+		getStringFromPath(item, "result", "revised_prompt"),
+		getStringFromPath(item, "image", "revised_prompt"),
+	)
+	images := make([]GeneratedImage, 0)
+	for _, key := range []string{"result", "image", "images", "output", "outputs", "data", "content", "partial_image", "partial_image_b64", "b64_json", "base64", "image_base64", "url"} {
+		collectResponsesImageGenerationPayload(item[key], outputFormat, mimeType, revisedPrompt, keyAllowsBareImageString(key), &images)
+	}
+	return images
+}
+
+func keyAllowsBareImageString(key string) bool {
+	switch strings.TrimSpace(key) {
+	case "result", "partial_image_b64", "b64_json", "base64", "image_base64", "data":
+		return true
+	default:
+		return false
+	}
+}
+
+func collectResponsesImageGenerationPayload(
+	raw interface{},
+	outputFormat string,
+	mimeType string,
+	revisedPrompt string,
+	allowBareString bool,
+	images *[]GeneratedImage,
+) {
+	if images == nil || raw == nil {
+		return
+	}
+	switch value := raw.(type) {
+	case string:
+		appendResponsesImageString(value, mimeType, revisedPrompt, allowBareString, images)
+	case []interface{}:
+		for _, item := range value {
+			collectResponsesImageGenerationPayload(item, outputFormat, mimeType, revisedPrompt, allowBareString, images)
+		}
+	case map[string]interface{}:
+		itemMIME := responsesImageGenerationMIMEType(outputFormat, firstNonEmptyString(
+			getString(value["mime_type"]),
+			getString(value["media_type"]),
+			mimeType,
+		))
+		itemPrompt := firstNonEmptyString(getString(value["revised_prompt"]), getString(value["revisedPrompt"]), revisedPrompt)
+		for _, key := range []string{"url", "image_url"} {
+			appendResponsesImageString(getString(value[key]), itemMIME, itemPrompt, false, images)
+		}
+		for _, key := range []string{"b64_json", "base64", "image_base64", "partial_image_b64"} {
+			appendResponsesImageString(getString(value[key]), itemMIME, itemPrompt, true, images)
+		}
+		for _, key := range []string{"result", "image", "images", "output", "outputs", "data", "content", "partial_image"} {
+			collectResponsesImageGenerationPayload(value[key], outputFormat, itemMIME, itemPrompt, keyAllowsBareImageString(key), images)
+		}
+	}
+}
+
+func appendResponsesImageString(value string, mimeType string, revisedPrompt string, allowBareString bool, images *[]GeneratedImage) {
+	text := strings.TrimSpace(value)
+	if text == "" {
+		return
+	}
+	if b64, dataURLMIME, ok := splitResponsesImageDataURL(text); ok {
+		_, _ = appendUniqueGeneratedImage(images, GeneratedImage{
+			B64JSON:       b64,
+			MIMEType:      firstNonEmptyString(dataURLMIME, mimeType),
+			RevisedPrompt: strings.TrimSpace(revisedPrompt),
+		})
+		return
+	}
+	lower := strings.ToLower(text)
+	if strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") {
+		_, _ = appendUniqueGeneratedImage(images, GeneratedImage{
+			URL:           text,
+			MIMEType:      strings.TrimSpace(mimeType),
+			RevisedPrompt: strings.TrimSpace(revisedPrompt),
+		})
+		return
+	}
+	if !allowBareString {
+		return
+	}
+	_, _ = appendUniqueGeneratedImage(images, GeneratedImage{
+		B64JSON:       text,
+		MIMEType:      strings.TrimSpace(mimeType),
+		RevisedPrompt: strings.TrimSpace(revisedPrompt),
+	})
+}
+
+func splitResponsesImageDataURL(value string) (string, string, bool) {
+	text := strings.TrimSpace(value)
+	if !strings.HasPrefix(strings.ToLower(text), "data:") {
+		return "", "", false
+	}
+	comma := strings.Index(text, ",")
+	if comma < 0 {
+		return "", "", false
+	}
+	meta := strings.TrimSpace(text[len("data:"):comma])
+	mimeType := strings.TrimSpace(strings.Split(meta, ";")[0])
+	if !strings.HasPrefix(strings.ToLower(mimeType), "image/") {
+		mimeType = ""
+	}
+	return strings.TrimSpace(text[comma+1:]), mimeType, true
+}
+
+func responsesImageGenerationMIMEType(outputFormat string, mimeType string) string {
+	normalizedMIME := strings.TrimSpace(strings.ToLower(mimeType))
+	if strings.HasPrefix(normalizedMIME, "image/") {
+		return normalizedMIME
+	}
+	return openAIImageMIMEType(outputFormat)
+}
+
+func appendUniqueGeneratedImage(items *[]GeneratedImage, image GeneratedImage) (int, bool) {
+	if items == nil {
+		return -1, false
+	}
+	if strings.TrimSpace(image.URL) == "" && strings.TrimSpace(image.B64JSON) == "" {
+		return -1, false
+	}
+	for index, existing := range *items {
+		if image.URL != "" && strings.TrimSpace(existing.URL) == strings.TrimSpace(image.URL) {
+			return index, false
+		}
+		if image.B64JSON != "" && strings.TrimSpace(existing.B64JSON) == strings.TrimSpace(image.B64JSON) {
+			return index, false
+		}
+	}
+	*items = append(*items, image)
+	return len(*items) - 1, true
+}
+
+func responsesImageGenerationToolOutputJSON(item map[string]interface{}, fallback string) string {
+	images := parseResponsesImageGenerationImages(item)
+	if len(images) == 0 {
+		return fallback
+	}
+	summary := make([]map[string]interface{}, 0, len(images))
+	for _, image := range images {
+		payload := map[string]interface{}{}
+		if url := strings.TrimSpace(image.URL); url != "" {
+			payload["url"] = url
+		}
+		if strings.TrimSpace(image.B64JSON) != "" {
+			payload["b64_json"] = "[redacted]"
+		}
+		if mimeType := strings.TrimSpace(image.MIMEType); mimeType != "" {
+			payload["mime_type"] = mimeType
+		}
+		if prompt := strings.TrimSpace(image.RevisedPrompt); prompt != "" {
+			payload["revised_prompt"] = prompt
+		}
+		if len(payload) > 0 {
+			summary = append(summary, payload)
+		}
+	}
+	if len(summary) == 0 {
+		return fallback
+	}
+	return normalizeJSONString(map[string]interface{}{"images": summary})
 }
 
 func isResponsesClientToolCallType(itemType string) bool {
