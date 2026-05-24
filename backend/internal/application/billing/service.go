@@ -22,6 +22,7 @@ const (
 	maxPageSize                = 200
 	publicModelPricingCacheTTL = 30 * time.Second
 	nativeToolPricingSource    = "provider_official_defaults"
+	nativeToolUSD01Nanousd     = 100_000_000
 	nativeToolUSD001Nanousd    = 10_000_000
 	nativeToolUSD0025Nanousd   = 25_000_000
 	nativeToolUSD0005Nanousd   = 5_000_000
@@ -292,7 +293,7 @@ func ListNativeToolDefaultPricing() []NativeToolPricingView {
 		{Provider: "OpenAI", ToolKey: "openaiWebSearchReasoning", PriceNanousd: nativeToolUSD001Nanousd, Unit: "call", Billable: true},
 		{Provider: "OpenAI", ToolKey: "openaiWebSearchStandard", PriceNanousd: nativeToolUSD0025Nanousd, Unit: "call", Billable: true},
 		{Provider: "OpenAI", ToolKey: "openaiShell", PriceLabel: "notMetered", Billable: false},
-		{Provider: "OpenAI", ToolKey: "openaiImageGeneration", PriceLabel: "notMetered", Billable: false},
+		{Provider: "OpenAI", ToolKey: "openaiImageGeneration", PriceNanousd: nativeToolUSD01Nanousd, Unit: "call", Billable: true},
 		{Provider: "OpenAI", ToolKey: "openaiCodeInterpreter", PriceLabel: "notMetered", Billable: false},
 		{Provider: "Anthropic", ToolKey: "anthropicWebSearch", PriceNanousd: nativeToolUSD001Nanousd, Unit: "search", Billable: true},
 		{Provider: "Anthropic", ToolKey: "anthropicWebFetch", PriceLabel: "included", Billable: false},
@@ -2525,6 +2526,8 @@ func nativeToolDefaultCallPrice(input UsagePricingInput, toolName string) (nativ
 				return nativeToolCallPrice{provider: "openai", serviceName: "OpenAI Web search", nanousdPerCall: nativeToolUSD001Nanousd}, true
 			}
 			return nativeToolCallPrice{provider: "openai", serviceName: "OpenAI Web search", nanousdPerCall: nativeToolUSD0025Nanousd}, true
+		case "image_generation":
+			return nativeToolCallPrice{provider: "openai", serviceName: "OpenAI Image generation", nanousdPerCall: nativeToolUSD01Nanousd}, true
 		default:
 			return nativeToolCallPrice{}, false
 		}

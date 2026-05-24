@@ -321,6 +321,50 @@ func TestBuildUsageLedgerBillsOpenAIWebSearchPreviewByModelFamily(t *testing.T) 
 	}
 }
 
+func TestBuildUsageLedgerBillsOpenAIImageGenerationNativeTool(t *testing.T) {
+	repo := &billingRepositoryStub{
+		mode:                     "usage",
+		nativeToolBillingEnabled: true,
+		pricing: &domainbilling.ModelPricing{
+			PlatformModelName: "gpt-5.5",
+			Currency:          "USD",
+			PricingMode:       domainbilling.PricingModeToken,
+		},
+	}
+	service := NewService(repo)
+
+	ledger, err := service.BuildUsageLedger(context.Background(), UsagePricingInput{
+		UserID:            1,
+		PlatformModelName: "gpt-5.5",
+		ProviderProtocol:  "openai_responses",
+		ServerSideToolUsage: map[string]int64{
+			"image_generation": 2,
+		},
+	})
+	if err != nil {
+		t.Fatalf("build usage ledger: %v", err)
+	}
+	if ledger.BilledNanousd != 200_000_000 {
+		t.Fatalf("expected OpenAI image generation native tool billing total, got %d", ledger.BilledNanousd)
+	}
+
+	var snapshot map[string]interface{}
+	if err := json.Unmarshal([]byte(ledger.PricingSnapshotJSON), &snapshot); err != nil {
+		t.Fatalf("unmarshal pricing snapshot: %v", err)
+	}
+	if snapshot["native_tool_billed_nanousd"] != float64(200_000_000) {
+		t.Fatalf("expected image generation native tool billing snapshot, got %#v", snapshot)
+	}
+	serviceItems, ok := snapshot["service_items"].([]interface{})
+	if !ok || len(serviceItems) != 1 {
+		t.Fatalf("expected one native tool service item, got %#v", snapshot["service_items"])
+	}
+	serviceItem, ok := serviceItems[0].(map[string]interface{})
+	if !ok || serviceItem["service_code"] != "native_tool.openai.image_generation" || serviceItem["call_nanousd_per_call"] != float64(100_000_000) {
+		t.Fatalf("unexpected image generation service item: %#v", serviceItems[0])
+	}
+}
+
 func TestBuildUsageLedgerAppliesAnthropicFastModeAndCacheRates(t *testing.T) {
 	repo := &billingRepositoryStub{
 		mode: "usage",

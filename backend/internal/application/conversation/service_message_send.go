@@ -1062,7 +1062,6 @@ func (s *Service) sendMessageInternal(
 	var generatedImageFiles []model.FileObject
 	var generatedImageAttachmentRows []model.Attachment
 	if upstreamOutput != nil && len(upstreamOutput.GeneratedImages) > 0 {
-		emitEvent(input.OnEvent, "saving_artifact", map[string]interface{}{"message": "saving image"})
 		var imageSaveErr error
 		generatedImageFiles, generatedImageAttachmentRows, imageSaveErr = s.saveAssistantGeneratedImages(ctx, assistantGeneratedImageSaveInput{
 			UserID:         input.UserID,
