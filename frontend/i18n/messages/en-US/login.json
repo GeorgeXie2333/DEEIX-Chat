@@ -34,6 +34,7 @@
     "challengeExpired": "Two-factor verification expired. Sign in again.",
     "providerStartFailed": "Unable to start third-party sign-in. Refresh the page and try again.",
     "codeSendFailed": "Failed to send verification code.",
+    "turnstileRequired": "Complete the human verification first.",
     "passwordInvalid": "Password must be at least 8 characters and not digits only.",
     "registerFailed": "Registration failed. Please try again later."
   },

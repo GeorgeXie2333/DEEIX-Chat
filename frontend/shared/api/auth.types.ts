@@ -150,6 +150,8 @@ export type LoginOptionsData = {
   emailEnabled: boolean;
   emailRegistrationEnabled: boolean;
   emailVerificationEnabled: boolean;
+  turnstileRegistrationEnabled: boolean;
+  turnstileSiteKey: string;
   providers: IdentityProviderDTO[];
 };
 

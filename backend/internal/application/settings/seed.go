@@ -36,6 +36,9 @@ func defaultSettings() []domainsettings.SystemSetting {
 		{Namespace: "auth", Key: "email_registration_allowed_domains", Value: "", ValueType: "string", Description: "邮箱注册域名白名单，留空表示不限制"},
 		{Namespace: "auth", Key: "email_registration_block_plus_alias", Value: "false", ValueType: "bool", Description: "邮箱注册是否禁止 + 别名地址"},
 		{Namespace: "auth", Key: "auto_link_verified_email", Value: "true", ValueType: "bool", Description: "是否允许相同已验证邮箱自动绑定第三方身份"},
+		{Namespace: "auth", Key: "turnstile_registration_enabled", Value: "false", ValueType: "bool", Description: "邮箱注册是否启用 Cloudflare Turnstile 人机验证"},
+		{Namespace: "auth", Key: "turnstile_site_key", Value: "", ValueType: "string", Description: "Cloudflare Turnstile Site Key"},
+		{Namespace: "auth", Key: "turnstile_secret_key", Value: "", ValueType: "string", Description: "Cloudflare Turnstile Secret Key"},
 
 		// 计费配置
 		{Namespace: "billing", Key: "mode", Value: "self", ValueType: "string", Description: "计费方式：self=自用模式，period=周期计费，usage=按量计费"},

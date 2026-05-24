@@ -8,6 +8,10 @@
       "title": "Sign-in & registration",
       "description": "Control available sign-in methods and email registration entry points."
     },
+    "humanVerification": {
+      "title": "Human verification",
+      "description": "Enable Cloudflare Turnstile for email registration. Third-party sign-in is not affected."
+    },
     "bindingAndVerification": {
       "title": "Binding & verification",
       "description": "Control email verification, registration domain policy, and third-party identity linking."
@@ -78,6 +82,18 @@
     "autoLinkVerifiedEmail": {
       "label": "Auto-link same email",
       "description": "Automatically link a verified third-party email to an existing local account."
+    },
+    "turnstileRegistrationEnabled": {
+      "label": "Registration human check",
+      "description": "Require Cloudflare Turnstile for email registration. OIDC / OAuth2 sign-in does not require it."
+    },
+    "turnstileSiteKey": {
+      "label": "Turnstile Site Key",
+      "description": "Public Cloudflare Turnstile site key used by the sign-up form."
+    },
+    "turnstileSecretKey": {
+      "label": "Turnstile Secret Key",
+      "description": "Server-side Cloudflare Turnstile validation key. It is hidden after saving."
     },
     "tokenTTLHours": {
       "label": "Access token lifetime",
@@ -159,7 +175,9 @@
     "defaultNextPath": "The default redirect path must be an internal path, for example /chat.",
     "passwordLoginRequired": "Before disabling username and email sign-in, enable third-party sign-in and make sure at least one administrator has a linked identity provider.",
     "missingSMTP": "Email verification requires {fields}.",
-    "invalidSMTPPort": "SMTP port must be an integer between 1 and 65535."
+    "invalidSMTPPort": "SMTP port must be an integer between 1 and 65535.",
+    "missingTurnstile": "Turnstile verification requires {fields}.",
+    "turnstileRegistrationRequired": "Enable email registration before enabling Turnstile verification."
   },
   "punctuation": {
     "listSeparator": ", "

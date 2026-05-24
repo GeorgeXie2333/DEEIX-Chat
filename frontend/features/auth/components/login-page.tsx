@@ -9,6 +9,7 @@ import { PASSWORD_MIN_LENGTH } from "@/shared/auth/account-policy";
 import { useLoginPage } from "@/features/auth/hooks/use-login-page";
 import { AppLogo } from "@/shared/components/app-logo";
 import { IdentityProviderIcon } from "@/shared/components/identity-provider-icon";
+import { TurnstileWidget } from "@/features/auth/components/turnstile-widget";
 import { cn } from "@/lib/utils";
 
 type LoginPageProps = {
@@ -49,12 +50,17 @@ export function LoginPage({ nextPath }: LoginPageProps) {
     registerDebugCode,
     registerEmail,
     registerPassword,
+    registerTurnstileRequired,
+    registerTurnstileResetSignal,
+    registerTurnstileSiteKey,
+    registerTurnstileToken,
     requestRegisterCode,
     requestTwoFactorEmailCode,
     sendingCode,
     setPassword,
     setRegisterCode,
     setRegisterPassword,
+    setRegisterTurnstileToken,
     setTwoFactorCode,
     switchTwoFactorVerificationMethod,
     setUsername,
@@ -239,6 +245,13 @@ export function LoginPage({ nextPath }: LoginPageProps) {
                     required
                   />
                 </div>
+                {registerTurnstileRequired ? (
+                  <TurnstileWidget
+                    siteKey={registerTurnstileSiteKey}
+                    resetSignal={registerTurnstileResetSignal}
+                    onTokenChange={setRegisterTurnstileToken}
+                  />
+                ) : null}
                 {emailVerificationEnabled ? (
                   <div className="space-y-2">
                     <label className="text-sm font-medium leading-none text-foreground" htmlFor="register-code">
@@ -259,7 +272,7 @@ export function LoginPage({ nextPath }: LoginPageProps) {
                         type="button"
                         variant="secondary"
                         className="h-9 min-w-[4.5rem] shrink-0 rounded-md border-0 bg-muted px-3 text-sm font-semibold text-foreground shadow-none hover:bg-muted/80"
-                        disabled={sendingCode || registerCodeCooldownSeconds > 0 || !registerEmail.trim()}
+                        disabled={sendingCode || registerCodeCooldownSeconds > 0 || !registerEmail.trim() || (registerTurnstileRequired && !registerTurnstileToken)}
                         onClick={() => {
                           void requestRegisterCode();
                         }}
@@ -273,7 +286,7 @@ export function LoginPage({ nextPath }: LoginPageProps) {
                 <Button
                   className="mt-1 h-9 w-full rounded-md bg-foreground text-sm font-semibold text-background shadow-none hover:bg-foreground/90"
                   type="submit"
-                  disabled={submitting || (emailVerificationEnabled && registerCode.length !== 6)}
+                  disabled={submitting || (emailVerificationEnabled && registerCode.length !== 6) || (!emailVerificationEnabled && registerTurnstileRequired && !registerTurnstileToken)}
                 >
                   {submitting ? <SpinnerLabel>{t("registering")}</SpinnerLabel> : t("register")}
                 </Button>

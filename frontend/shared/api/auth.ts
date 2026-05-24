@@ -120,17 +120,17 @@ export async function regenerateCurrentTwoFactorRecoveryCodes(accessToken: strin
   );
 }
 
-export async function startEmailRegistration(email: string): Promise<EmailRegistrationStartData> {
+export async function startEmailRegistration(email: string, turnstileToken?: string): Promise<EmailRegistrationStartData> {
   return apiRequest<EmailRegistrationStartData>("/api/v1/auth/register/email/start", {
     method: "POST",
-    body: { email },
+    body: { email, turnstileToken },
   });
 }
 
-export async function completeEmailRegistration(email: string, password: string, code: string): Promise<LoginData> {
+export async function completeEmailRegistration(email: string, password: string, code: string, turnstileToken?: string): Promise<LoginData> {
   return apiRequest<LoginData>("/api/v1/auth/register/email/complete", {
     method: "POST",
-    body: { email, password, code },
+    body: { email, password, code, turnstileToken },
   });
 }
 

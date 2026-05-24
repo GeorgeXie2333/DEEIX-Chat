@@ -10,6 +10,7 @@ import (
 
 var sensitiveSettingKeys = map[string]struct{}{
 	"auth:smtp_password":                   {},
+	"auth:turnstile_secret_key":            {},
 	"billing:stripe_secret_key":            {},
 	"billing:stripe_webhook_secret":        {},
 	"billing:epay_key":                     {},

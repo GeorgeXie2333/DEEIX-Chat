@@ -171,12 +171,44 @@ func TestRequestEmailRegistrationUsesSendCooldown(t *testing.T) {
 		EmailVerificationEnabled: true,
 	}, repo, nil)
 
-	_, err := service.RequestEmailRegistration(context.Background(), "user@example.com", "", requestmeta.SessionAuditContext{})
+	_, err := service.RequestEmailRegistration(context.Background(), "user@example.com", "", "", "", requestmeta.SessionAuditContext{})
 	if err == nil || err.Error() != "verification code was sent recently" {
 		t.Fatalf("expected cooldown error, got %v", err)
 	}
 	if repo.cancelCount != 0 || repo.createCount != 0 {
 		t.Fatalf("expected no verification rewrite during cooldown, cancel=%d create=%d", repo.cancelCount, repo.createCount)
+	}
+}
+
+func TestRequestEmailRegistrationRequiresTurnstileWhenEnabled(t *testing.T) {
+	service := NewService(config.Config{
+		EmailLoginEnabled:                 true,
+		EmailRegistrationEnabled:          true,
+		EmailVerificationEnabled:          true,
+		TurnstileRegistrationEnabled:      true,
+		TurnstileSiteKey:                  "site-key",
+		TurnstileSecretKey:                "secret-key",
+	}, nil, nil)
+
+	_, err := service.RequestEmailRegistration(context.Background(), "user@example.com", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})
+	if err == nil || err.Error() != "turnstile verification is required" {
+		t.Fatalf("expected turnstile required error, got %v", err)
+	}
+}
+
+func TestRegisterWithEmailRequiresTurnstileWhenEmailVerificationDisabled(t *testing.T) {
+	service := NewService(config.Config{
+		EmailLoginEnabled:                 true,
+		EmailRegistrationEnabled:          true,
+		EmailVerificationEnabled:          false,
+		TurnstileRegistrationEnabled:      true,
+		TurnstileSiteKey:                  "site-key",
+		TurnstileSecretKey:                "secret-key",
+	}, nil, nil)
+
+	_, err := service.RegisterWithEmail(context.Background(), "user@example.com", "securepass1", "", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})
+	if err == nil || err.Error() != "turnstile verification is required" {
+		t.Fatalf("expected turnstile required error, got %v", err)
 	}
 }
 

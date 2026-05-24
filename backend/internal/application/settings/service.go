@@ -270,6 +270,8 @@ func validatePatchItem(item PatchItem) error {
 		return validateStringMax(value, 255, key)
 	case "auth:smtp_username", "auth:smtp_password", "auth:smtp_from":
 		return validateStringMax(value, 255, key)
+	case "auth:turnstile_site_key", "auth:turnstile_secret_key":
+		return validateStringMax(value, 512, key)
 	case "chat:default_system_prompt":
 		return validateStringMax(value, 20000, key)
 	case "auth:smtp_port":
@@ -376,7 +378,7 @@ func validatePatchItem(item PatchItem) error {
 		return validateStringMax(value, 255, key)
 	case "extract:tencent_ocr_secret_id", "extract:tencent_ocr_secret_key", "extract:aliyun_ocr_access_key_id", "extract:aliyun_ocr_access_key_secret":
 		return validateStringMax(value, 512, key)
-	case "auth:username_login_enabled", "auth:email_login_enabled", "auth:third_party_login_enabled", "auth:email_registration_enabled", "auth:email_verification_enabled", "auth:email_registration_block_plus_alias", "auth:auto_link_verified_email", "chat:rag_enabled", "chat:message_embedding_enabled", "chat:semantic_context_enabled", "file:full_context_limit_enabled", "file:embedding_enabled", "file:embed_trigger_on_upload", "file:embedding_normalize", "extract:image_ocr_enabled", "extract:pdf_ocr_fallback_enabled", "mcp:mcp_enable":
+	case "auth:username_login_enabled", "auth:email_login_enabled", "auth:third_party_login_enabled", "auth:email_registration_enabled", "auth:email_verification_enabled", "auth:email_registration_block_plus_alias", "auth:auto_link_verified_email", "auth:turnstile_registration_enabled", "chat:rag_enabled", "chat:message_embedding_enabled", "chat:semantic_context_enabled", "file:full_context_limit_enabled", "file:embedding_enabled", "file:embed_trigger_on_upload", "file:embedding_normalize", "extract:image_ocr_enabled", "extract:pdf_ocr_fallback_enabled", "mcp:mcp_enable":
 		if _, err := strconv.ParseBool(value); err != nil {
 			return fmt.Errorf("%s must be bool", key)
 		}
@@ -522,6 +524,25 @@ func (s *Service) applyAuthSettingDependencies(ctx context.Context, patches []Pa
 			return nil, fmt.Errorf("auth:email_registration_enabled requires auth:email_login_enabled")
 		}
 		patches = upsertPatch(patches, PatchItem{Namespace: "auth", Key: "email_registration_enabled", Value: "false"})
+		next["auth:email_registration_enabled"] = "false"
+	}
+	emailRegistrationEnabled, _ := strconv.ParseBool(next["auth:email_registration_enabled"])
+	turnstileRegistrationEnabled, _ := strconv.ParseBool(next["auth:turnstile_registration_enabled"])
+	if !emailRegistrationEnabled {
+		if patchValueIsTrue(patches, "auth", "turnstile_registration_enabled") {
+			return nil, fmt.Errorf("auth:turnstile_registration_enabled requires auth:email_registration_enabled")
+		}
+		patches = upsertPatch(patches, PatchItem{Namespace: "auth", Key: "turnstile_registration_enabled", Value: "false"})
+		next["auth:turnstile_registration_enabled"] = "false"
+		turnstileRegistrationEnabled = false
+	}
+	if turnstileRegistrationEnabled {
+		if strings.TrimSpace(next["auth:turnstile_site_key"]) == "" {
+			return nil, fmt.Errorf("auth:turnstile_site_key is required when auth:turnstile_registration_enabled is true")
+		}
+		if strings.TrimSpace(next["auth:turnstile_secret_key"]) == "" {
+			return nil, fmt.Errorf("auth:turnstile_secret_key is required when auth:turnstile_registration_enabled is true")
+		}
 	}
 	emailVerificationEnabled, _ := strconv.ParseBool(next["auth:email_verification_enabled"])
 	if emailVerificationEnabled {

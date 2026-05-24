@@ -55,7 +55,8 @@ type TwoFactorSetupCancelResponse struct {
 }
 
 type EmailRegistrationStartRequest struct {
-	Email string `json:"email" binding:"required,max=128,email"`
+	Email          string `json:"email" binding:"required,max=128,email"`
+	TurnstileToken string `json:"turnstileToken" binding:"omitempty,max=2048"`
 }
 
 type EmailRegistrationStartResponse struct {
@@ -71,9 +72,10 @@ type PasswordChangeVerificationStartResponse struct {
 }
 
 type EmailRegistrationCompleteRequest struct {
-	Email    string `json:"email" binding:"required,max=128,email"`
-	Password string `json:"password" binding:"required,min=8,max=128"`
-	Code     string `json:"code" binding:"omitempty,len=6"`
+	Email          string `json:"email" binding:"required,max=128,email"`
+	Password       string `json:"password" binding:"required,min=8,max=128"`
+	Code           string `json:"code" binding:"omitempty,len=6"`
+	TurnstileToken string `json:"turnstileToken" binding:"omitempty,max=2048"`
 }
 
 type ChangePasswordRequest struct {
@@ -189,11 +191,13 @@ type DeleteUserIdentityResponse struct {
 }
 
 type LoginOptionsResponse struct {
-	UsernameEnabled          bool                       `json:"usernameEnabled"`
-	EmailEnabled             bool                       `json:"emailEnabled"`
-	EmailRegistrationEnabled bool                       `json:"emailRegistrationEnabled"`
-	EmailVerificationEnabled bool                       `json:"emailVerificationEnabled"`
-	Providers                []IdentityProviderResponse `json:"providers"`
+	UsernameEnabled              bool                       `json:"usernameEnabled"`
+	EmailEnabled                 bool                       `json:"emailEnabled"`
+	EmailRegistrationEnabled     bool                       `json:"emailRegistrationEnabled"`
+	EmailVerificationEnabled     bool                       `json:"emailVerificationEnabled"`
+	TurnstileRegistrationEnabled bool                       `json:"turnstileRegistrationEnabled"`
+	TurnstileSiteKey             string                     `json:"turnstileSiteKey"`
+	Providers                    []IdentityProviderResponse `json:"providers"`
 }
 
 type UpsertIdentityProviderRequest struct {
@@ -544,11 +548,13 @@ func toEmailVerificationStartResponse(d *appauth.EmailChangeVerificationStartRes
 
 func toLoginOptionsResponse(d *appauth.LoginOptions) LoginOptionsResponse {
 	return LoginOptionsResponse{
-		UsernameEnabled:          d.UsernameEnabled,
-		EmailEnabled:             d.EmailEnabled,
-		EmailRegistrationEnabled: d.EmailRegistrationEnabled,
-		EmailVerificationEnabled: d.EmailVerificationEnabled,
-		Providers:                toIdentityProviderResponses(d.Providers),
+		UsernameEnabled:              d.UsernameEnabled,
+		EmailEnabled:                 d.EmailEnabled,
+		EmailRegistrationEnabled:     d.EmailRegistrationEnabled,
+		EmailVerificationEnabled:     d.EmailVerificationEnabled,
+		TurnstileRegistrationEnabled: d.TurnstileRegistrationEnabled,
+		TurnstileSiteKey:             d.TurnstileSiteKey,
+		Providers:                    toIdentityProviderResponses(d.Providers),
 	}
 }
 

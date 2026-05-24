@@ -23,6 +23,9 @@ export type LoginSettingsField = {
     | "email_registration_allowed_domains"
     | "email_registration_block_plus_alias"
     | "auto_link_verified_email"
+    | "turnstile_registration_enabled"
+    | "turnstile_site_key"
+    | "turnstile_secret_key"
     | "token_ttl_hours"
     | "refresh_token_ttl_hours"
     | "login_max_failures"
@@ -65,6 +68,15 @@ export function buildLoginSettingsGroups(t: LoginSettingsTranslator): LoginSetti
       { namespace: "auth", key: "email_registration_enabled", label: t("fields.emailRegistrationEnabled.label"), description: t("fields.emailRegistrationEnabled.description"), type: "bool" },
       { namespace: "auth", key: "username_login_enabled", label: t("fields.usernameLoginEnabled.label"), description: t("fields.usernameLoginEnabled.description"), type: "bool" },
       { namespace: "auth", key: "third_party_login_enabled", label: t("fields.thirdPartyLoginEnabled.label"), description: t("fields.thirdPartyLoginEnabled.description"), type: "bool" },
+    ],
+  },
+  {
+    title: t("groups.humanVerification.title"),
+    description: t("groups.humanVerification.description"),
+    fields: [
+      { namespace: "auth", key: "turnstile_registration_enabled", label: t("fields.turnstileRegistrationEnabled.label"), description: t("fields.turnstileRegistrationEnabled.description"), type: "bool" },
+      { namespace: "auth", key: "turnstile_site_key", label: t("fields.turnstileSiteKey.label"), description: t("fields.turnstileSiteKey.description"), type: "string", placeholder: "0x4AAAA..." },
+      { namespace: "auth", key: "turnstile_secret_key", label: t("fields.turnstileSecretKey.label"), description: t("fields.turnstileSecretKey.description"), type: "password" },
     ],
   },
   {
@@ -278,6 +290,9 @@ export function applyLoginDefaults(settings: Record<string, string>): Record<str
     "auth.email_registration_allowed_domains": settings["auth.email_registration_allowed_domains"] ?? "",
     "auth.email_registration_block_plus_alias": settings["auth.email_registration_block_plus_alias"] || "false",
     "auth.auto_link_verified_email": settings["auth.auto_link_verified_email"] || "true",
+    "auth.turnstile_registration_enabled": settings["auth.turnstile_registration_enabled"] || "false",
+    "auth.turnstile_site_key": settings["auth.turnstile_site_key"] ?? "",
+    "auth.turnstile_secret_key": settings["auth.turnstile_secret_key"] ?? "",
     "auth.token_ttl_hours": settings["auth.token_ttl_hours"]?.trim() || "24",
     "auth.refresh_token_ttl_hours": settings["auth.refresh_token_ttl_hours"]?.trim() || "720",
     "auth.login_max_failures": settings["auth.login_max_failures"]?.trim() || "5",
@@ -286,6 +301,9 @@ export function applyLoginDefaults(settings: Record<string, string>): Record<str
   };
   if (result["auth.email_login_enabled"] === "false") {
     result["auth.email_registration_enabled"] = "false";
+  }
+  if (result["auth.email_registration_enabled"] === "false") {
+    result["auth.turnstile_registration_enabled"] = "false";
   }
   return result;
 }
@@ -306,6 +324,10 @@ export function isEmailSMTPField(field: LoginSettingsField) {
 
 export function includesEmailVerificationSettings(group: LoginSettingsGroup) {
   return group.fields.some((field) => field.key === "email_verification_enabled" || isEmailSMTPField(field));
+}
+
+export function includesTurnstileSettings(group: LoginSettingsGroup) {
+  return group.fields.some((field) => field.key === "turnstile_registration_enabled" || field.key === "turnstile_site_key" || field.key === "turnstile_secret_key");
 }
 
 export function validateEmailVerificationSettings(
@@ -351,6 +373,40 @@ export function validateEmailVerificationSettings(
 
 export function includesPasswordLoginSettings(group: LoginSettingsGroup) {
   return group.fields.some((field) => field.key === "username_login_enabled" || field.key === "email_login_enabled");
+}
+
+export function validateTurnstileSettings(
+  settings: Record<string, string>,
+  configured: Record<string, boolean> = {},
+  labels: {
+    siteKey: string;
+    secretKey: string;
+    registrationRequired: string;
+    missing: (labels: string[]) => string;
+  } = {
+    siteKey: "Turnstile Site Key",
+    secretKey: "Turnstile Secret Key",
+    registrationRequired: "Enable email registration before Turnstile verification.",
+    missing: (labels) => `Turnstile verification requires ${labels.join(", ")}.`,
+  },
+): string | undefined {
+  if (settings["auth.turnstile_registration_enabled"] !== "true") {
+    return undefined;
+  }
+  if (settings["auth.email_registration_enabled"] !== "true") {
+    return labels.registrationRequired;
+  }
+  const requiredFields = [
+    { key: "auth.turnstile_site_key", label: labels.siteKey },
+    { key: "auth.turnstile_secret_key", label: labels.secretKey },
+  ];
+  const missingLabels = requiredFields
+    .filter((field) => !(settings[field.key] ?? "").trim() && !configured[field.key])
+    .map((field) => field.label);
+  if (missingLabels.length > 0) {
+    return labels.missing(missingLabels);
+  }
+  return undefined;
 }
 
 export function validatePasswordLoginSettings(

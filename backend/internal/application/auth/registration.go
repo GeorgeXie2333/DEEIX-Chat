@@ -66,7 +66,7 @@ type EmailChangeVerificationStartResult struct {
 	AvailableMethods []SecurityVerificationMethod
 }
 
-func (s *Service) RequestEmailRegistration(ctx context.Context, email string, requestID string, auditCtx requestmeta.SessionAuditContext) (*EmailRegistrationStartResult, error) {
+func (s *Service) RequestEmailRegistration(ctx context.Context, email string, turnstileToken string, remoteIP string, requestID string, auditCtx requestmeta.SessionAuditContext) (*EmailRegistrationStartResult, error) {
 	cfg := s.cfg.Snapshot()
 	if !cfg.EmailLoginEnabled || !cfg.EmailRegistrationEnabled {
 		return nil, fmt.Errorf("email registration is disabled")
@@ -80,6 +80,9 @@ func (s *Service) RequestEmailRegistration(ctx context.Context, email string, re
 	}
 	if !cfg.EmailVerificationEnabled {
 		return nil, fmt.Errorf("email verification is disabled")
+	}
+	if err = s.verifyRegistrationTurnstile(ctx, cfg, turnstileToken, remoteIP); err != nil {
+		return nil, err
 	}
 	if _, err = s.repo.GetByEmail(ctx, normalizedEmail); err == nil {
 		return nil, fmt.Errorf("email already exists")
@@ -142,7 +145,7 @@ func (s *Service) RequestEmailRegistration(ctx context.Context, email string, re
 	}, nil
 }
 
-func (s *Service) RegisterWithEmail(ctx context.Context, email string, password string, code string, requestID string, auditCtx requestmeta.SessionAuditContext) (*LoginResult, error) {
+func (s *Service) RegisterWithEmail(ctx context.Context, email string, password string, code string, turnstileToken string, remoteIP string, requestID string, auditCtx requestmeta.SessionAuditContext) (*LoginResult, error) {
 	cfg := s.cfg.Snapshot()
 	if !cfg.EmailLoginEnabled || !cfg.EmailRegistrationEnabled {
 		return nil, fmt.Errorf("email registration is disabled")
@@ -157,6 +160,11 @@ func (s *Service) RegisterWithEmail(ctx context.Context, email string, password 
 	normalizedPassword, err := userapp.NormalizePassword(password)
 	if err != nil {
 		return nil, err
+	}
+	if !cfg.EmailVerificationEnabled {
+		if err = s.verifyRegistrationTurnstile(ctx, cfg, turnstileToken, remoteIP); err != nil {
+			return nil, err
+		}
 	}
 	if _, err = s.repo.GetByEmail(ctx, normalizedEmail); err == nil {
 		return nil, fmt.Errorf("email already exists")

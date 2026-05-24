@@ -317,20 +317,23 @@ type Config struct {
 
 	// ── 动态配置（由 DB 种子初始化默认值，settings.RuntimeSettings.ApplyTo 覆盖） ──
 	// 认证配置
-	TokenTTLHours            int
-	RefreshTokenTTLHours     int
-	LoginMaxFailures         int
-	LoginLockMinutes         int
-	RateLimitRPM             int
-	PublicAuthRateLimitRPM   int
-	UsernameLoginEnabled     bool
-	EmailLoginEnabled        bool
-	ThirdPartyLoginEnabled   bool
-	EmailRegistrationEnabled bool
-	EmailVerificationEnabled bool
-	EmailRegistrationDomains string
-	EmailRegistrationNoAlias bool
-	AutoLinkVerifiedEmail    bool
+	TokenTTLHours                int
+	RefreshTokenTTLHours         int
+	LoginMaxFailures             int
+	LoginLockMinutes             int
+	RateLimitRPM                 int
+	PublicAuthRateLimitRPM       int
+	UsernameLoginEnabled         bool
+	EmailLoginEnabled            bool
+	ThirdPartyLoginEnabled       bool
+	EmailRegistrationEnabled     bool
+	EmailVerificationEnabled     bool
+	EmailRegistrationDomains     string
+	EmailRegistrationNoAlias     bool
+	AutoLinkVerifiedEmail        bool
+	TurnstileRegistrationEnabled bool
+	TurnstileSiteKey             string
+	TurnstileSecretKey           string
 	// 对话配置
 	MaxContextMessages       int
 	ContextMaxTurns          int
@@ -530,6 +533,9 @@ func Load() Config {
 		EmailRegistrationDomains:          "",
 		EmailRegistrationNoAlias:          false,
 		AutoLinkVerifiedEmail:             true,
+		TurnstileRegistrationEnabled:      false,
+		TurnstileSiteKey:                  "",
+		TurnstileSecretKey:                "",
 		MaxContextMessages:                20,
 		ContextMaxTurns:                   48,
 		ContextMaxInputTokens:             32000,

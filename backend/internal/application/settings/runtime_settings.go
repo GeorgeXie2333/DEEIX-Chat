@@ -114,6 +114,12 @@ func (r *RuntimeSettings) applyItem(cfg *config.Config, item domainsettings.Syst
 		cfg.EmailRegistrationNoAlias = toBool(item.Value, cfg.EmailRegistrationNoAlias)
 	case "auth:auto_link_verified_email":
 		cfg.AutoLinkVerifiedEmail = toBool(item.Value, cfg.AutoLinkVerifiedEmail)
+	case "auth:turnstile_registration_enabled":
+		cfg.TurnstileRegistrationEnabled = toBool(item.Value, cfg.TurnstileRegistrationEnabled)
+	case "auth:turnstile_site_key":
+		cfg.TurnstileSiteKey = strings.TrimSpace(item.Value)
+	case "auth:turnstile_secret_key":
+		cfg.TurnstileSecretKey = strings.TrimSpace(item.Value)
 
 		// 对话配置
 	case "chat:max_context_messages":
@@ -345,6 +351,9 @@ func (r *RuntimeSettings) applyItem(cfg *config.Config, item domainsettings.Syst
 func (r *RuntimeSettings) normalizeConfig(cfg *config.Config) {
 	if !cfg.EmailLoginEnabled {
 		cfg.EmailRegistrationEnabled = false
+	}
+	if !cfg.EmailRegistrationEnabled {
+		cfg.TurnstileRegistrationEnabled = false
 	}
 	if !cfg.EmbeddingEnabled || strings.TrimSpace(cfg.EmbeddingHost) == "" || strings.TrimSpace(cfg.RAGModel) == "" {
 		cfg.RAGEnabled = false

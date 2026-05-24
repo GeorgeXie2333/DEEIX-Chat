@@ -30,11 +30,13 @@ import (
 )
 
 type LoginOptions struct {
-	UsernameEnabled          bool
-	EmailEnabled             bool
-	EmailRegistrationEnabled bool
-	EmailVerificationEnabled bool
-	Providers                []IdentityProviderView
+	UsernameEnabled              bool
+	EmailEnabled                 bool
+	EmailRegistrationEnabled     bool
+	EmailVerificationEnabled     bool
+	TurnstileRegistrationEnabled bool
+	TurnstileSiteKey             string
+	Providers                    []IdentityProviderView
 }
 
 type IdentityProviderView struct {
@@ -140,11 +142,13 @@ func (s *Service) GetLoginOptions(ctx context.Context) (*LoginOptions, error) {
 		providerViews = toProviderViews(providers, false)
 	}
 	return &LoginOptions{
-		UsernameEnabled:          cfg.UsernameLoginEnabled,
-		EmailEnabled:             cfg.EmailLoginEnabled,
-		EmailRegistrationEnabled: cfg.EmailRegistrationEnabled,
-		EmailVerificationEnabled: cfg.EmailVerificationEnabled,
-		Providers:                providerViews,
+		UsernameEnabled:              cfg.UsernameLoginEnabled,
+		EmailEnabled:                 cfg.EmailLoginEnabled,
+		EmailRegistrationEnabled:     cfg.EmailRegistrationEnabled,
+		EmailVerificationEnabled:     cfg.EmailVerificationEnabled,
+		TurnstileRegistrationEnabled: cfg.TurnstileRegistrationEnabled,
+		TurnstileSiteKey:             cfg.TurnstileSiteKey,
+		Providers:                    providerViews,
 	}, nil
 }
 

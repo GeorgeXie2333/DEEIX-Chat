@@ -8,6 +8,10 @@
       "title": "登录与注册",
       "description": "控制登录页可用的账号登录与邮箱注册入口。"
     },
+    "humanVerification": {
+      "title": "人机验证",
+      "description": "为邮箱注册启用 Cloudflare Turnstile，第三方登录不受影响。"
+    },
     "bindingAndVerification": {
       "title": "绑定与验证",
       "description": "控制邮箱验证、注册邮箱策略和第三方身份绑定策略。"
@@ -78,6 +82,18 @@
     "autoLinkVerifiedEmail": {
       "label": "同邮箱自动绑定",
       "description": "第三方已验证邮箱命中本地账号时自动绑定。"
+    },
+    "turnstileRegistrationEnabled": {
+      "label": "注册人机验证",
+      "description": "启用后，邮箱注册需要通过 Cloudflare Turnstile；OIDC / OAuth2 登录不需要。"
+    },
+    "turnstileSiteKey": {
+      "label": "Turnstile Site Key",
+      "description": "Cloudflare Turnstile 前端站点密钥。"
+    },
+    "turnstileSecretKey": {
+      "label": "Turnstile Secret Key",
+      "description": "Cloudflare Turnstile 服务端校验密钥，保存后不会回显。"
     },
     "tokenTTLHours": {
       "label": "访问令牌有效期",
@@ -159,7 +175,9 @@
     "defaultNextPath": "默认跳转路径必须是站内路径，例如 /chat。",
     "passwordLoginRequired": "关闭用户名登录和邮箱登录前，需要先开启第三方登录，并确保至少一个管理员已绑定可用身份源。",
     "missingSMTP": "开启邮箱验证后，需要填写 {fields}。",
-    "invalidSMTPPort": "SMTP 端口必须是 1-65535 之间的整数。"
+    "invalidSMTPPort": "SMTP 端口必须是 1-65535 之间的整数。",
+    "missingTurnstile": "开启 Turnstile 人机验证后，需要填写 {fields}。",
+    "turnstileRegistrationRequired": "请先开启邮箱注册，再启用 Turnstile 人机验证。"
   },
   "punctuation": {
     "listSeparator": "、"

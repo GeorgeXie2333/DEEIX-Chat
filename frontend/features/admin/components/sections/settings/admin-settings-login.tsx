@@ -51,6 +51,7 @@ import {
   flattenLoginSettings,
   includesEmailVerificationSettings,
   includesPasswordLoginSettings,
+  includesTurnstileSettings,
   isEmailSMTPField,
   normalizeProviderSlugPreview,
   providerToForm,
@@ -60,6 +61,7 @@ import {
   toEditorField,
   validateEmailVerificationSettings,
   validatePasswordLoginSettings,
+  validateTurnstileSettings,
   type LoginSettingsField,
   type LoginSettingsGroup,
   type ProviderTemplate,
@@ -150,6 +152,10 @@ export function AdminLoginSettingsPage() {
       }
       if (field.key === "email_login_enabled" && value !== "true") {
         next["auth.email_registration_enabled"] = "false";
+        next["auth.turnstile_registration_enabled"] = "false";
+      }
+      if (field.key === "email_registration_enabled" && value !== "true") {
+        next["auth.turnstile_registration_enabled"] = "false";
       }
       return next;
     });
@@ -158,6 +164,7 @@ export function AdminLoginSettingsPage() {
   const isFieldDisabled = React.useCallback((field: LoginSettingsField) => {
     if (loading || saving) return true;
     if (field.key === "email_registration_enabled" && settingsMap["auth.email_login_enabled"] === "false") return true;
+    if (field.key === "turnstile_registration_enabled" && settingsMap["auth.email_registration_enabled"] === "false") return true;
     return false;
   }, [loading, saving, settingsMap]);
 
@@ -184,6 +191,18 @@ export function AdminLoginSettingsPage() {
           smtpPassword: t("fields.smtpPassword.label"),
           missingSMTP: (labels) => t("validation.missingSMTP", { fields: labels.join(t("punctuation.listSeparator")) }),
           invalidSMTPPort: t("validation.invalidSMTPPort"),
+        });
+        if (validationError) {
+          toast.error(t("toast.saveFailed"), { description: validationError });
+          return;
+        }
+      }
+      if (includesTurnstileSettings(group)) {
+        const validationError = validateTurnstileSettings(nextSettingsMap, configuredMap, {
+          siteKey: t("fields.turnstileSiteKey.label"),
+          secretKey: t("fields.turnstileSecretKey.label"),
+          registrationRequired: t("validation.turnstileRegistrationRequired"),
+          missing: (labels) => t("validation.missingTurnstile", { fields: labels.join(t("punctuation.listSeparator")) }),
         });
         if (validationError) {
           toast.error(t("toast.saveFailed"), { description: validationError });

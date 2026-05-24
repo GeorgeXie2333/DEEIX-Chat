@@ -67,6 +67,8 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
   const [registerPassword, setRegisterPassword] = React.useState("");
   const [registerCode, setRegisterCode] = React.useState("");
   const [registerDebugCode, setRegisterDebugCode] = React.useState("");
+  const [registerTurnstileToken, setRegisterTurnstileToken] = React.useState("");
+  const [registerTurnstileResetSignal, setRegisterTurnstileResetSignal] = React.useState(0);
   const [codeSent, setCodeSent] = React.useState(false);
   const [configReady, setConfigReady] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
@@ -86,6 +88,8 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
   );
   const emailRegistrationEnabled = options.emailEnabled && options.emailRegistrationEnabled;
   const emailVerificationEnabled = options.emailVerificationEnabled;
+  const registerTurnstileSiteKey = options.turnstileSiteKey?.trim() ?? "";
+  const registerTurnstileRequired = options.turnstileRegistrationEnabled && Boolean(registerTurnstileSiteKey);
   const canShowRegister = emailRegistrationEnabled;
 
   React.useEffect(() => {
@@ -159,6 +163,11 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
     writeSessionSnapshot({ accessToken, sessionID });
     router.replace(resolvedNextPath);
   }, [resolvedNextPath, router]);
+
+  const resetRegisterTurnstile = React.useCallback(() => {
+    setRegisterTurnstileToken("");
+    setRegisterTurnstileResetSignal((current) => current + 1);
+  }, []);
 
   const onLoginSubmit = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
@@ -236,9 +245,13 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
     if (!emailVerificationEnabled || sendingCode || registerCodeCooldownSeconds > 0) {
       return;
     }
+    if (registerTurnstileRequired && !registerTurnstileToken) {
+      toast.error(t("toasts.turnstileRequired"));
+      return;
+    }
     setSendingCode(true);
     try {
-      const result = await startEmailRegistration(registerEmail);
+      const result = await startEmailRegistration(registerEmail, registerTurnstileRequired ? registerTurnstileToken : undefined);
       setCodeSent(result.sent);
       setRegisterDebugCode(result.debugCode ?? "");
       if (result.sent) {
@@ -249,9 +262,12 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
     } catch (error) {
       toast.error(resolveErrorMessage(error, t("toasts.codeSendFailed")));
     } finally {
+      if (registerTurnstileRequired && registerTurnstileToken) {
+        resetRegisterTurnstile();
+      }
       setSendingCode(false);
     }
-  }, [emailVerificationEnabled, registerCodeCooldownSeconds, registerEmail, resolveErrorMessage, sendingCode, t]);
+  }, [emailVerificationEnabled, registerCodeCooldownSeconds, registerEmail, registerTurnstileRequired, registerTurnstileToken, resetRegisterTurnstile, resolveErrorMessage, sendingCode, t]);
 
   const requestTwoFactorEmailCode = React.useCallback(async () => {
     if (!twoFactorChallengeToken || twoFactorVerificationMethod !== "email" || sendingCode || twoFactorEmailCodeCooldownSeconds > 0) {
@@ -284,17 +300,29 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
         toast.error(t("toasts.passwordInvalid"));
         return;
       }
+      if (registerTurnstileRequired && !emailVerificationEnabled && !registerTurnstileToken) {
+        toast.error(t("toasts.turnstileRequired"));
+        return;
+      }
       setSubmitting(true);
       try {
-        const result = await completeEmailRegistration(registerEmail, registerPassword, emailVerificationEnabled ? registerCode : "");
+        const result = await completeEmailRegistration(
+          registerEmail,
+          registerPassword,
+          emailVerificationEnabled ? registerCode : "",
+          registerTurnstileRequired && !emailVerificationEnabled ? registerTurnstileToken : undefined,
+        );
         completeAuth(result.accessToken, result.sessionID);
       } catch (error) {
         toast.error(resolveErrorMessage(error, t("toasts.registerFailed")));
       } finally {
+        if (registerTurnstileRequired && !emailVerificationEnabled && registerTurnstileToken) {
+          resetRegisterTurnstile();
+        }
         setSubmitting(false);
       }
     },
-    [completeAuth, emailVerificationEnabled, registerCode, registerEmail, registerPassword, resolveErrorMessage, submitting, t],
+    [completeAuth, emailVerificationEnabled, registerCode, registerEmail, registerPassword, registerTurnstileRequired, registerTurnstileToken, resetRegisterTurnstile, resolveErrorMessage, submitting, t],
   );
 
   const updateRegisterEmail = React.useCallback((value: string) => {
@@ -347,6 +375,10 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
     registerDebugCode,
     registerEmail,
     registerPassword,
+    registerTurnstileRequired,
+    registerTurnstileResetSignal,
+    registerTurnstileSiteKey,
+    registerTurnstileToken,
     requestRegisterCode,
     requestTwoFactorEmailCode,
     sendingCode,
@@ -354,6 +386,7 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
     setPassword,
     setRegisterCode: (value: string) => setRegisterCode(normalizeRegisterCode(value)),
     setRegisterPassword,
+    setRegisterTurnstileToken,
     setTwoFactorCode: (value: string) => setTwoFactorCode(twoFactorVerificationMethod === "email" ? normalizeRegisterCode(value) : normalizeTwoFactorInput(value)),
     switchTwoFactorVerificationMethod,
     setUsername,

@@ -130,6 +130,8 @@ func (h *Handler) StartEmailRegistration(c *gin.Context) {
 	result, err := h.service.RequestEmailRegistration(
 		c.Request.Context(),
 		req.Email,
+		req.TurnstileToken,
+		c.ClientIP(),
 		middleware.MustRequestID(c),
 		middleware.ResolveSessionAuditContext(c),
 	)
@@ -151,6 +153,8 @@ func (h *Handler) CompleteEmailRegistration(c *gin.Context) {
 		req.Email,
 		req.Password,
 		req.Code,
+		req.TurnstileToken,
+		c.ClientIP(),
 		middleware.MustRequestID(c),
 		middleware.ResolveSessionAuditContext(c),
 	)
