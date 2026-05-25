@@ -400,6 +400,19 @@ func shouldFallbackToNonStreaming(err error) bool {
 	}
 }
 
+func shouldUseUpstreamMediaImageStream(protocol string, model string, options map[string]interface{}) bool {
+	if !llm.SupportsImageGenerationStream(protocol, model) {
+		return false
+	}
+	switch llm.NormalizeAdapter(protocol) {
+	case llm.AdapterOpenAIImageGenerations, llm.AdapterOpenAIImageEdits:
+		partialImages, ok := modelParamIntFromOption(options["partial_images"])
+		return ok && partialImages > 0
+	default:
+		return true
+	}
+}
+
 func isStreamUnsupportedError(err *llm.UpstreamError) bool {
 	detail := strings.ToLower(strings.TrimSpace(err.Message + " " + err.Body))
 	if detail == "" || !strings.Contains(detail, "stream") {

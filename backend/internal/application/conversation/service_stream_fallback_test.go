@@ -32,6 +32,21 @@ func TestShouldFallbackToNonStreamingForExplicitStreamUnsupportedErrors(t *testi
 	}
 }
 
+func TestShouldUseUpstreamMediaImageStreamRequiresPartialImagesForOpenAI(t *testing.T) {
+	if shouldUseUpstreamMediaImageStream(llm.AdapterOpenAIImageEdits, "gpt-image-2", nil) {
+		t.Fatalf("expected OpenAI image edits without partial_images to use non-streaming")
+	}
+	if shouldUseUpstreamMediaImageStream(llm.AdapterOpenAIImageGenerations, "gpt-image-2", map[string]interface{}{"partial_images": 0}) {
+		t.Fatalf("expected partial_images=0 to use non-streaming")
+	}
+	if !shouldUseUpstreamMediaImageStream(llm.AdapterOpenAIImageEdits, "gpt-image-2", map[string]interface{}{"partial_images": 2}) {
+		t.Fatalf("expected OpenAI image edits with partial_images to use upstream streaming")
+	}
+	if !shouldUseUpstreamMediaImageStream(llm.AdapterGoogleImageGeneration, "gemini-3-pro-image-preview", nil) {
+		t.Fatalf("expected existing Google image stream behavior to be preserved")
+	}
+}
+
 func TestMessageErrorSummaryIncludesUpstreamBody(t *testing.T) {
 	err := wrapUpstreamRequestError(&llm.UpstreamError{
 		StatusCode: 400,
