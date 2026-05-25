@@ -117,7 +117,12 @@ func (c *Client) generateOpenAIImageGenerations(ctx context.Context, route Route
 		return nil, parseUpstreamError(resp.StatusCode, body, upstreamDebugSnapshot(req, payload, resp, body))
 	}
 
-	return parseOpenAIImageOutput(body, modelParamString(input.Options, "output_format"))
+	return parseOpenAIImageOutputWithDebug(
+		body,
+		modelParamString(input.Options, "output_format"),
+		upstreamDebugSnapshot(req, payload, resp, body),
+		"upstream returned a non-JSON image response",
+	)
 }
 
 // generateOpenAIImageGenerationsStream 构造并执行 OpenAI 图片生成流式请求。
@@ -186,24 +191,10 @@ func (c *Client) generateOpenAIImageGenerationsStream(
 		if readErr != nil {
 			return nil, readErr
 		}
-		output, parseErr := parseOpenAIImageOutput(body, outputFormat)
-		if parseErr != nil {
-			return nil, parseErr
-		}
-		if output.Usage != (Usage{}) && onEvent != nil {
-			if err := onEvent(GenerateStreamEvent{Usage: output.Usage}); err != nil {
-				return nil, err
-			}
-		}
-		return output, nil
+		return parseOpenAIImageStreamFallback(body, outputFormat, onEvent, upstreamDebugSnapshot(req, payload, resp, body))
 	}
 
-	result := &GenerateOutput{
-		ResponseID:      "",
-		Usage:           Usage{},
-		ToolCalls:       make([]ToolCall, 0),
-		ServerToolCalls: make([]ToolCall, 0),
-	}
+	result := newOpenAIImageOutput()
 	idleTimeout := resolveStreamIdleTimeout(route.StreamIdleTimeoutMS)
 	idleReader := newIdleTimeoutReader(resp.Body, idleTimeout)
 	streamBody := newUpstreamBodyRecorder(idleReader)
@@ -215,6 +206,74 @@ func (c *Client) generateOpenAIImageGenerationsStream(
 
 func isEventStreamContentType(contentType string) bool {
 	return strings.Contains(strings.ToLower(strings.TrimSpace(contentType)), "text/event-stream")
+}
+
+func looksLikeEventStreamBody(body []byte) bool {
+	sample := body
+	if len(sample) > 4096 {
+		sample = sample[:4096]
+	}
+	value := strings.TrimLeft(string(sample), "\ufeff \t\r\n")
+	for _, line := range strings.Split(value, "\n") {
+		line = strings.TrimSpace(strings.TrimRight(line, "\r"))
+		if line == "" || strings.HasPrefix(line, ":") {
+			continue
+		}
+		return strings.HasPrefix(line, "event:") || strings.HasPrefix(line, "data:")
+	}
+	return false
+}
+
+func newOpenAIImageOutput() *GenerateOutput {
+	return &GenerateOutput{
+		ResponseID:      "",
+		Usage:           Usage{},
+		ToolCalls:       make([]ToolCall, 0),
+		ServerToolCalls: make([]ToolCall, 0),
+	}
+}
+
+func parseOpenAIImageStreamFallback(
+	body []byte,
+	outputFormat string,
+	onEvent func(GenerateStreamEvent) error,
+	debug *UpstreamDebugSnapshot,
+) (*GenerateOutput, error) {
+	if looksLikeEventStreamBody(body) {
+		result := newOpenAIImageOutput()
+		if err := consumeOpenAIImageStream(bytes.NewReader(body), outputFormat, result, onEvent); err != nil {
+			return nil, attachUpstreamDebug(err, debug)
+		}
+		return result, nil
+	}
+	output, err := parseOpenAIImageOutputWithDebug(
+		body,
+		outputFormat,
+		debug,
+		"upstream returned a non-JSON and non-SSE image response",
+	)
+	if err != nil {
+		return nil, err
+	}
+	if output.Usage != (Usage{}) && onEvent != nil {
+		if err := onEvent(GenerateStreamEvent{Usage: output.Usage}); err != nil {
+			return nil, err
+		}
+	}
+	return output, nil
+}
+
+func parseOpenAIImageOutputWithDebug(body []byte, outputFormat string, debug *UpstreamDebugSnapshot, message string) (*GenerateOutput, error) {
+	output, err := parseOpenAIImageOutput(body, outputFormat)
+	if err != nil {
+		return nil, &UpstreamError{
+			StatusCode: responseStatusCodeFromDebug(debug),
+			Message:    strings.TrimSpace(message),
+			Body:       string(body),
+			Debug:      debug,
+		}
+	}
+	return output, nil
 }
 
 // generateOpenAIImageEdits 构造并执行 OpenAI 图片编辑请求。
@@ -257,7 +316,12 @@ func (c *Client) generateOpenAIImageEdits(ctx context.Context, route RouteConfig
 		return nil, parseUpstreamError(resp.StatusCode, body, upstreamDebugSnapshot(req, debugBody, resp, body))
 	}
 
-	return parseOpenAIImageOutput(body, modelParamString(input.Options, "output_format"))
+	return parseOpenAIImageOutputWithDebug(
+		body,
+		modelParamString(input.Options, "output_format"),
+		upstreamDebugSnapshot(req, debugBody, resp, body),
+		"upstream returned a non-JSON image response",
+	)
 }
 
 // generateOpenAIImageEditsStream 构造并执行 OpenAI 图片编辑流式请求。
@@ -322,24 +386,10 @@ func (c *Client) generateOpenAIImageEditsStream(
 		if readErr != nil {
 			return nil, readErr
 		}
-		output, parseErr := parseOpenAIImageOutput(body, outputFormat)
-		if parseErr != nil {
-			return nil, parseErr
-		}
-		if output.Usage != (Usage{}) && onEvent != nil {
-			if err := onEvent(GenerateStreamEvent{Usage: output.Usage}); err != nil {
-				return nil, err
-			}
-		}
-		return output, nil
+		return parseOpenAIImageStreamFallback(body, outputFormat, onEvent, upstreamDebugSnapshot(req, debugBody, resp, body))
 	}
 
-	result := &GenerateOutput{
-		ResponseID:      "",
-		Usage:           Usage{},
-		ToolCalls:       make([]ToolCall, 0),
-		ServerToolCalls: make([]ToolCall, 0),
-	}
+	result := newOpenAIImageOutput()
 	idleTimeout := resolveStreamIdleTimeout(route.StreamIdleTimeoutMS)
 	idleReader := newIdleTimeoutReader(resp.Body, idleTimeout)
 	streamBody := newUpstreamBodyRecorder(idleReader)

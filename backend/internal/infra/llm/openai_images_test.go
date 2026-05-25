@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -403,5 +405,104 @@ func TestOpenAIImageEditStream(t *testing.T) {
 	}
 	if output.Usage.InputTokens != 22 || output.Usage.OutputTokens != 44 {
 		t.Fatalf("expected edit usage, got %#v", output.Usage)
+	}
+}
+
+func TestOpenAIImageEditStreamSniffsEventStreamBodyWithWrongContentType(t *testing.T) {
+	var requestValues map[string][]string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/images/edits" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		if err := r.ParseMultipartForm(10 << 20); err != nil {
+			t.Fatalf("parse multipart request: %v", err)
+		}
+		requestValues = r.MultipartForm.Value
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("event: image_edit.completed\n"))
+		_, _ = w.Write([]byte("data: {\"type\":\"image_edit.completed\",\"id\":\"img_edit_text_1\",\"b64_json\":\"ZmluYWw=\",\"usage\":{\"input_tokens\":22,\"output_tokens\":44}}\n\n"))
+	}))
+	defer server.Close()
+
+	client := NewClient()
+	output, err := client.GenerateStream(context.Background(), RouteConfig{
+		Protocol:      AdapterOpenAIImageEdits,
+		BaseURL:       server.URL,
+		UpstreamModel: "gpt-image-1",
+	}, GenerateInput{
+		Messages: []Message{{
+			Role: "user",
+			Parts: []ContentPart{
+				{Kind: ContentPartText, Text: "Replace the background"},
+				{Kind: ContentPartImage, MimeType: "image/png", Data: []byte("source")},
+			},
+		}},
+		Options: map[string]interface{}{
+			"output_format":  "webp",
+			"partial_images": 2,
+		},
+	}, nil)
+	if err != nil {
+		t.Fatalf("generate image edit stream with sniffed body: %v", err)
+	}
+	if requestValues["stream"][0] != "true" || requestValues["partial_images"][0] != "2" {
+		t.Fatalf("expected stream request values, got %#v", requestValues)
+	}
+	if output.ResponseID != "img_edit_text_1" {
+		t.Fatalf("expected sniffed stream response id, got %q", output.ResponseID)
+	}
+	if len(output.GeneratedImages) != 1 || output.GeneratedImages[0].B64JSON != "ZmluYWw=" {
+		t.Fatalf("expected final edit image from sniffed stream, got %#v", output.GeneratedImages)
+	}
+	if output.Usage.InputTokens != 22 || output.Usage.OutputTokens != 44 {
+		t.Fatalf("expected sniffed stream usage, got %#v", output.Usage)
+	}
+}
+
+func TestOpenAIImageEditStreamReturnsReadableErrorForNonJSONNonSSE200(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/images/edits" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		if err := r.ParseMultipartForm(10 << 20); err != nil {
+			t.Fatalf("parse multipart request: %v", err)
+		}
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("error: upstream proxy returned a plain text failure"))
+	}))
+	defer server.Close()
+
+	client := NewClient()
+	_, err := client.GenerateStream(context.Background(), RouteConfig{
+		Protocol:      AdapterOpenAIImageEdits,
+		BaseURL:       server.URL,
+		UpstreamModel: "gpt-image-1",
+	}, GenerateInput{
+		Messages: []Message{{
+			Role: "user",
+			Parts: []ContentPart{
+				{Kind: ContentPartText, Text: "Replace the background"},
+				{Kind: ContentPartImage, MimeType: "image/png", Data: []byte("source")},
+			},
+		}},
+	}, nil)
+	if err == nil {
+		t.Fatal("expected readable upstream error")
+	}
+	var upstreamErr *UpstreamError
+	if !errors.As(err, &upstreamErr) {
+		t.Fatalf("expected upstream error, got %T: %v", err, err)
+	}
+	if upstreamErr.StatusCode != http.StatusOK {
+		t.Fatalf("expected status from 2xx response in debug error, got %d", upstreamErr.StatusCode)
+	}
+	if upstreamErr.Message != "upstream returned a non-JSON and non-SSE image response" {
+		t.Fatalf("expected readable error message, got %q", upstreamErr.Message)
+	}
+	if strings.Contains(upstreamErr.Error(), "invalid character") {
+		t.Fatalf("expected error not to expose raw JSON parse failure, got %q", upstreamErr.Error())
+	}
+	if upstreamErr.Debug == nil || upstreamErr.Debug.Response.Body != "error: upstream proxy returned a plain text failure" {
+		t.Fatalf("expected debug response body, got %#v", upstreamErr.Debug)
 	}
 }
