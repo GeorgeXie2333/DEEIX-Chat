@@ -88,7 +88,7 @@ export function buildLoginSettingsGroups(t: LoginSettingsTranslator): LoginSetti
       { namespace: "auth", key: "smtp_port", label: t("fields.smtpPort.label"), description: t("fields.smtpPort.description"), type: "int", placeholder: "587" },
       { namespace: "auth", key: "smtp_username", label: t("fields.smtpUsername.label"), description: t("fields.smtpUsername.description"), type: "string", placeholder: "noreply@example.com" },
       { namespace: "auth", key: "smtp_password", label: t("fields.smtpPassword.label"), description: t("fields.smtpPassword.description"), type: "password" },
-      { namespace: "auth", key: "smtp_from", label: t("fields.smtpFrom.label"), description: t("fields.smtpFrom.description"), type: "string", placeholder: "DEEIX Chat <noreply@example.com>" },
+      { namespace: "auth", key: "smtp_from", label: t("fields.smtpFrom.label"), description: t("fields.smtpFrom.description"), type: "string", placeholder: "Comi AI <noreply@example.com>" },
       { namespace: "auth", key: "email_registration_allowed_domains", label: t("fields.emailRegistrationAllowedDomains.label"), description: t("fields.emailRegistrationAllowedDomains.description"), type: "textarea", placeholder: "example.com\ncompany.com" },
       { namespace: "auth", key: "email_registration_block_plus_alias", label: t("fields.emailRegistrationBlockPlusAlias.label"), description: t("fields.emailRegistrationBlockPlusAlias.description"), type: "bool" },
       { namespace: "auth", key: "auto_link_verified_email", label: t("fields.autoLinkVerifiedEmail.label"), description: t("fields.autoLinkVerifiedEmail.description"), type: "bool" },
@@ -275,7 +275,7 @@ export function flattenLoginSettings(grouped: SettingsGrouped): Record<string, s
 export function applyLoginDefaults(settings: Record<string, string>): Record<string, string> {
   const result = {
     ...settings,
-    "auth.login_page_title": settings["auth.login_page_title"]?.trim() || "Sign in to DEEIX Chat",
+    "auth.login_page_title": settings["auth.login_page_title"]?.trim() || "Sign in to Comi AI",
     "auth.login_default_next_path": settings["auth.login_default_next_path"]?.trim() || "/chat",
     "auth.username_login_enabled": settings["auth.username_login_enabled"] || "true",
     "auth.email_login_enabled": settings["auth.email_login_enabled"] || "true",

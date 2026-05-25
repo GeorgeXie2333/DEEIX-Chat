@@ -272,7 +272,7 @@ func (s *Service) StartCurrentTwoFactorSetup(ctx context.Context, userID uint) (
 		}
 		return &TwoFactorSetupStartResult{
 			Secret:     secret,
-			OTPAuthURL: buildOTPAuthURL("DEEIX Chat", firstNonEmpty(item.Email, item.Username), secret),
+			OTPAuthURL: buildOTPAuthURL("Comi AI", firstNonEmpty(item.Email, item.Username), secret),
 			ExpiresAt:  *current.TOTPSetupExpiresAt,
 		}, nil
 	}
@@ -296,7 +296,7 @@ func (s *Service) StartCurrentTwoFactorSetup(ctx context.Context, userID uint) (
 	}
 	return &TwoFactorSetupStartResult{
 		Secret:     secret,
-		OTPAuthURL: buildOTPAuthURL("DEEIX Chat", firstNonEmpty(item.Email, item.Username), secret),
+		OTPAuthURL: buildOTPAuthURL("Comi AI", firstNonEmpty(item.Email, item.Username), secret),
 		ExpiresAt:  expiresAt,
 	}, nil
 }

@@ -791,7 +791,7 @@ func canBootstrapEmail(item *domainuser.User) bool {
 
 func (s *Service) sendRegistrationVerificationEmail(to string, code string) error {
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
-		Subject:      "DEEIX Chat 验证码",
+		Subject:      "Comi AI 验证码",
 		Title:        "完成邮箱注册",
 		SecurityNote: "如果不是您本人操作，请忽略这封邮件。",
 	}, "email registration")
@@ -799,7 +799,7 @@ func (s *Service) sendRegistrationVerificationEmail(to string, code string) erro
 
 func (s *Service) sendPasswordChangeVerificationEmail(to string, code string) error {
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
-		Subject:      "DEEIX Chat 验证码",
+		Subject:      "Comi AI 验证码",
 		Title:        "确认修改密码",
 		SecurityNote: "如果不是您本人操作，请立即检查账号安全。",
 	}, "password change")
@@ -807,7 +807,7 @@ func (s *Service) sendPasswordChangeVerificationEmail(to string, code string) er
 
 func (s *Service) sendEmailChangeVerificationEmail(to string, code string) error {
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
-		Subject:      "DEEIX Chat 验证码",
+		Subject:      "Comi AI 验证码",
 		Title:        "验证邮箱地址",
 		SecurityNote: "如果不是您本人操作，请忽略这封邮件。",
 	}, "email change")
@@ -815,7 +815,7 @@ func (s *Service) sendEmailChangeVerificationEmail(to string, code string) error
 
 func (s *Service) sendAccountDeleteVerificationEmail(to string, code string) error {
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
-		Subject:      "DEEIX Chat 验证码",
+		Subject:      "Comi AI 验证码",
 		Title:        "确认删除账号",
 		SecurityNote: "如果不是您本人操作，请立即检查账号安全。",
 	}, "account deletion")
@@ -946,7 +946,7 @@ func (s *Service) sendEmailVerificationCode(to string, code string, template ver
 	if strings.TrimSpace(cfg.SMTPUsername) != "" || strings.TrimSpace(cfg.SMTPPassword) != "" {
 		auth = smtp.PlainAuth("", strings.TrimSpace(cfg.SMTPUsername), strings.TrimSpace(cfg.SMTPPassword), strings.TrimSpace(cfg.SMTPHost))
 	}
-	message := buildVerificationEmailMessage(parsedFrom.String(), to, code, template, publicAssetURL(cfg.PublicWebBaseURL, "logo.svg"))
+	message := buildVerificationEmailMessage(parsedFrom.String(), to, code, template)
 	if err := sendSMTPMail(addr, strings.TrimSpace(cfg.SMTPHost), cfg.SMTPPort, auth, parsedFrom.Address, []string{to}, []byte(message)); err != nil {
 		s.warn("email_verification_send_failed",
 			zap.String("label", strings.TrimSpace(logLabel)),
@@ -958,9 +958,9 @@ func (s *Service) sendEmailVerificationCode(to string, code string, template ver
 	return nil
 }
 
-func buildVerificationEmailMessage(from string, to string, code string, template verificationEmailTemplate, logoURL string) string {
+func buildVerificationEmailMessage(from string, to string, code string, template verificationEmailTemplate) string {
 	plainBody := buildVerificationPlainText(code, template)
-	htmlBody := buildVerificationHTML(code, template, logoURL)
+	htmlBody := buildVerificationHTML(code, template)
 	var multipartBody bytes.Buffer
 	writer := multipart.NewWriter(&multipartBody)
 	writeEmailPart(writer, "text/plain; charset=UTF-8", plainBody)
@@ -991,7 +991,7 @@ func writeEmailPart(writer *multipart.Writer, contentType string, body string) {
 }
 
 func buildVerificationPlainText(code string, template verificationEmailTemplate) string {
-	return fmt.Sprintf(`DEEIX Chat
+	return fmt.Sprintf(`Comi AI
 
 %s
 
@@ -1002,11 +1002,11 @@ func buildVerificationPlainText(code string, template verificationEmailTemplate)
 %s`, template.Title, strings.TrimSpace(code), template.SecurityNote)
 }
 
-func buildVerificationHTML(code string, template verificationEmailTemplate, logoURL string) string {
+func buildVerificationHTML(code string, template verificationEmailTemplate) string {
 	escapedCode := html.EscapeString(strings.TrimSpace(code))
 	escapedTitle := html.EscapeString(strings.TrimSpace(template.Title))
 	escapedSecurityNote := html.EscapeString(strings.TrimSpace(template.SecurityNote))
-	logoHTML := verificationEmailLogoHTML(logoURL)
+	logoHTML := verificationEmailLogoHTML()
 	return fmt.Sprintf(`<!doctype html>
 <html lang="zh-CN">
   <head>
@@ -1054,19 +1054,8 @@ func buildVerificationHTML(code string, template verificationEmailTemplate, logo
 </html>`, escapedTitle, logoHTML, escapedTitle, escapedCode, escapedSecurityNote)
 }
 
-func verificationEmailLogoHTML(logoURL string) string {
-	if trimmed := strings.TrimSpace(logoURL); trimmed != "" {
-		return fmt.Sprintf(`<img src="%s" width="150" alt="DEEIX Chat" style="display:block;width:150px;height:auto;border:0;outline:none;text-decoration:none;">`, html.EscapeString(trimmed))
-	}
-	return `<div style="font-size:20px;line-height:1.3;font-weight:700;color:#26231f;">DEEIX Chat</div>`
-}
-
-func publicAssetURL(publicWebBaseURL string, assetPath string) string {
-	baseURL := strings.TrimRight(strings.TrimSpace(publicWebBaseURL), "/")
-	if baseURL == "" {
-		return ""
-	}
-	return baseURL + "/" + strings.TrimLeft(strings.TrimSpace(assetPath), "/")
+func verificationEmailLogoHTML() string {
+	return `<div style="font-size:20px;line-height:1.3;font-weight:700;color:#26231f;">Comi AI</div>`
 }
 
 func sendSMTPMail(addr string, host string, port int, auth smtp.Auth, from string, to []string, msg []byte) error {

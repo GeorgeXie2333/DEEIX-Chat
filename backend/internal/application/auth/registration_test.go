@@ -15,17 +15,20 @@ import (
 )
 
 func TestBuildVerificationEmailMessageEncodesChineseSubject(t *testing.T) {
-	message := buildVerificationEmailMessage("DEEIX Chat <no-reply@example.com>", "user@example.com", "123456", verificationEmailTemplate{
-		Subject:      "DEEIX Chat 验证码",
+	message := buildVerificationEmailMessage("Comi AI <no-reply@example.com>", "user@example.com", "123456", verificationEmailTemplate{
+		Subject:      "Comi AI 验证码",
 		Title:        "完成邮箱注册",
 		SecurityNote: "如果不是您本人操作，请忽略这封邮件。",
-	}, "https://deeix.example/logo.svg")
+	})
 
 	if !strings.Contains(message, "Subject: =?utf-8?") {
 		t.Fatalf("expected encoded utf-8 subject, got:\n%s", message)
 	}
-	if strings.Contains(message, "Subject: DEEIX Chat 验证码") {
+	if strings.Contains(message, "Subject: Comi AI 验证码") {
 		t.Fatalf("expected subject to be MIME encoded, got:\n%s", message)
+	}
+	if strings.Contains(message, "DEE"+"IX") {
+		t.Fatalf("expected verification email to use Comi AI brand, got:\n%s", message)
 	}
 	if !strings.Contains(message, "Content-Type: multipart/alternative; boundary=") {
 		t.Fatalf("expected multipart alternative content type, got:\n%s", message)
@@ -42,8 +45,8 @@ func TestBuildVerificationEmailMessageEncodesChineseSubject(t *testing.T) {
 	if !strings.Contains(message, "<!doctype html>") || !strings.Contains(message, ">123456<") {
 		t.Fatalf("expected html verification body, got:\n%s", message)
 	}
-	if !strings.Contains(message, `src="https://deeix.example/logo.svg"`) {
-		t.Fatalf("expected html logo, got:\n%s", message)
+	if !strings.Contains(message, ">Comi AI<") || strings.Contains(message, "<img") {
+		t.Fatalf("expected text brand header without legacy image logo, got:\n%s", message)
 	}
 }
 
