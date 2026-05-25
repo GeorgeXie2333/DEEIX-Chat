@@ -26,6 +26,9 @@ const (
 )
 
 const (
+	// DefaultTurnstileSiteverifyURL 是 Cloudflare Turnstile 默认校验端点。
+	DefaultTurnstileSiteverifyURL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+
 	// DefaultMCPMaxSelectedToolsPerMessage 是单次消息可选择 MCP 工具数量的默认值。
 	DefaultMCPMaxSelectedToolsPerMessage = 32
 	// MaxMCPSelectedToolsPerMessage 是运行时配置允许的安全上限，防止一次请求暴露过多工具 schema。
@@ -204,9 +207,10 @@ type yamlConfig struct {
 		MaxHeaderBytes           int    `yaml:"max_header_bytes"`
 	} `yaml:"server"`
 	Security struct {
-		JWTSecret             string `yaml:"jwt_secret"`
-		DataEncryptionKey     string `yaml:"data_encryption_key"`
-		SSRFProtectionEnabled *bool  `yaml:"ssrf_protection_enabled"`
+		JWTSecret              string `yaml:"jwt_secret"`
+		DataEncryptionKey      string `yaml:"data_encryption_key"`
+		SSRFProtectionEnabled  *bool  `yaml:"ssrf_protection_enabled"`
+		TurnstileSiteverifyURL string `yaml:"turnstile_siteverify_url"`
 	} `yaml:"security"`
 	Database struct {
 		Postgres struct {
@@ -309,6 +313,7 @@ type Config struct {
 	SMTPUsername                 string
 	SMTPPassword                 string
 	SMTPFrom                     string
+	TurnstileSiteverifyURL       string
 	OTelEnabled                  *bool
 	OTelExporterOTLPEndpoint     string
 	OTelExporterOTLPHeaders      string
@@ -512,6 +517,7 @@ func Load() Config {
 		SMTPUsername:                 "",
 		SMTPPassword:                 "",
 		SMTPFrom:                     "",
+		TurnstileSiteverifyURL:       envOr("TURNSTILE_SITEVERIFY_URL", yc.Security.TurnstileSiteverifyURL, DefaultTurnstileSiteverifyURL),
 		OTelEnabled:                  envOrBoolOptional("OTEL_ENABLED", yc.Observability.Tracing.Enabled),
 		OTelExporterOTLPEndpoint:     envOr("OTEL_EXPORTER_OTLP_ENDPOINT", yc.Observability.Tracing.Endpoint, ""),
 		OTelExporterOTLPHeaders:      envOr("OTEL_EXPORTER_OTLP_HEADERS", yc.Observability.Tracing.Headers, ""),

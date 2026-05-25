@@ -161,6 +161,8 @@ func (s *Service) RegisterWithEmail(ctx context.Context, email string, password 
 	if err != nil {
 		return nil, err
 	}
+	// With email verification enabled, Turnstile is checked before issuing the registration code.
+	// Without that step, completion is the first registration write path and must verify it here.
 	if !cfg.EmailVerificationEnabled {
 		if err = s.verifyRegistrationTurnstile(ctx, cfg, turnstileToken, remoteIP); err != nil {
 			return nil, err

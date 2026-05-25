@@ -521,7 +521,7 @@ func applyOpenAIImageEditStreamParams(fields map[string]string, options map[stri
 	if !ok {
 		return
 	}
-	if value >= 0 {
+	if value > 0 {
 		fields["partial_images"] = fmt.Sprintf("%d", value)
 	}
 }
@@ -604,7 +604,7 @@ func applyOpenAIImageGenerationStreamParams(payload map[string]interface{}, opti
 	if !ok {
 		return
 	}
-	if value >= 0 {
+	if value > 0 {
 		payload["partial_images"] = value
 	}
 }

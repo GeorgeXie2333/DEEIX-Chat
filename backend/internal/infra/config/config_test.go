@@ -97,6 +97,31 @@ geoip:
 	assertPath(t, "geoip database", cfg.GeoIPDatabasePath, filepath.Join(root, "data", "geoip.mmdb"))
 }
 
+func TestLoadReadsTurnstileSiteverifyURL(t *testing.T) {
+	cleanupConfigEnv(t)
+
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	configBody := []byte(`
+security:
+  turnstile_siteverify_url: "https://turnstile.example.test/siteverify"
+`)
+	if err := os.WriteFile(configPath, configBody, 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	t.Setenv("CONFIG_FILE", configPath)
+
+	cfg := Load()
+	if cfg.TurnstileSiteverifyURL != "https://turnstile.example.test/siteverify" {
+		t.Fatalf("expected turnstile siteverify url from config, got %q", cfg.TurnstileSiteverifyURL)
+	}
+
+	t.Setenv("TURNSTILE_SITEVERIFY_URL", "https://turnstile-env.example.test/siteverify")
+	cfg = Load()
+	if cfg.TurnstileSiteverifyURL != "https://turnstile-env.example.test/siteverify" {
+		t.Fatalf("expected turnstile siteverify url from env, got %q", cfg.TurnstileSiteverifyURL)
+	}
+}
+
 func TestValidateAllowsOnlyDevAndProdEnvironment(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -145,6 +170,7 @@ func cleanupConfigEnv(t *testing.T) {
 		"FRONTEND_DIST_DIR",
 		"STORAGE_ROOT_DIR",
 		"GEOIP_DATABASE_PATH",
+		"TURNSTILE_SITEVERIFY_URL",
 	}
 	for _, key := range keys {
 		key := key

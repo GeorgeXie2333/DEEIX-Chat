@@ -33,6 +33,8 @@ security:
   data_encryption_key: "change-me-dev-data-encryption-key-32-bytes-min"
   # Optional: set true to block outbound requests to localhost, private networks, link-local, and metadata IPs in prod.
   ssrf_protection_enabled: false
+  # Optional: override only when using a compatible Turnstile verification proxy.
+  turnstile_siteverify_url: "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 
 database:
   postgres:

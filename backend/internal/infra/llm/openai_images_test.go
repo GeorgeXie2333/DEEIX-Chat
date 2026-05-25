@@ -82,6 +82,19 @@ func TestBuildOpenAIImageGenerationStreamRequestBodyOmitsDefaultPartialImages(t 
 	}
 }
 
+func TestBuildOpenAIImageGenerationStreamRequestBodyOmitsZeroPartialImages(t *testing.T) {
+	payload, err := buildOpenAIImageGenerationStreamRequestBody("gpt-image-1", GenerateInput{
+		Messages: []Message{{Role: "user", Content: "A clean product render"}},
+		Options:  map[string]interface{}{"partial_images": 0},
+	})
+	if err != nil {
+		t.Fatalf("build image stream request body: %v", err)
+	}
+	if _, ok := payload["partial_images"]; ok {
+		t.Fatalf("partial_images must only be sent when configured as a positive value, got %#v", payload)
+	}
+}
+
 func TestBuildOpenAIImageGenerationRequestBodyDallEParams(t *testing.T) {
 	payload, err := buildOpenAIImageGenerationRequestBody("dall-e-3", GenerateInput{
 		Messages: []Message{{Role: "user", Content: "A clean product render"}},
@@ -182,6 +195,30 @@ func TestBuildOpenAIImageEditStreamMultipartRequest(t *testing.T) {
 	}
 	if req.MultipartForm.Value["stream"][0] != "true" || req.MultipartForm.Value["partial_images"][0] != "2" {
 		t.Fatalf("expected edit stream fields, got %#v", req.MultipartForm.Value)
+	}
+}
+
+func TestBuildOpenAIImageEditStreamMultipartRequestOmitsZeroPartialImages(t *testing.T) {
+	body, contentType, _, err := buildOpenAIImageEditMultipartRequest("gpt-image-1", GenerateInput{
+		Messages: []Message{{
+			Role: "user",
+			Parts: []ContentPart{
+				{Kind: ContentPartText, Text: "Replace the background"},
+				{Kind: ContentPartImage, MimeType: "image/png", Data: []byte("source")},
+			},
+		}},
+		Options: map[string]interface{}{"partial_images": 0},
+	}, true)
+	if err != nil {
+		t.Fatalf("build image edit stream multipart request: %v", err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/v1/images/edits", bytes.NewReader(body))
+	req.Header.Set("Content-Type", contentType)
+	if err = req.ParseMultipartForm(10 << 20); err != nil {
+		t.Fatalf("parse multipart body: %v", err)
+	}
+	if _, ok := req.MultipartForm.Value["partial_images"]; ok {
+		t.Fatalf("partial_images must only be sent when configured as a positive value, got %#v", req.MultipartForm.Value)
 	}
 }
 

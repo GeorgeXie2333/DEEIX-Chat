@@ -109,6 +109,7 @@ observability:
 - `auth:turnstile_registration_enabled`：是否在邮箱注册时启用 Turnstile。
 - `auth:turnstile_site_key`：前端渲染 Turnstile 组件使用的 Site Key，会通过 `/api/v1/auth/login-options` 返回。
 - `auth:turnstile_secret_key`：后端调用 Cloudflare siteverify 使用的 Secret Key，属于敏感设置。
+- `TURNSTILE_SITEVERIFY_URL` / `security.turnstile_siteverify_url`：可选覆盖 siteverify 端点，默认使用 Cloudflare 官方地址。
 
 启用 Turnstile 需要同时启用 `auth:email_registration_enabled`，并配置 Site Key 与 Secret Key。开启邮箱验证码注册时，前端在 `/api/v1/auth/register/email/start` 提交 `turnstileToken`；关闭邮箱验证码但允许邮箱注册时，前端在 `/api/v1/auth/register/email/complete` 提交 `turnstileToken`。
 
