@@ -93,7 +93,7 @@ export function notifyResponseCompletion(input: ResponseCompletionNotificationIn
   }
 
   const conversationTitle = normalizeString(input.conversationTitle);
-  const notification = new Notification(conversationTitle || "DEEIX Chat", {
+  const notification = new Notification(conversationTitle || "Comi AI", {
     body: normalizeNotificationBody(normalizeString(input.content)),
     tag: normalizeString(input.conversationPublicID, `response-completion:${Date.now()}`),
     icon: "/favicon.ico",

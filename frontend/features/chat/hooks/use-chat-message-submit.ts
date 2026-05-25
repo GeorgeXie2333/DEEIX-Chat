@@ -621,7 +621,7 @@ export function useChatMessageSubmit({
         notifyResponseCompletion({
           content: completed.assistantMessage.content,
           conversationPublicID: targetConversationID,
-          conversationTitle: targetConversation?.title || "DEEIX Chat",
+          conversationTitle: targetConversation?.title || "Comi AI",
         });
         reload();
       } catch (error) {

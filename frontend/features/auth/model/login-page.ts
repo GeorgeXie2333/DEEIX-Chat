@@ -5,7 +5,7 @@ export type LoginMode = "login" | "register";
 export type ProviderAuthIntent = "login" | "register";
 
 export const DEFAULT_LOGIN_SETTINGS: LoginPageSettings = {
-  title: "Sign in to DEEIX Chat",
+  title: "Sign in to Comi AI",
   defaultNextPath: "/chat",
 };
 

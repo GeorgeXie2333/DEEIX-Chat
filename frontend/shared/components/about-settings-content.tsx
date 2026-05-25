@@ -94,26 +94,26 @@ export function AboutSettingsContent({
   const links: AboutLinkItem[] = [
     {
       label: labels.website,
-      value: "deeix.com",
-      href: "https://deeix.com",
+      value: "Comi AI",
+      href: "/",
       icon: Globe,
     },
     {
       label: labels.official,
-      value: "DEEIX",
-      href: "https://github.com/DEEIX-AI/DEEIX",
+      value: "Comi AI",
+      href: "/",
       providerIcon: { name: "GitHub", slug: "github" },
     },
     {
       label: labels.social,
-      value: "@DEEIX_AI",
-      href: "https://x.com/DEEIX_AI",
+      value: "Comi AI",
+      href: "/",
       providerIcon: { name: "X", slug: "x" },
     },
     {
       label: labels.repository,
-      value: "DEEIX-Chat",
-      href: "https://github.com/DEEIX-AI/DEEIX-Chat",
+      value: "Comi AI",
+      href: "/",
       providerIcon: { name: "GitHub", slug: "github" },
     },
     {
@@ -124,8 +124,8 @@ export function AboutSettingsContent({
     },
     {
       label: labels.contact,
-      value: "support@deeix.com",
-      href: "mailto:support@deeix.com",
+      value: "Comi AI",
+      href: "/",
       icon: Mail,
     },
   ];

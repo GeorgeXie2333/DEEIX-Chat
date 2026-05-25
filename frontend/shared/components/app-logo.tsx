@@ -1,8 +1,6 @@
 "use client";
 
-import Image from "next/image";
-
-import { useTheme } from "@/shared/components/theme-provider";
+import { cn } from "@/lib/utils";
 
 type AppLogoProps = {
   alt?: string;
@@ -13,22 +11,23 @@ type AppLogoProps = {
 };
 
 export function AppLogo({
-  alt = "DEEIX Chat",
-  width,
+  alt = "Comi AI",
   height,
-  priority,
   className,
 }: AppLogoProps) {
-  const { resolvedTheme } = useTheme();
+  const fontSize = Math.max(13, Math.min(20, Math.round(height * 0.42)));
 
   return (
-    <Image
-      src={resolvedTheme === "dark" ? "/logo-white.svg" : "/logo.svg"}
-      alt={alt}
-      width={width}
-      height={height}
-      priority={priority}
-      className={className}
-    />
+    <span
+      aria-label={alt}
+      title={alt}
+      className={cn(
+        "flex min-w-fit items-center justify-center whitespace-nowrap font-semibold leading-none tracking-normal text-foreground",
+        className,
+      )}
+      style={{ fontSize }}
+    >
+      Comi AI
+    </span>
   );
 }

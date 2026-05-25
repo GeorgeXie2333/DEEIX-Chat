@@ -368,7 +368,7 @@ export function PublicSharePage() {
               <span>{t("snapshotMessages", { count: data.messages.length })}</span>
             </div>
           </div>
-          <Link href="/" aria-label="DEEIX Chat" className="mt-0.5 inline-flex h-8 shrink-0 items-center">
+          <Link href="/" aria-label="Comi AI" className="mt-0.5 inline-flex h-8 shrink-0 items-center">
             <AppLogo width={78} height={24} priority className="h-6 w-auto" />
           </Link>
         </header>

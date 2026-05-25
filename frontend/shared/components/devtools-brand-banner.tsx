@@ -1,14 +1,14 @@
 const BANNER = String.raw`
- ____  _____ _____ _____  __  ____ _   _    _  _____
-|  _ \| ____| ____|_ _\ \/ / / ___| | | |  / \|_   _|
-| | | |  _| |  _|  | | \  / | |   | |_| | / _ \ | |
-| |_| | |___| |___ | | /  \ | |___|  _  |/ ___ \| |
-|____/|_____|_____|___/_/\_\ \____|_| |_/_/   \_\_|
+  ____                _      _    ___
+ / ___|___  _ __ ___ (_)    / \  |_ _|
+| |   / _ \| '_ ' _ \| |   / _ \  | |
+| |__| (_) | | | | | | |  / ___ \ | |
+ \____\___/|_| |_| |_|_| /_/   \_\___|
 `;
 
 const BANNER_SCRIPT = `
 (() => {
-  const key = "__DEEIX_CHAT_DEVTOOLS_BANNER__";
+  const key = "__COMI_AI_DEVTOOLS_BANNER__";
   if (globalThis[key]) return;
   globalThis[key] = true;
   const banner = ${JSON.stringify(BANNER)};
@@ -24,14 +24,14 @@ const BANNER_SCRIPT = `
     "background:#d4d4d4",
     "background:transparent"
   );
-  console.log("%cOfficial: https://deeix.com  |  Repository: https://github.com/DEEIX-AI/DEEIX-Chat  |  License: Apache License 2.0", "color:#64748b;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace");
+  console.log("%cComi AI  |  License: Apache License 2.0", "color:#64748b;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace");
 })();
 `;
 
 export function DevtoolsBrandBanner() {
   return (
     <script
-      id="deeix-devtools-brand"
+      id="comi-ai-devtools-brand"
       dangerouslySetInnerHTML={{ __html: BANNER_SCRIPT }}
     />
   );

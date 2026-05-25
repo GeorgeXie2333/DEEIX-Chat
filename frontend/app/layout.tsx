@@ -26,8 +26,8 @@ const geistMono = Geist_Mono({
 const webVitalsEnabled = process.env.NEXT_PUBLIC_WEB_VITALS_DEBUG === "true";
 
 export const metadata: Metadata = {
-  title: "DEEIX Chat",
-  description: "DEEIX Chat is a multi-model AI conversation system.",
+  title: "Comi AI",
+  description: "Comi AI is a multi-model AI conversation system.",
 };
 
 export const viewport: Viewport = {
