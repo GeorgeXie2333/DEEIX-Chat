@@ -386,7 +386,7 @@ func consumeOpenAIGenerateStream(
 	onEvent func(GenerateStreamEvent) error,
 ) error {
 	scanner := bufio.NewScanner(reader)
-	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	scanner.Buffer(make([]byte, 0, 256*1024), 64*1024*1024)
 
 	var eventName string
 	dataLines := make([]string, 0, 4)
@@ -550,6 +550,9 @@ func mergeGenerateOutput(dst *GenerateOutput, src *GenerateOutput) {
 	}
 	if len(src.Citations) > 0 {
 		dst.Citations = append(dst.Citations[:0], src.Citations...)
+	}
+	if len(src.GeneratedImages) > 0 {
+		dst.GeneratedImages = append(dst.GeneratedImages[:0], src.GeneratedImages...)
 	}
 	if strings.TrimSpace(src.RawJSON) != "" {
 		dst.RawJSON = src.RawJSON

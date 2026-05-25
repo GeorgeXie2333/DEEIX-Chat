@@ -303,6 +303,9 @@ func applyResponsesStreamEvent(
 		}
 		return nil
 	}
+	if isResponsesImageGenerationPartialEvent(eventType) {
+		return emitResponsesImageGenerationPartial(result, parsed, onEvent)
+	}
 
 	switch eventType {
 	case "response.created":
@@ -461,6 +464,9 @@ func mergeResponsesStreamOutputItem(
 	call := parseResponseServerToolCall(item)
 	appendUniqueToolCall(&result.ServerToolCalls, call)
 	result.Citations = appendUniqueStrings(result.Citations, parseResponseCitations(item)...)
+	if err := mergeResponsesImageGenerationToolItem(result, item, onEvent); err != nil {
+		return err
+	}
 	if onEvent == nil {
 		return nil
 	}
@@ -721,6 +727,7 @@ func mergeResponsesOutputItem(result *GenerateOutput, item map[string]interface{
 	case isResponsesServerToolCallItem(item):
 		appendUniqueToolCall(&result.ServerToolCalls, parseResponseServerToolCall(item))
 		result.Citations = appendUniqueStrings(result.Citations, parseResponseCitations(item)...)
+		_ = mergeResponsesImageGenerationToolItem(result, item, nil)
 	case isResponsesClientToolCallType(itemType):
 		appendUniqueToolCall(&result.ToolCalls, parseResponseToolCall(item))
 	default:
@@ -799,6 +806,9 @@ func parseResponseServerToolCall(item map[string]interface{}) ToolCall {
 		normalizeJSONString(item["result"]),
 		actionOutputJSON,
 	)
+	if isResponsesImageGenerationCallType(itemType) {
+		outputJSON = responsesImageGenerationToolOutputJSON(item, outputJSON)
+	}
 	errorJSON := normalizeJSONString(item["error"])
 	return ToolCall{
 		ToolCallID:    toolCallID,
@@ -906,6 +916,123 @@ func isResponsesServerToolCallType(itemType string) bool {
 		}
 		return false
 	}
+}
+
+func isResponsesImageGenerationCallType(itemType string) bool {
+	return strings.TrimSpace(itemType) == "image_generation_call"
+}
+
+func isResponsesImageGenerationPartialEvent(eventType string) bool {
+	return strings.TrimSpace(eventType) == "response.image_generation_call.partial_image"
+}
+
+func emitResponsesImageGenerationPartial(
+	result *GenerateOutput,
+	parsed map[string]interface{},
+	onEvent func(GenerateStreamEvent) error,
+) error {
+	if onEvent == nil {
+		return nil
+	}
+	b64 := strings.TrimSpace(getString(parsed["partial_image_b64"]))
+	if b64 == "" {
+		return nil
+	}
+	image := GeneratedImage{
+		B64JSON:  b64,
+		MIMEType: openAIImageMIMEType(getString(parsed["output_format"])),
+	}
+	index := int(firstNonZero(
+		getInt64FromPath(parsed, "partial_image_index"),
+		getInt64FromPath(parsed, "index"),
+	))
+	return onEvent(GenerateStreamEvent{
+		GeneratedImage:        &image,
+		GeneratedImageIndex:   index,
+		GeneratedImagePartial: true,
+		ResponseID:            responseIDForStreamEvent(result, parsed),
+	})
+}
+
+func mergeResponsesImageGenerationToolItem(
+	result *GenerateOutput,
+	item map[string]interface{},
+	onEvent func(GenerateStreamEvent) error,
+) error {
+	if result == nil || !isResponsesImageGenerationCallType(getString(item["type"])) {
+		return nil
+	}
+	for _, image := range parseResponsesImageGenerationImages(item) {
+		index, appended := appendUniqueGeneratedImage(&result.GeneratedImages, image)
+		if !appended || onEvent == nil {
+			continue
+		}
+		eventImage := image
+		if err := onEvent(GenerateStreamEvent{
+			GeneratedImage:      &eventImage,
+			GeneratedImageIndex: index,
+			ResponseID:          result.ResponseID,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func responseIDForStreamEvent(result *GenerateOutput, parsed map[string]interface{}) string {
+	if result != nil && strings.TrimSpace(result.ResponseID) != "" {
+		return strings.TrimSpace(result.ResponseID)
+	}
+	return firstNonEmptyString(getString(parsed["response_id"]), getStringFromPath(parsed, "response", "id"), getString(parsed["id"]))
+}
+
+func parseResponsesImageGenerationImages(item map[string]interface{}) []GeneratedImage {
+	if len(item) == 0 {
+		return nil
+	}
+	if !isResponsesImageGenerationCallType(getString(item["type"])) {
+		return nil
+	}
+	b64 := strings.TrimSpace(getString(item["result"]))
+	if b64 == "" {
+		return nil
+	}
+	revisedPrompt := firstNonEmptyString(getString(item["revised_prompt"]), getString(item["revisedPrompt"]))
+	return []GeneratedImage{{
+		B64JSON:       b64,
+		MIMEType:      openAIImageMIMEType(getString(item["output_format"])),
+		RevisedPrompt: strings.TrimSpace(revisedPrompt),
+	}}
+}
+
+func appendUniqueGeneratedImage(items *[]GeneratedImage, image GeneratedImage) (int, bool) {
+	if items == nil {
+		return -1, false
+	}
+	if strings.TrimSpace(image.URL) == "" && strings.TrimSpace(image.B64JSON) == "" {
+		return -1, false
+	}
+	for index, existing := range *items {
+		if image.URL != "" && strings.TrimSpace(existing.URL) == strings.TrimSpace(image.URL) {
+			return index, false
+		}
+		if image.B64JSON != "" && strings.TrimSpace(existing.B64JSON) == strings.TrimSpace(image.B64JSON) {
+			return index, false
+		}
+	}
+	*items = append(*items, image)
+	return len(*items) - 1, true
+}
+
+func responsesImageGenerationToolOutputJSON(item map[string]interface{}, fallback string) string {
+	if len(parseResponsesImageGenerationImages(item)) == 0 {
+		return fallback
+	}
+	return normalizeJSONString(map[string]interface{}{
+		"type":          "image_generation_call",
+		"result":        "[redacted]",
+		"output_format": firstNonEmptyString(getString(item["output_format"]), "png"),
+	})
 }
 
 func isResponsesClientToolCallType(itemType string) bool {

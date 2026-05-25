@@ -899,6 +899,36 @@ func TestParseResponsesCapturesOpenAINativeShellAndImageTools(t *testing.T) {
 	}
 }
 
+func TestParseResponsesCapturesImageGenerationResultAsGeneratedImage(t *testing.T) {
+	payload := mustDecodeObject(t, `{
+		"id": "resp_1",
+		"output": [
+			{"type":"image_generation_call","id":"img_1","status":"completed","result":"aW1hZ2U=","output_format":"webp","revised_prompt":"A revised poster"}
+		],
+		"usage": {
+			"server_side_tool_usage_details": {"image_generation_calls":1}
+		}
+	}`)
+
+	result := buildGenerateOutputFromParsed(EndpointResponses, payload)
+	if len(result.GeneratedImages) != 1 {
+		t.Fatalf("expected generated image metadata, got %#v", result.GeneratedImages)
+	}
+	image := result.GeneratedImages[0]
+	if image.B64JSON != "aW1hZ2U=" || image.MIMEType != "image/webp" || image.RevisedPrompt != "A revised poster" {
+		t.Fatalf("unexpected generated image metadata: %#v", image)
+	}
+	if len(result.ServerToolCalls) != 1 || result.ServerToolCalls[0].ToolName != "image_generation" {
+		t.Fatalf("expected image generation server tool trace, got %#v", result.ServerToolCalls)
+	}
+	if strings.Contains(result.ServerToolCalls[0].OutputJSON, "aW1hZ2U=") || !strings.Contains(result.ServerToolCalls[0].OutputJSON, "[redacted]") {
+		t.Fatalf("expected image bytes to be redacted from tool output, got %q", result.ServerToolCalls[0].OutputJSON)
+	}
+	if result.ServerSideToolUsage["image_generation"] != 1 {
+		t.Fatalf("expected image generation usage to be normalized, got %#v", result.ServerSideToolUsage)
+	}
+}
+
 func TestParseResponsesTreatsXSearchCustomCallsAsServerSide(t *testing.T) {
 	payload := mustDecodeObject(t, `{
 		"id": "resp_1",
@@ -1049,6 +1079,28 @@ func TestResponsesOutputItemDoneCapturesServerSideToolCall(t *testing.T) {
 	}
 	if len(result.Citations) != 1 || result.Citations[0] != "https://example.com/weather" {
 		t.Fatalf("expected citations from server-side tool, got %#v", result.Citations)
+	}
+}
+
+func TestResponsesStreamCapturesLargeImageGenerationResult(t *testing.T) {
+	result := &GenerateOutput{ToolCalls: make([]ToolCall, 0), ServerToolCalls: make([]ToolCall, 0)}
+	largeImage := strings.Repeat("a", 2*1024*1024)
+	rawStream := "event: response.completed\n" +
+		`data: {"type":"response.completed","response":{"id":"resp_1","output":[{"type":"image_generation_call","id":"img_1","status":"completed","result":"` + largeImage + `","output_format":"png"}],"usage":{"input_tokens":1,"output_tokens":2}}}` +
+		"\n\n"
+
+	err := consumeOpenAIGenerateStream(EndpointResponses, AdapterOpenAIResponses, strings.NewReader(rawStream), result, nil)
+	if err != nil {
+		t.Fatalf("consume stream: %v", err)
+	}
+	if len(result.GeneratedImages) != 1 || result.GeneratedImages[0].B64JSON != largeImage {
+		t.Fatalf("expected large generated image result, got %#v", result.GeneratedImages)
+	}
+	if len(result.ServerToolCalls) != 1 || strings.Contains(result.ServerToolCalls[0].OutputJSON, largeImage) {
+		t.Fatalf("expected redacted image tool output, got %#v", result.ServerToolCalls)
+	}
+	if result.Usage.InputTokens != 1 || result.Usage.OutputTokens != 2 {
+		t.Fatalf("expected completed usage to be merged, got %#v", result.Usage)
 	}
 }
 

@@ -3,6 +3,8 @@ package conversation
 import (
 	"bytes"
 	"testing"
+
+	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
 )
 
 func TestDetectGeneratedImageMIMERejectsNonImageBytes(t *testing.T) {
@@ -30,5 +32,22 @@ func TestStripBase64DataURLPrefix(t *testing.T) {
 	got := stripBase64DataURLPrefix("data:image/png;base64, aGVsbG8= ")
 	if got != "aGVsbG8=" {
 		t.Fatalf("unexpected stripped data URL: %q", got)
+	}
+}
+
+func TestAppendGeneratedImageMarkdownAllowsImageOnlyAssistantMessage(t *testing.T) {
+	files := []model.FileObject{{FileID: "file_generated"}}
+	got := appendGeneratedImageMarkdown("", files)
+	if got != "![Generated image](/api/v1/files/file_generated/content)" {
+		t.Fatalf("unexpected image-only assistant content: %q", got)
+	}
+}
+
+func TestAppendGeneratedImageMarkdownPreservesAssistantText(t *testing.T) {
+	files := []model.FileObject{{FileID: "file_generated"}}
+	got := appendGeneratedImageMarkdown("Here is the poster.", files)
+	want := "Here is the poster.\n\n![Generated image](/api/v1/files/file_generated/content)"
+	if got != want {
+		t.Fatalf("unexpected assistant content with image: %q", got)
 	}
 }
