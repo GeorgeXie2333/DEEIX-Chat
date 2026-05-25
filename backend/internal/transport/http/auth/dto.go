@@ -380,6 +380,18 @@ type LoginResponseDoc struct {
 	Data     LoginResponse `json:"data"`
 }
 
+// LoginOptionsResponseDoc 登录入口配置响应（Swagger 用）。
+type LoginOptionsResponseDoc struct {
+	ErrorMsg string               `json:"errorMsg"`
+	Data     LoginOptionsResponse `json:"data"`
+}
+
+// EmailRegistrationStartResponseDoc 邮箱注册验证码发送响应（Swagger 用）。
+type EmailRegistrationStartResponseDoc struct {
+	ErrorMsg string                         `json:"errorMsg"`
+	Data     EmailRegistrationStartResponse `json:"data"`
+}
+
 // MeResponseDoc 当前用户信息响应（Swagger 用）。
 type MeResponseDoc struct {
 	ErrorMsg string     `json:"errorMsg"`

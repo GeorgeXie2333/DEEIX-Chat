@@ -577,6 +577,49 @@ definitions:
       errorMsg:
         type: string
     type: object
+  internal_transport_http_auth.EmailRegistrationCompleteRequest:
+    properties:
+      code:
+        type: string
+      email:
+        maxLength: 128
+        type: string
+      password:
+        maxLength: 128
+        minLength: 8
+        type: string
+      turnstileToken:
+        maxLength: 2048
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_transport_http_auth.EmailRegistrationStartRequest:
+    properties:
+      email:
+        maxLength: 128
+        type: string
+      turnstileToken:
+        maxLength: 2048
+        type: string
+    required:
+    - email
+    type: object
+  internal_transport_http_auth.EmailRegistrationStartResponse:
+    properties:
+      expiresAt:
+        type: string
+      sent:
+        type: boolean
+    type: object
+  internal_transport_http_auth.EmailRegistrationStartResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/internal_transport_http_auth.EmailRegistrationStartResponse'
+      errorMsg:
+        type: string
+    type: object
   internal_transport_http_auth.EmailVerificationStartResponse:
     properties:
       availableMethods:
@@ -606,6 +649,81 @@ definitions:
       errorMsg:
         type: string
       requestId:
+        type: string
+    type: object
+  internal_transport_http_auth.IdentityProviderResponse:
+    properties:
+      authURL:
+        type: string
+      avatarField:
+        type: string
+      clientID:
+        type: string
+      createdAt:
+        type: string
+      defaultRole:
+        type: string
+      discoveryURL:
+        type: string
+      emailField:
+        type: string
+      emailVerifiedField:
+        type: string
+      issuerURL:
+        type: string
+      jwksURL:
+        type: string
+      loginEnabled:
+        type: boolean
+      logoURL:
+        type: string
+      name:
+        type: string
+      nameField:
+        type: string
+      publicID:
+        type: string
+      registrationEnabled:
+        type: boolean
+      scopes:
+        type: string
+      slug:
+        type: string
+      subjectField:
+        type: string
+      tokenURL:
+        type: string
+      type:
+        type: string
+      updatedAt:
+        type: string
+      userinfoURL:
+        type: string
+    type: object
+  internal_transport_http_auth.LoginOptionsResponse:
+    properties:
+      emailEnabled:
+        type: boolean
+      emailRegistrationEnabled:
+        type: boolean
+      emailVerificationEnabled:
+        type: boolean
+      providers:
+        items:
+          $ref: '#/definitions/internal_transport_http_auth.IdentityProviderResponse'
+        type: array
+      turnstileRegistrationEnabled:
+        type: boolean
+      turnstileSiteKey:
+        type: string
+      usernameEnabled:
+        type: boolean
+    type: object
+  internal_transport_http_auth.LoginOptionsResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/internal_transport_http_auth.LoginOptionsResponse'
+      errorMsg:
         type: string
     type: object
   internal_transport_http_auth.LoginRequest:
@@ -5722,6 +5840,23 @@ paths:
       summary: 用户登录
       tags:
       - auth
+  /auth/login-options:
+    get:
+      description: 获取用户名、邮箱、OAuth/OIDC 登录入口，以及邮箱注册 Turnstile 公共配置
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_auth.LoginOptionsResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_auth.ErrorDoc'
+      summary: 获取登录入口配置
+      tags:
+      - auth
   /auth/logout:
     post:
       consumes:
@@ -5795,6 +5930,58 @@ paths:
           schema:
             $ref: '#/definitions/internal_transport_http_auth.ErrorDoc'
       summary: 刷新访问令牌
+      tags:
+      - auth
+  /auth/register/email/complete:
+    post:
+      consumes:
+      - application/json
+      description: 使用邮箱、密码和验证码完成注册；未开启邮箱验证码但启用 Turnstile 时需要提交 turnstileToken
+      parameters:
+      - description: 邮箱注册完成请求
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_auth.EmailRegistrationCompleteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_auth.LoginResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_auth.ErrorDoc'
+      summary: 完成邮箱注册
+      tags:
+      - auth
+  /auth/register/email/start:
+    post:
+      consumes:
+      - application/json
+      description: 邮箱验证码注册开启时发送验证码；启用 Turnstile 后需要提交 turnstileToken
+      parameters:
+      - description: 邮箱注册验证码请求
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_auth.EmailRegistrationStartRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_auth.EmailRegistrationStartResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_auth.ErrorDoc'
+      summary: 发送邮箱注册验证码
       tags:
       - auth
   /auth/sessions:

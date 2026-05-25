@@ -111,6 +111,24 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8080
 
 优先级：`环境变量 > config.yaml > 代码内置默认值`。
 
+Docker 镜像工作目录是 `/app`。使用默认 compose 挂载时，后端会自动读取 `/app/config.yaml`：
+
+```yaml
+volumes:
+  - ./config.yaml:/app/config.yaml:ro
+```
+
+如果需要指定其他配置文件路径，使用 `CONFIG_FILE`，值必须是容器内路径：
+
+```yaml
+environment:
+  CONFIG_FILE: "/app/config.yaml"
+```
+
+自定义配置文件路径只读取 `CONFIG_FILE`。如果 compose 的 `environment` 和 `config.yaml` 同时配置同一个键，环境变量优先。`docker-compose.full.yml` 默认在 `environment` 中写入了 `POSTGRES_DSN`、`REDIS_ADDR`、`REDIS_PASSWORD`，因此会覆盖 `config.yaml` 中的 PostgreSQL 和 Redis 配置。
+
+`config.yaml` 只负责静态基础设施和安全配置，例如服务地址、数据库、Redis、存储、GeoIP、Trace、JWT 和加密密钥。运行时业务配置存储在数据库中，并通过后台管理修改；这些配置启动后不以 YAML 为准。
+
 `APP_ENV` 支持 `dev`/`development` 和 `prod`/`production`，内部会规范化为 `dev` 或 `prod`；未配置时默认 `prod`。`dev` 只用于本地开发；公网生产部署应保持 `APP_ENV=prod` 或 `APP_ENV=production` 并使用生产密钥。
 
 #### 轻量启动
@@ -123,6 +141,8 @@ cp config.docker.example.yaml config.yaml
 docker compose up -d
 ```
 
+这种方式主要使用 `config.yaml`。除非明确希望用环境变量覆盖配置文件，否则 compose 中不需要额外写同名 `environment`。
+
 #### 全量启动
 
 启动 `app`、`postgres`、`redis` 三个容器。适合本机试用、开发自测或无外部数据库的单机部署。
@@ -132,6 +152,8 @@ cp config.docker.example.yaml config.yaml
 docker compose -f docker-compose.full.yml up -d
 ```
 
+这种方式会通过 compose 环境变量连接内置 PostgreSQL 和 Redis。如果希望这些连接配置完全来自 `config.yaml`，需要修改 `docker-compose.full.yml` 或删除对应 `environment` 项。
+
 默认应用镜像为 `ghcr.io/deeix-ai/deeix-chat:latest`。测试自定义构建时可通过 `DEEIX_CHAT_IMAGE` 覆盖：
 
 ```bash
@@ -139,6 +161,13 @@ DEEIX_CHAT_IMAGE=deeix-chat:local docker compose up -d --build
 ```
 
 Docker 地址：`http://localhost:8080`。除非修改端口或公网域名，否则不要改 Docker 配置里的 `server` 段；如需修改，端口映射、公开 URL 和 CORS 必须一起调整。
+
+排查配置是否挂载成功时，可检查容器内文件和启动日志：
+
+```bash
+docker compose exec app ls -l /app/config.yaml
+docker compose logs app
+```
 
 #### 分离部署
 
@@ -221,6 +250,8 @@ pnpm build
 
 静态基础设施配置从仓库根目录的 `config.yaml` 读取，并支持环境变量覆盖。运行时业务配置存储在 `system_settings`，由后台管理。
 
+Docker 部署默认通过 `./config.yaml:/app/config.yaml:ro` 挂载并读取 `/app/config.yaml`。如需自定义路径，使用 `CONFIG_FILE` 指向容器内路径。
+
 前端构建期变量：
 
 | 变量 | 作用 |
@@ -232,6 +263,7 @@ pnpm build
 | 变量 | 作用 |
 | --- | --- |
 | `APP_ENV` | 运行环境。支持 `dev`/`development` 和 `prod`/`production`；未配置时默认 `prod`。 |
+| `CONFIG_FILE` | 可选的配置文件路径，Docker 场景应填写容器内路径；默认 compose 挂载后会读取 `/app/config.yaml`。 |
 | `HTTP_PORT` | API/运行时端口。 |
 | `JWT_SECRET` | JWT 签名密钥，生产环境必须使用强随机值。 |
 | `DATA_ENCRYPTION_KEY` | 上游 API Key、SSO Client Secret、MCP Token、敏感设置和 TOTP Secret 的加密密钥材料。 |

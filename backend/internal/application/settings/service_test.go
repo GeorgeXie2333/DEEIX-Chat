@@ -141,6 +141,12 @@ func TestValidateTurnstileRegistrationSettings(t *testing.T) {
 	}
 }
 
+func TestValidateTurnstileRegistrationEnabledRequiresBool(t *testing.T) {
+	if err := validatePatchItem(PatchItem{Namespace: "auth", Key: "turnstile_registration_enabled", Value: "enabled"}); err == nil {
+		t.Fatal("expected turnstile registration switch to reject non-bool value")
+	}
+}
+
 func TestValidateModelOptionPolicySettings(t *testing.T) {
 	if err := validatePatchItem(PatchItem{Namespace: "chat", Key: "model_option_policy_mode", Value: "allowlist"}); err != nil {
 		t.Fatalf("expected allowlist mode to pass, got %v", err)

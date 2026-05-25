@@ -3,6 +3,14 @@ app:
   # REQUIRED for deployment: change to prod and replace security/admin defaults below.
   env: dev
 
+# Docker config loading notes:
+# - The image runs from /app and the compose files mount ./config.yaml to /app/config.yaml.
+# - /app/config.yaml is read automatically. Set CONFIG_FILE only for a different container path.
+# - Effective priority is environment variables > config.yaml > built-in defaults.
+# - docker-compose.full.yml sets POSTGRES_DSN, REDIS_ADDR, and REDIS_PASSWORD in environment,
+#   so those values override the database.postgres/database.redis settings below.
+# - Runtime business settings are stored in the database and managed from the admin console.
+
 server:
   # Docker defaults. Keep these values unless you are changing the exposed port or public domain.
   # If http_port changes, also update the compose port mapping "<host_port>:<container_port>".

@@ -111,6 +111,24 @@ If omitted, local development defaults to `localhost:8080`; same-origin deployme
 
 Priority: `environment variables > config.yaml > built-in defaults`.
 
+The Docker image runs from `/app`. With the default compose mount below, the backend reads `/app/config.yaml` automatically:
+
+```yaml
+volumes:
+  - ./config.yaml:/app/config.yaml:ro
+```
+
+To use a different file path, set `CONFIG_FILE` to the container path:
+
+```yaml
+environment:
+  CONFIG_FILE: "/app/config.yaml"
+```
+
+Custom config file paths are read from `CONFIG_FILE`. If both compose environment variables and `config.yaml` define the same key, the environment variable wins. In `docker-compose.full.yml`, `POSTGRES_DSN`, `REDIS_ADDR`, and `REDIS_PASSWORD` are set in `environment`, so they override the PostgreSQL and Redis values in `config.yaml`.
+
+`config.yaml` is for static infrastructure and security configuration such as server URLs, database, Redis, storage, GeoIP, tracing, JWT, and encryption keys. Runtime business settings are stored in the database and managed in the admin console, so changing those values in YAML after startup is not the source of truth.
+
 `APP_ENV` accepts `dev`/`development` and `prod`/`production`, normalizes them to `dev` or `prod`, and defaults to `prod` when omitted. Use `dev` only for local development. Public production deployments should keep `APP_ENV=prod` or `APP_ENV=production` and use production secrets.
 
 #### Lightweight Start
@@ -123,6 +141,8 @@ cp config.docker.example.yaml config.yaml
 docker compose up -d
 ```
 
+This mode primarily uses `config.yaml`; keep compose `environment` empty unless you intentionally want an environment variable to override the file.
+
 #### Full Stack Start
 
 Starts `app`, `postgres`, and `redis`. Use this for local evaluation, development smoke tests, or single-machine deployments without external services.
@@ -132,6 +152,8 @@ cp config.docker.example.yaml config.yaml
 docker compose -f docker-compose.full.yml up -d
 ```
 
+This mode uses compose environment variables for the bundled PostgreSQL and Redis services. Edit `docker-compose.full.yml` or remove those environment entries if you want `config.yaml` to provide these connection values instead.
+
 The default application image is `ghcr.io/deeix-ai/deeix-chat:latest`. Override it with `DEEIX_CHAT_IMAGE` when testing a custom build:
 
 ```bash
@@ -139,6 +161,13 @@ DEEIX_CHAT_IMAGE=deeix-chat:local docker compose up -d --build
 ```
 
 Docker URL: `http://localhost:8080`. Keep the Docker `server` section unchanged unless changing ports or public domains; then update compose ports, public URLs, and CORS together.
+
+For troubleshooting, inspect startup logs and verify that the mounted file exists inside the container:
+
+```bash
+docker compose exec app ls -l /app/config.yaml
+docker compose logs app
+```
 
 #### Separated Deployment
 
@@ -221,6 +250,8 @@ pnpm build
 
 Static infrastructure configuration is loaded from the repository-level `config.yaml` and can be overridden by environment variables. Runtime business settings are stored in `system_settings` and managed from the admin console.
 
+Docker deployments read `/app/config.yaml` by default when `./config.yaml` is mounted to `/app/config.yaml`. `CONFIG_FILE` can point to another container path.
+
 Frontend build-time variables:
 
 | Variable | Purpose |
@@ -232,6 +263,7 @@ Common backend environment variables:
 | Variable | Purpose |
 | --- | --- |
 | `APP_ENV` | Runtime environment. Accepts `dev`/`development` and `prod`/`production`; omitted values default to `prod`. |
+| `CONFIG_FILE` | Optional custom config file path inside the running process or container. Docker defaults to `/app/config.yaml` through the working directory and compose mount. |
 | `HTTP_PORT` | API/runtime port. |
 | `JWT_SECRET` | JWT signing secret. Must be strong in production. |
 | `DATA_ENCRYPTION_KEY` | Key material for encrypted secrets such as upstream API keys, SSO client secrets, MCP tokens, and TOTP secrets. |

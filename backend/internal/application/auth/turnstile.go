@@ -55,9 +55,10 @@ func (s *Service) verifyRegistrationTurnstile(ctx context.Context, cfg config.Co
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Set("Accept", "application/json")
 
-	client := s.providerHTTPClient
+	client := s.turnstileHTTPClient
 	if client == nil {
-		client = http.DefaultClient
+		s.warn("turnstile_siteverify_client_missing")
+		return fmt.Errorf("turnstile verification failed")
 	}
 	response, err := client.Do(request)
 	if err != nil {

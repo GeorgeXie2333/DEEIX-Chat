@@ -100,6 +100,18 @@ observability:
 
 `APP_ENV` 未配置时默认 `prod`。`dev`/`development` 只用于本地开发；公网生产部署应保持 `APP_ENV=prod` 或 `APP_ENV=production` 并使用生产密钥。
 
+## 邮箱注册 Turnstile
+
+邮箱注册可选启用 Cloudflare Turnstile 人机验证，作用范围仅限邮箱注册；OAuth/OIDC 登录或注册不需要 Turnstile 校验。
+
+相关运行时设置：
+
+- `auth:turnstile_registration_enabled`：是否在邮箱注册时启用 Turnstile。
+- `auth:turnstile_site_key`：前端渲染 Turnstile 组件使用的 Site Key，会通过 `/api/v1/auth/login-options` 返回。
+- `auth:turnstile_secret_key`：后端调用 Cloudflare siteverify 使用的 Secret Key，属于敏感设置。
+
+启用 Turnstile 需要同时启用 `auth:email_registration_enabled`，并配置 Site Key 与 Secret Key。开启邮箱验证码注册时，前端在 `/api/v1/auth/register/email/start` 提交 `turnstileToken`；关闭邮箱验证码但允许邮箱注册时，前端在 `/api/v1/auth/register/email/complete` 提交 `turnstileToken`。
+
 生产环境安全校验：
 
 - `APP_ENV` 支持 `dev`/`development` 和 `prod`/`production`，其他值会启动失败。

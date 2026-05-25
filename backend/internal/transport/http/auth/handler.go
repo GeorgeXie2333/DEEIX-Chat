@@ -96,6 +96,14 @@ func (h *Handler) shouldUseSecureCookie(c *gin.Context) bool {
 	return isHTTPSRequest(c) || (h.service != nil && h.service.ShouldUseSecureCookies())
 }
 
+// LoginOptions godoc
+// @Summary 获取登录入口配置
+// @Description 获取用户名、邮箱、OAuth/OIDC 登录入口，以及邮箱注册 Turnstile 公共配置
+// @Tags auth
+// @Produce json
+// @Success 200 {object} LoginOptionsResponseDoc
+// @Failure 500 {object} ErrorDoc
+// @Router /auth/login-options [get]
 func (h *Handler) LoginOptions(c *gin.Context) {
 	result, err := h.service.GetLoginOptions(c.Request.Context())
 	if err != nil {
@@ -121,6 +129,16 @@ func (h *Handler) IdentityProviderLogo(c *gin.Context) {
 	c.Data(http.StatusOK, asset.ContentType, asset.Content)
 }
 
+// StartEmailRegistration godoc
+// @Summary 发送邮箱注册验证码
+// @Description 邮箱验证码注册开启时发送验证码；启用 Turnstile 后需要提交 turnstileToken
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body EmailRegistrationStartRequest true "邮箱注册验证码请求"
+// @Success 200 {object} EmailRegistrationStartResponseDoc
+// @Failure 400 {object} ErrorDoc
+// @Router /auth/register/email/start [post]
 func (h *Handler) StartEmailRegistration(c *gin.Context) {
 	var req EmailRegistrationStartRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -142,6 +160,16 @@ func (h *Handler) StartEmailRegistration(c *gin.Context) {
 	response.Success(c, toEmailRegistrationStartResponse(result))
 }
 
+// CompleteEmailRegistration godoc
+// @Summary 完成邮箱注册
+// @Description 使用邮箱、密码和验证码完成注册；未开启邮箱验证码但启用 Turnstile 时需要提交 turnstileToken
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body EmailRegistrationCompleteRequest true "邮箱注册完成请求"
+// @Success 200 {object} LoginResponseDoc
+// @Failure 400 {object} ErrorDoc
+// @Router /auth/register/email/complete [post]
 func (h *Handler) CompleteEmailRegistration(c *gin.Context) {
 	var req EmailRegistrationCompleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

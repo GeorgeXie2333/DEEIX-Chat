@@ -182,12 +182,12 @@ func TestRequestEmailRegistrationUsesSendCooldown(t *testing.T) {
 
 func TestRequestEmailRegistrationRequiresTurnstileWhenEnabled(t *testing.T) {
 	service := NewService(config.Config{
-		EmailLoginEnabled:                 true,
-		EmailRegistrationEnabled:          true,
-		EmailVerificationEnabled:          true,
-		TurnstileRegistrationEnabled:      true,
-		TurnstileSiteKey:                  "site-key",
-		TurnstileSecretKey:                "secret-key",
+		EmailLoginEnabled:            true,
+		EmailRegistrationEnabled:     true,
+		EmailVerificationEnabled:     true,
+		TurnstileRegistrationEnabled: true,
+		TurnstileSiteKey:             "site-key",
+		TurnstileSecretKey:           "secret-key",
 	}, nil, nil)
 
 	_, err := service.RequestEmailRegistration(context.Background(), "user@example.com", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})
@@ -198,12 +198,12 @@ func TestRequestEmailRegistrationRequiresTurnstileWhenEnabled(t *testing.T) {
 
 func TestRegisterWithEmailRequiresTurnstileWhenEmailVerificationDisabled(t *testing.T) {
 	service := NewService(config.Config{
-		EmailLoginEnabled:                 true,
-		EmailRegistrationEnabled:          true,
-		EmailVerificationEnabled:          false,
-		TurnstileRegistrationEnabled:      true,
-		TurnstileSiteKey:                  "site-key",
-		TurnstileSecretKey:                "secret-key",
+		EmailLoginEnabled:            true,
+		EmailRegistrationEnabled:     true,
+		EmailVerificationEnabled:     false,
+		TurnstileRegistrationEnabled: true,
+		TurnstileSiteKey:             "site-key",
+		TurnstileSecretKey:           "secret-key",
 	}, nil, nil)
 
 	_, err := service.RegisterWithEmail(context.Background(), "user@example.com", "securepass1", "", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})

@@ -3487,6 +3487,32 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/login-options": {
+            "get": {
+                "description": "获取用户名、邮箱、OAuth/OIDC 登录入口，以及邮箱注册 Turnstile 公共配置",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "获取登录入口配置",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.LoginOptionsResponseDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/logout": {
             "post": {
                 "security": [
@@ -3598,6 +3624,86 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register/email/complete": {
+            "post": {
+                "description": "使用邮箱、密码和验证码完成注册；未开启邮箱验证码但启用 Turnstile 时需要提交 turnstileToken",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "完成邮箱注册",
+                "parameters": [
+                    {
+                        "description": "邮箱注册完成请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.EmailRegistrationCompleteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.LoginResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register/email/start": {
+            "post": {
+                "description": "邮箱验证码注册开启时发送验证码；启用 Turnstile 后需要提交 turnstileToken",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "发送邮箱注册验证码",
+                "parameters": [
+                    {
+                        "description": "邮箱注册验证码请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.EmailRegistrationStartRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.EmailRegistrationStartResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
                         }
@@ -7683,6 +7789,69 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_transport_http_auth.EmailRegistrationCompleteRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 8
+                },
+                "turnstileToken": {
+                    "type": "string",
+                    "maxLength": 2048
+                }
+            }
+        },
+        "internal_transport_http_auth.EmailRegistrationStartRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "turnstileToken": {
+                    "type": "string",
+                    "maxLength": 2048
+                }
+            }
+        },
+        "internal_transport_http_auth.EmailRegistrationStartResponse": {
+            "type": "object",
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "sent": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_transport_http_auth.EmailRegistrationStartResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_transport_http_auth.EmailRegistrationStartResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_transport_http_auth.EmailVerificationStartResponse": {
             "type": "object",
             "properties": {
@@ -7726,6 +7895,120 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "requestId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_auth.IdentityProviderResponse": {
+            "type": "object",
+            "properties": {
+                "authURL": {
+                    "type": "string"
+                },
+                "avatarField": {
+                    "type": "string"
+                },
+                "clientID": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "defaultRole": {
+                    "type": "string"
+                },
+                "discoveryURL": {
+                    "type": "string"
+                },
+                "emailField": {
+                    "type": "string"
+                },
+                "emailVerifiedField": {
+                    "type": "string"
+                },
+                "issuerURL": {
+                    "type": "string"
+                },
+                "jwksURL": {
+                    "type": "string"
+                },
+                "loginEnabled": {
+                    "type": "boolean"
+                },
+                "logoURL": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nameField": {
+                    "type": "string"
+                },
+                "publicID": {
+                    "type": "string"
+                },
+                "registrationEnabled": {
+                    "type": "boolean"
+                },
+                "scopes": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "subjectField": {
+                    "type": "string"
+                },
+                "tokenURL": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userinfoURL": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_auth.LoginOptionsResponse": {
+            "type": "object",
+            "properties": {
+                "emailEnabled": {
+                    "type": "boolean"
+                },
+                "emailRegistrationEnabled": {
+                    "type": "boolean"
+                },
+                "emailVerificationEnabled": {
+                    "type": "boolean"
+                },
+                "providers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_auth.IdentityProviderResponse"
+                    }
+                },
+                "turnstileRegistrationEnabled": {
+                    "type": "boolean"
+                },
+                "turnstileSiteKey": {
+                    "type": "string"
+                },
+                "usernameEnabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_transport_http_auth.LoginOptionsResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_transport_http_auth.LoginOptionsResponse"
+                },
+                "errorMsg": {
                     "type": "string"
                 }
             }
