@@ -15,17 +15,20 @@ export function AppLogo({
   height,
   className,
 }: AppLogoProps) {
-  const fontSize = Math.max(13, Math.min(20, Math.round(height * 0.42)));
+  const fontSize = Math.max(13, Math.min(32, Math.round(height * 0.42)));
 
   return (
     <span
       aria-label={alt}
       title={alt}
       className={cn(
-        "flex min-w-fit items-center justify-center whitespace-nowrap font-semibold leading-none tracking-normal text-foreground",
+        "flex w-fit min-w-fit items-center justify-center whitespace-nowrap font-semibold leading-none tracking-normal text-foreground",
         className,
       )}
-      style={{ fontSize }}
+      style={{
+        fontFamily: '"Palatino Linotype", Palatino, "Book Antiqua", serif',
+        fontSize,
+      }}
     >
       Comi AI
     </span>
