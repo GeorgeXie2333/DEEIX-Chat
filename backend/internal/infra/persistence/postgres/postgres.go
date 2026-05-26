@@ -155,6 +155,9 @@ func migrate(db *gorm.DB, cfg config.Config) error {
 	if err := applyIdentityBaselineConstraints(db); err != nil {
 		return err
 	}
+	if err := applyIdentityProviderBaseline(db); err != nil {
+		return err
+	}
 	if err := applyConversationBaselineIndexes(db); err != nil {
 		return err
 	}
@@ -290,6 +293,21 @@ func applyIdentityBaselineConstraints(db *gorm.DB) error {
 		`COMMENT ON COLUMN "identity_users"."appearance_preferences" IS '外观偏好JSON'`,
 		`DROP INDEX IF EXISTS uk_identity_users_single_superadmin`,
 	}
+	for _, statement := range statements {
+		if err := db.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func applyIdentityProviderBaseline(db *gorm.DB) error {
+	statements := []string{
+		`ALTER TABLE "identity_providers"
+		ADD COLUMN IF NOT EXISTS "email_verified_field" varchar(64) NOT NULL DEFAULT 'email_verified'`,
+		`COMMENT ON COLUMN "identity_providers"."email_verified_field" IS '邮箱验证状态字段'`,
+	}
+
 	for _, statement := range statements {
 		if err := db.Exec(statement).Error; err != nil {
 			return err

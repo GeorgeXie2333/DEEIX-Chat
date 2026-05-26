@@ -3407,6 +3407,8 @@ definitions:
           type: string
         maxItems: 20
         type: array
+      htmlVisualPrompt:
+        type: boolean
       model:
         maxLength: 128
         type: string
@@ -3638,7 +3640,7 @@ info:
   contact: {}
   description: DEEIX Chat 后端 API 文档
   title: DEEIX Chat API
-  version: 0.1.1
+  version: "0.1.2"
 paths:
   /admin/audit-logs:
     get:

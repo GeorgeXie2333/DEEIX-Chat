@@ -25,7 +25,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test): [A-Za-z0-9 _-]+$'
+          pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test): [A-Za-z0-9 ._-]+$'
 
           range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
 
@@ -47,6 +47,6 @@ jobs:
           if [[ "$invalid" -ne 0 ]]; then
             echo "Commit message subjects must use: type: subject"
             echo "Allowed types: build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test"
-            echo "Allowed subject characters: English letters, numbers, spaces, hyphens, and underscores"
+            echo "Allowed subject characters: English letters, numbers, spaces, periods, hyphens, and underscores"
             exit 1
           fi
