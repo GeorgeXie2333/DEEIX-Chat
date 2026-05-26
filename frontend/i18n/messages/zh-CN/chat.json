@@ -290,6 +290,9 @@
   },
   "composer": {
     "uploadFile": "上传文件",
+    "dragUploadTitle": "松开以上传文件",
+    "dragUploadDescription": "文件将作为当前消息附件上传。",
+    "dragUploadUnavailable": "当前对话忙碌中，暂不能上传文件。",
     "screenshot": "屏幕截图",
     "openTools": "打开工具菜单",
     "modelOptions": "模型配置",

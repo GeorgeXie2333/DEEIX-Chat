@@ -290,6 +290,9 @@
   },
   "composer": {
     "uploadFile": "Upload file",
+    "dragUploadTitle": "Drop files to upload",
+    "dragUploadDescription": "Release to attach them to the current message.",
+    "dragUploadUnavailable": "File upload is unavailable while this chat is busy.",
     "screenshot": "Screenshot",
     "openTools": "Open tools",
     "modelOptions": "Parameters",

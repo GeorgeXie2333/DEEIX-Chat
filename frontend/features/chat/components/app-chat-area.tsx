@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { UploadCloud } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ import { useChatModelOptions } from "@/features/chat/hooks/use-chat-model-option
 import { useChatRuntime } from "@/features/chat/hooks/use-chat-runtime";
 import { useChatScrollController } from "@/features/chat/hooks/use-chat-scroll-controller";
 import { useChatViewerProfile } from "@/features/chat/hooks/use-chat-viewer-profile";
+import { useChatWindowFileDrop } from "@/features/chat/hooks/use-chat-window-file-drop";
 import { useHTMLVisualPrompt } from "@/features/chat/hooks/use-visual-prompt";
 import { ChatInput } from "@/features/chat/components/sections/chat-input";
 import {
@@ -636,6 +638,15 @@ export function AppChatArea() {
   const selectedModelDefaultOptions = modelOptionPolicyDisabled
     ? EMPTY_CONVERSATION_OPTIONS
     : (selectedModel?.defaultOptions ?? EMPTY_CONVERSATION_OPTIONS);
+  const isConversationLoading = Boolean(conversationID) && loading && visibleMessageCount === 0 && messagesWithInlineError.length === 0;
+  const isConversationLoadFailed = Boolean(conversationID) && !loading && errorMsg.trim().length > 0 && visibleMessageCount === 0;
+  const shouldUseCenteredComposer =
+    !isConversationLoading && !isConversationLoadFailed && !isConversationMode && messagesWithInlineError.length === 0;
+  const dragUploadDisabled = loading || generating || uploading || isConversationLoadFailed;
+  const { isDraggingFiles } = useChatWindowFileDrop({
+    disabled: dragUploadDisabled,
+    onDropFiles: onUploadFiles,
+  });
 
   const chatInputProps = {
     draft,
@@ -672,13 +683,41 @@ export function AppChatArea() {
     onSendMessage,
     onStopMessage: onStopActiveMessage,
   };
-  const isConversationLoading = Boolean(conversationID) && loading && visibleMessageCount === 0 && messagesWithInlineError.length === 0;
-  const isConversationLoadFailed = Boolean(conversationID) && !loading && errorMsg.trim().length > 0 && visibleMessageCount === 0;
-  const shouldUseCenteredComposer =
-    !isConversationLoading && !isConversationLoadFailed && !isConversationMode && messagesWithInlineError.length === 0;
 
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden md:overflow-visible">
+      {isDraggingFiles ? (
+        <div
+          className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/75 p-6 backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <div
+            className={cn(
+              "flex w-full max-w-sm flex-col items-center gap-3 rounded-lg border px-5 py-6 text-center shadow-lg",
+              dragUploadDisabled
+                ? "border-destructive/25 bg-destructive/10 text-destructive"
+                : "border-primary/25 bg-background/95 text-foreground",
+            )}
+          >
+            <span
+              className={cn(
+                "flex size-11 items-center justify-center rounded-full",
+                dragUploadDisabled ? "bg-destructive/10" : "bg-primary/10 text-primary",
+              )}
+              aria-hidden="true"
+            >
+              <UploadCloud className="size-5" strokeWidth={1.7} />
+            </span>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">{t("composer.dragUploadTitle")}</p>
+              <p className="text-xs leading-5 text-muted-foreground">
+                {dragUploadDisabled ? t("composer.dragUploadUnavailable") : t("composer.dragUploadDescription")}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {shouldUseCenteredComposer ? (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <ChatEmptyState greetingTitle={greetingTitle}>
