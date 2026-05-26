@@ -1,0 +1,585 @@
+{
+  "title": "設定",
+  "general": "一般",
+  "account": "アカウント",
+  "chat": "チャット",
+  "subscription": "サブスクリプション",
+  "about": "概要",
+  "navigation": "設定ナビゲーション",
+  "aboutPage": {
+    "title": "概要",
+    "description": "Comi AI は、複数ユーザー向け AI アプリケーションのためのモデル接続と会話運用プラットフォームです。モデルカタログ、複数上流ルーティング、パラメーター管理、ファイルと RAG、MCP ツール、利用量課金、ID セキュリティ、監査、運用設定を 1 つの制御面に統合します。",
+    "details": "製品情報",
+    "product": "製品",
+    "version": "バージョン",
+    "console": "コンソール",
+    "userConsole": "ユーザー画面",
+    "official": "公式",
+    "website": "公式サイト",
+    "repository": "リポジトリ",
+    "social": "X",
+    "blog": "ブログ",
+    "contact": "お問い合わせとサポート",
+    "copyright": "© 2026 Comi AI.",
+    "license": "コードは Apache License 2.0 に基づいてライセンスされています。"
+  },
+  "appearance": "外観",
+  "language": "言語",
+  "languageDescription": "現在のブラウザーとアカウントで使用するインターフェース言語を選択します。",
+  "generalPage": {
+    "profile": {
+      "avatar": "アバター",
+      "avatarAlt": "ユーザーアバター",
+      "username": "ユーザー名",
+      "usernamePlaceholder": "ユーザー名を設定",
+      "displayName": "表示名",
+      "displayNamePlaceholder": "画面に表示される名前",
+      "displayNameInvalid": "表示名は 3-16 文字で入力してください。",
+      "timezone": "タイムゾーン",
+      "conversationPreferences": "会話の好み",
+      "conversationPreferencesPlaceholder": "好みのスタイル、言語習慣、出力形式、よく使うワークフロー。"
+    },
+    "username": {
+      "invalid": "ユーザー名は 3-16 文字の小文字英字、数字、アンダースコア、ハイフンで入力し、予約名は使用できません。",
+      "alreadyChanged": "ユーザー名は一度だけ設定できます。",
+      "taken": "このユーザー名はすでに使用されています。"
+    },
+    "toast": {
+      "initialUsernameRequired": "初期ユーザー名は変更してから続行する必要があります。",
+      "setUsernameFailed": "ユーザー名の設定に失敗しました",
+      "usernameUpdated": "ユーザー名を更新しました",
+      "profileUpdated": "プロフィールを更新しました",
+      "saveProfileFailed": "プロフィールの保存に失敗しました"
+    },
+    "notifications": {
+      "responseCompletionTitle": "返信完了通知",
+      "responseCompletionDescription": "モデルの返信が完了したときに通知します。ツール呼び出しや調査など時間のかかるタスクに便利です。",
+      "toggleResponseCompletion": "返信完了通知を切り替え",
+      "unsupportedTitle": "現在のブラウザーは通知に対応していません",
+      "unsupportedDescription": "Notification API に対応したデスクトップブラウザーを使用してください。",
+      "deniedTitle": "通知権限が拒否されました",
+      "deniedDescription": "有効にする前に、ブラウザーのサイト権限設定で通知を許可してください。",
+      "enabledTitle": "ブラウザー通知を有効にしました",
+      "enabledDescription": "バックグラウンドで返信が完了すると、システム通知を受け取ります。",
+      "defaultHelp": "有効にするとブラウザー通知権限を使用し、システム通知でお知らせします。",
+      "unsupportedHelp": "現在のブラウザーはシステム通知に対応していません。",
+      "deniedHelp": "ブラウザーが通知をブロックしています。ブラウザー設定で手動で許可してください。",
+      "grantedHelp": "ブラウザー通知は有効です。オンにすると、モデル返信完了時に通知が表示されます。"
+    },
+    "appearance": {
+      "colorMode": "カラーモード",
+      "themePreset": "テーマ",
+      "chatFont": "チャットフォント",
+      "chatFontWeight": "チャットフォント太さ",
+      "preset": {
+        "default": "既定",
+        "azure": "Azure",
+        "cobalt": "Cobalt",
+        "graphite": "Graphite",
+        "lagoon": "Lagoon",
+        "ink": "Ink",
+        "ochre": "Ochre",
+        "sepia": "Sepia"
+      },
+      "theme": {
+        "light": "ライト",
+        "system": "システムに従う",
+        "dark": "ダーク"
+      },
+      "font": {
+        "default": "既定",
+        "songti": "セリフ",
+        "heiti": "サンセリフ",
+        "mono": "等幅"
+      },
+      "fontWeight": {
+        "regular": "標準",
+        "medium": "中",
+        "semibold": "セミボールド",
+        "bold": "太字"
+      }
+    },
+    "avatarDialog": {
+      "title": "アバターを編集",
+      "description": "アバター URL を入力するか、アバター領域をクリックしてピクセル風アバターを生成します。",
+      "avatarURL": "アバター URL",
+      "apply": "適用"
+    }
+  },
+  "profile": "プロフィール",
+  "security": "セキュリティ",
+  "notifications": "通知",
+  "memory": "AI の好み記憶",
+  "accountPage": {
+    "title": "アカウント",
+    "password": "ログインパスワード",
+    "twoFactor": "二段階認証",
+    "logoutAllDevices": "すべてのオンラインデバイスからログアウト",
+    "deleteAccount": "アカウントを削除",
+    "publicID": "ユーザー公開 ID",
+    "copyPublicID": "ユーザー公開 ID をコピー",
+    "email": {
+      "label": "メール",
+      "withAddress": "メール（{email}）",
+      "verified": "確認済み",
+      "unverified": "未確認"
+    },
+    "actions": {
+      "set": "設定",
+      "update": "更新",
+      "manage": "管理",
+      "generating": "生成中",
+      "logOut": "ログアウト",
+      "loggingOut": "ログアウト中",
+      "deleteAccount": "アカウントを削除",
+      "deleting": "削除中",
+      "bind": "バインド",
+      "cancel": "キャンセル",
+      "verify": "確認"
+    },
+    "identity": {
+      "title": "バインド済み ID プロバイダー",
+      "provider": "ID プロバイダー",
+      "username": "ユーザー名",
+      "email": "メール",
+      "linkedAt": "バインド日時",
+      "empty": "現在バインド済みの第三者 ID プロバイダーはありません",
+      "unlink": "ID プロバイダーを解除",
+      "unlinkDisabled": "先にパスワードを設定するか、別の ID プロバイダーをバインドしてください"
+    },
+    "session": {
+      "title": "アクティブセッション",
+      "device": "デバイス",
+      "location": "位置",
+      "createdAt": "作成日時",
+      "updatedAt": "更新日時",
+      "empty": "利用可能なアクティブセッションはありません",
+      "current": "現在のセッション",
+      "actions": "セッション操作",
+      "logoutThisSession": "このセッションからログアウト",
+      "unknownDevice": "不明なデバイス",
+      "unknownLocation": "不明な地域",
+      "unknownIP": "不明な IP"
+    },
+    "deleteDialog": {
+      "title": "アカウントを削除",
+      "description": "アカウント削除は永久的です。アカウントやチャット履歴を復元することはできません。",
+      "verificationTitle": "アカウント削除を確認",
+      "verificationDescription": {
+        "twoFactor": "認証アプリのコードまたは復旧コードを入力してアカウントを削除します。",
+        "email": "確認済みメールへ認証コードを送信し、入力後にアカウントを削除します。"
+      },
+      "verificationUnavailable": "アカウント削除には本人確認が必要です。先にメールを確認するか、二段階認証を有効にしてください。"
+    },
+    "securityDialog": {
+      "common": {
+        "cancel": "キャンセル",
+        "save": "保存",
+        "saving": "保存中",
+        "sending": "送信中",
+        "sendCode": "送信",
+        "resendIn": "{seconds}s 後に再送",
+        "processing": "処理中",
+        "done": "完了",
+        "verify": "確認",
+        "continue": "続行",
+        "back": "戻る",
+        "debugCode": "開発用認証コード: {code}",
+        "copiedLabel": "{label}をコピーしました",
+        "copyFailed": "コピーに失敗しました",
+        "copyManually": "内容を手動で選択してコピーしてください。"
+      },
+      "password": {
+        "title": {
+          "required": "初回パスワード設定",
+          "change": "パスワードを変更",
+          "set": "パスワードを設定"
+        },
+        "description": {
+          "required": "初回起動では初期パスワードを変更する必要があります。完了後、現在のセッションは失効し、新しいパスワードで再ログインする必要があります。",
+          "change": "変更後、現在のログインセッションは失効し、新しいパスワードで再ログインする必要があります。",
+          "set": "設定後はアカウントパスワードでログインでき、ID プロバイダー解除前の安全な資格情報として使用できます。"
+        },
+        "verificationTitle": "パスワード変更を確認",
+        "verificationDescription": {
+          "twoFactor": "認証アプリのコードまたは復旧コードを入力して続行します。",
+          "email": "確認済みメールへ認証コードを送信し、入力後に続行します。"
+        },
+        "labels": {
+          "currentPassword": "現在のパスワード",
+          "newPassword": "新しいパスワード",
+          "loginPassword": "ログインパスワード",
+          "twoFactorCode": "二段階認証コード",
+          "emailCode": "メール認証コード"
+        },
+        "placeholders": {
+          "password": "8 文字以上、数字のみは不可",
+          "otpOrRecovery": "認証コードまたは復旧コード",
+          "sixDigitCode": "6 桁の認証コード"
+        }
+      },
+      "email": {
+        "title": {
+          "set": "メールを設定",
+          "change": "メールを変更"
+        },
+        "description": {
+          "bootstrapVerified": "初回メール設定では新しいメールアドレスの所有確認が必要です。",
+          "saveOnly": "保存後、メールアドレスが更新されます。",
+          "change": "Comi AI は現在のアカウント安全状態に応じて必要な確認を求め、通過後に変更を保存します。"
+        },
+        "labels": {
+          "newEmail": "新しいメール"
+        }
+      },
+      "verification": {
+        "title": {
+          "emailBootstrap": "新しいメールを確認",
+          "emailChange": "メール変更を確認",
+          "currentEmail": "メールを確認"
+        },
+        "description": {
+          "emailBootstrap": "新しいメールへ認証コードを送信し、入力後にメールを保存します。",
+          "emailChange": "必要な確認を完了すると、メール変更を保存します。",
+          "currentEmail": "{email} へ認証コードを送信し、入力後にこのメールを確認済みにします。"
+        },
+        "labels": {
+          "twoFactorCode": "二段階認証コード",
+          "emailCode": "メール認証コード",
+          "currentEmailCode": "現在のメール認証コード",
+          "newEmail": "新しいメール",
+          "newEmailCode": "新しいメール認証コード",
+          "verificationCode": "認証コード"
+        },
+        "placeholders": {
+          "otpOrRecovery": "認証コードまたは復旧コード",
+          "sixDigitCode": "6 桁の認証コード"
+        },
+        "actions": {
+          "useEmail": "メール確認を使用",
+          "useTwoFactor": "二段階認証を使用"
+        }
+      },
+      "twoFactor": {
+        "title": {
+          "setup": "二段階認証を有効化",
+          "manage": "二段階認証を管理",
+          "recovery": "復旧コードを保存"
+        },
+        "description": {
+          "setup": "認証アプリで QR コードを読み取るか、手動でバインドします。",
+          "manage": "認証コードまたは復旧コードを入力して操作を続行します。",
+          "recovery": "復旧コードは一度だけ表示されます。安全な場所に保存してください。"
+        },
+        "tabs": {
+          "qr": "QR コード",
+          "manual": "手動バインド"
+        },
+        "errors": {
+          "codeRequired": "認証コードを入力してください"
+        },
+        "qrLabel": "二段階認証 QR コード",
+        "setupExpired": "この設定は期限切れです",
+        "qrUnavailable": "QR コードは現在利用できません。手動キーでバインドしてください。",
+        "scanThenVerify": "読み取り後、認証コードを入力してバインドを完了します",
+        "regenerate": "再生成",
+        "validUntil": "{time} まで有効",
+        "secret": "キー",
+        "copySecret": "キーをコピー",
+        "otpAuthUri": "OTP Auth URI",
+        "copyOtpUri": "OTP Auth URI をコピー",
+        "code": "認証コード",
+        "sixDigitCode": "6 桁の認証コード",
+        "codeOrRecovery": "認証コードまたは復旧コード",
+        "regenerateRecoveryCodes": "復旧コードを再生成",
+        "recoveryCodes": "復旧コード",
+        "copyRecoveryCodes": "復旧コードをコピー",
+        "enable": "有効化",
+        "disable": "オフ"
+      }
+    },
+    "toasts": {
+      "retryLater": "しばらくしてからもう一度お試しください。",
+      "sessionMissing": "ログイン状態を検出できません",
+      "loadFailed": "アカウント情報の読み込みに失敗しました",
+      "publicIDCopied": "公開 ID をコピーしました",
+      "copyFailed": "コピーに失敗しました",
+      "codeSent": "認証コードを送信しました",
+      "sendCodeFailed": "認証コードの送信に失敗しました",
+      "passwordChanged": "パスワードを変更しました",
+      "passwordChangedDescription": "新しいパスワードで再度ログインしてください。",
+      "changePasswordFailed": "パスワードの変更に失敗しました",
+      "emailSet": "メールを設定しました",
+      "setEmailFailed": "メールの設定に失敗しました",
+      "emailVerified": "メールを確認しました",
+      "verifyEmailFailed": "メール確認に失敗しました",
+      "currentEmailCodeSent": "現在のメール認証コードを送信しました",
+      "newEmailCodeSent": "新しいメール認証コードを送信しました",
+      "deleteAccountCodeSent": "アカウント削除認証コードを送信しました",
+      "emailChanged": "メールを変更しました",
+      "changeEmailFailed": "メールの変更に失敗しました",
+      "deleteAccountFailed": "アカウントの削除に失敗しました",
+      "sessionLoggedOut": "セッションからログアウトしました",
+      "logoutSessionFailed": "セッションのログアウトに失敗しました",
+      "identityUnlinked": "ID プロバイダーを解除しました",
+      "unlinkIdentityFailed": "ID プロバイダーの解除に失敗しました",
+      "startTwoFactorFailed": "二段階認証の開始に失敗しました",
+      "twoFactorEnabled": "二段階認証を有効化しました",
+      "enableTwoFactorFailed": "二段階認証の有効化に失敗しました",
+      "twoFactorDisabled": "二段階認証をオフにしました",
+      "disableTwoFactorFailed": "二段階認証のオフに失敗しました",
+      "recoveryCodesRegenerated": "復旧コードを再生成しました",
+      "regenerateRecoveryCodesFailed": "復旧コードの再生成に失敗しました",
+      "providerUnavailable": "この ID プロバイダーは現在バインドできません",
+      "bindIdentityFailed": "ID プロバイダーのバインドに失敗しました"
+    }
+  },
+  "chatPage": {
+    "defaultModel": {
+      "sectionTitle": "既定モデル",
+      "title": "新規会話の既定モデル",
+      "description": "新しい会話を開くときに事前選択されるモデルです。空欄の場合はシステム推奨の最初の利用可能モデルを使用します。",
+      "systemRecommended": "システム既定"
+    },
+    "input": {
+      "sectionTitle": "入力と送信",
+      "shortcutTitle": "送信ショートカット",
+      "shortcutDescription": "現在のプラットフォームでは {shortcut} でメッセージを送信します。",
+      "heightTitle": "入力欄の高さ",
+      "heightDescription": "入力欄の自動拡張時に使用できる最大高さを制御します。",
+      "height": {
+        "compact": "コンパクト",
+        "standard": "標準",
+        "loose": "広め"
+      },
+      "restoreDraftTitle": "下書きを自動復元",
+      "restoreDraftDescription": "送信失敗時に今回送信したテキストと添付を自動復元するかを制御します。",
+      "preserveDraftTitle": "会話下書きを保持",
+      "preserveDraftDescription": "会話を切り替えた後、現在の会話の未送信内容を保持して復元するかを制御します。"
+    },
+    "display": {
+      "sectionTitle": "表示とレンダリング",
+      "markdownTitle": "Markdown レンダリング",
+      "markdownDescription": "AI の返信をフォーマット済み Markdown としてレンダリングするかを制御します。",
+      "modelTitle": "呼び出しモデルを表示",
+      "modelDescription": "AI 返信の下に今回呼び出したモデルを表示するかを制御します。",
+      "tokenTitle": "Token 使用量を表示",
+      "tokenDescription": "AI 返信の下に今回のリクエストで消費した Token 使用量を表示するかを制御します。",
+      "latencyTitle": "呼び出し総時間を表示",
+      "latencyDescription": "AI 返信の下に今回の呼び出し総時間を表示するかを制御します。",
+      "costTitle": "呼び出し総費用を表示",
+      "costDescription": "AI 返信の下に今回の呼び出し総費用を表示するかを制御します。",
+      "costDescriptionSelfMode": "AI 返信の下に今回の呼び出し総費用を表示するかを制御します。自用モードでは表示されません。"
+    },
+    "context": {
+      "sectionTitle": "コンテキスト管理",
+      "autoCompactTitle": "コンテキストを自動圧縮",
+      "autoCompactDescription": "会話コンテキストがモデル制限に近づいたとき、初期メッセージを自動で要約圧縮し、会話の連続性を保ちます。オフの場合は手動で圧縮を開始する必要があります。"
+    },
+    "file": {
+      "sectionTitle": "ファイル処理",
+      "modeTitle": "ファイル処理モード",
+      "mode": {
+        "auto": "自動",
+        "fullContext": "全文注入",
+        "rag": "ベクトル検索"
+      },
+      "modeDescription": {
+        "auto": "現在: 自動 — システムがファイルサイズ、種類、コンテキスト予算、検索能力に基づいて全文注入または RAG を自動選択します（推奨）。",
+        "fullContext": "現在: 全文注入 — 以後の各ターンで会話ファイル内容をできるだけコンテキストに入れます。小さなファイルの精密分析に適しています。",
+        "rag": "現在: RAG — 以後の各ターンで会話ファイルの関連断片を優先的に検索します。検索が利用できない場合は全文注入にフォールバックします。"
+      }
+    },
+    "memory": {
+      "sectionTitle": "AI の好み記憶",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "delete": "削除",
+      "edit": "好みを編集",
+      "confirmDelete": "この好みを削除しますか？",
+      "separator": ": ",
+      "addTitle": "好みを追加",
+      "addDescription": "保存後、AI 返信時の長期的な好み参照として使用されます。",
+      "name": "名前",
+      "namePlaceholder": "例: 返信スタイル",
+      "content": "好みの内容",
+      "contentPlaceholder": "例: 簡潔で直接的に、冗長な説明を避ける",
+      "adding": "追加中",
+      "add": "追加",
+      "added": "好みを追加しました",
+      "addFailed": "追加に失敗しました",
+      "updated": "更新しました",
+      "updateFailed": "更新に失敗しました",
+      "deleted": "削除しました",
+      "deleteFailed": "削除に失敗しました",
+      "full": "上限に達しました",
+      "addPreference": "好みを追加",
+      "empty": "好みの記憶はまだありません。"
+    },
+    "toasts": {
+      "saveFailed": "保存に失敗しました",
+      "retryLater": "しばらくしてからもう一度お試しください。"
+    }
+  },
+  "subscriptionPage": {
+    "title": "サブスクリプション",
+    "actions": {
+      "cancel": "キャンセル",
+      "processing": "処理中"
+    },
+    "interval": {
+      "lifetime": "永久",
+      "year": "年",
+      "month": "月"
+    },
+    "currentSubscription": {
+      "title": "現在のサブスクリプション",
+      "none": "未契約",
+      "empty": "利用可能なサブスクリプションプランはありません",
+      "subscribe": "契約"
+    },
+    "periodUsage": {
+      "title": "プラン使用状況",
+      "currentPeriod": "現在の請求期間",
+      "used": "使用済み {value}",
+      "total": "総枠 {value}"
+    },
+    "usageBilling": {
+      "title": "従量課金",
+      "balance": "アカウント残高 {value}",
+      "topUp": "チャージ"
+    },
+    "selfMode": {
+      "title": "課金モード",
+      "value": "自用モード"
+    },
+    "usageTrend": {
+      "dailyTitle": "日別利用量推移",
+      "monthlyTitle": "月別利用量推移",
+      "daily": "日別",
+      "monthly": "月別",
+      "dailyUsage": "日次利用量",
+      "monthlyUsage": "月次利用量",
+      "empty": "利用データはありません。",
+      "metrics": {
+        "totalCost": "総費用",
+        "totalTokens": "総 Tokens",
+        "totalCalls": "総呼び出し",
+        "averageLatency": "平均時間"
+      },
+      "tooltip": {
+        "cost": "費用",
+        "calls": "呼び出し"
+      }
+    },
+    "usageLog": {
+      "title": "利用ログ",
+      "searchModel": "モデルを検索",
+      "type": "タイプ",
+      "filters": {
+        "all": "すべて",
+        "free": "無料モデル",
+        "billable": "課金モデル"
+      },
+      "sort": {
+        "newest": "最新の呼び出し",
+        "oldest": "最古の呼び出し",
+        "tokensDesc": "Tokens 多い順",
+        "costDesc": "費用 高い順",
+        "latencyDesc": "時間 長い順"
+      },
+      "columns": {
+        "time": "時間",
+        "model": "モデル",
+        "baseBilling": "基本課金",
+        "serviceBilling": "サービス課金",
+        "latency": "所要時間"
+      },
+      "empty": "利用ログはありません"
+    },
+    "billingTooltip": {
+      "cacheWrite": "キャッシュ(書)",
+      "cacheWrite5m": "キャッシュ(書 5m)",
+      "cacheWrite1h": "キャッシュ(書 1h)",
+      "cacheWrite5m1h": "キャッシュ(書 5m/1h)",
+      "cacheWritePricingLabel": "キャッシュ(書 5m)",
+      "cacheWritePricingNote": "Claude のキャッシュ読み取りは管理画面設定に従います。キャッシュ書き込み 5m は設定価格の 1.25x、1h は 2x、Fast Mode はさらにその上に 6x が適用されます。",
+      "claudeCacheWriteMixedNote": "Claude キャッシュ書き込みは管理画面設定価格の {multiplier} で課金されます。",
+      "claudeCacheWriteNote": "Claude {timeout} キャッシュ書き込みは管理画面設定価格の {multiplier} で課金されます。",
+      "claudeFastModeNote": "Claude Fast Mode: 入力、出力、キャッシュ費用は {multiplier} で課金されます。",
+      "openaiServiceTierNote": "OpenAI service_tier={tier}: {multiplier} で課金されます。",
+      "baseService": "基本サービス",
+      "input": "入力",
+      "output": "出力",
+      "cacheRead": "キャッシュ(読)",
+      "rateNote": "倍率説明",
+      "cacheNote": "キャッシュ説明",
+      "total": "合計",
+      "subtotal": "小計",
+      "freeModelNoBilling": "無料モデルのため課金されません",
+      "perCall": "1 回あたり",
+      "perSecond": "1 秒あたり",
+      "callUnit": "回",
+      "secondUnit": "秒",
+      "tieredRangeBounded": "元入力範囲 {from}-{upTo}",
+      "tieredRangeOpen": "元入力範囲 {from}+",
+      "table": {
+        "item": "課金項目",
+        "usage": "利用量",
+        "unitPrice": "単価",
+        "amount": "金額"
+      }
+    },
+    "plans": {
+      "title": "サブスクリプションプラン",
+      "actions": {
+        "current": "現在のプラン",
+        "unavailable": "利用不可",
+        "subscribe": "契約",
+        "switch": "切り替え"
+      },
+      "features": {
+        "monthlyCredit": "{credit} 月額枠",
+        "freeModelsNotIncluded": "無料モデルは枠に含まれません"
+      }
+    },
+    "payment": {
+      "title": "支払い方法を選択",
+      "description": "支払い方法を確認して続行します。",
+      "method": "支払い方法",
+      "card": "銀行カード",
+      "disabled": "未有効",
+      "continue": "支払いへ進む",
+      "epay": {
+        "alipay": "Alipay",
+        "wxpay": "WeChat Pay",
+        "qqpay": "QQ Wallet",
+        "custom": "カスタム · {type}"
+      }
+    },
+    "topUp": {
+      "title": "チャージ",
+      "description": "米ドル金額を入力",
+      "amount": "チャージ金額",
+      "amountAria": "チャージする米ドル金額",
+      "confirm": "チャージ"
+    },
+    "toasts": {
+      "retryLater": "しばらくしてからもう一度お試しください。",
+      "subscriptionLoadFailed": "サブスクリプション情報の読み込みに失敗しました",
+      "usageLogLoadFailed": "利用ログの読み込みに失敗しました",
+      "checkoutCreateFailed": "支払いの作成に失敗しました",
+      "checkoutURLMissing": "支払いチャネルからチェックアウト URL が返されませんでした。",
+      "planUpdated": "サブスクリプションプランを更新しました",
+      "subscribeFailed": "契約に失敗しました",
+      "invalidTopUpAmount": "チャージ金額が無効です",
+      "invalidTopUpAmountDescription": "0 より大きい米ドル金額を入力してください。",
+      "planUnavailable": "プランを利用できません",
+      "planUnavailableDescription": "現在のプランには利用可能な価格がありません。管理者に課金設定の確認を依頼してください。",
+      "paymentDisabled": "支払いチャネルが有効ではありません",
+      "paymentDisabledDescription": "有料プランを契約するには、先に管理画面で支払い設定を完了する必要があります。",
+      "noPlanSelected": "プランが選択されていません",
+      "noPlanSelectedDescription": "先に契約するプランを選択してください。"
+    }
+  }
+}

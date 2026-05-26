@@ -16,7 +16,7 @@ export function createDraftFromUser(user?: UserDTO | null): ProfileDraft {
     avatarUrl: normalizeString(user?.avatarURL),
     displayName: normalizeString(user?.displayName),
     timezone: normalizeString(user?.timezone, "Etc/UTC"),
-    locale: normalizeString(user?.locale, "en-US"),
+    locale: normalizeString(user?.locale, "zh-CN"),
     profilePreferences: normalizeString(user?.profilePreferences),
   };
 }

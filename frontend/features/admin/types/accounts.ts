@@ -84,7 +84,7 @@ export const DEFAULT_CREATE_USER_PAYLOAD: CreateUserPayload = {
   password: "",
   email: "",
   timezone: "Etc/UTC",
-  locale: "en-US",
+  locale: "zh-CN",
   subscriptionTier: "free",
   subscriptionExpiresAt: "",
 };

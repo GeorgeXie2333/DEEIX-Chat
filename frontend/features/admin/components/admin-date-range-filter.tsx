@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { enUS, zhCN } from "date-fns/locale";
+import { enUS, ja, zhCN } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { DateRange } from "react-day-picker";
@@ -33,6 +33,16 @@ function parseDateValue(value: string): Date | undefined {
   }
   const date = new Date(year, month - 1, day);
   return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function resolveCalendarLocale(locale: string) {
+  if (locale === "zh-CN") {
+    return zhCN;
+  }
+  if (locale === "ja-JP") {
+    return ja;
+  }
+  return enUS;
 }
 
 export function AdminDateRangeFilter({
@@ -80,7 +90,7 @@ export function AdminDateRangeFilter({
             mode="range"
             defaultMonth={selectedRange?.from}
             selected={selectedRange}
-            locale={locale === "zh-CN" ? zhCN : enUS}
+            locale={resolveCalendarLocale(locale)}
             onSelect={(range) => {
               onFromChange(range?.from ? format(range.from, "yyyy-MM-dd") : "");
               onToChange(range?.to ? format(range.to, "yyyy-MM-dd") : "");

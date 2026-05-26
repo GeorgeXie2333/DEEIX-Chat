@@ -584,6 +584,9 @@ definitions:
       email:
         maxLength: 128
         type: string
+      locale:
+        maxLength: 16
+        type: string
       password:
         maxLength: 128
         minLength: 8
@@ -599,6 +602,9 @@ definitions:
     properties:
       email:
         maxLength: 128
+        type: string
+      locale:
+        maxLength: 16
         type: string
       turnstileToken:
         maxLength: 2048
@@ -3640,7 +3646,7 @@ info:
   contact: {}
   description: DEEIX Chat 后端 API 文档
   title: DEEIX Chat API
-  version: "0.1.2"
+  version: 0.1.2
 paths:
   /admin/audit-logs:
     get:

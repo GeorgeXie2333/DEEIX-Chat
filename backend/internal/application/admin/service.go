@@ -870,7 +870,7 @@ func (s *Service) PatchUserByAdmin(
 func normalizeAdminLocale(raw string) (string, error) {
 	trimmed := strings.TrimSpace(raw)
 	if trimmed == "" {
-		return "en-US", nil
+		return "zh-CN", nil
 	}
 
 	normalized := strings.ReplaceAll(trimmed, "_", "-")

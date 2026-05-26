@@ -1,0 +1,508 @@
+{
+  "groups": {
+    "uploadLimits": {
+      "title": "アップロード制限"
+    },
+    "extraction": {
+      "title": "内容抽出"
+    },
+    "fullContext": {
+      "title": "全文注入"
+    },
+    "embedding": {
+      "title": "ベクトル検索"
+    },
+    "semantic": {
+      "title": "セマンティック強化"
+    },
+    "rag": {
+      "title": "RAG"
+    },
+    "contextCompression": {
+      "title": "コンテキスト圧縮強化"
+    }
+  },
+  "model": {
+    "followCurrent": "現在のモデルに従う"
+  },
+  "runtime": {
+    "address": "URL",
+    "testConnection": "接続をテスト"
+  },
+  "embeddingStatus": {
+    "title": "ベクトルインデックス状態",
+    "noSignature": "署名はまだ生成されていません（初回保存後に自動計算されます）",
+    "reindex": "インデックスを再構築",
+    "reindexing": "再構築中...",
+    "ready": "準備完了",
+    "stale": "失効",
+    "pending": "処理待ち",
+    "failed": "失敗",
+    "empty": "データはまだありません（Embedding サービス設定後に利用できます）",
+    "needsReindex": "失効したベクトルが検出されました。「インデックスを再構築」をクリックして検索機能を回復してください。"
+  },
+  "toast": {
+    "sessionExpired": "ログイン状態が失効しました",
+    "sessionExpiredDescription": "続行するには再度ログインしてください。",
+    "unknownError": "リクエストに失敗しました。しばらくしてからもう一度お試しください。",
+    "cannotEnable": "有効化できません",
+    "saveFailed": "保存に失敗しました",
+    "loadFailed": "ファイルポリシーの読み込みに失敗しました",
+    "serviceTestFailed": "{service} のテストに失敗しました",
+    "reindexSubmitted": "インデックス再構築を送信しました",
+    "reindexSubmittedDescription": "{count} 件のファイル再構築タスクを送信しました。バックグラウンドで非同期実行されます。",
+    "reindexFailed": "インデックス再構築に失敗しました",
+    "embeddingModelChanged": "Embedding モデルが変更されました",
+    "embeddingModelChangedDescription": "既存のベクトルは失効としてマークされました。インデックス状態パネルで「インデックスを再構築」をクリックし、すべてのファイルを再ベクトル化してください。",
+    "groupUpdated": "{group}を更新しました"
+  },
+  "validation": {
+    "embeddingRequired": "先に「ベクトル検索」で Embedding サービス URL とリクエストモデルを有効化して設定してください。",
+    "messageEmbeddingRequired": "先にメッセージベクトル化を有効にしてください。",
+    "messageEmbeddingRequiredBeforeSemantic": "セマンティックコンテキスト再呼び出しを有効にする前に、メッセージベクトル化を有効にしてください。",
+    "tikaBaseURLRequired": "Tika サービス URL は必須です。",
+    "doclingBaseURLRequired": "Docling サービス URL は必須です。",
+    "mineruBaseURLRequired": "MinerU サービス URL は必須です。",
+    "tesseractBaseURLRequired": "Tesseract OCR サービス URL は必須です。",
+    "rapidOCRBaseURLRequired": "Rapid OCR サービス URL は必須です。",
+    "paddleOCRBaseURLRequired": "Paddle OCR サービス URL は必須です。",
+    "tencentOCRRequired": "Tencent Cloud OCR の SecretId、SecretKey、リージョンは必須です。",
+    "aliyunOCRRequired": "Alibaba Cloud OCR の AccessKey ID、AccessKey Secret、リージョンは必須です。",
+    "llmOCRBaseURLRequired": "LLM OCR サービス URL は必須です。",
+    "llmOCRModelRequired": "LLM OCR リクエストモデルは必須です。",
+    "embeddingModelRequired": "Embedding リクエストモデルは必須です。",
+    "embeddingHostRequired": "Embedding サービス URL は必須です。"
+  },
+  "fields": {
+    "storage": {
+      "max_message_files": {
+        "label": "添付ファイル数上限",
+        "description": "1 件の会話メッセージに添付できるファイル数を制限します。",
+        "placeholder": "数量を入力"
+      },
+      "max_upload_file_bytes": {
+        "label": "既定サイズ上限",
+        "description": "単一添付ファイルの既定サイズ上限を設定します。画面上の単位は MB です。",
+        "placeholder": "サイズ上限（MB）"
+      }
+    },
+    "file": {
+      "allowed_mime_types": {
+        "label": "添付 MIME 許可リスト",
+        "description": "アップロードを許可する添付 MIME タイプを制限します。複数の値はカンマで区切ります。",
+        "placeholder": "MIME タイプをカンマ区切りで入力"
+      },
+      "image_max_bytes": {
+        "label": "画像サイズ上限",
+        "description": "画像添付のサイズ上限だけを個別に上書きします。画面上の単位は MB です。空欄の場合は既定の添付サイズ上限に戻ります。",
+        "placeholder": "空欄の場合は既定の添付サイズ上限を使用"
+      },
+      "doc_max_bytes": {
+        "label": "文書サイズ上限",
+        "description": "文書添付のサイズ上限だけを個別に上書きします。画面上の単位は MB です。空欄の場合は既定の添付サイズ上限に戻ります。",
+        "placeholder": "空欄の場合は既定の添付サイズ上限を使用"
+      },
+      "full_context_limit_enabled": {
+        "label": "全文注入制限",
+        "description": "有効にすると、サイズ、Token、PDF ページ数に基づいて全文注入を制限します。無効にすると全文注入しきい値は制限されません。",
+        "options": {
+          "false": "オフ",
+          "true": "オン"
+        }
+      },
+      "file_full_context_max_bytes": {
+        "label": "全文サイズ上限",
+        "description": "全文注入で許可する最大テキストバイト数を制限します。空欄または 0 はサイズ無制限を表します。",
+        "placeholder": "空欄または 0 は無制限"
+      },
+      "full_context_max_tokens": {
+        "label": "全文 Token 上限",
+        "description": "全文注入で許可する最大 Token 予算を制限します。空欄または 0 は Token 無制限を表します。",
+        "placeholder": "空欄または 0 は無制限"
+      },
+      "full_context_pdf_max_pages": {
+        "label": "全文ページ数上限",
+        "description": "PDF を全文注入する際に許可する最大ページ数を制限します。空欄または 0 はページ数無制限を表します。",
+        "placeholder": "空欄または 0 は無制限"
+      },
+      "embedding_enabled": {
+        "label": "Embedding スイッチ",
+        "description": "有効にすると、ファイルのベクトル化とベクトル検索を使用できます。無効にすると関連処理は停止します。",
+        "options": {
+          "false": "オフ",
+          "true": "オン"
+        }
+      },
+      "embedding_host": {
+        "label": "Embedding サービス URL *",
+        "description": "Embedding サービス URL を設定します。サービスは OpenAI `/embeddings` API と互換である必要があります。",
+        "placeholder": "サービス URL"
+      },
+      "embedding_key": {
+        "label": "Embedding 認証キー",
+        "description": "Embedding サービス呼び出し時に使用する認証キーを設定します。",
+        "placeholder": "認証キー"
+      },
+      "rag_model": {
+        "label": "Embedding モデル *",
+        "description": "ベクトル化に使用するモデル名を指定します。",
+        "placeholder": "モデル名"
+      },
+      "embedding_timeout_seconds": {
+        "label": "Embedding タイムアウト",
+        "description": "1 回の Embedding API リクエストの最大待機時間を秒単位で設定します。",
+        "placeholder": "タイムアウト（秒）"
+      },
+      "embedding_output_dimensions": {
+        "label": "ベクトル次元",
+        "description": "保存と検索で統一して使用するベクトル次元を指定します。",
+        "placeholder": "ベクトル次元"
+      },
+      "embedding_normalize": {
+        "label": "ベクトルを正規化",
+        "description": "有効にするとベクトルを正規化します。"
+      },
+      "embed_trigger_on_upload": {
+        "label": "自動ベクトル化",
+        "description": "ファイルアップロード完了後、すぐに非同期で Embedding を開始します。"
+      },
+      "embed_batch_size": {
+        "label": "バッチサイズ",
+        "description": "1 回の Embedding API リクエストに含めるテキスト数を設定します。",
+        "placeholder": "バッチサイズ"
+      },
+      "embed_chunk_size_tokens": {
+        "label": "チャンクサイズ",
+        "description": "文書ベクトル化時のチャンクサイズを Token 概算で設定します。",
+        "placeholder": "チャンクサイズ（Token）"
+      },
+      "embed_chunk_overlap_tokens": {
+        "label": "チャンク重なり",
+        "description": "隣接チャンク間の Token 重なり量を設定します。",
+        "placeholder": "チャンク重なり（Token）"
+      },
+      "rag_top_k": {
+        "label": "再呼び出しチャンク数",
+        "description": "RAG が最終的に返し、注入に使用するチャンク数を設定します。",
+        "placeholder": "返すチャンク数"
+      }
+    },
+    "extract": {
+      "engine": {
+        "label": "抽出エンジン",
+        "description": "ファイル内容抽出のメイン処理エンジンを選択します。",
+        "options": {
+          "builtin": "組み込み",
+          "tika": "Tika",
+          "docling": "Docling",
+          "mineru": "MinerU"
+        }
+      },
+      "tika_base_url": {
+        "label": "Tika サービス URL *",
+        "description": "Apache Tika サービス URL を設定します。",
+        "placeholder": "サービス URL"
+      },
+      "tika_auth_token": {
+        "label": "Tika 認証キー",
+        "description": "Tika サービス呼び出し時に付与する認証キーを設定します。",
+        "placeholder": "認証キー（任意）"
+      },
+      "tika_timeout_seconds": {
+        "label": "Tika タイムアウト",
+        "description": "1 回の Tika 解析リクエストの最大待機時間を秒単位で設定します。",
+        "placeholder": "タイムアウト（秒）"
+      },
+      "docling_base_url": {
+        "label": "Docling サービス URL *",
+        "description": "Docling サービス URL を設定します。",
+        "placeholder": "サービス URL"
+      },
+      "docling_auth_token": {
+        "label": "Docling 認証キー",
+        "description": "Docling サービス呼び出し時に付与する認証キーを設定します。",
+        "placeholder": "認証キー（任意）"
+      },
+      "docling_timeout_seconds": {
+        "label": "Docling タイムアウト",
+        "description": "1 回の Docling 解析リクエストの最大待機時間を秒単位で設定します。",
+        "placeholder": "タイムアウト（秒）"
+      },
+      "mineru_source": {
+        "label": "MinerU サービス種別",
+        "description": "MinerU のクラウドサービスまたはセルフホストサービスを選択します。",
+        "options": {
+          "cloud": "クラウドサービス",
+          "self_hosted": "セルフホスト"
+        }
+      },
+      "mineru_base_url": {
+        "label": "MinerU サービス URL *",
+        "description": "MinerU サービス URL を設定します。",
+        "placeholder": "サービス URL"
+      },
+      "mineru_auth_token": {
+        "label": "MinerU 認証キー",
+        "description": "MinerU サービス呼び出し時に使用する Token または API Key を設定します。",
+        "placeholder": "認証キー（任意）"
+      },
+      "mineru_timeout_seconds": {
+        "label": "MinerU タイムアウト",
+        "description": "1 回の MinerU 解析リクエストの最大待機時間を秒単位で設定します。",
+        "placeholder": "タイムアウト（秒）"
+      },
+      "image_ocr_enabled": {
+        "label": "画像 OCR",
+        "description": "有効にすると、画像添付を OCR 処理に送り、検索に使えるテキスト結果を生成します。"
+      },
+      "pdf_ocr_fallback_enabled": {
+        "label": "PDF OCR フォールバック",
+        "description": "有効にすると、PDF のネイティブテキスト抽出が失敗した場合や品質が低い場合に OCR フォールバック認識を使用します。"
+      },
+      "ocr_engine": {
+        "label": "OCR エンジン",
+        "description": "画像 OCR と PDF OCR フォールバックで共通して使用する認識エンジンを選択します。",
+        "options": {
+          "rapidocr": "Rapid OCR",
+          "tesseract": "Tesseract OCR",
+          "paddle": "Paddle OCR",
+          "tencent": "Tencent Cloud OCR",
+          "aliyun": "Alibaba Cloud OCR",
+          "llm": "LLM OCR"
+        }
+      },
+      "tesseract_ocr_base_url": {
+        "label": "Tesseract OCR サービス URL *",
+        "description": "Tesseract OCR サービス URL を設定します。",
+        "placeholder": "サービス URL"
+      },
+      "tesseract_ocr_auth_token": {
+        "label": "Tesseract OCR 認証キー",
+        "description": "Tesseract OCR サービス呼び出し時に付与する認証キーを設定します。",
+        "placeholder": "認証キー（任意）"
+      },
+      "tesseract_ocr_timeout_seconds": {
+        "label": "Tesseract OCR タイムアウト",
+        "description": "1 回の Tesseract OCR リクエストの最大待機時間を秒単位で設定します。",
+        "placeholder": "タイムアウト（秒）"
+      },
+      "rapidocr_base_url": {
+        "label": "Rapid OCR サービス URL *",
+        "description": "Rapid OCR サービス URL を設定します。",
+        "placeholder": "サービス URL"
+      },
+      "rapidocr_auth_token": {
+        "label": "Rapid OCR 認証キー",
+        "description": "Rapid OCR サービス呼び出し時に付与する認証キーを設定します。",
+        "placeholder": "認証キー（任意）"
+      },
+      "rapidocr_timeout_seconds": {
+        "label": "Rapid OCR タイムアウト",
+        "description": "1 回の Rapid OCR リクエストの最大待機時間を秒単位で設定します。",
+        "placeholder": "タイムアウト（秒）"
+      },
+      "paddle_ocr_base_url": {
+        "label": "Paddle OCR サービス URL *",
+        "description": "Paddle OCR サービス URL を設定します。",
+        "placeholder": "サービス URL"
+      },
+      "paddle_ocr_auth_token": {
+        "label": "Paddle OCR 認証キー",
+        "description": "Paddle OCR サービス呼び出し時に付与する認証キーを設定します。",
+        "placeholder": "認証キー（任意）"
+      },
+      "paddle_ocr_timeout_seconds": {
+        "label": "Paddle OCR タイムアウト",
+        "description": "1 回の Paddle OCR リクエストの最大待機時間を秒単位で設定します。",
+        "placeholder": "タイムアウト（秒）"
+      },
+      "tencent_ocr_secret_id": {
+        "label": "Tencent Cloud SecretId *",
+        "description": "Tencent Cloud OCR API の呼び出しに必要な SecretId を設定します。",
+        "placeholder": "SecretId"
+      },
+      "tencent_ocr_secret_key": {
+        "label": "Tencent Cloud SecretKey *",
+        "description": "Tencent Cloud OCR API の呼び出しに必要な SecretKey を設定します。",
+        "placeholder": "SecretKey"
+      },
+      "tencent_ocr_region": {
+        "label": "Tencent Cloud リージョン",
+        "description": "Tencent Cloud OCR API のリクエストリージョンを設定します。",
+        "placeholder": "リージョン"
+      },
+      "tencent_ocr_endpoint": {
+        "label": "Tencent Cloud エンドポイント",
+        "description": "Tencent Cloud OCR API のエンドポイント URL を設定します。",
+        "placeholder": "エンドポイント"
+      },
+      "tencent_ocr_timeout_seconds": {
+        "label": "Tencent Cloud OCR タイムアウト",
+        "description": "1 回の Tencent Cloud OCR リクエストの最大待機時間を秒単位で設定します。",
+        "placeholder": "タイムアウト（秒）"
+      },
+      "aliyun_ocr_access_key_id": {
+        "label": "Alibaba Cloud AccessKey ID *",
+        "description": "Alibaba Cloud OCR API の呼び出しに必要な AccessKey ID を設定します。",
+        "placeholder": "AccessKey ID"
+      },
+      "aliyun_ocr_access_key_secret": {
+        "label": "Alibaba Cloud AccessKey Secret *",
+        "description": "Alibaba Cloud OCR API の呼び出しに必要な AccessKey Secret を設定します。",
+        "placeholder": "AccessKey Secret"
+      },
+      "aliyun_ocr_region": {
+        "label": "Alibaba Cloud リージョン",
+        "description": "Alibaba Cloud OCR API のリクエストリージョンを設定します。",
+        "placeholder": "リージョン"
+      },
+      "aliyun_ocr_endpoint": {
+        "label": "Alibaba Cloud エンドポイント",
+        "description": "Alibaba Cloud OCR API のエンドポイント URL を設定します。",
+        "placeholder": "エンドポイント"
+      },
+      "aliyun_ocr_timeout_seconds": {
+        "label": "Alibaba Cloud OCR タイムアウト",
+        "description": "1 回の Alibaba Cloud OCR リクエストの最大待機時間を秒単位で設定します。",
+        "placeholder": "タイムアウト（秒）"
+      },
+      "llm_ocr_base_url": {
+        "label": "LLM OCR サービス URL *",
+        "description": "OpenAI 互換の視覚モデルサービス URL を設定します。",
+        "placeholder": "サービス URL"
+      },
+      "llm_ocr_auth_token": {
+        "label": "LLM OCR 認証キー",
+        "description": "LLM OCR サービス呼び出し時に使用する API Key を設定します。",
+        "placeholder": "API Key（任意）"
+      },
+      "llm_ocr_model": {
+        "label": "LLM OCR リクエストモデル *",
+        "description": "OCR を実行する視覚モデル名を指定します。",
+        "placeholder": "モデル名"
+      },
+      "llm_ocr_timeout_seconds": {
+        "label": "LLM OCR タイムアウト",
+        "description": "1 回の LLM OCR リクエストの最大待機時間を秒単位で設定します。",
+        "placeholder": "タイムアウト（秒）"
+      },
+      "llm_ocr_prompt": {
+        "label": "LLM OCR プロンプト",
+        "description": "視覚モデルへ送信する OCR 指示を設定します。",
+        "placeholder": "プロンプト（任意）"
+      }
+    },
+    "chat": {
+      "message_embedding_enabled": {
+        "label": "メッセージベクトル化",
+        "description": "有効にすると、各会話ターンの完了後にメッセージベクトルを非同期生成します。利用可能な Embedding サービスに依存します。"
+      },
+      "semantic_context_enabled": {
+        "label": "セマンティックコンテキスト再呼び出し",
+        "description": "有効にすると、メッセージ送信時に関連する過去の断片を自動で再呼び出し、コンテキストへ注入します。メッセージベクトルデータが利用可能である必要があります。"
+      },
+      "rag_enabled": {
+        "label": "RAG スイッチ",
+        "description": "有効にすると、ファイルを検索強化パイプラインに投入できます。利用可能な Embedding サービスに依存します。"
+      },
+      "rag_min_similarity": {
+        "label": "類似度しきい値",
+        "description": "断片注入の最低類似度しきい値を設定します。",
+        "placeholder": "類似度しきい値"
+      },
+      "rag_token_budget": {
+        "label": "注入 Token 予算",
+        "description": "検索断片をコンテキストに注入するときに使用できる Token 予算を制限します。",
+        "placeholder": "Token 予算"
+      },
+      "rag_fetch_multiplier": {
+        "label": "取得倍率",
+        "description": "候補取得倍率を設定します。システムはより多くの候補を先に取得し、その後二次選別を行います。",
+        "placeholder": "取得倍率"
+      },
+      "rag_wait_ready_ms": {
+        "label": "準備待機時間",
+        "description": "リクエスト送信時にベクトル化結果の準備完了を待つ最大時間をミリ秒単位で設定します。",
+        "placeholder": "待機時間（ミリ秒）"
+      },
+      "rag_query_history_turns": {
+        "label": "履歴結合ターン数",
+        "description": "検索クエリ生成時に追加で取り込める直近ユーザーターン数を設定します。",
+        "placeholder": "履歴ターン数"
+      },
+      "rag_retrieval_cache_ttl_seconds": {
+        "label": "検索キャッシュ時間",
+        "description": "RAG 検索結果のキャッシュ時間を秒単位で設定します。",
+        "placeholder": "キャッシュ時間（秒）"
+      },
+      "rag_hybrid_enabled": {
+        "label": "ハイブリッド検索（BM25+ベクトル）",
+        "description": "有効にすると、ベクトル検索と全文検索を並列実行し、RRF で結果を統合します。"
+      },
+      "context_token_budget_enabled": {
+        "label": "Token 予算による切り詰め",
+        "description": "有効にすると、現在のモデルのコンテキストウィンドウに基づいて予算を自動計算し、送信可能な履歴メッセージを切り詰めます。"
+      },
+      "context_max_turns": {
+        "label": "圧縮トリガーターン数",
+        "description": "ターン数に基づいてコンテキスト圧縮を開始するしきい値を設定します。",
+        "placeholder": "トリガーターン数"
+      },
+      "context_compact_trigger_tokens": {
+        "label": "圧縮 Token しきい値",
+        "description": "Token 規模に基づいてコンテキスト圧縮を開始するしきい値を設定します。",
+        "placeholder": "Token しきい値"
+      },
+      "context_compact_preserve_recent_turns": {
+        "label": "原文保持ターン数",
+        "description": "圧縮時に保持する直近の元ターン数を設定します。それ以前の内容は要約に書き込まれます。",
+        "placeholder": "保持ターン数"
+      },
+      "context_compact_highlights_per_role": {
+        "label": "ロールごとの要約件数",
+        "description": "テンプレート圧縮時に、ユーザーとアシスタントそれぞれで最大何件の要約情報を保持するかを設定します。",
+        "placeholder": "要約件数"
+      },
+      "context_compact_snippet_chars": {
+        "label": "断片文字数上限",
+        "description": "テンプレート圧縮時に、1 件のメッセージ断片で保持できる最大文字数を設定します。",
+        "placeholder": "文字数上限"
+      },
+      "context_artifact_retention_days": {
+        "label": "証拠保持日数",
+        "description": "コンテキスト証拠の保持期間を設定します。RAG 結果、履歴証拠、ツール結果を含みます。`0` は自動期限切れなしを表します。",
+        "placeholder": "保持日数"
+      },
+      "compact_llm_enabled": {
+        "label": "LLM 圧縮",
+        "description": "有効にすると、モデルを呼び出して意味的な要約を生成します。無効の場合はテンプレート要約のみ使用します。"
+      },
+      "compact_async_enabled": {
+        "label": "非同期圧縮",
+        "description": "有効にすると、現在の返信処理のブロックを減らすため、バックグラウンドで圧縮タスクを非同期実行します。"
+      },
+      "compact_task_model": {
+        "label": "圧縮モデル",
+        "description": "圧縮要約生成に使用するモデルを指定します。`follow` を選択すると現在の会話モデルを再利用します。",
+        "options": {
+          "follow": "現在のモデルに従う"
+        }
+      },
+      "compact_max_failures": {
+        "label": "遮断しきい値",
+        "description": "LLM 圧縮の連続失敗しきい値を設定します。到達すると自動的にテンプレート要約へ降格します。",
+        "placeholder": "遮断しきい値"
+      },
+      "compact_system_prompt": {
+        "label": "全量要約プロンプト",
+        "description": "全量圧縮時に LLM へ送信する指示をカスタマイズします。空欄の場合は組み込み既定値を使用します。",
+        "placeholder": "空欄の場合は既定プロンプトを使用"
+      },
+      "compact_light_prompt": {
+        "label": "軽量要約プロンプト",
+        "description": "軽量圧縮時に LLM へ送信する指示をカスタマイズします。空欄の場合は組み込み既定値を使用します。",
+        "placeholder": "空欄の場合は既定プロンプトを使用"
+      }
+    }
+  }
+}

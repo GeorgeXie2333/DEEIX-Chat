@@ -11,6 +11,7 @@ import { resolveApiBaseURL } from "@/shared/api/http-client";
 import { isPasswordPolicyValid } from "@/shared/auth/account-policy";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { writeSessionSnapshot } from "@/shared/auth/session";
+import { useAppLocale } from "@/i18n/app-i18n-provider";
 import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import {
   createProviderPKCE,
@@ -52,6 +53,7 @@ function parseSecurityVerificationMethods(value: string | null): SecurityVerific
 export function useLoginPage({ nextPath }: UseLoginPageInput) {
   const router = useRouter();
   const t = useTranslations("login");
+  const { locale } = useAppLocale();
   const resolveErrorMessage = useLocalizedErrorMessage();
   const [settings, setSettings] = React.useState<LoginPageSettings>(DEFAULT_LOGIN_SETTINGS);
   const [options, setOptions] = React.useState<LoginOptionsData>(DEFAULT_LOGIN_OPTIONS);
@@ -235,11 +237,12 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
       params.set("next", resolvedNextPath);
       params.set("code_challenge", pkce.challenge);
       params.set("intent", intent);
+      params.set("locale", locale);
       window.location.href = `${resolveApiBaseURL()}/api/v1/auth/providers/${encodeURIComponent(slug)}/start?${params.toString()}`;
     } catch {
       toast.error(t("toasts.providerStartFailed"));
     }
-  }, [resolvedNextPath, t]);
+  }, [locale, resolvedNextPath, t]);
 
   const requestRegisterCode = React.useCallback(async () => {
     if (!emailVerificationEnabled || sendingCode || registerCodeCooldownSeconds > 0) {
@@ -251,7 +254,7 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
     }
     setSendingCode(true);
     try {
-      const result = await startEmailRegistration(registerEmail, registerTurnstileRequired ? registerTurnstileToken : undefined);
+      const result = await startEmailRegistration(registerEmail, registerTurnstileRequired ? registerTurnstileToken : undefined, locale);
       setCodeSent(result.sent);
       setRegisterDebugCode(result.debugCode ?? "");
       if (result.sent) {
@@ -267,7 +270,7 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
       }
       setSendingCode(false);
     }
-  }, [emailVerificationEnabled, registerCodeCooldownSeconds, registerEmail, registerTurnstileRequired, registerTurnstileToken, resetRegisterTurnstile, resolveErrorMessage, sendingCode, t]);
+  }, [emailVerificationEnabled, locale, registerCodeCooldownSeconds, registerEmail, registerTurnstileRequired, registerTurnstileToken, resetRegisterTurnstile, resolveErrorMessage, sendingCode, t]);
 
   const requestTwoFactorEmailCode = React.useCallback(async () => {
     if (!twoFactorChallengeToken || twoFactorVerificationMethod !== "email" || sendingCode || twoFactorEmailCodeCooldownSeconds > 0) {
@@ -311,6 +314,7 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
           registerPassword,
           emailVerificationEnabled ? registerCode : "",
           registerTurnstileRequired && !emailVerificationEnabled ? registerTurnstileToken : undefined,
+          locale,
         );
         completeAuth(result.accessToken, result.sessionID);
       } catch (error) {
@@ -322,7 +326,7 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
         setSubmitting(false);
       }
     },
-    [completeAuth, emailVerificationEnabled, registerCode, registerEmail, registerPassword, registerTurnstileRequired, registerTurnstileToken, resetRegisterTurnstile, resolveErrorMessage, submitting, t],
+    [completeAuth, emailVerificationEnabled, locale, registerCode, registerEmail, registerPassword, registerTurnstileRequired, registerTurnstileToken, resetRegisterTurnstile, resolveErrorMessage, submitting, t],
   );
 
   const updateRegisterEmail = React.useCallback((value: string) => {

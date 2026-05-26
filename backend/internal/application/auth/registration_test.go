@@ -50,6 +50,17 @@ func TestBuildVerificationEmailMessageEncodesChineseSubject(t *testing.T) {
 	}
 }
 
+func TestBuildRegistrationVerificationEmailMessageJapanese(t *testing.T) {
+	message := buildVerificationEmailMessage("Comi AI <no-reply@example.com>", "user@example.com", "123456", registrationVerificationEmailTemplate("ja-JP"))
+
+	if !strings.Contains(message, "<html lang=\"ja-JP\">") {
+		t.Fatalf("expected ja-JP html lang, got:\n%s", message)
+	}
+	if !strings.Contains(message, "メール登録を完了") || !strings.Contains(message, "認証コード") {
+		t.Fatalf("expected Japanese registration email copy, got:\n%s", message)
+	}
+}
+
 func TestSendRegistrationVerificationEmailRejectsInvalidFrom(t *testing.T) {
 	service := NewService(config.Config{
 		Env:          "production",
@@ -60,7 +71,7 @@ func TestSendRegistrationVerificationEmailRejectsInvalidFrom(t *testing.T) {
 		SMTPFrom:     "不是合法发件人",
 	}, nil, nil)
 
-	err := service.sendRegistrationVerificationEmail("user@example.com", "123456")
+	err := service.sendRegistrationVerificationEmail("user@example.com", "123456", "zh-CN")
 	if err == nil || err.Error() != "smtp from is invalid" {
 		t.Fatalf("expected invalid from error, got %v", err)
 	}
@@ -176,7 +187,7 @@ func TestRequestEmailRegistrationUsesSendCooldown(t *testing.T) {
 		EmailVerificationEnabled: true,
 	}, repo, nil)
 
-	_, err := service.RequestEmailRegistration(context.Background(), "user@example.com", "", "", "", requestmeta.SessionAuditContext{})
+	_, err := service.RequestEmailRegistration(context.Background(), "user@example.com", "", "", "", "", requestmeta.SessionAuditContext{})
 	if err == nil || err.Error() != "verification code was sent recently" {
 		t.Fatalf("expected cooldown error, got %v", err)
 	}
@@ -195,7 +206,7 @@ func TestRequestEmailRegistrationRequiresTurnstileWhenEnabled(t *testing.T) {
 		TurnstileSecretKey:           "secret-key",
 	}, nil, nil)
 
-	_, err := service.RequestEmailRegistration(context.Background(), "user@example.com", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})
+	_, err := service.RequestEmailRegistration(context.Background(), "user@example.com", "", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})
 	if err == nil || err.Error() != "turnstile verification is required" {
 		t.Fatalf("expected turnstile required error, got %v", err)
 	}
@@ -268,7 +279,7 @@ func TestRegisterWithEmailRequiresTurnstileWhenEmailVerificationDisabled(t *test
 		TurnstileSecretKey:           "secret-key",
 	}, nil, nil)
 
-	_, err := service.RegisterWithEmail(context.Background(), "user@example.com", "securepass1", "", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})
+	_, err := service.RegisterWithEmail(context.Background(), "user@example.com", "securepass1", "", "", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})
 	if err == nil || err.Error() != "turnstile verification is required" {
 		t.Fatalf("expected turnstile required error, got %v", err)
 	}
@@ -284,9 +295,50 @@ func TestRegisterWithEmailDoesNotRequireTurnstileWhenEmailVerificationEnabled(t 
 		TurnstileSecretKey:           "secret-key",
 	}, &emailRegistrationRepo{}, nil)
 
-	_, err := service.RegisterWithEmail(context.Background(), "user@example.com", "securepass1", "", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})
+	_, err := service.RegisterWithEmail(context.Background(), "user@example.com", "securepass1", "", "", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})
 	if err == nil || err.Error() != "verification code is invalid or expired" {
 		t.Fatalf("expected verification code error instead of turnstile error, got %v", err)
+	}
+}
+
+func TestRegisterWithEmailStoresLocale(t *testing.T) {
+	repo := &emailRegistrationRepo{}
+	service := NewService(config.Config{
+		Env:                      "dev",
+		JWTSecret:                "test-secret",
+		EmailLoginEnabled:        true,
+		EmailRegistrationEnabled: true,
+		EmailVerificationEnabled: false,
+	}, repo, nil)
+
+	result, err := service.RegisterWithEmail(context.Background(), "user@example.com", "securepass1", "", "ja-JP", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})
+	if err != nil {
+		t.Fatalf("RegisterWithEmail() error = %v", err)
+	}
+	if result.User.Locale != "ja-JP" {
+		t.Fatalf("expected result locale ja-JP, got %q", result.User.Locale)
+	}
+	if repo.createdUser == nil || repo.createdUser.Locale != "ja-JP" {
+		t.Fatalf("expected created user locale ja-JP, got %#v", repo.createdUser)
+	}
+}
+
+func TestRegisterWithEmailDefaultsLocaleToChinese(t *testing.T) {
+	repo := &emailRegistrationRepo{}
+	service := NewService(config.Config{
+		Env:                      "dev",
+		JWTSecret:                "test-secret",
+		EmailLoginEnabled:        true,
+		EmailRegistrationEnabled: true,
+		EmailVerificationEnabled: false,
+	}, repo, nil)
+
+	result, err := service.RegisterWithEmail(context.Background(), "user@example.com", "securepass1", "", "", "", "127.0.0.1", "", requestmeta.SessionAuditContext{})
+	if err != nil {
+		t.Fatalf("RegisterWithEmail() error = %v", err)
+	}
+	if result.User.Locale != "zh-CN" {
+		t.Fatalf("expected result locale zh-CN, got %q", result.User.Locale)
 	}
 }
 
@@ -372,6 +424,22 @@ func TestCompleteEmailChangeDoesNotVerifyEmailWhenEmailVerificationDisabled(t *t
 	}
 }
 
+func TestUpdateProfileAcceptsJapaneseLocale(t *testing.T) {
+	repo := &securityVerificationRepo{
+		user: &domainuser.User{ID: 1, Locale: "zh-CN"},
+	}
+	service := NewService(config.Config{}, repo, nil)
+	nextLocale := "ja"
+
+	updated, err := service.UpdateProfile(context.Background(), 1, UpdateProfileInput{Locale: &nextLocale})
+	if err != nil {
+		t.Fatalf("UpdateProfile() error = %v", err)
+	}
+	if updated.Locale != "ja-JP" {
+		t.Fatalf("expected ja-JP locale, got %q", updated.Locale)
+	}
+}
+
 func TestVerifyEmailCodeUsesUserScopedPendingVerification(t *testing.T) {
 	now := time.Now()
 	expiresAt := now.Add(time.Minute)
@@ -421,13 +489,59 @@ func TestVerifyEmailCodeUsesUserScopedPendingVerification(t *testing.T) {
 type emailRegistrationRepo struct {
 	repository.AuthRepository
 
-	pending     *domainuser.ContactVerification
-	cancelCount int
-	createCount int
+	pending            *domainuser.ContactVerification
+	cancelCount        int
+	createCount        int
+	createdUser        *domainuser.User
+	createdCredential  *domainuser.Credential
+	createdSession     *domainuser.Session
+	verifiedContactIDs []uint
 }
 
 func (r *emailRegistrationRepo) GetByEmail(ctx context.Context, email string) (*domainuser.User, error) {
 	return nil, repository.ErrNotFound
+}
+
+func (r *emailRegistrationRepo) CreateWithCredential(
+	ctx context.Context,
+	item *domainuser.User,
+	credential domainuser.Credential,
+	subscriptionPlanID uint,
+	subscriptionPriceID uint,
+	subscriptionEndAt *time.Time,
+	autoRenew bool,
+) error {
+	if item.ID == 0 {
+		item.ID = 100
+	}
+	copyUser := *item
+	copyCredential := credential
+	copyCredential.UserID = item.ID
+	r.createdUser = &copyUser
+	r.createdCredential = &copyCredential
+	return nil
+}
+
+func (r *emailRegistrationRepo) GetCredentialByUserID(ctx context.Context, userID uint) (*domainuser.Credential, error) {
+	if r.createdCredential == nil || r.createdCredential.UserID != userID {
+		return nil, repository.ErrNotFound
+	}
+	copyCredential := *r.createdCredential
+	return &copyCredential, nil
+}
+
+func (r *emailRegistrationRepo) GetUserTwoFactorByUserID(ctx context.Context, userID uint) (*domainuser.UserTwoFactor, error) {
+	return nil, repository.ErrNotFound
+}
+
+func (r *emailRegistrationRepo) CreateSession(ctx context.Context, item *domainuser.Session) error {
+	copySession := *item
+	r.createdSession = &copySession
+	return nil
+}
+
+func (r *emailRegistrationRepo) UpdateLastLogin(ctx context.Context, userID uint) error {
+	return nil
 }
 
 func (r *emailRegistrationRepo) RecordAuthEvent(ctx context.Context, userID uint, requestID string, eventType string, result string, reason string, clientIP string, userAgent string, detailJSON string) error {
@@ -453,6 +567,11 @@ func (r *emailRegistrationRepo) GetPendingContactVerification(ctx context.Contex
 		return nil, repository.ErrNotFound
 	}
 	return r.pending, nil
+}
+
+func (r *emailRegistrationRepo) MarkContactVerificationVerified(ctx context.Context, verificationID uint, now time.Time) error {
+	r.verifiedContactIDs = append(r.verifiedContactIDs, verificationID)
+	return nil
 }
 
 type securityVerificationRepo struct {
@@ -495,6 +614,9 @@ func (r *securityVerificationRepo) UpdateProfile(ctx context.Context, userID uin
 	}
 	if input.EmailVerifiedAt != nil {
 		r.user.EmailVerifiedAt = *input.EmailVerifiedAt
+	}
+	if input.Locale != nil {
+		r.user.Locale = *input.Locale
 	}
 	copyItem := *r.user
 	return &copyItem, nil

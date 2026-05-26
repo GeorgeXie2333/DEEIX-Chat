@@ -1,0 +1,90 @@
+{
+  "sections": {
+    "conversation": "会話設定",
+    "optionPassthrough": "パラメーター透過"
+  },
+  "taskModel": {
+    "follow": "現在のモデルに従う"
+  },
+  "policy": {
+    "allowlist": "許可リスト",
+    "denylist": "拒否リスト",
+    "disabled": "透過を禁止"
+  },
+  "fields": {
+    "taskModel": {
+      "label": "タスク実行モデル",
+      "description": "会話タイトルとラベルの生成に使用するチャットモデルです。"
+    },
+    "defaultSystemPrompt": {
+      "label": "グローバル既定システムプロンプト",
+      "description": "すべてのチャットモデルに対するグローバルな行動指示です。空欄の場合は注入しません。モデル単位のプロンプトはこの後ろに追加されます。",
+      "placeholder": "例: 回答は正確かつ明確にし、プラットフォームの安全要件に従う。"
+    },
+    "optionPolicyMode": {
+      "label": "パラメーター透過ポリシー",
+      "description": "ユーザーリクエストの options を上流へ透過できるかを制御します。既定では許可リストのパスのみ通します。"
+    },
+    "allowedPaths": {
+      "label": "モデルパラメーター許可リスト",
+      "description": "JSON オブジェクトです。default はすべてのプロトコルに適用され、プロトコル別の項目は該当プロトコルにのみ追加で許可します。パスは xxx.xxx 形式です。"
+    },
+    "deniedPaths": {
+      "label": "モデルパラメーター拒否リスト",
+      "description": "JSON オブジェクトです。拒否リストモードでのみ有効です。システム上危険なフィールドは、未記載でも遮断されます。"
+    },
+    "nativeToolTypes": {
+      "label": "公式ツール制御",
+      "description": "モデルパラメーター許可リストとは独立して、プロトコルごとに利用可能な公式ネイティブツールを制御します。空配列は該当プロトコルの公式ツールを無効にします。"
+    },
+    "titlePrompt": {
+      "label": "タイトル生成プロンプト",
+      "description": "モデルは JSON: '{' \"title\": \"要約したタイトル\" '}' を返す必要があります。'{{MESSAGES}}' プレースホルダーに対応しています。"
+    },
+    "labelsPrompt": {
+      "label": "ラベル生成プロンプト",
+      "description": "モデルは JSON: '{' \"labels\": [\"ラベル1\", \"ラベル2\"] '}' を返す必要があります。'{{MESSAGES}}' プレースホルダーに対応しています。"
+    },
+    "defaultPromptPlaceholder": "空欄の場合は組み込みの既定プロンプトを使用します"
+  },
+  "preview": {
+    "title": "リアルタイムプレビュー",
+    "passed": "透過",
+    "filtered": "フィルター",
+    "emptyPassed": "現在透過できるパスはありません",
+    "emptyFiltered": "現在フィルターされるパスはありません",
+    "systemDenied": "システム遮断",
+    "hitDenylist": "拒否リストに一致",
+    "hitAllowlist": "許可リストに一致",
+    "otherFields": "その他のフィールド",
+    "notInDenylist": "拒否リスト外"
+  },
+  "nativeTools": {
+    "enabledCount": "{enabled}/{total} 有効",
+    "enableAll": "すべて有効",
+    "disableAll": "オフ"
+  },
+  "guide": {
+    "button": "ガイド",
+    "title": "パラメーター透過ガイド",
+    "description": "ユーザー options のどのフィールドを上流リクエストへ渡せるかを制御します。",
+    "pathTitle": "パスの書き方",
+    "pathLabel": "パス",
+    "pathDescription": "トップレベルはフィールド名を書き、ネストはドットで表します。複数階層に対応しています。",
+    "strategyTitle": "透過ポリシー",
+    "allowlistDescription": "列挙したパスのみ通し、その他のフィールドは破棄します。",
+    "denylistDescription": "既定では透過し、拒否リストまたはシステム遮断に一致したパスだけを削除します。",
+    "openAIServiceTierNote": "OpenAI service_tier は default、flex、priority のみ受け付けます。未設定の場合は送信しません。",
+    "protocolTitle": "プロトコル主キー",
+    "protocolDescription": "default は全プロトコルに適用されます。その他の主キーは対応するプロトコルにのみ適用されます。",
+    "systemDeniedTitle": "システム遮断",
+    "systemDeniedDescription": "これらのフィールドは常に遮断され、許可リストでも通せません。"
+  },
+  "toast": {
+    "sessionExpired": "ログイン状態が失効しました",
+    "signInAgain": "続行するには再度ログインしてください。",
+    "loadFailed": "会話設定の読み込みに失敗しました",
+    "saveFailed": "保存に失敗しました",
+    "updated": "会話設定を更新しました"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "title": "会話を共有",
+  "snapshotMessages": "{count} 件のスナップショットメッセージ",
+  "continueConversation": "会話を続ける",
+  "continuing": "続行中...",
+  "signInToContinue": "Comi AI にログインして会話を続ける",
+  "notFoundTitle": "共有を利用できません",
+  "notFoundDescription": "共有が存在しない、閉じられている、または元の会話が削除されています。",
+  "cloneFailed": "会話の続行に失敗しました"
+}

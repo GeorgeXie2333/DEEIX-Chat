@@ -1,0 +1,281 @@
+{
+  "auth": {
+    "adminRequired": "管理者権限が必要です。",
+    "authorizationCodeRequired": "認可コードが必要です。",
+    "emailAliasNotAllowed": "メールのエイリアスは使用できません。",
+    "emailAlreadyExists": "このメールアドレスはすでに使用されています。",
+    "emailBootstrapNotAllowed": "このアカウントではメール設定は許可されていません。",
+    "emailDomainNotAllowed": "このメールドメインは許可されていません。",
+    "emailNotVerified": "メールアドレスが認証されていません。",
+    "emailRegistrationDisabled": "メール登録は無効です。",
+    "emailUnchanged": "新しいメールアドレスは現在のものと異なる必要があります。",
+    "emailVerificationDisabled": "メール認証は無効です。",
+    "forbidden": "この操作を実行する権限がありません。",
+    "invalidCredentials": "ユーザー名またはパスワードが正しくありません。",
+    "invalidCurrentPassword": "現在のパスワードが正しくありません。",
+    "invalidEmail": "メールアドレスが正しくありません。",
+    "invalidPassword": "パスワードは8文字以上で、数字のみにはできません。",
+    "invalidPkce": "サインイン検証パラメーターが無効です。もう一度サインインしてください。",
+    "invalidRedirectUri": "コールバック URL が無効です。",
+    "invalidRefreshToken": "セッションの有効期限が切れました。もう一度サインインしてください。",
+    "invalidToken": "セッショントークンが無効です。もう一度サインインしてください。",
+    "invalidTwoFactorCode": "二段階認証コードが無効です。",
+    "lastLoginMethodRequired": "先にパスワードを設定するか、別の ID プロバイダーを連携してください。",
+    "oauthIntentMismatch": "OAuthフローが一致しません。もう一度お試しください。",
+    "oauthStateExpired": "OAuth state の有効期限が切れました。もう一度サインインしてください。",
+    "oauthStateInvalid": "OAuth state が無効です。もう一度サインインしてください。",
+    "passwordResetRequired": "パスワードのリセットが必要です。",
+    "passwordReuseNotAllowed": "新しいパスワードは初期パスワードと異なる必要があります。",
+    "providerAccountNotRegistered": "このプロバイダーアカウントは登録されていません。",
+    "providerAlreadyBound": "このプロバイダーはすでに連携されています。",
+    "providerAuthUrlNotConfigured": "プロバイダーの認可 URL が設定されていません。",
+    "providerBindEndpointRequired": "このプロバイダーを連携するにはアカウント連携フローを使用してください。",
+    "providerCallbackMisconfigured": "プロバイダーのコールバック URL が正しく設定されていません。",
+    "providerClientIdRequired": "プロバイダーのクライアント ID が必要です。",
+    "providerClientSecretRequired": "プロバイダーのクライアントシークレットが必要です。",
+    "providerDefaultRoleInvalid": "プロバイダーの既定ロールが無効です。",
+    "providerSuperadminDefaultRoleProtected": "プロバイダーの既定ロールを superadmin に設定できるのはスーパー管理者のみです。",
+    "providerEmailConflict": "このメールアドレスは別のアカウントに属しています。",
+    "providerIdRequired": "プロバイダー ID が必要です。",
+    "providerIdentityConflict": "このプロバイダーIDは別のアカウントに連携されています。",
+    "providerInvalid": "プロバイダー認証に失敗しました。",
+    "providerLoginDisabled": "プロバイダーサインインは無効です。",
+    "providerLogoUrlInvalid": "プロバイダーのロゴ URL が無効です。",
+    "providerNameRequired": "プロバイダー名が必要です。",
+    "providerOauthUrlsRequired": "OAuth2 の認可 URL、トークン URL、ユーザー情報 URL が必要です。",
+    "providerOidcIssuerRequired": "OIDC issuer URL または discovery URL が必要です。",
+    "providerOrderInvalid": "プロバイダーIDは重複できません。",
+    "providerRegistrationDisabled": "プロバイダー登録は無効です。",
+    "providerRegistrationRequiresLogin": "プロバイダー登録を有効にする前に、プロバイダーログインを有効にしてください。",
+    "providerSlugRequired": "プロバイダー slug が必要です。",
+    "providerSubjectMissing": "プロバイダー subject がありません。",
+    "providerTypeInvalid": "プロバイダー種別が無効です。",
+    "providerUpstreamFailed": "プロバイダー認証に失敗しました。",
+    "sessionInvalid": "セッションの有効期限が切れました。もう一度サインインしてください。",
+    "superadminRequired": "スーパー管理者権限が必要です。",
+    "twoFactorAlreadyEnabled": "二段階認証はすでに有効です。",
+    "twoFactorChallengeExpired": "二段階認証の有効期限が切れました。もう一度サインインしてください。",
+    "twoFactorExpired": "二段階認証の有効期限が切れました。もう一度お試しください。",
+    "twoFactorNotStarted": "二段階認証は開始されていません。",
+    "turnstileInvalid": "人間確認に失敗しました。もう一度お試しください。",
+    "turnstileNotConfigured": "人間確認が設定されていません。",
+    "turnstileRequired": "先に人間確認を完了してください。",
+    "unauthorized": "セッションの有効期限が切れました。もう一度サインインしてください。",
+    "usernameChangeRequired": "ユーザー名の変更が必要です。",
+    "verificationCodeAttemptsExceeded": "認証の試行回数が多すぎます。新しいコードをリクエストしてください。",
+    "verificationCodeInvalid": "認証コードが無効、または期限切れです。",
+    "verificationCodeRecent": "認証コードは最近送信されています。しばらくしてからもう一度お試しください。"
+  },
+  "billing": {
+    "insufficientBalance": "残高が不足しています。",
+    "insufficientFunds": "残高が不足しています。",
+    "invalidDailyUsageDateRange": "利用日の範囲が無効です。",
+    "invalidDailyUsageDays": "利用日数が無効です。",
+    "invalidModelPricing": "モデル料金が無効です。",
+    "invalidSubscriptionExpiry": "サブスクリプション期限が無効です。",
+    "invalidSubscriptionTier": "サブスクリプションプランが無効です。",
+    "paymentRequired": "支払いが必要です。",
+    "periodCreditExceeded": "期間クレジットを使い切りました。",
+    "pricingRequired": "モデル料金が必要です。",
+    "subscriptionExpiryRequired": "サブスクリプション期限が必要です。"
+  },
+  "config": {
+    "invalidJson": "JSON設定が無効です。"
+  },
+  "conversation": {
+    "invalidId": "会話 ID が無効です。",
+    "invalidTitle": "会話タイトルが無効です。",
+    "notFound": "会話が見つかりません。"
+  },
+  "conversationRun": {
+    "canceled": "生成はキャンセルされました。",
+    "streamInterrupted": "生成接続が中断されました。このメッセージを再試行してください。",
+    "streamNotFound": "生成ストリームが見つかりません。"
+  },
+  "conversationShare": {
+    "invalid": "会話共有が無効です。",
+    "invalidId": "共有 ID が無効です。",
+    "notFound": "共有が見つかりません。",
+    "schemaOutdated": "共有スキーマが古くなっています。データベースを再構築してください。"
+  },
+  "contextArtifact": {
+    "invalidId": "コンテキスト成果物 ID が無効です。",
+    "notFound": "コンテキスト成果物が見つかりません。"
+  },
+  "cors": {
+    "originForbidden": "このオリジンは許可されていません。"
+  },
+  "embedding": {
+    "serviceUnavailable": "埋め込みサービスを利用できません。"
+  },
+  "file": {
+    "embeddingUnavailable": "このファイルでは埋め込みを利用できません。",
+    "extractNotReady": "ファイル抽出はまだ準備できていません。",
+    "invalidId": "ファイル ID が無効です。",
+    "invalidName": "ファイル名が無効です。",
+    "invalidReference": "ファイル参照が無効です。",
+    "invalidStream": "ファイルストリームが無効です。",
+    "notFound": "ファイルが見つかりません。",
+    "notReady": "ファイルはまだ準備できていません。",
+    "required": "ファイルが必要です。",
+    "tooLarge": "ファイルが大きすぎます。",
+    "tooLargeForContext": "全文コンテキスト注入にはファイルが大きすぎます。",
+    "typeBlocked": "このファイル形式は許可されていません。"
+  },
+  "identityProvider": {
+    "deleteConflict": "この ID プロバイダーを削除すると、一部ユーザーの唯一のログイン方法が削除されます。"
+  },
+  "internal": {
+    "error": "内部サーバーエラーです。しばらくしてからもう一度お試しください。"
+  },
+  "llm": {
+    "apiKeysRequired": "API キーが必要です。",
+    "emptyResponse": "モデルが空の応答を返しました。",
+    "invalidAdapter": "このインターフェースプロトコルはサポートされていません。別のプロトコルを選択してください。",
+    "invalidApiKeysConfig": "API キー設定が無効です。",
+    "invalidCompatible": "互換モードが無効です。",
+    "invalidHeadersConfig": "ヘッダー設定が無効です。",
+    "invalidKinds": "モデル種別が無効です。",
+    "invalidPlatformModelName": "プラットフォームモデル名が無効です。",
+    "invalidRouteProtocolCombination": "このプロトコル組み合わせは利用できません。バインドでは1つのプロトコル、または同じプロバイダーの画像生成/画像編集プロトコルを使用してください。",
+    "systemPromptTooLong": "システムプロンプトは20000文字以内にしてください。",
+    "invalidProtocolDefaultsConfig": "プロトコル既定設定が無効です。",
+    "modelRouteNotConfigured": "モデルルートが設定されていません。",
+    "noActiveApiKey": "利用可能な有効 API キーがありません。",
+    "platformModelNameExists": "プラットフォームモデル名はすでに存在します。",
+    "platformModelNameRequired": "プラットフォームモデル名が必要です。",
+    "protocolRequired": "プロトコルが必要です。",
+    "remoteModelsUnavailable": "リモートモデルを利用できません。",
+    "routeConflict": "この上流モデルには同じプラットフォームモデルとプロトコルのバインドがすでにあります。保存前に重複バインドを削除してください。",
+    "routesUnavailable": "すべてのモデルルートを利用できません。"
+  },
+  "mcp": {
+    "clientUnavailable": "MCPクライアントを利用できません。",
+    "invalidServerBaseUrl": "MCP サーバー Base URL が無効です。",
+    "invalidServerHeaders": "MCPサーバーヘッダーが無効です。",
+    "invalidServerName": "MCPサーバー名が無効です。",
+    "invalidServerStatus": "MCPサーバーステータスが無効です。",
+    "invalidToolDescription": "MCPツール説明が無効です。",
+    "invalidToolName": "MCPツール名が無効です。",
+    "invalidToolSelection": "MCPツール選択が無効です。",
+    "invalidToolStatus": "MCPツールステータスが無効です。",
+    "server": {
+      "invalidId": "MCP サーバー ID が無効です。"
+    },
+    "tool": {
+      "invalidId": "MCP ツール ID が無効です。"
+    }
+  },
+  "memory": {
+    "keyRequired": "メモリキーが必要です。"
+  },
+  "media": {
+    "imagePromptRequired": "画像プロンプトを入力してください。",
+    "imageGenerationRejectsInputs": "画像生成は入力画像を受け付けません。添付を削除するか、画像編集を選択してください。",
+    "imageEditInputRequired": "画像編集には少なくとも1つの入力画像が必要です。",
+    "imageEditTooManyInputs": "画像編集の入力画像が多すぎます。",
+    "imageEditInputInvalid": "画像編集では有効な画像ファイルのみ使用できます。",
+    "routeProtocolMismatch": "現在のモデルルートプロトコルはこの画像タスクと一致しません。モデルバインドを確認してください。",
+    "invalidTask": "画像タスクのパラメーターが無効です。"
+  },
+  "message": {
+    "feedbackTargetInvalid": "メッセージフィードバック対象が無効です。",
+    "invalidBranch": "メッセージ分岐が無効です。",
+    "invalidFeedback": "メッセージフィードバックが無効です。",
+    "invalidId": "メッセージ ID が無効です。",
+    "notFound": "メッセージが見つかりません。",
+    "tooManyFiles": "1つのメッセージ内のファイルが多すぎます。"
+  },
+  "payment": {
+    "checkoutFailed": "チェックアウトの作成に失敗しました。",
+    "epayTypeUnsupported": "この EPay 支払い方法はサポートされていません。",
+    "invalidEvent": "支払いイベントが無効です。",
+    "invalidSignature": "支払い署名が無効です。",
+    "invalidWebhookBody": "Webhook 本文が無効です。",
+    "notificationMismatch": "支払い通知が注文と一致しません。",
+    "orderNoRequired": "注文番号が必要です。",
+    "providerUnavailable": "決済プロバイダーを利用できません。",
+    "returnUrlCrossOrigin": "支払い戻りURLは設定済みの公開Webオリジンを使用する必要があります。",
+    "returnUrlInvalid": "支払い戻り URL が無効です。",
+    "webhookBodyTooLarge": "Webhook 本文が大きすぎます。",
+    "webhookNotConfigured": "支払いWebhookが設定されていません。"
+  },
+  "quota": {
+    "exceeded": "クォータを超過しました。"
+  },
+  "rateLimit": {
+    "authenticationExceeded": "認証の試行回数が多すぎます。しばらくしてからもう一度お試しください。",
+    "exceeded": "リクエストが多すぎます。しばらくしてからもう一度お試しください。",
+    "refreshExceeded": "セッション更新の試行回数が多すぎます。しばらくしてからもう一度お試しください。"
+  },
+  "request": {
+    "invalid": "リクエストが無効です。フォームを確認してもう一度お試しください。",
+    "invalid_": "リクエストパラメーターが無効です。",
+    "invalidBody": "リクエストが無効です。フォームを確認してもう一度お試しください。",
+    "invalidId": "ID が無効です。",
+    "invalidQuery": "クエリパラメーターが無効です。",
+    "required": "必須項目が不足しています。"
+  },
+  "resource": {
+    "conflict": "リソースが競合しています。更新してもう一度お試しください。",
+    "notFound": "リソースが見つかりません。"
+  },
+  "route": {
+    "notFound": "ルートが見つかりません。"
+  },
+  "runtime": {
+    "doclingUnavailable": "Docling ランタイムを利用できません。",
+    "mineruUnavailable": "MinerU ランタイムを利用できません。",
+    "rapidocrUnavailable": "RapidOCR ランタイムを利用できません。",
+    "tesseractUnavailable": "Tesseract ランタイムを利用できません。",
+    "tikaUnavailable": "Tika ランタイムを利用できません。"
+  },
+  "service": {
+    "unavailable": "サービスを利用できません。しばらくしてからもう一度お試しください。"
+  },
+  "settings": {
+    "billingPaymentInvalid": "課金支払い設定が無効です。",
+    "embeddingInvalid": "埋め込み設定が無効です。",
+    "extractInvalid": "ファイル抽出設定が無効です。",
+    "invalidKey": "設定キーが無効です。",
+    "invalidNamespace": "設定名前空間が無効です。",
+    "invalidValue": "設定値が無効です。",
+    "modelOptionPolicyInvalid": "モデルオプションポリシー設定が無効です。",
+    "notFound": "設定が見つかりません。",
+    "serviceUnavailable": "設定サービスを利用できません。",
+    "smtpInvalid": "SMTP設定が無効です。"
+  },
+  "upstream": {
+    "unavailable": "上流サービスを利用できません。"
+  },
+  "user": {
+    "accountDeleteVerificationRequired": "アカウントを削除する前に本人確認を行ってください。",
+    "emptyPatch": "少なくとも1つのユーザー項目を変更してください。",
+    "invalidAvatarUrl": "アバター URL が無効です。",
+    "invalidEmail": "ユーザーメールアドレスが無効です。",
+    "invalidLocale": "言語が無効です。",
+    "invalidLocation": "位置情報が無効です。",
+    "invalidPhone": "電話番号が無効です。",
+    "invalidRole": "ユーザーロールが無効です。",
+    "invalidStatus": "ユーザーステータスが無効です。",
+    "invalidTimeZone": "タイムゾーンが無効です。",
+    "invalidUsername": "ユーザー名が無効です。",
+    "invalidDisplayName": "表示名は3〜16文字で入力してください。",
+    "lastSuperadminRoleProtected": "最後のスーパー管理者のロールは変更できません。",
+    "selfDeleteNotAllowed": "現在のアカウントは削除できません。",
+    "selfRoleChangeNotAllowed": "自分自身のロールは変更できません。",
+    "selfStatusChangeNotAllowed": "自分自身のステータスは変更できません。",
+    "superadminDeleteProtected": "スーパー管理者アカウントは削除できません。",
+    "superadminPasswordResetProtected": "スーパー管理者のパスワードはリセットできません。",
+    "superadminManagementProtected": "管理者はスーパー管理者アカウントを管理できません。",
+    "superadminStatusProtected": "スーパー管理者のステータスは変更できません。",
+    "superadminTwoFactorResetProtected": "スーパー管理者の二段階認証はリセットできません。",
+    "usernameAlreadyExists": "このユーザー名はすでに使用されています。",
+    "usernameChangeUsed": "ユーザー名はすでに変更済みです。",
+    "usernameTaken": "このユーザー名はすでに使用されています。"
+  },
+  "userSettings": {
+    "invalidValue": "ユーザー設定値が無効です。",
+    "unknownKey": "不明なユーザー設定項目です。"
+  }
+}

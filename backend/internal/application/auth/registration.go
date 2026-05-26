@@ -44,7 +44,11 @@ const (
 type verificationEmailTemplate struct {
 	Subject      string
 	Title        string
+	CodeLabel    string
+	ValidityNote string
 	SecurityNote string
+	Footer       string
+	HTMLLang     string
 }
 
 type EmailRegistrationStartResult struct {
@@ -66,7 +70,7 @@ type EmailChangeVerificationStartResult struct {
 	AvailableMethods []SecurityVerificationMethod
 }
 
-func (s *Service) RequestEmailRegistration(ctx context.Context, email string, turnstileToken string, remoteIP string, requestID string, auditCtx requestmeta.SessionAuditContext) (*EmailRegistrationStartResult, error) {
+func (s *Service) RequestEmailRegistration(ctx context.Context, email string, locale string, turnstileToken string, remoteIP string, requestID string, auditCtx requestmeta.SessionAuditContext) (*EmailRegistrationStartResult, error) {
 	cfg := s.cfg.Snapshot()
 	if !cfg.EmailLoginEnabled || !cfg.EmailRegistrationEnabled {
 		return nil, fmt.Errorf("email registration is disabled")
@@ -123,7 +127,8 @@ func (s *Service) RequestEmailRegistration(ctx context.Context, email string, tu
 		return nil, err
 	}
 
-	if err := s.sendRegistrationVerificationEmail(normalizedEmail, code); err != nil {
+	normalizedLocale := normalizeLocaleOrDefault(locale)
+	if err := s.sendRegistrationVerificationEmail(normalizedEmail, code, normalizedLocale); err != nil {
 		_ = s.repo.CancelPendingContactVerifications(ctx, domainuser.ContactVerificationChannelEmail, domainuser.ContactVerificationPurposeRegister, normalizedEmail)
 		return nil, err
 	}
@@ -136,6 +141,7 @@ func (s *Service) RequestEmailRegistration(ctx context.Context, email string, tu
 			"email":           normalizedEmail,
 			"verification_id": created.ID,
 			"expires_at":      expiresAt,
+			"locale":          normalizedLocale,
 		}),
 	)
 
@@ -145,7 +151,7 @@ func (s *Service) RequestEmailRegistration(ctx context.Context, email string, tu
 	}, nil
 }
 
-func (s *Service) RegisterWithEmail(ctx context.Context, email string, password string, code string, turnstileToken string, remoteIP string, requestID string, auditCtx requestmeta.SessionAuditContext) (*LoginResult, error) {
+func (s *Service) RegisterWithEmail(ctx context.Context, email string, password string, code string, locale string, turnstileToken string, remoteIP string, requestID string, auditCtx requestmeta.SessionAuditContext) (*LoginResult, error) {
 	cfg := s.cfg.Snapshot()
 	if !cfg.EmailLoginEnabled || !cfg.EmailRegistrationEnabled {
 		return nil, fmt.Errorf("email registration is disabled")
@@ -202,6 +208,7 @@ func (s *Service) RegisterWithEmail(ctx context.Context, email string, password 
 	if err != nil {
 		return nil, err
 	}
+	normalizedLocale := normalizeLocaleOrDefault(locale)
 	userItem := &domainuser.User{
 		PublicID:        conv.NormalizePublicID(uuid.NewString()),
 		Username:        username,
@@ -211,7 +218,7 @@ func (s *Service) RegisterWithEmail(ctx context.Context, email string, password 
 		Role:            domainuser.RoleUser,
 		Status:          domainuser.StatusActive,
 		Timezone:        "Etc/UTC",
-		Locale:          "en-US",
+		Locale:          normalizedLocale,
 		EmailVerifiedAt: verifiedAt,
 	}
 	if err = s.createWithCredentialUsingAvailableUsername(ctx, userItem, domainuser.Credential{
@@ -241,6 +248,7 @@ func (s *Service) RegisterWithEmail(ctx context.Context, email string, password 
 		marshalAuthEventDetail(map[string]interface{}{
 			"email":      normalizedEmail,
 			"session_id": result.SessionID,
+			"locale":     normalizedLocale,
 		}),
 	)
 	return result, nil
@@ -789,19 +797,19 @@ func canBootstrapEmail(item *domainuser.User) bool {
 	return item.EmailSource == domainuser.EmailSourceProviderUnverified
 }
 
-func (s *Service) sendRegistrationVerificationEmail(to string, code string) error {
-	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
-		Subject:      "Comi AI 验证码",
-		Title:        "完成邮箱注册",
-		SecurityNote: "如果不是您本人操作，请忽略这封邮件。",
-	}, "email registration")
+func (s *Service) sendRegistrationVerificationEmail(to string, code string, locale string) error {
+	return s.sendEmailVerificationCode(to, code, registrationVerificationEmailTemplate(locale), "email registration")
 }
 
 func (s *Service) sendPasswordChangeVerificationEmail(to string, code string) error {
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
 		Subject:      "Comi AI 验证码",
 		Title:        "确认修改密码",
+		CodeLabel:    "验证码",
+		ValidityNote: "10 分钟内有效，请不要泄露给任何人。",
 		SecurityNote: "如果不是您本人操作，请立即检查账号安全。",
+		Footer:       "这是一封系统邮件，请勿直接回复。",
+		HTMLLang:     "zh-CN",
 	}, "password change")
 }
 
@@ -809,7 +817,11 @@ func (s *Service) sendEmailChangeVerificationEmail(to string, code string) error
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
 		Subject:      "Comi AI 验证码",
 		Title:        "验证邮箱地址",
+		CodeLabel:    "验证码",
+		ValidityNote: "10 分钟内有效，请不要泄露给任何人。",
 		SecurityNote: "如果不是您本人操作，请忽略这封邮件。",
+		Footer:       "这是一封系统邮件，请勿直接回复。",
+		HTMLLang:     "zh-CN",
 	}, "email change")
 }
 
@@ -817,8 +829,47 @@ func (s *Service) sendAccountDeleteVerificationEmail(to string, code string) err
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
 		Subject:      "Comi AI 验证码",
 		Title:        "确认删除账号",
+		CodeLabel:    "验证码",
+		ValidityNote: "10 分钟内有效，请不要泄露给任何人。",
 		SecurityNote: "如果不是您本人操作，请立即检查账号安全。",
+		Footer:       "这是一封系统邮件，请勿直接回复。",
+		HTMLLang:     "zh-CN",
 	}, "account deletion")
+}
+
+func registrationVerificationEmailTemplate(locale string) verificationEmailTemplate {
+	switch normalizeLocaleOrDefault(locale) {
+	case "ja-JP":
+		return verificationEmailTemplate{
+			Subject:      "Comi AI 認証コード",
+			Title:        "メール登録を完了してください",
+			CodeLabel:    "認証コード",
+			ValidityNote: "このコードは10分間有効です。誰にも共有しないでください。",
+			SecurityNote: "この操作に心当たりがない場合は、このメールを無視してください。",
+			Footer:       "このメールはシステムから送信されています。返信しないでください。",
+			HTMLLang:     "ja-JP",
+		}
+	case "en-US":
+		return verificationEmailTemplate{
+			Subject:      "Comi AI verification code",
+			Title:        "Complete email registration",
+			CodeLabel:    "Verification code",
+			ValidityNote: "Valid for 10 minutes. Do not share it with anyone.",
+			SecurityNote: "If this was not you, ignore this email.",
+			Footer:       "This is a system email. Please do not reply.",
+			HTMLLang:     "en-US",
+		}
+	default:
+		return verificationEmailTemplate{
+			Subject:      "Comi AI 验证码",
+			Title:        "完成邮箱注册",
+			CodeLabel:    "验证码",
+			ValidityNote: "10 分钟内有效，请不要泄露给任何人。",
+			SecurityNote: "如果不是您本人操作，请忽略这封邮件。",
+			Footer:       "这是一封系统邮件，请勿直接回复。",
+			HTMLLang:     "zh-CN",
+		}
+	}
 }
 
 func (s *Service) requestEmailVerificationCode(ctx context.Context, userID uint, purpose string, target string, eventType string, requestID string, auditCtx requestmeta.SessionAuditContext) (*EmailChangeVerificationStartResult, error) {
@@ -995,20 +1046,27 @@ func buildVerificationPlainText(code string, template verificationEmailTemplate)
 
 %s
 
-验证码：%s
+%s：%s
 
-10 分钟内有效，请不要泄露给任何人。
+%s
 
-%s`, template.Title, strings.TrimSpace(code), template.SecurityNote)
+%s`, template.Title, firstNonEmpty(template.CodeLabel, "验证码"), strings.TrimSpace(code), firstNonEmpty(template.ValidityNote, "10 分钟内有效，请不要泄露给任何人。"), template.SecurityNote)
 }
 
 func buildVerificationHTML(code string, template verificationEmailTemplate) string {
 	escapedCode := html.EscapeString(strings.TrimSpace(code))
 	escapedTitle := html.EscapeString(strings.TrimSpace(template.Title))
+	escapedCodeLabel := html.EscapeString(firstNonEmpty(template.CodeLabel, "验证码"))
+	escapedValidityNote := html.EscapeString(firstNonEmpty(template.ValidityNote, "10 分钟内有效，请不要泄露给任何人。"))
 	escapedSecurityNote := html.EscapeString(strings.TrimSpace(template.SecurityNote))
+	if escapedSecurityNote != "" {
+		escapedSecurityNote = " " + escapedSecurityNote
+	}
+	escapedFooter := html.EscapeString(firstNonEmpty(template.Footer, "这是一封系统邮件，请勿直接回复。"))
+	htmlLang := html.EscapeString(firstNonEmpty(template.HTMLLang, "zh-CN"))
 	logoHTML := verificationEmailLogoHTML()
 	return fmt.Sprintf(`<!doctype html>
-<html lang="zh-CN">
+<html lang="%s">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1032,7 +1090,7 @@ func buildVerificationHTML(code string, template verificationEmailTemplate) stri
             </tr>
             <tr>
               <td style="padding:28px 0 0;">
-                <div style="margin:0 0 8px;font-size:13px;font-weight:600;line-height:1.4;color:#312f2b;">验证码</div>
+                <div style="margin:0 0 8px;font-size:13px;font-weight:600;line-height:1.4;color:#312f2b;">%s</div>
                 <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#eee8dc;border-radius:8px;">
                   <tr>
                     <td align="center" style="padding:17px 18px 16px;">
@@ -1040,18 +1098,18 @@ func buildVerificationHTML(code string, template verificationEmailTemplate) stri
                     </td>
                   </tr>
                 </table>
-                <div style="margin-top:8px;font-size:12px;line-height:1.65;color:#8c8378;">10 分钟内有效，请不要泄露给任何人。%s</div>
+                <div style="margin-top:8px;font-size:12px;line-height:1.65;color:#8c8378;">%s%s</div>
               </td>
             </tr>
             <tr>
-              <td align="center" style="padding:36px 0 0;font-size:12px;line-height:1.6;color:#aaa298;">这是一封系统邮件，请勿直接回复。</td>
+              <td align="center" style="padding:36px 0 0;font-size:12px;line-height:1.6;color:#aaa298;">%s</td>
             </tr>
           </table>
         </td>
       </tr>
     </table>
   </body>
-</html>`, escapedTitle, logoHTML, escapedTitle, escapedCode, escapedSecurityNote)
+</html>`, htmlLang, escapedTitle, logoHTML, escapedTitle, escapedCodeLabel, escapedCode, escapedValidityNote, escapedSecurityNote, escapedFooter)
 }
 
 func verificationEmailLogoHTML() string {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -22,7 +23,7 @@ func boolPtr(value bool) *bool {
 
 func TestResolveProviderUserLoginAutoRegistersWhenProviderRegistrationEnabled(t *testing.T) {
 	repo := &providerLoginRepo{}
-	service := NewService(config.Config{JWTSecret: "test-secret"}, repo, nil)
+	service := NewService(config.Config{JWTSecret: "test-secret", ThirdPartyLoginEnabled: true}, repo, nil)
 	provider := domainuser.IdentityProvider{
 		ID:                  10,
 		Type:                domainuser.IdentityProviderTypeOIDC,
@@ -33,7 +34,7 @@ func TestResolveProviderUserLoginAutoRegistersWhenProviderRegistrationEnabled(t 
 		DefaultRole:         domainuser.RoleUser,
 	}
 
-	userItem, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "new@example.com", "New User", "", true, `{"sub":"sub-1"}`, providerIntentLogin)
+	userItem, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "new@example.com", "New User", "", true, `{"sub":"sub-1"}`, providerIntentLogin, "")
 	if err != nil {
 		t.Fatalf("expected login to auto-register, got %v", err)
 	}
@@ -43,11 +44,76 @@ func TestResolveProviderUserLoginAutoRegistersWhenProviderRegistrationEnabled(t 
 	if repo.createUserCount != 1 {
 		t.Fatalf("expected one user to be created, got %d", repo.createUserCount)
 	}
+	if repo.lastCreatedUser == nil || repo.lastCreatedUser.Locale != "zh-CN" {
+		t.Fatalf("expected provider auto-registration to default to zh-CN, got %#v", repo.lastCreatedUser)
+	}
 	if len(repo.identities) != 1 {
 		t.Fatalf("expected one identity to be created, got %d", len(repo.identities))
 	}
 	if repo.identities[0].ProviderSubject != "sub-1" || repo.identities[0].UserID != userItem.ID {
 		t.Fatalf("created identity does not match user: %#v", repo.identities[0])
+	}
+}
+
+func TestResolveProviderUserAutoRegistrationUsesLocale(t *testing.T) {
+	repo := &providerLoginRepo{}
+	service := NewService(config.Config{JWTSecret: "test-secret", ThirdPartyLoginEnabled: true}, repo, nil)
+	provider := domainuser.IdentityProvider{
+		ID:                  10,
+		Type:                domainuser.IdentityProviderTypeOIDC,
+		Name:                "Acme SSO",
+		Slug:                "acme",
+		LoginEnabled:        true,
+		RegistrationEnabled: true,
+		DefaultRole:         domainuser.RoleUser,
+	}
+
+	userItem, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "new@example.com", "New User", "", true, `{"sub":"sub-1"}`, providerIntentLogin, "ja-JP")
+	if err != nil {
+		t.Fatalf("expected login to auto-register, got %v", err)
+	}
+	if userItem.Locale != "ja-JP" {
+		t.Fatalf("expected ja-JP locale, got %q", userItem.Locale)
+	}
+}
+
+func TestBuildProviderAuthURLStoresLocaleInState(t *testing.T) {
+	repo := &providerLoginRepo{
+		providersBySlug: map[string]*domainuser.IdentityProvider{
+			"acme": {
+				ID:                  10,
+				Type:                domainuser.IdentityProviderTypeOAuth2,
+				Name:                "Acme SSO",
+				Slug:                "acme",
+				LoginEnabled:        true,
+				RegistrationEnabled: true,
+				ClientID:            "client",
+				AuthURL:             "https://auth.example.com/oauth/authorize",
+				TokenURL:            "https://auth.example.com/oauth/token",
+				UserInfoURL:         "https://auth.example.com/oauth/userinfo",
+				Scopes:              "openid profile email",
+			},
+		},
+	}
+	service := NewService(config.Config{
+		JWTSecret:              "test-secret",
+		ThirdPartyLoginEnabled: true,
+	}, repo, nil)
+
+	target, err := service.BuildProviderAuthURL(context.Background(), "acme", "http://localhost:3000/auth/callback?provider=acme", "/chat", strings.Repeat("a", 43), providerIntentRegister, "ja")
+	if err != nil {
+		t.Fatalf("expected provider auth URL, got %v", err)
+	}
+	parsed, err := url.Parse(target)
+	if err != nil {
+		t.Fatalf("parse target url: %v", err)
+	}
+	state, err := service.verifyProviderState("acme", "http://localhost:3000/auth/callback?provider=acme", parsed.Query().Get("state"))
+	if err != nil {
+		t.Fatalf("verify provider state: %v", err)
+	}
+	if state.Locale != "ja-JP" {
+		t.Fatalf("expected ja-JP locale in provider state, got %q", state.Locale)
 	}
 }
 
@@ -103,7 +169,7 @@ func TestResolveProviderUserAutoRegistrationAddsUsernameSuffixOnCollision(t *tes
 		DefaultRole:         domainuser.RoleUser,
 	}
 
-	userItem, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "new@example.com", "New User", "", true, `{"sub":"sub-1"}`, providerIntentLogin)
+	userItem, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "new@example.com", "New User", "", true, `{"sub":"sub-1"}`, providerIntentLogin, "")
 	if err != nil {
 		t.Fatalf("expected login to retry with suffixed username, got %v", err)
 	}
@@ -128,7 +194,7 @@ func TestResolveProviderUserLoginRequiresRegistrationEnabledForNewAccount(t *tes
 		DefaultRole:         domainuser.RoleUser,
 	}
 
-	_, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "new@example.com", "New User", "", true, `{"sub":"sub-1"}`, providerIntentLogin)
+	_, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "new@example.com", "New User", "", true, `{"sub":"sub-1"}`, providerIntentLogin, "")
 	if err == nil || err.Error() != "provider account is not registered" {
 		t.Fatalf("expected not registered error, got %v", err)
 	}
@@ -155,7 +221,7 @@ func TestResolveProviderUserAutoLinksVerifiedProviderEmailBeforeProvisioning(t *
 		DefaultRole:         domainuser.RoleUser,
 	}
 
-	userItem, err := service.resolveProviderUser(context.Background(), provider, "sub-1", existing.Email, "Verified User", "", true, `{"sub":"sub-1"}`, providerIntentLogin)
+	userItem, err := service.resolveProviderUser(context.Background(), provider, "sub-1", existing.Email, "Verified User", "", true, `{"sub":"sub-1"}`, providerIntentLogin, "")
 	if err != nil {
 		t.Fatalf("expected verified email to auto-link, got %v", err)
 	}
@@ -188,7 +254,7 @@ func TestResolveProviderUserNormalizesProviderEmailBeforeAutoLink(t *testing.T) 
 		DefaultRole:         domainuser.RoleUser,
 	}
 
-	userItem, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "Verified@Example.com", "Verified User", "", true, `{"sub":"sub-1"}`, providerIntentLogin)
+	userItem, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "Verified@Example.com", "Verified User", "", true, `{"sub":"sub-1"}`, providerIntentLogin, "")
 	if err != nil {
 		t.Fatalf("expected normalized provider email to auto-link, got %v", err)
 	}
@@ -308,7 +374,7 @@ func TestResolveProviderUserRejectsInactiveBoundUserWithoutUpdatingIdentity(t *t
 		DefaultRole:         domainuser.RoleUser,
 	}
 
-	_, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "bound@example.com", "Bound User", "", true, `{"sub":"sub-1"}`, providerIntentLogin)
+	_, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "bound@example.com", "Bound User", "", true, `{"sub":"sub-1"}`, providerIntentLogin, "")
 	if err == nil || err.Error() != ErrInvalidCredentials.Error() {
 		t.Fatalf("expected inactive account rejection, got %v", err)
 	}
@@ -337,7 +403,7 @@ func TestResolveProviderUserRejectsInactiveAutoLinkUserWithoutBinding(t *testing
 		DefaultRole:         domainuser.RoleUser,
 	}
 
-	_, err := service.resolveProviderUser(context.Background(), provider, "sub-1", existing.Email, "Suspended User", "", true, `{"sub":"sub-1"}`, providerIntentLogin)
+	_, err := service.resolveProviderUser(context.Background(), provider, "sub-1", existing.Email, "Suspended User", "", true, `{"sub":"sub-1"}`, providerIntentLogin, "")
 	if err == nil || err.Error() != ErrInvalidCredentials.Error() {
 		t.Fatalf("expected inactive account rejection, got %v", err)
 	}
@@ -359,7 +425,7 @@ func TestResolveProviderUserReturnsIdentityCreateErrorWithoutCleanupCompensation
 		DefaultRole:         domainuser.RoleUser,
 	}
 
-	_, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "new@example.com", "New User", "", true, `{"sub":"sub-1"}`, providerIntentLogin)
+	_, err := service.resolveProviderUser(context.Background(), provider, "sub-1", "new@example.com", "New User", "", true, `{"sub":"sub-1"}`, providerIntentLogin, "")
 	if err == nil || err.Error() != "duplicate identity" {
 		t.Fatalf("expected identity creation error, got %v", err)
 	}
@@ -503,6 +569,7 @@ type providerLoginRepo struct {
 	credentialsByUserID       map[uint]*domainuser.Credential
 	identities                []domainuser.UserIdentity
 	providersBySlug           map[string]*domainuser.IdentityProvider
+	lastCreatedUser           *domainuser.User
 }
 
 func (r *providerLoginRepo) GetIdentityProviderBySlug(ctx context.Context, slug string) (*domainuser.IdentityProvider, error) {
@@ -563,6 +630,8 @@ func (r *providerLoginRepo) CreateWithCredential(
 	}
 	item.ID = r.nextUserID
 	r.nextUserID++
+	copyItem := *item
+	r.lastCreatedUser = &copyItem
 	return nil
 }
 
@@ -589,6 +658,8 @@ func (r *providerLoginRepo) CreateWithCredentialAndIdentity(
 	}
 	item.ID = r.nextUserID
 	r.nextUserID++
+	copyItem := *item
+	r.lastCreatedUser = &copyItem
 	if identity != nil {
 		if r.nextIdentityID == 0 {
 			r.nextIdentityID = 200

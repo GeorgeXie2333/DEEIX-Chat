@@ -1,0 +1,148 @@
+{
+  "title": "MCP ツール",
+  "sections": {
+    "servers": "MCP サービス",
+    "tools": "MCP ツール"
+  },
+  "fields": {
+    "mcpEnable": {
+      "label": "MCP ツールを有効化",
+      "description": "ユーザーが会話内で有効化済み MCP ツールを選択できるようにします。"
+    },
+    "maxSelectedTools": {
+      "label": "1 メッセージで選択できるツール数",
+      "description": "1 回のメッセージで選択できる MCP ツールの最大数です。既定は 32、最大は 128 です。"
+    },
+    "maxLLMCalls": {
+      "label": "最大 LLM リクエスト回数",
+      "description": "1 回のメッセージ内で許可される LLM リクエスト総数です。初回リクエストと最終要約を含みます。既定は 5、最小は 2 です。"
+    },
+    "maxToolCalls": {
+      "label": "最大 MCP Tool 呼び出し回数",
+      "description": "1 回のメッセージ内で許可される MCP Tool Call の総数です。失敗した呼び出しも回数に含みます。既定は 8 です。"
+    },
+    "maxConcurrentCalls": {
+      "label": "MCP Tool 同時実行上限",
+      "description": "単一サービスインスタンスで同時に実行できる MCP Tool Call の上限です。既定は 8 です。"
+    },
+    "toolTimeout": {
+      "label": "MCP Tool 呼び出しタイムアウト",
+      "description": "1 回の MCP Tool Call の最大待機時間です。単位は秒です。既定は 10 です。"
+    },
+    "toolRetry": {
+      "label": "MCP Tool リトライ回数",
+      "description": "MCP Tool Call 失敗後のリトライ回数です。既定は 0 です。"
+    }
+  },
+  "status": {
+    "active": "オン",
+    "inactive": "オフ",
+    "all": "すべて",
+    "enabled": "有効",
+    "disabled": "無効"
+  },
+  "sort": {
+    "nameAsc": "名前 A-Z",
+    "nameDesc": "名前 Z-A",
+    "statusAsc": "状態",
+    "updatedDesc": "最近更新",
+    "updatedAsc": "最も古い更新"
+  },
+  "table": {
+    "name": "名前",
+    "url": "URL",
+    "status": "状態",
+    "tools": "ツール",
+    "lastSynced": "同期日時",
+    "tool": "ツール",
+    "description": "説明",
+    "schema": "Schema",
+    "enabled": "有効化",
+    "emptyServers": "MCP サービスはありません",
+    "emptyTools": "ツールはありません。先に同期してください",
+    "emptyFilteredTools": "一致するツールはありません",
+    "noDescription": "説明なし",
+    "unsynced": "未同期"
+  },
+  "toolbar": {
+    "searchServers": "サービス名、URL を検索",
+    "searchTools": "ツール名、説明を検索",
+    "add": "追加",
+    "sync": "同期",
+    "syncTools": "ツールを同期",
+    "editServer": "サービスを編集",
+    "deleteServer": "サービスを削除",
+    "viewTools": "{name} の MCP ツールを表示",
+    "toggleServer": "MCP サービス {name} の状態を切り替え",
+    "selectPageTools": "現在のページのツールを選択",
+    "selectTool": "ツール {name} を選択",
+    "editTool": "ツールを編集",
+    "viewSchema": "Schema を表示",
+    "viewToolSchema": "ツール {name} の Schema を表示",
+    "toggleTool": "ツール {name} を切り替え",
+    "activateSelected": "有効化",
+    "deactivateSelected": "無効化"
+  },
+  "bulkConfirm": {
+    "title": "一括操作を確認",
+    "description": "選択した {count} 個のツールにこの一括操作を実行します。",
+    "confirm": "実行を確認",
+    "pending": "処理中"
+  },
+  "serverDialog": {
+    "createTitle": "MCP サービスを追加",
+    "editTitle": "MCP サービスを編集",
+    "description": "MCP Streamable HTTP サービスエンドポイントとアクセス資格情報を設定します。",
+    "name": "サービス名",
+    "namePlaceholder": "サービス名",
+    "status": "サービス状態",
+    "url": "サービス URL",
+    "authToken": "認証キー",
+    "authTokenCreatePlaceholder": "空欄可",
+    "authTokenEditPlaceholder": "空欄の場合は変更しません",
+    "headers": "リクエストヘッダー"
+  },
+  "toolDialog": {
+    "title": "MCP ツールを編集",
+    "description": "会話ツールバーとモデル呼び出し時に表示されるツール名と説明をカスタマイズします。",
+    "displayName": "表示名",
+    "displayNamePlaceholder": "ツール表示名",
+    "toolDescription": "説明",
+    "toolDescriptionPlaceholder": "このツールがどのようなタスクに適しているかを説明"
+  },
+  "schemaDialog": {
+    "fallbackTitle": "ツール Schema",
+    "description": "{name} の入力パラメーター JSON Schema",
+    "fallbackDescription": "入力パラメーター JSON Schema"
+  },
+  "confirm": {
+    "deleteServer": "MCP サービス「{name}」を削除しますか？"
+  },
+  "toast": {
+    "settingsUpdated": "ツール設定を更新しました",
+    "settingsLoadFailed": "ツール設定の読み込みに失敗しました",
+    "saveFailed": "保存に失敗しました",
+    "serversLoadFailed": "MCP サービスの読み込みに失敗しました",
+    "toolsLoadFailed": "MCP ツールの読み込みに失敗しました",
+    "toolsSynced": "MCP ツールを同期しました",
+    "toolsSyncFailed": "MCP ツールの同期に失敗しました",
+    "serverUpdated": "MCP サービスを更新しました",
+    "serverCreated": "MCP サービスを作成しました",
+    "serverSaveFailed": "MCP サービスの保存に失敗しました",
+    "serverDeleted": "MCP サービスを削除しました",
+    "serverDeleteFailed": "MCP サービスの削除に失敗しました",
+    "serverStatusUpdated": "MCP サービスを{status}しました",
+    "serverStatusFailed": "MCP サービス状態の更新に失敗しました",
+    "toolStatusFailed": "ツール状態の更新に失敗しました",
+    "selectedToolsEnabled": "選択したツールを有効化しました",
+    "selectedToolsDisabled": "選択したツールを無効化しました",
+    "selectedToolsUpdateFailed": "ツールの一括更新に失敗しました",
+    "toolUpdated": "ツール情報を更新しました",
+    "toolSaveFailed": "ツールの保存に失敗しました",
+    "schemaCopied": "Schema をコピーしました",
+    "copyFailed": "コピーに失敗しました",
+    "unknownError": "リクエストに失敗しました。しばらくしてからもう一度お試しください。",
+    "sessionExpired": "ログイン状態が失効しました",
+    "sessionExpiredDescription": "続行するには再度ログインしてください。"
+  }
+}

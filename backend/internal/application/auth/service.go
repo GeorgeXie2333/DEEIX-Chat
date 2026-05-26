@@ -34,7 +34,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const passwordHashCost = 12
+const (
+	passwordHashCost  = 12
+	defaultUserLocale = "zh-CN"
+)
 
 // Service 封装认证业务能力。
 type Service struct {
@@ -200,7 +203,7 @@ func (s *Service) EnsureBootstrapSuperAdmin(ctx context.Context) error {
 		Role:        domainuser.RoleSuperAdmin,
 		Status:      domainuser.StatusActive,
 		Timezone:    "Etc/UTC",
-		Locale:      "en-US",
+		Locale:      defaultUserLocale,
 	}
 
 	if err = s.repo.CreateWithCredential(ctx, item, domainuser.Credential{
@@ -784,15 +787,28 @@ func validateAppearancePreferences(raw string) error {
 func normalizeLocale(raw string) (string, error) {
 	trimmed := strings.TrimSpace(raw)
 	if trimmed == "" {
-		return "en-US", nil
+		return defaultUserLocale, nil
 	}
 	normalized := strings.ReplaceAll(trimmed, "_", "-")
-	switch normalized {
-	case "en", "en-US", "zh", "zh-CN":
-		return normalized, nil
+	lower := strings.ToLower(normalized)
+	switch {
+	case lower == "zh" || strings.HasPrefix(lower, "zh-"):
+		return "zh-CN", nil
+	case lower == "ja" || strings.HasPrefix(lower, "ja-"):
+		return "ja-JP", nil
+	case lower == "en" || strings.HasPrefix(lower, "en-"):
+		return "en-US", nil
 	default:
 		return "", ErrInvalidLocale
 	}
+}
+
+func normalizeLocaleOrDefault(raw string) string {
+	locale, err := normalizeLocale(raw)
+	if err != nil {
+		return defaultUserLocale
+	}
+	return locale
 }
 
 // UpdateUsernameOnce 修改当前用户用户名，仅允许自主修改一次。

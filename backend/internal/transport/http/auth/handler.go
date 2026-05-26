@@ -148,6 +148,7 @@ func (h *Handler) StartEmailRegistration(c *gin.Context) {
 	result, err := h.service.RequestEmailRegistration(
 		c.Request.Context(),
 		req.Email,
+		req.Locale,
 		req.TurnstileToken,
 		c.ClientIP(),
 		middleware.MustRequestID(c),
@@ -181,6 +182,7 @@ func (h *Handler) CompleteEmailRegistration(c *gin.Context) {
 		req.Email,
 		req.Password,
 		req.Code,
+		req.Locale,
 		req.TurnstileToken,
 		c.ClientIP(),
 		middleware.MustRequestID(c),
@@ -472,7 +474,7 @@ func (h *Handler) CompleteProviderBind(c *gin.Context) {
 func (h *Handler) StartProviderLogin(c *gin.Context) {
 	slug := c.Param("slug")
 	callback := c.Query("redirect_uri")
-	target, err := h.service.BuildProviderAuthURL(c.Request.Context(), slug, callback, c.Query("next"), c.Query("code_challenge"), c.Query("intent"))
+	target, err := h.service.BuildProviderAuthURL(c.Request.Context(), slug, callback, c.Query("next"), c.Query("code_challenge"), c.Query("intent"), c.Query("locale"))
 	if err != nil {
 		response.ErrorFrom(c, http.StatusBadRequest, err)
 		return

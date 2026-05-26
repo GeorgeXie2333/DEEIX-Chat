@@ -1,0 +1,205 @@
+{
+  "groups": {
+    "loginPage": {
+      "title": "ログインページ",
+      "description": "ログインページのブラウザータブタイトルと、ログイン後の既定遷移先を制御します。"
+    },
+    "loginAndRegistration": {
+      "title": "ログインと登録",
+      "description": "ログインページで利用できるアカウントログイン方法とメール登録入口を制御します。"
+    },
+    "humanVerification": {
+      "title": "人間確認",
+      "description": "メール登録に Cloudflare Turnstile を有効化します。第三者ログインには影響しません。"
+    },
+    "bindingAndVerification": {
+      "title": "バインドと確認",
+      "description": "メール確認、登録メールポリシー、第三者 ID バインドポリシーを制御します。"
+    },
+    "loginSecurity": {
+      "title": "ログインセキュリティ",
+      "description": "ログイントークンの有効期間、失敗ロック、公開認証 API のレート制限を制御します。"
+    }
+  },
+  "fields": {
+    "loginPageTitle": {
+      "label": "タブタイトル",
+      "description": "ブラウザータブに表示されるタイトルです。",
+      "placeholder": "DEEIX Chat にサインイン"
+    },
+    "loginDefaultNextPath": {
+      "label": "既定の遷移パス",
+      "description": "/login に next パラメーターがない場合、ログイン成功後に遷移する既定パスです。"
+    },
+    "emailLoginEnabled": {
+      "label": "メールログイン",
+      "description": "ユーザーがメールアドレスとパスワードでログインできるようにします。"
+    },
+    "emailRegistrationEnabled": {
+      "label": "メール登録",
+      "description": "ユーザーがメールアドレスでアカウントを作成できるようにします。"
+    },
+    "usernameLoginEnabled": {
+      "label": "ユーザー名ログイン",
+      "description": "ユーザーがユーザー名とパスワードでログインできるようにします。"
+    },
+    "thirdPartyLoginEnabled": {
+      "label": "第三者ログイン",
+      "description": "有効にすると、OIDC / OAuth2 ID プロバイダーを設定して表示できます。"
+    },
+    "emailVerificationEnabled": {
+      "label": "メール確認を有効化",
+      "description": "メール登録時にメール認証コードの入力を必須にします。"
+    },
+    "smtpHost": {
+      "label": "SMTP ホスト",
+      "description": "登録認証コードを送信する SMTP サービス URL です。"
+    },
+    "smtpPort": {
+      "label": "SMTP ポート",
+      "description": "SMTP サービスポートです。一般的には 465 または 587 です。"
+    },
+    "smtpUsername": {
+      "label": "SMTP ユーザー名",
+      "description": "SMTP ログインアカウントです。通常は完全なメールアドレスです。"
+    },
+    "smtpPassword": {
+      "label": "SMTP パスワード",
+      "description": "SMTP ログインパスワード、またはアプリ専用パスワードです。"
+    },
+    "smtpFrom": {
+      "label": "送信者",
+      "description": "認証コードメールの送信者です。空欄の場合は SMTP ユーザー名を使用します。"
+    },
+    "emailRegistrationAllowedDomains": {
+      "label": "登録ドメイン許可リスト",
+      "description": "登録を許可するメールドメインです。空欄の場合は制限しません。"
+    },
+    "emailRegistrationBlockPlusAlias": {
+      "label": "メール別名を禁止",
+      "description": "+ 別名付きメールアドレスでの登録を禁止します。"
+    },
+    "autoLinkVerifiedEmail": {
+      "label": "同一メールを自動バインド",
+      "description": "第三者側で確認済みのメールがローカルアカウントに一致した場合、自動的にバインドします。"
+    },
+    "turnstileRegistrationEnabled": {
+      "label": "登録時の人間確認",
+      "description": "有効にすると、メール登録時に Cloudflare Turnstile の通過が必要になります。OIDC / OAuth2 ログインでは不要です。"
+    },
+    "turnstileSiteKey": {
+      "label": "Turnstile Site Key",
+      "description": "Cloudflare Turnstile のフロントエンドサイトキーです。"
+    },
+    "turnstileSecretKey": {
+      "label": "Turnstile Secret Key",
+      "description": "Cloudflare Turnstile のサーバー側検証キーです。保存後は表示されません。"
+    },
+    "tokenTTLHours": {
+      "label": "アクセストークン有効期間",
+      "description": "Access Token の有効期間です。単位は時間で、範囲は 1-168 です。"
+    },
+    "refreshTokenTTLHours": {
+      "label": "ログイン保持時間",
+      "description": "Refresh Token とセッションの保持時間です。単位は時間で、範囲は 1-8760 です。"
+    },
+    "loginMaxFailures": {
+      "label": "失敗ロックしきい値",
+      "description": "同一アカウントで連続ログイン失敗がこの回数に達するとロックされます。"
+    },
+    "loginLockMinutes": {
+      "label": "ロック時間",
+      "description": "ログイン失敗でロックされた後の継続時間です。単位は分です。"
+    },
+    "publicAuthRateLimitRPM": {
+      "label": "公開認証レート制限",
+      "description": "ログイン、トークン更新、ログインページ設定 API の 1 分あたりのリクエスト上限です。"
+    }
+  },
+  "providers": {
+    "title": "OIDC / OAuth2 ID プロバイダー",
+    "create": "ID プロバイダーを追加",
+    "customOIDC": "カスタム OIDC",
+    "customOAuth2": "カスタム OAuth2",
+    "name": "名前",
+    "type": "タイプ",
+    "loginControl": "ログイン制御",
+    "registrationControl": "登録制御",
+    "dragToReorder": "{name} をドラッグして並べ替え",
+    "loginControlFor": "{name} のログイン制御",
+    "registrationControlFor": "{name} の登録制御",
+    "edit": "ID プロバイダーを編集",
+    "delete": "ID プロバイダーを削除",
+    "empty": "ID プロバイダーはありません"
+  },
+  "providerDialog": {
+    "createTitle": "ID プロバイダーを追加",
+    "editTitle": "ID プロバイダーを編集",
+    "description": "Client Secret は保存後に表示されません。編集時に空欄のままにすると既存のシークレットを保持します。",
+    "loginControlDescription": "プラットフォームアカウントへのログインを許可します",
+    "registrationControlDescription": "アカウントの自動作成を許可します",
+    "callbackURL": "コールバック URL",
+    "copyCallbackURL": "コールバック URL をコピー",
+    "logoURL": "Logo URL",
+    "clientID": "Client ID",
+    "clientSecret": "Client Secret",
+    "oidcEndpoint": "OIDC URL",
+    "issuerURL": "Issuer URL",
+    "discoveryURL": "Discovery URL",
+    "authURL": "Auth URL",
+    "tokenURL": "Token URL",
+    "userinfoURL": "UserInfo URL",
+    "scopes": "Scopes",
+    "advancedSettings": "詳細設定",
+    "sourceField": "ソースフィールド",
+    "systemField": "システムフィールド",
+    "systemFields": {
+      "userID": "ユーザー ID",
+      "email": "メール",
+      "emailVerified": "メール確認状態",
+      "displayName": "表示名",
+      "avatar": "アバター"
+    }
+  },
+  "deleteDialog": {
+    "title": "ID プロバイダーを削除",
+    "thisProvider": "この ID プロバイダー",
+    "description": "削除すると {name} の設定が削除され、この ID プロバイダーを使用しているすべてのアカウントのバインドが解除されます。この操作は元に戻せません。"
+  },
+  "forceDeleteDialog": {
+    "title": "ID プロバイダーを強制削除",
+    "description": "一部のアカウントはこの ID プロバイダーのみに依存してログインしています。強制削除後、これらのアカウントはこの ID プロバイダー経由でログインできなくなります。",
+    "confirm": "強制削除"
+  },
+  "validation": {
+    "defaultNextPath": "既定の遷移パスは /chat のようなサイト内パスである必要があります。",
+    "passwordLoginRequired": "ユーザー名ログインとメールログインを無効にする前に、第三者ログインを有効にし、少なくとも 1 人の管理者が利用可能な ID プロバイダーをバインドしていることを確認してください。",
+    "missingSMTP": "メール確認を有効にするには {fields} の入力が必要です。",
+    "invalidSMTPPort": "SMTP ポートは 1-65535 の整数である必要があります。",
+    "missingTurnstile": "Turnstile 人間確認を有効にするには {fields} の入力が必要です。",
+    "turnstileRegistrationRequired": "Turnstile 人間確認を有効にする前に、メール登録を有効にしてください。"
+  },
+  "punctuation": {
+    "listSeparator": "、"
+  },
+  "toast": {
+    "sessionExpired": "ログイン状態が失効しました",
+    "signInAgain": "続行するには再度ログインしてください。",
+    "loadFailed": "認証設定の読み込みに失敗しました",
+    "saveFailed": "保存に失敗しました",
+    "settingsUpdated": "認証設定を更新しました",
+    "cannotDisableLoginMethod": "ログイン方式を無効にできません",
+    "thirdPartyOnlyRequiresAdminBinding": "管理者が第三者ログインをバインド済みの場合にのみ、第三者ログインのみを残すことができます。",
+    "providerSaved": "ID プロバイダーを保存しました",
+    "providerSaveFailed": "ID プロバイダーの保存に失敗しました",
+    "providerDeleted": "ID プロバイダーを削除しました",
+    "providerDeleteFailed": "ID プロバイダーの削除に失敗しました",
+    "enableLoginFirst": "先にログイン制御を有効にしてください",
+    "registrationRequiresLogin": "この ID プロバイダーでログインが許可されている場合にのみ、登録を有効にできます。",
+    "providerControlUpdated": "ID プロバイダー制御を更新しました",
+    "providerControlSaveFailed": "ID プロバイダー制御の保存に失敗しました",
+    "providerOrderUpdated": "ID プロバイダーの並び順を更新しました",
+    "providerOrderSaveFailed": "ID プロバイダーの並び順保存に失敗しました",
+    "callbackCopied": "コールバック URL をコピーしました"
+  }
+}

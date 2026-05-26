@@ -126,6 +126,7 @@ type providerOAuthState struct {
 	RedirectURI   string `json:"redirectURI"`
 	Next          string `json:"next"`
 	Intent        string `json:"intent"`
+	Locale        string `json:"locale"`
 	CodeChallenge string `json:"codeChallenge"`
 	Nonce         string `json:"nonce"`
 	ExpiresAt     int64  `json:"expiresAt"`
@@ -364,7 +365,7 @@ func (s *Service) CompleteProviderLogin(
 	avatarURL := claimString(profile, provider.AvatarField)
 	emailVerified := resolveProviderEmailVerified(profile, *provider)
 
-	userItem, err := s.resolveProviderUser(ctx, *provider, subject, email, displayName, avatarURL, emailVerified, string(profileJSON), verifiedState.Intent)
+	userItem, err := s.resolveProviderUser(ctx, *provider, subject, email, displayName, avatarURL, emailVerified, string(profileJSON), verifiedState.Intent, verifiedState.Locale)
 	if err != nil {
 		return nil, err
 	}
@@ -905,7 +906,7 @@ func buildProviderAuthURL(provider domainuser.IdentityProvider, authURL string, 
 	return parsed.String(), nil
 }
 
-func (s *Service) BuildProviderAuthURL(ctx context.Context, slug string, redirectURI string, nextPath string, codeChallenge string, intent string) (string, error) {
+func (s *Service) BuildProviderAuthURL(ctx context.Context, slug string, redirectURI string, nextPath string, codeChallenge string, intent string, locale string) (string, error) {
 	if !s.cfg.Snapshot().ThirdPartyLoginEnabled {
 		return "", fmt.Errorf("third-party login is disabled")
 	}
@@ -940,6 +941,7 @@ func (s *Service) BuildProviderAuthURL(ctx context.Context, slug string, redirec
 		RedirectURI:   redirectURI,
 		Next:          normalizeProviderNextPath(nextPath),
 		Intent:        normalizedIntent,
+		Locale:        normalizeLocaleOrDefault(locale),
 		CodeChallenge: strings.TrimSpace(codeChallenge),
 		Nonce:         conv.NormalizePublicID(uuid.NewString()),
 		ExpiresAt:     time.Now().Add(10 * time.Minute).Unix(),
@@ -1090,7 +1092,7 @@ func parseOIDCDiscoveryDocument(reader io.Reader) (oidcDiscoveryDocument, error)
 	}, nil
 }
 
-func (s *Service) resolveProviderUser(ctx context.Context, provider domainuser.IdentityProvider, subject string, email string, displayName string, avatarURL string, emailVerified bool, profileJSON string, intent string) (*domainuser.User, error) {
+func (s *Service) resolveProviderUser(ctx context.Context, provider domainuser.IdentityProvider, subject string, email string, displayName string, avatarURL string, emailVerified bool, profileJSON string, intent string, locale string) (*domainuser.User, error) {
 	identity, err := s.repo.GetUserIdentityByProviderSubject(ctx, provider.ID, subject)
 	if err == nil {
 		if !provider.LoginEnabled {
@@ -1159,7 +1161,7 @@ func (s *Service) resolveProviderUser(ctx context.Context, provider domainuser.I
 		Role:            firstNonEmpty(provider.DefaultRole, domainuser.RoleUser),
 		Status:          domainuser.StatusActive,
 		Timezone:        "Etc/UTC",
-		Locale:          "en-US",
+		Locale:          normalizeLocaleOrDefault(locale),
 		EmailVerifiedAt: emailVerifiedAt,
 	}
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(uuid.NewString()), passwordHashCost)

@@ -34,7 +34,8 @@
   "locale": {
     "label": "Language",
     "english": "English",
-    "chinese": "简体中文"
+    "chinese": "简体中文",
+    "japanese": "日本語"
   },
   "errors": {
     "unknown": "Something went wrong. Please try again later.",

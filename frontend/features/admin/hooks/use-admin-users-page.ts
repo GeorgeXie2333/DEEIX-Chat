@@ -165,7 +165,7 @@ function createEditPayload(user: UserDTO, fallbackSubscriptionTier = "free"): Ed
     role: user.role as AdminUserRole,
     status: user.status as AdminUserStatus,
     timezone: user.timezone.trim() || "Etc/UTC",
-    locale: user.locale.trim() || "en-US",
+    locale: user.locale.trim() || "zh-CN",
     subscriptionTier,
     subscriptionExpiresAt: resolveSubscriptionExpiryInputValue(user.subscriptionExpiresAt),
     billingBalanceUSD: String(user.billingBalanceUSD ?? 0),
@@ -267,7 +267,7 @@ export function useAdminUsersPage({
     role: "user",
     status: "active",
     timezone: "Etc/UTC",
-    locale: "en-US",
+    locale: "zh-CN",
     subscriptionTier: "free",
     subscriptionExpiresAt: "",
     billingBalanceUSD: "0",
@@ -550,7 +550,7 @@ export function useAdminUsersPage({
     const nextDisplayName = editPayload.displayName.trim();
     const nextEmail = editPayload.email.trim();
     const nextPhone = editPayload.phone.trim();
-    const nextLocale = editPayload.locale.trim() || "en-US";
+    const nextLocale = editPayload.locale.trim() || "zh-CN";
     const nextSubscriptionTier = editPayload.subscriptionTier.trim();
     const nextBillingBalance = Number(editPayload.billingBalanceUSD);
     const nextProfilePreferences = editPayload.profilePreferences.trim();
@@ -582,7 +582,7 @@ export function useAdminUsersPage({
     if (nextTimezone !== (editDialogTarget.timezone.trim() || "Etc/UTC")) {
       patchPayload.timezone = nextTimezone;
     }
-    if (nextLocale !== (editDialogTarget.locale.trim() || "en-US")) {
+    if (nextLocale !== (editDialogTarget.locale.trim() || "zh-CN")) {
       patchPayload.locale = nextLocale;
     }
     if (nextProfilePreferences !== editDialogTarget.profilePreferences.trim()) {

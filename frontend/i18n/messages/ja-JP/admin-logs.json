@@ -1,0 +1,199 @@
+{
+  "title": "ログ",
+  "centerTitle": "ログセンター",
+  "audit": "監査ログ",
+  "usage": "利用ログ",
+  "system": "システムイベント",
+  "tabs": {
+    "audit": "監査",
+    "usage": "利用ログ",
+    "auth": "認証ログ",
+    "system": "システムイベント"
+  },
+  "toast": {
+    "sessionExpired": "ログイン状態が失効しました",
+    "signInAgain": "続行するには再度ログインしてください。",
+    "auditLoadFailed": "監査ログの読み込みに失敗しました",
+    "authLoadFailed": "認証ログの読み込みに失敗しました",
+    "systemLoadFailed": "システムイベントの読み込みに失敗しました",
+    "usageLoadFailed": "利用ログの読み込みに失敗しました",
+    "modelFilterLoadFailed": "モデルフィルターの読み込みに失敗しました"
+  },
+  "sort": {
+    "idDesc": "ID 新しい順",
+    "idAsc": "ID 古い順",
+    "createdDesc": "作成日時 新しい順",
+    "createdAsc": "作成日時 古い順",
+    "occurredDesc": "発生日時 新しい順",
+    "occurredAsc": "発生日時 古い順",
+    "callTimeDesc": "呼び出し日時 新しい順",
+    "callTimeAsc": "呼び出し日時 古い順",
+    "costDesc": "費用 高い順",
+    "tokensDesc": "Token 多い順",
+    "latencyDesc": "レイテンシ 高い順"
+  },
+  "filters": {
+    "allResources": "すべて",
+    "allActions": "すべて",
+    "allSources": "すべて",
+    "allEvents": "すべて",
+    "allResults": "すべて",
+    "allLevels": "すべて",
+    "timeRange": "期間",
+    "levels": {
+      "info": "情報",
+      "warn": "警告",
+      "error": "エラー"
+    }
+  },
+  "columns": {
+    "actor": "操作者",
+    "action": "操作",
+    "resource": "リソース",
+    "time": "時間",
+    "requestID": "リクエスト ID",
+    "user": "ユーザー",
+    "event": "イベント",
+    "result": "結果",
+    "reason": "理由",
+    "level": "レベル",
+    "source": "ソース",
+    "message": "メッセージ",
+    "caller": "呼び出し元",
+    "model": "モデル",
+    "billing": "課金",
+    "latency": "レイテンシ"
+  },
+  "audit": {
+    "searchPlaceholder": "ユーザー ID、操作、リソース、リクエスト ID、IP、詳細を検索",
+    "empty": "監査ログはありません"
+  },
+  "auth": {
+    "searchPlaceholder": "ユーザー ID またはイベント種別を検索",
+    "empty": "認証ログはありません"
+  },
+  "system": {
+    "searchPlaceholder": "ソース、イベント、リソース、リクエスト ID、詳細を検索",
+    "empty": "システムイベントはありません"
+  },
+  "usage": {
+    "searchPlaceholder": "ユーザー ID、プラットフォームモデル、上流モデル、上流名、バインドコード、プロトコルを検索",
+    "empty": "利用ログはありません",
+    "filters": {
+      "billingMode": "課金モード",
+      "all": "すべて",
+      "allModels": "すべて",
+      "model": "呼び出しモデル"
+    },
+    "billingModes": {
+      "token": "従量",
+      "call": "回数",
+      "duration": "秒",
+      "tiered": "階層"
+    },
+    "modelTooltip": {
+      "upstreamName": "上流名",
+      "upstreamModel": "実モデル",
+      "bindingCode": "バインドコード",
+      "protocol": "プロトコル"
+    },
+    "tokens": {
+      "inputShort": "入",
+      "outputShort": "出",
+      "cacheReadShort": "読",
+      "cacheWriteShort": "書"
+    },
+    "billing": {
+      "cacheWrite": "キャッシュ(書)",
+      "cacheWrite5m": "キャッシュ(書 5m)",
+      "cacheWrite1h": "キャッシュ(書 1h)",
+      "cacheWrite5m1h": "キャッシュ(書 5m/1h)",
+      "cacheWritePricingLabel": "キャッシュ(書 5m)",
+      "cacheWritePricingNote": "Claude のキャッシュ読み取りは管理画面設定に従います。キャッシュ書き込み 5m は設定価格の 1.25x、1h は 2x、Fast Mode はさらにその上に 6x が適用されます。",
+      "claudeCacheWriteMixedNote": "Claude キャッシュ書き込みは管理画面設定価格の {multiplier} で課金されます。",
+      "claudeCacheWriteNote": "Claude {timeout} キャッシュ書き込みは管理画面設定価格の {multiplier} で課金されます。",
+      "claudeFastModeNote": "Claude Fast Mode: 入力、出力、キャッシュ費用は {multiplier} で課金されます。",
+      "openaiServiceTierNote": "OpenAI service_tier={tier}: {multiplier} で課金されます。",
+      "input": "入力",
+      "output": "出力",
+      "cacheRead": "キャッシュ(読)",
+      "rateNote": "倍率説明",
+      "cacheNote": "キャッシュ説明",
+      "total": "合計",
+      "freeModelNoBilling": "無料",
+      "perCall": "1 回あたり",
+      "perSecond": "1 秒あたり",
+      "callUnit": "回",
+      "secondUnit": "秒",
+      "tieredRangeBounded": "元入力範囲 {from}~{upTo}",
+      "tieredRangeOpen": "元入力範囲 {from}+",
+      "table": {
+        "item": "課金項目",
+        "usage": "利用量",
+        "unitPrice": "単価",
+        "amount": "金額"
+      }
+    }
+  },
+  "detail": {
+    "titles": {
+      "audit": "監査ログ詳細",
+      "auth": "認証ログ詳細",
+      "usage": "利用ログ詳細",
+      "system": "システムイベント詳細"
+    },
+    "fallbacks": {
+      "authEvent": "認証イベント",
+      "modelCall": "モデル呼び出し",
+      "systemEvent": "システムイベント",
+      "auditEvent": "監査イベント"
+    },
+    "blocks": {
+      "event": "イベント",
+      "actor": "操作者",
+      "request": "リクエスト",
+      "user": "ユーザー",
+      "resource": "リソース",
+      "call": "呼び出し",
+      "modelRoute": "モデルルート",
+      "usageBilling": "利用量課金"
+    },
+    "fields": {
+      "action": "操作",
+      "resource": "リソース",
+      "resourceID": "リソース ID",
+      "createdAt": "作成日時",
+      "user": "ユーザー",
+      "userID": "ユーザー ID",
+      "requestID": "リクエスト ID",
+      "event": "イベント",
+      "result": "結果",
+      "reason": "理由",
+      "occurredAt": "発生日時",
+      "level": "レベル",
+      "source": "ソース",
+      "message": "メッセージ",
+      "caller": "呼び出し元",
+      "conversationID": "会話 ID",
+      "callTime": "呼び出し日時",
+      "platformModel": "プラットフォームモデル",
+      "upstreamName": "上流名",
+      "upstreamModel": "上流モデル",
+      "bindingCode": "バインドコード",
+      "protocol": "プロトコル",
+      "billing": "課金",
+      "totalTokens": "合計 Token",
+      "reasoning": "推理",
+      "callCount": "呼び出し回数",
+      "latency": "レイテンシ"
+    },
+    "result": {
+      "success": "成功",
+      "failure": "失敗",
+      "blocked": "ブロック"
+    },
+    "jsonTitle": "詳細 JSON",
+    "copied": "{label}をコピーしました",
+    "copyFailed": "コピーに失敗しました"
+  }
+}

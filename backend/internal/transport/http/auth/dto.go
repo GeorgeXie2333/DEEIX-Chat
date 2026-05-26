@@ -56,6 +56,7 @@ type TwoFactorSetupCancelResponse struct {
 
 type EmailRegistrationStartRequest struct {
 	Email          string `json:"email" binding:"required,max=128,email"`
+	Locale         string `json:"locale" binding:"omitempty,max=16"`
 	TurnstileToken string `json:"turnstileToken" binding:"omitempty,max=2048"`
 }
 
@@ -75,6 +76,7 @@ type EmailRegistrationCompleteRequest struct {
 	Email          string `json:"email" binding:"required,max=128,email"`
 	Password       string `json:"password" binding:"required,min=8,max=128"`
 	Code           string `json:"code" binding:"omitempty,len=6"`
+	Locale         string `json:"locale" binding:"omitempty,max=16"`
 	TurnstileToken string `json:"turnstileToken" binding:"omitempty,max=2048"`
 }
 

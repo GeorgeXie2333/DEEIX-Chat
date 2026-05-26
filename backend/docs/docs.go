@@ -7803,6 +7803,10 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 128
                 },
+                "locale": {
+                    "type": "string",
+                    "maxLength": 16
+                },
                 "password": {
                     "type": "string",
                     "maxLength": 128,
@@ -7823,6 +7827,10 @@ const docTemplate = `{
                 "email": {
                     "type": "string",
                     "maxLength": 128
+                },
+                "locale": {
+                    "type": "string",
+                    "maxLength": 16
                 },
                 "turnstileToken": {
                     "type": "string",

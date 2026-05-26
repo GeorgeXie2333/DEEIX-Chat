@@ -36,7 +36,7 @@ type User struct {
 	Role                  string     `gorm:"size:32;not null;default:'user';index:idx_identity_users_role;comment:角色(superadmin/admin/user)"`
 	Status                string     `gorm:"size:32;not null;default:'active';index:idx_identity_users_status;comment:账户状态"`
 	Timezone              string     `gorm:"size:64;not null;default:'Etc/UTC';comment:时区"`
-	Locale                string     `gorm:"size:16;not null;default:'en-US';comment:语言区域"`
+	Locale                string     `gorm:"size:16;not null;default:'zh-CN';comment:语言区域"`
 	ProfilePreferences    string     `gorm:"type:text;not null;default:'';comment:对话偏好"`
 	AppearancePreferences string     `gorm:"type:text;not null;default:'';comment:外观偏好JSON"`
 	OnboardingCompletedAt *time.Time `gorm:"index:idx_identity_users_onboarding_completed_at;comment:首次引导完成时间"`
