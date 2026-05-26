@@ -57,6 +57,7 @@ const htmlVisualPromptInstruction = `<format>
 </format>
 <require>
   更积极的使用html-visual为用户提供更好的回复质量和效果。
+  使用 HTML 可视化时突出设计感、信息层级与阅读节奏，避免空洞装饰。
 </require>`
 
 type systemPromptInjection struct {
