@@ -393,7 +393,7 @@
   },
   "shareDialog": {
     "title": "この会話を共有",
-    "statusShared": "共有済み",
+    "statusShared": "共有中",
     "statusNotShared": "未共有",
     "publicLink": "公開リンク",
     "emptyLink": "公開リンクは作成されていません",
