@@ -115,6 +115,110 @@ export type ConversationRunDTO = {
   updatedAt: string;
 };
 
+export type ConversationArchiveAttachmentDTO = {
+  kind: "file" | "image" | string;
+  fileName: string;
+  mimeType: string;
+  detectedMIME?: string;
+  fileCategory?: string;
+  fileSize: number;
+  processingStatus?: string;
+  processingReady?: boolean;
+  processingErrorCode?: string;
+  processingErrorMessage?: string;
+};
+
+export type ConversationArchiveTraceBlockDTO = {
+  title: string;
+  summary: string;
+  contentMarkdown: string;
+  status: string;
+  stage?: string;
+  roundID?: string;
+  parentEventID?: string;
+  updatedAt: string;
+  payloadJSON?: string;
+};
+
+export type ConversationArchiveTraceEventDTO = {
+  eventID: string;
+  eventType: string;
+  phase: string;
+  stage?: string;
+  roundID?: string;
+  parentEventID?: string;
+  title: string;
+  summary: string;
+  contentMarkdown: string;
+  status: string;
+  seq: number;
+  startedAt: string;
+  endedAt?: string | null;
+  updatedAt: string;
+  payloadJSON?: string;
+};
+
+export type ConversationArchiveProcessTraceDTO = {
+  enabled: boolean;
+  status: string;
+  process?: ConversationArchiveTraceBlockDTO;
+  tools?: ConversationArchiveTraceBlockDTO;
+  upstreamThink?: ConversationArchiveTraceBlockDTO;
+  promptTrace?: PromptTraceDTO;
+  events?: ConversationArchiveTraceEventDTO[];
+};
+
+export type ConversationArchiveRunDTO = Omit<ConversationRunDTO, "id" | "runID" | "requestID" | "userID" | "conversationID" | "upstreamID" | "upstreamModelID" | "routedBindingCode"> & {
+  originalRunID: string;
+  taskType: string;
+};
+
+export type ConversationArchiveMessageDTO = {
+  originalPublicID: string;
+  parentPublicID?: string;
+  sourcePublicID?: string;
+  runID?: string;
+  role: string;
+  contentType: string;
+  content: string;
+  branchReason: string;
+  tokenUsage: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  reasoningTokens: number;
+  latencyMS: number;
+  status: string;
+  errorCode: string;
+  errorMessage: string;
+  attachments?: ConversationArchiveAttachmentDTO[];
+  processTrace?: ConversationArchiveProcessTraceDTO;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ConversationArchiveDTO = {
+  schema: "deeix-chat.conversation.v1" | string;
+  exportedAt?: string;
+  conversation: {
+    originalPublicID?: string;
+    originalProjectName?: string;
+    title: string;
+    labelsJSON: string;
+    model: string;
+    provider: string;
+    isStarred: boolean;
+    status: string;
+    contextPolicyJSON?: string;
+    messageCount: number;
+    createdAt: string;
+    updatedAt: string;
+  };
+  runs?: ConversationArchiveRunDTO[];
+  messages: ConversationArchiveMessageDTO[];
+};
+
 export type MessageBillingCostDTO = {
   billingMode: string;
   billedCurrency: string;

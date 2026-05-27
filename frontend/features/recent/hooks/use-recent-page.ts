@@ -10,6 +10,8 @@ import { useLoadMoreSentinel } from "@/shared/hooks/use-load-more-sentinel";
 import { useSidebarRecents } from "@/features/recent/context/sidebar-recents-context";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import {
+  exportConversationArchive,
+  importConversationArchive,
   listConversations,
   revokeConversationShare,
   revokeConversationShares,
@@ -29,6 +31,10 @@ import {
   upsertByPublicID,
   isArchivedConversation,
 } from "@/features/recent/utils/conversation-list";
+import {
+  downloadConversationArchive,
+  readConversationArchiveFile,
+} from "@/features/recent/utils/conversation-archive";
 import { RECENT_PAGE_SIZE } from "@/features/recent/utils/recent-display";
 import type { RecentDeleteTarget, RecentRowState } from "@/features/recent/types/recent";
 import {
@@ -101,6 +107,7 @@ export function useRecentPage() {
     setStarByPublicID,
     archiveByPublicID,
     deleteByPublicID,
+    upsertConversation,
     projects,
     setProjectByPublicID,
     touchByPublicID,
@@ -125,6 +132,7 @@ export function useRecentPage() {
   const [deleteTarget, setDeleteTarget] = React.useState<RecentDeleteTarget>(null);
   const [deleteFiles, setDeleteFiles] = React.useState(false);
   const [shareTarget, setShareTarget] = React.useState<ConversationDTO | null>(null);
+  const [importingArchive, setImportingArchive] = React.useState(false);
   const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
   const pageRef = React.useRef(1);
   const requestVersionRef = React.useRef(0);
@@ -304,6 +312,69 @@ export function useRecentPage() {
     }
     router.push("/chat");
   }, [prependNewConversation, projectFilter, router]);
+
+  const onExport = React.useCallback(
+    async (item: ConversationDTO) => {
+      const token = await resolveAccessToken();
+      if (!token) {
+        toast.error(t("archive.signInRequired"));
+        return;
+      }
+      try {
+        const archive = await exportConversationArchive(token, item.publicID);
+        downloadConversationArchive(archive, item.title || t("untitled"));
+        toast.success(t("archive.exported"));
+      } catch (error) {
+        toast.error(t("archive.exportFailed"), {
+          description: resolveErrorMessage(error, t("archive.exportFailed")),
+        });
+      }
+    },
+    [resolveErrorMessage, t],
+  );
+
+  const onImportConversationArchive = React.useCallback(
+    async (file: File) => {
+      if (importingArchive) {
+        return;
+      }
+      setImportingArchive(true);
+      try {
+        const archive = await readConversationArchiveFile(file);
+        const token = await resolveAccessToken();
+        if (!token) {
+          toast.error(t("archive.signInRequired"));
+          return;
+        }
+        const imported = await importConversationArchive(token, archive);
+        upsertConversation(imported);
+        setItems((current) =>
+          conversationMatchesRecentFilters(imported, statusFilter, starredFilter, shareFilter, projectFilter)
+            ? upsertByPublicID(current, imported)
+            : current,
+        );
+        toast.success(t("archive.imported"));
+        router.push(`/chat?conversation_id=${imported.publicID}`);
+      } catch (error) {
+        toast.error(t("archive.importFailed"), {
+          description: resolveErrorMessage(error, t("archive.invalidImportFile")),
+        });
+      } finally {
+        setImportingArchive(false);
+      }
+    },
+    [
+      importingArchive,
+      projectFilter,
+      resolveErrorMessage,
+      router,
+      shareFilter,
+      starredFilter,
+      statusFilter,
+      t,
+      upsertConversation,
+    ],
+  );
 
   const onProjectFilterChange = React.useCallback(
     (value: ConversationProjectFilter) => {
@@ -642,6 +713,7 @@ export function useRecentPage() {
     projectFilter,
     projects,
     query,
+    importingArchive,
     isSelectionMode,
     selectedConversationIDs,
     hoveredConversationID,
@@ -656,6 +728,8 @@ export function useRecentPage() {
     pageSelectionState,
     loadMoreRef,
     onCreateConversation,
+    onExport,
+    onImportConversationArchive,
     setQuery,
     setStatusFilter,
     setStarredFilter,

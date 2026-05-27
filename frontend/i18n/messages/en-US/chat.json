@@ -11,6 +11,11 @@
   "time": "Time",
   "tokens": "Tokens",
   "details": "Details",
+  "archive": {
+    "exported": "JSON exported",
+    "exportFailed": "Export failed",
+    "signInRequired": "Sign in to export this conversation."
+  },
   "greeting": {
     "morning": "Good morning",
     "afternoon": "Good afternoon",
@@ -80,6 +85,7 @@
     "unassignedProject": "Default",
     "share": "Share",
     "manageShare": "Manage share",
+    "exportJSON": "Export JSON",
     "delete": "Delete"
   },
   "markdown": {
@@ -201,6 +207,7 @@
     "screenshotUnsupported": "This browser does not support screenshots",
     "screenshotFailed": "Screenshot failed",
     "retry": "Please try again.",
+    "metadataOnly": "Metadata only",
     "policy": {
       "mimeNotAllowed": "This file type is not included in the admin MIME allowlist.",
       "fullContextLimitExceeded": "Vector retrieval is disabled. Only small files that fit full-context injection can be uploaded, and this file exceeds the {limit} KB limit.",

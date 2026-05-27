@@ -1209,6 +1209,12 @@ type ConversationDeleteResponseDoc struct {
 	Data     ConversationDeleteResponse `json:"data"`
 }
 
+// ConversationArchiveResponseDoc 会话 JSON 归档响应文档。
+type ConversationArchiveResponseDoc struct {
+	ErrorMsg string                              `json:"errorMsg"`
+	Data     appconversation.ConversationArchive `json:"data"`
+}
+
 // ConversationShareResponseDoc 会话分享响应文档。
 type ConversationShareResponseDoc struct {
 	ErrorMsg string                    `json:"errorMsg"`

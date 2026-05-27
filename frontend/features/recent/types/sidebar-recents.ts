@@ -37,6 +37,7 @@ export type SidebarRecentsControllerValue = {
   loadMore: () => Promise<void>;
   retryLoadMore: () => Promise<void>;
   prependNewConversation: (platformModelName?: string, projectID?: string) => Promise<ConversationDTO | null>;
+  upsertConversation: (item: ConversationDTO) => void;
   touchByPublicID: (publicID: string, patch: Partial<ConversationDTO>) => void;
   renameByPublicID: (publicID: string, title: string) => Promise<ConversationDTO | null>;
   createProject: (payload: CreateConversationProjectRequest) => Promise<ConversationProjectDTO | null>;

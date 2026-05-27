@@ -36,6 +36,7 @@ import type {
 } from "@/features/recent/types/sidebar-recents";
 import {
   mergeUniqueByPublicID,
+  isArchivedConversation,
   removeByPublicID,
   sortByStarredAtDesc,
   sortByUpdatedAtDesc,
@@ -417,6 +418,33 @@ export function useSidebarRecentsController(): SidebarRecentsControllerValue {
     return item;
   }, [publishChange, t]);
 
+  const upsertConversation = React.useCallback((item: ConversationDTO) => {
+    if (isArchivedConversation(item)) {
+      setRecentItems((prev) => removeByPublicID(prev, item.publicID));
+      setStarredItems((prev) => removeByPublicID(prev, item.publicID));
+      publishChange({ type: "upsert", publicID: item.publicID, item });
+      return;
+    }
+
+    if (item.isStarred) {
+      const alreadyStarred = starredItemsRef.current.some((current) => current.publicID === item.publicID);
+      setRecentItems((prev) => removeByPublicID(prev, item.publicID));
+      setStarredItems((prev) => upsertByPublicID(prev, item, sortByStarredAtDesc));
+      if (!alreadyStarred) {
+        setStarredTotal((current) => current + 1);
+      }
+    } else {
+      const wasStarred = starredItemsRef.current.some((current) => current.publicID === item.publicID);
+      setRecentItems((prev) => upsertByPublicID(prev, item, sortByUpdatedAtDesc));
+      setStarredItems((prev) => removeByPublicID(prev, item.publicID));
+      if (wasStarred) {
+        setStarredTotal((current) => Math.max(0, current - 1));
+      }
+    }
+    publishChange({ type: "upsert", publicID: item.publicID, item });
+  }, [publishChange]);
+
+
   const renameByPublicID = React.useCallback(
     async (publicID: string, title: string): Promise<ConversationDTO | null> => {
       const token = await resolveAccessToken();
@@ -784,6 +812,7 @@ export function useSidebarRecentsController(): SidebarRecentsControllerValue {
       loadMore,
       retryLoadMore,
       prependNewConversation,
+      upsertConversation,
       touchByPublicID,
       renameByPublicID,
       createProject,
@@ -820,6 +849,7 @@ export function useSidebarRecentsController(): SidebarRecentsControllerValue {
       starredItems,
       starredTotal,
       touchByPublicID,
+      upsertConversation,
       updateProject,
       renameByPublicID,
       setStarByPublicID,

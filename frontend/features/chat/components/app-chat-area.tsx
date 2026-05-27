@@ -44,8 +44,10 @@ import {
 import { useSidebarRecents } from "@/features/recent/context/sidebar-recents-context";
 import { useChatData } from "@/features/chat/hooks/use-chat-data";
 import { toPendingAttachment } from "@/features/chat/model/message-submit";
+import { exportConversationArchive } from "@/shared/api/conversation";
 import { listAvailableMCPTools } from "@/shared/api/mcp";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
+import { downloadConversationArchive } from "@/features/recent/utils/conversation-archive";
 import type { ConversationOptions } from "@/shared/api/conversation.types";
 import type { MCPToolDTO } from "@/shared/api/mcp.types";
 import { cn } from "@/lib/utils";
@@ -517,6 +519,24 @@ export function AppChatArea() {
     setShareDialogOpen(true);
   }, [canOperateConversation]);
 
+  const onExportActiveConversation = React.useCallback(async () => {
+    if (!canOperateConversation) {
+      return;
+    }
+    const token = await resolveAccessToken();
+    if (!token) {
+      toast.error(t("archive.signInRequired"));
+      return;
+    }
+    try {
+      const archive = await exportConversationArchive(token, actionConversationID);
+      downloadConversationArchive(archive, activeConversationTitle);
+      toast.success(t("archive.exported"));
+    } catch {
+      toast.error(t("archive.exportFailed"));
+    }
+  }, [actionConversationID, activeConversationTitle, canOperateConversation, t]);
+
   const messagesWithInlineError = React.useMemo<ChatAreaMessage[]>(() => {
     const errors = [
       modelsErrorMsg.trim()
@@ -772,6 +792,7 @@ export function AppChatArea() {
                   }}
                   onShare={onShareActiveConversation}
                   shareActive={activeConversationShared}
+                  onExport={onExportActiveConversation}
                   onDelete={onRequestDeleteActiveConversation}
                   markdownRender={markdownRender}
                   showModelInfo={showModelInfo}

@@ -83,6 +83,7 @@ type ChatAreaProps = {
   projectMenu?: React.ComponentProps<typeof ChatLabel>["projectMenu"];
   onShare?: () => void;
   shareActive?: boolean;
+  onExport?: () => void | Promise<void>;
   onDelete?: () => void | Promise<void>;
   markdownRender?: boolean;
   showModelInfo?: boolean;
@@ -238,6 +239,7 @@ export function ChatArea({
   projectMenu,
   onShare,
   shareActive = false,
+  onExport,
   onDelete,
   markdownRender = true,
   showModelInfo = true,
@@ -271,6 +273,7 @@ export function ChatArea({
             projectMenu={canOperateConversation ? projectMenu : undefined}
             onShare={canOperateConversation ? onShare : undefined}
             shareActive={shareActive}
+            onExport={canOperateConversation ? onExport : undefined}
             onDelete={canOperateConversation ? onDelete : undefined}
           />
           {canOperateConversation ? (

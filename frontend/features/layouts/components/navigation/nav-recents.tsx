@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { Star } from "lucide-react"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner"
 
 import {
   AlertDialog,
@@ -38,6 +39,9 @@ import type {
 } from "@/features/layouts/types/navigation"
 import { useSidebarRecents } from "@/features/recent/context/sidebar-recents-context"
 import { useLoadMoreSentinel } from "@/shared/hooks/use-load-more-sentinel"
+import { exportConversationArchive } from "@/shared/api/conversation"
+import { resolveAccessToken } from "@/shared/auth/resolve-access-token"
+import { downloadConversationArchive } from "@/features/recent/utils/conversation-archive"
 import { cn } from "@/lib/utils"
 
 const RECENT_SKELETON_WIDTHS = ["74%", "61%", "69%", "57%", "72%"] as const
@@ -129,6 +133,24 @@ export function NavRecents() {
     setShareTarget({ publicID, title })
   }, [])
 
+  const onExport = React.useCallback(
+    async (publicID: string, title: string) => {
+      const token = await resolveAccessToken()
+      if (!token) {
+        toast.error(t("archive.signInRequired"))
+        return
+      }
+      try {
+        const archive = await exportConversationArchive(token, publicID)
+        downloadConversationArchive(archive, title || t("untitled"))
+        toast.success(t("archive.exported"))
+      } catch {
+        toast.error(t("archive.exportFailed"))
+      }
+    },
+    [t],
+  )
+
   const confirmDelete = React.useCallback(async () => {
     if (!deleteTarget) {
       return
@@ -213,6 +235,7 @@ export function NavRecents() {
                       onRenameCancel={onRenameCancel}
                       onArchive={onArchive}
                       onShare={onShare}
+                      onExport={onExport}
                       onDelete={onDelete}
                       onNavigate={isMobile ? () => setOpenMobile(false) : undefined}
                       menuTriggerID={`recent-item-menu-trigger-${publicID}`}

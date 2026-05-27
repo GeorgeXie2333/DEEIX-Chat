@@ -6,6 +6,7 @@ import "github.com/gin-gonic/gin"
 func (m *Module) RegisterRoutes(authRequired *gin.RouterGroup) {
 	authRequired.POST("/conversations", m.Handler.CreateConversation)
 	authRequired.GET("/conversations", m.Handler.ListConversations)
+	authRequired.POST("/conversations/import", m.Handler.ImportConversationArchive)
 	authRequired.POST("/conversations/shares/revoke", m.Handler.RevokeConversationShares)
 	authRequired.GET("/conversation-projects", m.Handler.ListConversationProjects)
 	authRequired.POST("/conversation-projects", m.Handler.CreateConversationProject)
@@ -19,6 +20,7 @@ func (m *Module) RegisterRoutes(authRequired *gin.RouterGroup) {
 	authRequired.PATCH("/conversations/:id/archive", m.Handler.SetConversationArchive)
 	authRequired.PATCH("/conversations/:id/project", m.Handler.SetConversationProject)
 	authRequired.DELETE("/conversations/:id", m.Handler.DeleteConversation)
+	authRequired.GET("/conversations/:id/export", m.Handler.ExportConversationArchive)
 	authRequired.GET("/conversations/:id/share", m.Handler.GetConversationShare)
 	authRequired.POST("/conversations/:id/share", m.Handler.CreateConversationShare)
 	authRequired.DELETE("/conversations/:id/share", m.Handler.RevokeConversationShare)

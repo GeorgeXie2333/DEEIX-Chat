@@ -8,6 +8,8 @@ export type MessageAttachment = {
   fileCategory?: string;
   sizeBytes: number;
   kind: "file" | "image";
+  status?: string;
+  metadataOnly?: boolean;
   previewURL?: string;
   processingStatus?: string;
   processingReady?: boolean;

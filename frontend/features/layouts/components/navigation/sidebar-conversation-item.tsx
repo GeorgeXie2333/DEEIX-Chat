@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Archive, PencilLine, Share2, Trash } from "lucide-react"
+import { Archive, Download, PencilLine, Share2, Trash } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { Ellipsis } from "@/components/animate-ui/icons/ellipsis"
@@ -42,6 +42,7 @@ type SidebarConversationItemProps = {
   onRename: (publicID: string, currentTitle: string) => void
   onArchive: (publicID: string) => void
   onShare?: (publicID: string, title: string) => void
+  onExport?: (publicID: string, title: string) => void | Promise<void>
   onDelete: (publicID: string, title: string) => void
   onNavigate?: () => void
 }
@@ -63,6 +64,7 @@ export function SidebarConversationItem({
   onRename,
   onArchive,
   onShare,
+  onExport,
   onDelete,
   onNavigate,
 }: SidebarConversationItemProps) {
@@ -182,6 +184,16 @@ export function SidebarConversationItem({
               >
                 <DropdownMenuItemIcon icon={Share2} />
                 {item.shareActive ? t("manageShare") : t("share")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!onExport}
+                onSelect={(event) => {
+                  event.preventDefault()
+                  void onExport?.(item.publicID, item.title)
+                }}
+              >
+                <DropdownMenuItemIcon icon={Download} />
+                {t("exportJSON")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={(event) => {

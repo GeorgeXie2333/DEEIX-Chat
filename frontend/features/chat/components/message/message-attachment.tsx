@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 
 import type { MessageAttachment } from "@/features/chat/types/messages";
 import type { PreviewDialogFile } from "@/features/files/components/preview/file-preview-dialog";
@@ -29,13 +30,16 @@ function resolveCardMeta(att: MessageAttachment): string {
 function AttachmentCard({
   att,
   onClick,
+  unavailableLabel,
 }: {
   att: MessageAttachment;
   onClick: () => void;
+  unavailableLabel: string;
 }) {
   const ext = resolveFileExt(att.fileName);
   const meta = resolveCardMeta(att);
   const fileIcon = resolveFileIcon(att);
+  const metadataOnly = att.metadataOnly || att.status === "metadata_only";
 
   return (
     <div
@@ -43,8 +47,10 @@ function AttachmentCard({
     >
       <button
         type="button"
-        onClick={onClick}
-        className="flex h-full w-full items-center gap-2.5 rounded-lg px-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={metadataOnly ? undefined : onClick}
+        disabled={metadataOnly}
+        title={metadataOnly ? unavailableLabel : undefined}
+        className="flex h-full w-full items-center gap-2.5 rounded-lg px-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-75"
       >
         <div className="flex size-6 shrink-0 items-center justify-center">
           {React.createElement(fileIcon, { className: "size-5 text-muted-foreground", strokeWidth: 1.6 })}
@@ -55,7 +61,7 @@ function AttachmentCard({
           </p>
           <div className="mt-1 flex min-w-0 items-center gap-1.5">
             <span className="min-w-0 shrink truncate text-[10px] leading-none text-muted-foreground">
-              {meta}
+              {metadataOnly ? unavailableLabel : meta}
             </span>
             <span className="shrink-0 rounded-md bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground/65">
               {ext}
@@ -80,10 +86,14 @@ export function MessageAttachmentRow({
   allowDownload?: boolean;
   align?: "start" | "end";
 }) {
+  const t = useTranslations("chat.attachments");
   const [activeAtt, setActiveAtt] = React.useState<MessageAttachment | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
   const handleClick = React.useCallback((att: MessageAttachment) => {
+    if (att.metadataOnly || att.status === "metadata_only") {
+      return;
+    }
     setActiveAtt(att);
     setDialogOpen(true);
   }, []);
@@ -97,7 +107,7 @@ export function MessageAttachmentRow({
     <>
       <div className={`flex max-w-full flex-wrap gap-2 sm:max-w-[70%] ${align === "start" ? "justify-start" : "justify-end"}`}>
         {attachments.map((att) => (
-          <AttachmentCard key={att.fileID} att={att} onClick={() => handleClick(att)} />
+          <AttachmentCard key={att.fileID} att={att} onClick={() => handleClick(att)} unavailableLabel={t("metadataOnly")} />
         ))}
       </div>
       {activeAtt ? (

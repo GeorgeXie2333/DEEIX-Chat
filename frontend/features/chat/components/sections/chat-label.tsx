@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, PencilLine, Share2, Star, StarOff, Trash } from "lucide-react";
+import { ChevronDown, Download, PencilLine, Share2, Star, StarOff, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import {
@@ -45,6 +45,7 @@ type ChatLabelProps = {
   };
   onShare?: () => void;
   shareActive?: boolean;
+  onExport?: () => void | Promise<void>;
   onDelete?: () => void | Promise<void>;
 };
 
@@ -57,6 +58,7 @@ export function ChatLabel({
   projectMenu,
   onShare,
   shareActive = false,
+  onExport,
   onDelete,
 }: ChatLabelProps) {
   const t = useTranslations("chat.labelMenu");
@@ -173,6 +175,20 @@ export function ChatLabel({
           >
             <DropdownMenuItemIcon icon={Share2} />
             {shareActive ? t("manageShare") : t("share")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!onExport}
+            onSelect={(event) => {
+              event.preventDefault();
+              if (!onExport) {
+                return;
+              }
+              setMenuOpen(false);
+              void onExport();
+            }}
+          >
+            <DropdownMenuItemIcon icon={Download} />
+            {t("exportJSON")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

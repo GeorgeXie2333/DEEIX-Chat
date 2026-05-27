@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Archive, Check, PencilLine, Share2, Star, Trash } from "lucide-react";
+import { Archive, Check, Download, PencilLine, Share2, Star, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Ellipsis } from "@/components/animate-ui/icons/ellipsis";
@@ -100,6 +100,7 @@ function RecentConversationRow({
   onArchive,
   onShare,
   onRevokeShare,
+  onExport,
   onSetProject,
   onDelete,
 }: {
@@ -119,6 +120,7 @@ function RecentConversationRow({
   onArchive: (publicID: string, archived: boolean) => void;
   onShare: (item: ConversationDTO) => void;
   onRevokeShare: (publicID: string) => void | Promise<void>;
+  onExport: (item: ConversationDTO) => void | Promise<void>;
   onSetProject: (publicID: string, projectID?: string) => void | Promise<void>;
   onDelete: (item: ConversationDTO) => void;
 }) {
@@ -283,6 +285,15 @@ function RecentConversationRow({
             <DropdownMenuItem
               onSelect={(event) => {
                 event.preventDefault();
+                void onExport(item);
+              }}
+            >
+              <DropdownMenuItemIcon icon={Download} />
+              {t("row.exportJSON")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault();
                 onArchive(item.publicID, !archived);
               }}
             >
@@ -328,6 +339,7 @@ type RecentListProps = {
   onArchive: (publicID: string, archived: boolean) => void;
   onShare: (item: ConversationDTO) => void;
   onRevokeShare: (publicID: string) => void | Promise<void>;
+  onExport: (item: ConversationDTO) => void | Promise<void>;
   onSetProject: (publicID: string, projectID?: string) => void | Promise<void>;
   onDelete: (item: ConversationDTO) => void;
   onRetryLoadMore: () => void | Promise<void>;
@@ -415,6 +427,7 @@ export function RecentList({
   onArchive,
   onShare,
   onRevokeShare,
+  onExport,
   onSetProject,
   onDelete,
   onRetryLoadMore,
@@ -492,6 +505,7 @@ export function RecentList({
                     onArchive={onArchive}
                     onShare={onShare}
                     onRevokeShare={onRevokeShare}
+                    onExport={onExport}
                     onSetProject={onSetProject}
                     onDelete={onDelete}
                   />

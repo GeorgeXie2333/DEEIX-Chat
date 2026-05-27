@@ -4784,6 +4784,63 @@
                 }
             }
         },
+        "/conversations/import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "导入 deeix-chat.conversation.v1 JSON 归档，并创建新的会话副本",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "导入单条会话 JSON",
+                "parameters": [
+                    {
+                        "description": "会话归档 JSON",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/conversations/project": {
             "post": {
                 "security": [
@@ -5053,6 +5110,61 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/conversations/{id}/export": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将当前用户的一条会话导出为 deeix-chat.conversation.v1 JSON 归档",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "导出单条会话 JSON",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "会话 public_id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveResponseDoc"
                         }
                     },
                     "400": {
@@ -6919,6 +7031,454 @@
         }
     },
     "definitions": {
+        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchive": {
+            "type": "object",
+            "properties": {
+                "conversation": {
+                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMetadata"
+                },
+                "exportedAt": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMessage"
+                    }
+                },
+                "runs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveRun"
+                    }
+                },
+                "schema": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveAttachment": {
+            "type": "object",
+            "properties": {
+                "detectedMIME": {
+                    "type": "string"
+                },
+                "fileCategory": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "fileSize": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "mimeType": {
+                    "type": "string"
+                },
+                "processingErrorCode": {
+                    "type": "string"
+                },
+                "processingErrorMessage": {
+                    "type": "string"
+                },
+                "processingReady": {
+                    "type": "boolean"
+                },
+                "processingStatus": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMessage": {
+            "type": "object",
+            "properties": {
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveAttachment"
+                    }
+                },
+                "branchReason": {
+                    "type": "string"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "latencyMS": {
+                    "type": "integer"
+                },
+                "originalPublicID": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "parentPublicID": {
+                    "type": "string"
+                },
+                "processTrace": {
+                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveProcessTrace"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "runID": {
+                    "type": "string"
+                },
+                "sourcePublicID": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tokenUsage": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMetadata": {
+            "type": "object",
+            "properties": {
+                "contextPolicyJSON": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "isStarred": {
+                    "type": "boolean"
+                },
+                "labelsJSON": {
+                    "type": "string"
+                },
+                "messageCount": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "originalProjectName": {
+                    "type": "string"
+                },
+                "originalPublicID": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveProcessTrace": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceEvent"
+                    }
+                },
+                "process": {
+                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceBlock"
+                },
+                "promptTrace": {
+                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptTrace"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tools": {
+                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceBlock"
+                },
+                "upstreamThink": {
+                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceBlock"
+                }
+            }
+        },
+        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptBlock": {
+            "type": "object",
+            "properties": {
+                "cacheable": {
+                    "type": "boolean"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "sourceCount": {
+                    "type": "integer"
+                },
+                "sourceRefs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptSourceRef"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tokenEstimate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptSourceRef": {
+            "type": "object",
+            "properties": {
+                "sourceID": {
+                    "type": "string"
+                },
+                "sourceType": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptTrace": {
+            "type": "object",
+            "properties": {
+                "blocks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptBlock"
+                    }
+                },
+                "fullMessageCount": {
+                    "type": "integer"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "promptFingerprint": {
+                    "type": "string"
+                },
+                "sentMessageCount": {
+                    "type": "integer"
+                },
+                "sentTokenEstimate": {
+                    "type": "integer"
+                },
+                "statefulDisabledReason": {
+                    "type": "string"
+                },
+                "statefulSavedMessages": {
+                    "type": "integer"
+                },
+                "statefulSavedTokens": {
+                    "type": "integer"
+                },
+                "statefulUsed": {
+                    "type": "boolean"
+                },
+                "totalTokenEstimate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveRun": {
+            "type": "object",
+            "properties": {
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "endedAt": {
+                    "type": "string"
+                },
+                "endpoint": {
+                    "type": "string"
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "firstTokenLatencyMS": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "originalRunID": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "providerProtocol": {
+                    "type": "string"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "requestedModelName": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "taskType": {
+                    "type": "string"
+                },
+                "toolCallsCount": {
+                    "type": "integer"
+                },
+                "totalLatencyMS": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceBlock": {
+            "type": "object",
+            "properties": {
+                "contentMarkdown": {
+                    "type": "string"
+                },
+                "parentEventID": {
+                    "type": "string"
+                },
+                "payloadJSON": {
+                    "type": "string"
+                },
+                "roundID": {
+                    "type": "string"
+                },
+                "stage": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceEvent": {
+            "type": "object",
+            "properties": {
+                "contentMarkdown": {
+                    "type": "string"
+                },
+                "endedAt": {
+                    "type": "string"
+                },
+                "eventID": {
+                    "type": "string"
+                },
+                "eventType": {
+                    "type": "string"
+                },
+                "parentEventID": {
+                    "type": "string"
+                },
+                "payloadJSON": {
+                    "type": "string"
+                },
+                "phase": {
+                    "type": "string"
+                },
+                "roundID": {
+                    "type": "string"
+                },
+                "seq": {
+                    "type": "integer"
+                },
+                "stage": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope": {
             "type": "object",
             "properties": {
@@ -10859,6 +11419,43 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_transport_http_conversation.ContextArtifactResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_conversation.ConversationArchiveRequest": {
+            "type": "object",
+            "properties": {
+                "conversation": {
+                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMetadata"
+                },
+                "exportedAt": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMessage"
+                    }
+                },
+                "runs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveRun"
+                    }
+                },
+                "schema": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_conversation.ConversationArchiveResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchive"
                 },
                 "errorMsg": {
                     "type": "string"

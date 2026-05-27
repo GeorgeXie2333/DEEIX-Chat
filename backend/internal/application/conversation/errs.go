@@ -17,6 +17,10 @@ var (
 	ErrConversationProjectNotFound = errors.New("conversation project not found")
 	// ErrInvalidConversationProject 会话项目请求不合法。
 	ErrInvalidConversationProject = errors.New("invalid conversation project")
+	// ErrInvalidConversationArchive 会话导入/导出归档格式不合法。
+	ErrInvalidConversationArchive = errors.New("invalid conversation archive")
+	// ErrConversationArchiveTooLarge 会话归档超过导入限制。
+	ErrConversationArchiveTooLarge = errors.New("conversation archive too large")
 	// ErrInvalidFileReference 文件引用无效。
 	ErrInvalidFileReference = errors.New("invalid file reference")
 	// ErrInvalidFileName 文件名不合法。

@@ -11,6 +11,11 @@
   "time": "时间",
   "tokens": "Token",
   "details": "详情",
+  "archive": {
+    "exported": "已导出 JSON",
+    "exportFailed": "导出失败",
+    "signInRequired": "未登录，无法导出对话"
+  },
   "greeting": {
     "morning": "上午好",
     "afternoon": "下午好",
@@ -80,6 +85,7 @@
     "unassignedProject": "默认",
     "share": "分享",
     "manageShare": "管理分享",
+    "exportJSON": "导出 JSON",
     "delete": "删除"
   },
   "markdown": {
@@ -201,6 +207,7 @@
     "screenshotUnsupported": "当前浏览器不支持屏幕截图",
     "screenshotFailed": "屏幕截图失败",
     "retry": "请重试。",
+    "metadataOnly": "仅备份元数据",
     "policy": {
       "mimeNotAllowed": "当前文件类型不在后台允许的 MIME 白名单内。",
       "fullContextLimitExceeded": "当前未启用向量检索，只允许上传可走全文注入的小文件。当前文件超过 {limit} KB 上限。",

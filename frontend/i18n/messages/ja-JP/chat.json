@@ -11,6 +11,11 @@
   "time": "時間",
   "tokens": "Token",
   "details": "詳細",
+  "archive": {
+    "exported": "JSON をエクスポートしました",
+    "exportFailed": "エクスポートに失敗しました",
+    "signInRequired": "この会話をエクスポートするにはログインしてください"
+  },
   "greeting": {
     "morning": "おはようございます",
     "afternoon": "こんにちは",
@@ -80,6 +85,7 @@
     "unassignedProject": "既定",
     "share": "共有",
     "manageShare": "共有を管理",
+    "exportJSON": "JSON をエクスポート",
     "delete": "削除"
   },
   "markdown": {
@@ -201,6 +207,7 @@
     "screenshotUnsupported": "現在のブラウザーはスクリーンショットに対応していません",
     "screenshotFailed": "スクリーンショットに失敗しました",
     "retry": "再試行してください。",
+    "metadataOnly": "メタデータのみ",
     "policy": {
       "mimeNotAllowed": "現在のファイルタイプは、管理画面で許可された MIME リストに含まれていません。",
       "fullContextLimitExceeded": "現在ベクトル検索が有効ではないため、全文注入可能な小さなファイルのみアップロードできます。このファイルは {limit} KB の上限を超えています。",

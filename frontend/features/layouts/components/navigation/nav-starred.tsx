@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "motion/react"
 import { StarOff } from "lucide-react"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner"
 
 import { List } from "@/components/animate-ui/icons/list"
 import {
@@ -43,7 +44,10 @@ import type {
 } from "@/features/layouts/types/navigation"
 import { filterConversationSearchResults } from "@/features/layouts/utils/navigation-search"
 import { useSidebarRecents } from "@/features/recent/context/sidebar-recents-context"
+import { exportConversationArchive } from "@/shared/api/conversation"
 import type { ConversationDTO } from "@/shared/api/conversation.types"
+import { resolveAccessToken } from "@/shared/auth/resolve-access-token"
+import { downloadConversationArchive } from "@/features/recent/utils/conversation-archive"
 import { cn } from "@/lib/utils"
 
 const STARRED_SKELETON_WIDTHS = ["71%", "59%", "66%", "54%", "70%"] as const
@@ -197,6 +201,24 @@ export function NavStarred() {
     setShareTarget({ publicID, title })
   }, [])
 
+  const onExport = React.useCallback(
+    async (publicID: string, title: string) => {
+      const token = await resolveAccessToken()
+      if (!token) {
+        toast.error(t("archive.signInRequired"))
+        return
+      }
+      try {
+        const archive = await exportConversationArchive(token, publicID)
+        downloadConversationArchive(archive, title || t("untitled"))
+        toast.success(t("archive.exported"))
+      } catch {
+        toast.error(t("archive.exportFailed"))
+      }
+    },
+    [t],
+  )
+
   const confirmDelete = React.useCallback(async () => {
     if (!deleteTarget) {
       return
@@ -276,6 +298,7 @@ export function NavStarred() {
                     onRenameCancel={onRenameCancel}
                     onArchive={onArchive}
                     onShare={onShare}
+                    onExport={onExport}
                     onDelete={onDelete}
                     onNavigate={isMobile ? () => setOpenMobile(false) : undefined}
                     menuTriggerID={`starred-item-menu-trigger-${item.publicID}`}

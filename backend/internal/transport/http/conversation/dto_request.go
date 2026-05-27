@@ -1,5 +1,10 @@
 package conversation
 
+import appconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/conversation"
+
+// ConversationArchiveRequest 会话 JSON 归档导入请求。
+type ConversationArchiveRequest = appconversation.ConversationArchive
+
 // CreateConversationRequest 创建会话请求。
 type CreateConversationRequest struct {
 	Title     string `json:"title" binding:"max=255"`

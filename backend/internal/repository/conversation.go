@@ -1,7 +1,10 @@
 package repository
 
+import "context"
+
 // ConversationRepository 定义 conversation 编排层所需的聚合仓储能力。
 type ConversationRepository interface {
+	WithConversationTransaction(ctx context.Context, fn func(repo ConversationRepository) error) error
 	ConversationMetadataRepository
 	MessageRepository
 	MessageFeedbackRepository

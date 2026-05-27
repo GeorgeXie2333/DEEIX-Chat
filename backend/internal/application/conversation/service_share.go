@@ -829,6 +829,7 @@ func isSharedTraceInternalField(key string, parentKey string) bool {
 	normalized := strings.ToLower(strings.NewReplacer("_", "", "-", "").Replace(strings.TrimSpace(key)))
 	parent := strings.ToLower(strings.TrimSpace(parentKey))
 	if normalized == "upstreamname" || normalized == "upstreamdebug" ||
+		normalized == "artifactid" ||
 		normalized == "authorization" || normalized == "proxyauthorization" ||
 		normalized == "cookie" || normalized == "setcookie" {
 		return true

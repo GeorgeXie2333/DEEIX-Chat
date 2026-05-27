@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion, type Transition } from "motion/react"
 import { PencilLine, Plus, Star, StarOff, Trash } from "lucide-react"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner"
 
 import { Ellipsis } from "@/components/animate-ui/icons/ellipsis"
 import { FolderOpenIcon, type FolderOpenIconHandle } from "@/components/ui/folder-open"
@@ -62,9 +63,10 @@ import type {
 } from "@/features/layouts/types/navigation"
 import { useSidebarRecents } from "@/features/recent/context/sidebar-recents-context"
 import { sortByUpdatedAtDesc, upsertByPublicID, removeByPublicID } from "@/features/recent/utils/conversation-list"
-import { listConversations } from "@/shared/api/conversation"
+import { exportConversationArchive, listConversations } from "@/shared/api/conversation"
 import type { ConversationDTO } from "@/shared/api/conversation.types"
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token"
+import { downloadConversationArchive } from "@/features/recent/utils/conversation-archive"
 import { cn } from "@/lib/utils"
 
 type ProjectDraft = {
@@ -279,6 +281,24 @@ export function NavProjects() {
   const onDeleteConversation = React.useCallback((publicID: string, title: string) => {
     setConversationDeleteTarget({ publicID, title })
   }, [])
+
+  const onExportConversation = React.useCallback(
+    async (publicID: string, title: string) => {
+      const token = await resolveAccessToken()
+      if (!token) {
+        toast.error(tRecent("archive.signInRequired"))
+        return
+      }
+      try {
+        const archive = await exportConversationArchive(token, publicID)
+        downloadConversationArchive(archive, title || tRecent("untitled"))
+        toast.success(tRecent("archive.exported"))
+      } catch {
+        toast.error(tRecent("archive.exportFailed"))
+      }
+    },
+    [tRecent],
+  )
 
   const confirmDeleteConversation = React.useCallback(async () => {
     if (!conversationDeleteTarget) {
@@ -665,6 +685,7 @@ export function NavProjects() {
                                 onRename={onRenameConversation}
                                 onArchive={onArchiveConversation}
                                 onShare={(publicID, shareTitle) => setShareTarget({ publicID, title: shareTitle })}
+                                onExport={onExportConversation}
                                 onDelete={onDeleteConversation}
                                 onNavigate={isMobile ? () => setOpenMobile(false) : undefined}
                                 menuTriggerID={`project-conversation-menu-trigger-${conversation.publicID}`}

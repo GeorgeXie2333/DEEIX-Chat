@@ -68,6 +68,16 @@ func NewRepo(db *gorm.DB) *Repo {
 	return &Repo{db: db}
 }
 
+// WithConversationTransaction 在同一事务中执行会话仓储操作。
+func (r *Repo) WithConversationTransaction(ctx context.Context, fn func(repo repository.ConversationRepository) error) error {
+	if fn == nil {
+		return nil
+	}
+	return translateError(r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return fn(&Repo{db: tx})
+	}))
+}
+
 // CreateConversation 创建会话。
 func (r *Repo) CreateConversation(ctx context.Context, item *domainconversation.Conversation) error {
 	entity := toConversationModel(item)
@@ -2363,6 +2373,8 @@ type messageAttachmentSnapshotRow struct {
 	Kind                   string `gorm:"column:kind"`
 	FileName               string `gorm:"column:file_name"`
 	MimeType               string `gorm:"column:mime_type"`
+	Status                 string `gorm:"column:status"`
+	MetaJSON               string `gorm:"column:meta_json"`
 	DetectedMIME           string `gorm:"column:detected_mime"`
 	FileCategory           string `gorm:"column:file_category"`
 	FileSize               int64  `gorm:"column:file_size"`
@@ -2396,6 +2408,8 @@ func (r *Repo) hydrateMessageAttachments(ctx context.Context, items []models.Mes
 			"a.kind",
 			"a.file_name",
 			"a.mime_type",
+			"a.status",
+			"a.meta_json",
 			"a.file_size",
 			"fo.detected_mime",
 			"fo.file_category",
@@ -2413,18 +2427,29 @@ func (r *Repo) hydrateMessageAttachments(ctx context.Context, items []models.Mes
 
 	grouped := make(map[uint][]map[string]interface{}, len(rows))
 	for _, row := range rows {
+		meta := parseAttachmentMetaJSON(row.MetaJSON)
+		detectedMIME := firstNonEmpty(row.DetectedMIME, meta["detected_mime"], meta["detectedMIME"])
+		fileCategory := firstNonEmpty(row.FileCategory, meta["file_category"], meta["fileCategory"])
+		processingStatus := firstNonEmpty(row.ProcessingStatus, meta["processing_status"], meta["processingStatus"])
+		processingErrorCode := firstNonEmpty(row.ProcessingErrorCode, meta["processing_error_code"], meta["processingErrorCode"])
+		processingErrorMessage := firstNonEmpty(row.ProcessingErrorMessage, meta["processing_error_message"], meta["processingErrorMessage"])
+		processingReady := row.ProcessingReady
+		if !processingReady {
+			processingReady = boolFromAttachmentMeta(meta, "processing_ready") || boolFromAttachmentMeta(meta, "processingReady")
+		}
 		grouped[row.MessageID] = append(grouped[row.MessageID], map[string]interface{}{
 			"file_id":                  row.FileID,
 			"kind":                     row.Kind,
 			"file_name":                row.FileName,
 			"mime_type":                row.MimeType,
-			"detected_mime":            row.DetectedMIME,
-			"file_category":            row.FileCategory,
+			"status":                   row.Status,
+			"detected_mime":            detectedMIME,
+			"file_category":            fileCategory,
 			"file_size":                row.FileSize,
-			"processing_status":        row.ProcessingStatus,
-			"processing_ready":         row.ProcessingReady,
-			"processing_error_code":    row.ProcessingErrorCode,
-			"processing_error_message": row.ProcessingErrorMessage,
+			"processing_status":        processingStatus,
+			"processing_ready":         processingReady,
+			"processing_error_code":    processingErrorCode,
+			"processing_error_message": processingErrorMessage,
 		})
 	}
 	for i := range items {
@@ -2440,6 +2465,49 @@ func (r *Repo) hydrateMessageAttachments(ctx context.Context, items []models.Mes
 		items[i].Attachments = string(raw)
 	}
 	return nil
+}
+
+func parseAttachmentMetaJSON(raw string) map[string]string {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return map[string]string{}
+	}
+	payload := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(value), &payload); err != nil {
+		return map[string]string{}
+	}
+	result := make(map[string]string, len(payload))
+	for key, value := range payload {
+		switch typed := value.(type) {
+		case string:
+			result[key] = strings.TrimSpace(typed)
+		case bool:
+			if typed {
+				result[key] = "true"
+			} else {
+				result[key] = "false"
+			}
+		}
+	}
+	return result
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if normalized := strings.TrimSpace(value); normalized != "" {
+			return normalized
+		}
+	}
+	return ""
+}
+
+func boolFromAttachmentMeta(meta map[string]string, key string) bool {
+	switch strings.ToLower(strings.TrimSpace(meta[key])) {
+	case "true", "1", "yes":
+		return true
+	default:
+		return false
+	}
 }
 
 func toConversationDomain(item models.Conversation) domainconversation.Conversation {

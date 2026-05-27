@@ -15,6 +15,8 @@ function parseAttachments(raw: string): MessageAttachment[] {
         fileCategory: String(item.file_category ?? ""),
         sizeBytes: Number(item.file_size ?? 0),
         kind: item.kind === "image" ? ("image" as const) : ("file" as const),
+        status: String(item.status ?? ""),
+        metadataOnly: item.status === "metadata_only" || item.metadata_only === true,
         processingStatus: String(item.processing_status ?? ""),
         processingReady: Boolean(item.processing_ready),
         processingErrorCode: String(item.processing_error_code ?? ""),

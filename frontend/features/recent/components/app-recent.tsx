@@ -18,6 +18,8 @@ export function AppRecent() {
           query={controller.query}
           onQueryChange={controller.setQuery}
           onCreateConversation={controller.onCreateConversation}
+          onImportConversationArchive={controller.onImportConversationArchive}
+          importingArchive={controller.importingArchive}
         />
 
         <RecentToolbar
@@ -60,6 +62,7 @@ export function AppRecent() {
           onRename={controller.onRename}
           onArchive={controller.onArchive}
           onShare={controller.onShare}
+          onExport={controller.onExport}
           onSetProject={controller.onSetProject}
           onRevokeShare={controller.onRevokeShare}
           onDelete={controller.onDelete}
