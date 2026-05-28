@@ -66,6 +66,9 @@ export type PendingExchange = {
   assistantText: string;
   assistantPending: boolean;
   assistantStreaming: boolean;
+  assistantStatus?: string;
+  assistantErrorCode?: string;
+  assistantErrorMessage?: string;
   assistantFileProc?: boolean; // Active file_proc stage.
   assistantActivityLabel?: string;
   assistantImageAspectRatio?: ImageLoadingAspectRatio;

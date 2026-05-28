@@ -286,15 +286,39 @@ func upstreamErrorSummary(err *llm.UpstreamError) string {
 		return ""
 	}
 	lines := make([]string, 0, 3)
+	if isSuccessfulUpstreamStatus(err.StatusCode) {
+		lines = append(lines, fmt.Sprintf("模型响应格式不兼容（HTTP %d）", err.StatusCode))
+		lines = append(lines, "错误：上游返回成功状态码，但响应格式与当前协议不兼容")
+		return strings.Join(lines, "\n")
+	}
 	if err.StatusCode > 0 {
 		lines = append(lines, fmt.Sprintf("模型请求失败（HTTP %d）", err.StatusCode))
 	} else {
 		lines = append(lines, "模型请求失败")
 	}
-	if message := strings.TrimSpace(err.Message); message != "" {
+	if message := normalizeUpstreamErrorMessage(err.Message); message != "" {
 		lines = append(lines, "错误："+message)
 	}
 	return strings.Join(lines, "\n")
+}
+
+func isSuccessfulUpstreamStatus(statusCode int) bool {
+	return statusCode >= 200 && statusCode < 300
+}
+
+func normalizeUpstreamErrorMessage(message string) string {
+	value := strings.TrimSpace(message)
+	if value == "" || looksLikeRawSSEBody(value) {
+		return ""
+	}
+	return value
+}
+
+func looksLikeRawSSEBody(value string) bool {
+	normalized := strings.TrimSpace(value)
+	return strings.HasPrefix(normalized, "data:") ||
+		strings.Contains(normalized, "\ndata:") ||
+		strings.Contains(normalized, " data:")
 }
 
 func wrapUpstreamRequestError(cause error) error {

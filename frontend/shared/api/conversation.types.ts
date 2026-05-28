@@ -573,4 +573,5 @@ export type StreamMessageEvent =
       message: string;
       errorCode?: string;
       debug?: UpstreamDebugInfo;
+      data?: SendMessageResult;
     };

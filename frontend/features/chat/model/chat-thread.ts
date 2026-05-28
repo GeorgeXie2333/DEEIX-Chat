@@ -201,7 +201,7 @@ export function mapServerMessage(
     msg.latencyMS = item.latencyMS ?? 0;
     msg.billingCost = item.billingCost;
     msg.processTrace = parseProcessTrace(item);
-    if (item.status === "error" && item.errorMessage?.trim()) {
+    if ((item.status === "error" || item.status === "interrupted") && item.errorMessage?.trim()) {
       msg.inlineAlert = {
         title: labels.generationInterrupted,
         message:

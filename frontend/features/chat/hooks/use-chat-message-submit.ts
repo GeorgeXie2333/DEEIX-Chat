@@ -43,6 +43,7 @@ import type {
   MediaImageRequest,
   SendMessageRequest,
   SendMessageResult,
+  StreamMessageEvent,
 } from "@/shared/api/conversation.types";
 
 const CONVERSATION_METADATA_REFRESH_DELAYS = [800, 1200, 1800, 2600, 3500, 5000] as const;
@@ -118,6 +119,10 @@ function createClientRunID(): string {
       ? window.crypto.randomUUID().replaceAll("-", "")
       : Math.random().toString(36).slice(2) + Date.now().toString(36);
   return `run_${randomID}`.slice(0, 64);
+}
+
+function buildContinueGenerationPrompt(t: ReturnType<typeof useTranslations>): string {
+  return t("continueGenerationPrompt");
 }
 
 function normalizeLabelsJSON(value: string | null | undefined): string {
@@ -430,8 +435,12 @@ export function useChatMessageSubmit({
           sourceMessagePublicID: resolvedSourcePublicID || undefined,
           branchReason: resolvedBranchReason,
         };
+        let terminalStreamError: Extract<StreamMessageEvent, { type: "error" }> | null = null;
         const streamOptions: ConversationStreamOptions = {
           signal: streamAbortController.signal,
+          onInterrupted: (event) => {
+            terminalStreamError = event;
+          },
           onFileProc: (message) => {
             setPendingExchange((prev) =>
               prev && prev.key === exchangeKey
@@ -592,7 +601,17 @@ export function useChatMessageSubmit({
             assistantReasoningTokens: completed.assistantMessage.reasoningTokens,
             assistantLatencyMS: completed.assistantMessage.latencyMS,
             assistantProcessTrace: toPendingProcessTrace(completed.assistantMessage.processTrace),
-            assistantInlineAlert: undefined,
+            assistantStatus: completed.assistantMessage.status || "success",
+            assistantErrorCode: completed.assistantMessage.errorCode,
+            assistantErrorMessage: completed.assistantMessage.errorMessage,
+            assistantInlineAlert:
+              completed.assistantMessage.status === "error" || completed.assistantMessage.status === "interrupted"
+                ? {
+                    title: t("generationInterrupted"),
+                    message: terminalStreamError?.message || completed.assistantMessage.errorMessage || t("retryLater"),
+                    details: terminalStreamError?.debug,
+                  }
+                : undefined,
             assistantText:
               streamedText === completed.assistantMessage.content
                 ? prev.assistantText
@@ -621,11 +640,13 @@ export function useChatMessageSubmit({
           });
         }
         releaseAttachments(effectiveAttachments);
-        notifyResponseCompletion({
-          content: completed.assistantMessage.content,
-          conversationPublicID: targetConversationID,
-          conversationTitle: targetConversation?.title || "Comi AI",
-        });
+        if ((completed.assistantMessage.status || "success") === "success") {
+          notifyResponseCompletion({
+            content: completed.assistantMessage.content,
+            conversationPublicID: targetConversationID,
+            conversationTitle: targetConversation?.title || "Comi AI",
+          });
+        }
         reload();
       } catch (error) {
         resetStreamBuffer();
@@ -662,6 +683,8 @@ export function useChatMessageSubmit({
                 assistantStreaming: false,
                 assistantFileProc: false,
                 assistantActivityLabel: undefined,
+                assistantStatus: "error",
+                assistantErrorMessage: errorMessage,
                 assistantInlineAlert: {
                   title: t("generationInterrupted"),
                   message: errorMessage,
@@ -776,6 +799,25 @@ export function useChatMessageSubmit({
     [combinedMessages, submitMessage, t],
   );
 
+  const onContinueAssistantMessage = React.useCallback(
+    async (message: ChatAreaMessage) => {
+      const parentPublicID = resolvePersistedPublicID(message.publicID);
+      const status = message.status?.trim().toLowerCase();
+      if (!parentPublicID || message.role !== "assistant" || status !== "interrupted") {
+        toast.error(t("continueReplyFailed"), { description: t("continueReplyUnavailable") });
+        return;
+      }
+      await submitMessage({
+        content: buildContinueGenerationPrompt(t),
+        currentAttachments: [],
+        resetComposer: false,
+        parentMessagePublicID: parentPublicID,
+        branchReason: "default",
+      });
+    },
+    [submitMessage, t],
+  );
+
   const onEditUserMessage = React.useCallback(
     async (message: ChatAreaMessage, content: string) => {
       const ok = await submitMessage({
@@ -820,6 +862,7 @@ export function useChatMessageSubmit({
   return {
     onCycleMessageBranch,
     onEditUserMessage,
+    onContinueAssistantMessage,
     onRetryAssistantMessage,
     onRetryUserMessage,
     onSendMessage,

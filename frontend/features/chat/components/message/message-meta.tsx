@@ -11,6 +11,7 @@ import {
   DatabaseSearch,
   DatabaseZap,
   Cpu,
+  Forward,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -34,9 +35,11 @@ import { billingRateMultiplierNote, cacheWriteBillingLabel, cacheWriteBillingNot
 import type { BillingDisplayLabels } from "@/shared/lib/billing-display";
 import type { ChatBillingCost, ChatMessageBranchNavigator } from "@/features/chat/types/messages";
 import { useAppLocale } from "@/i18n/app-i18n-provider";
+import { cn } from "@/lib/utils";
 
 export type ChatMetaMessage = {
   publicID: string;
+  status?: string;
   createdAt?: string;
   updatedAt?: string;
   isPending?: boolean;
@@ -144,6 +147,40 @@ function MetaContainer({
   );
 }
 
+function MetaIconButton({
+  label,
+  disabled,
+  onClick,
+  className,
+  children,
+}: {
+  label: string;
+  disabled?: boolean;
+  onClick?: () => void;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40",
+            className,
+          )}
+          aria-label={label}
+          disabled={disabled}
+          onClick={onClick}
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function UserMessageMeta({
   item,
   busy,
@@ -178,34 +215,28 @@ export function UserMessageMeta({
       {!readOnly ? (
         <div className="flex items-center">
           {showRetry ? (
-            <button
-              type="button"
-              className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
-              aria-label={t("retryMessage")}
+            <MetaIconButton
+              label={t("retryMessage")}
               disabled={item.isPending}
               onClick={onRetry}
             >
               <RotateCcw size={14} strokeWidth={1.8} animateOnHover="default" />
-            </button>
+            </MetaIconButton>
           ) : null}
-          <button
-            type="button"
-            className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors disabled:opacity-40"
-            aria-label={t("editMessage")}
+          <MetaIconButton
+            label={t("editMessage")}
             disabled={item.isPending}
             onClick={onEdit}
           >
             <Brush size={14} strokeWidth={1.8} animateOnHover="default" />
-          </button>
-          <button
-            type="button"
-            className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
-            aria-label={t("copyMessage")}
+          </MetaIconButton>
+          <MetaIconButton
+            label={t("copyMessage")}
             disabled={item.isPending}
             onClick={onCopy}
           >
             <Copy size={14} strokeWidth={1.8} animateOnHover="default" />
-          </button>
+          </MetaIconButton>
         </div>
       ) : null}
       {canShowBranchNavigator ? <BranchSwitcher item={item} onCycle={onCycleBranch} /> : null}
@@ -780,16 +811,21 @@ function QuickMemoryPin({ disabled }: { disabled?: boolean }) {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
-          aria-label={t("rememberPreference")}
-          disabled={disabled}
-        >
-          <Heart size={14} strokeWidth={1.8} animateOnHover="default" />
-        </button>
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
+              aria-label={t("rememberPreference")}
+              disabled={disabled}
+            >
+              <Heart size={14} strokeWidth={1.8} animateOnHover="default" />
+            </button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="top">{t("rememberPreference")}</TooltipContent>
+      </Tooltip>
       <PopoverContent align="start" className="w-64 p-3">
         <p className="mb-2 text-[12px] font-medium text-foreground">{t("rememberPreference")}</p>
         <div className="space-y-2">
@@ -825,6 +861,7 @@ export function AssistantMessageMeta({
   reaction,
   onCycleBranch,
   onRetry,
+  onContinue,
   onCopy,
   onReact,
   showModelInfo = true,
@@ -840,6 +877,7 @@ export function AssistantMessageMeta({
   reaction: AssistantReaction;
   onCycleBranch: (parentPublicID: string | null, direction: "previous" | "next") => void;
   onRetry: () => void;
+  onContinue?: () => void;
   onCopy: () => void;
   onReact: (value: AssistantReaction) => void;
   showModelInfo?: boolean;
@@ -853,54 +891,51 @@ export function AssistantMessageMeta({
   const t = useTranslations("chat.messages");
   const isLive = Boolean(item.isPending || item.isStreaming);
   const canRetry = !readOnly && !busy && !isLive;
+  const canContinue = Boolean(canRetry && item.publicID && item.status === "interrupted");
   const canShowBranchNavigator = Boolean(showBranchNavigator && item.branchNavigator && !busy && !isLive);
 
   return (
     <MetaContainer align="start" mobileStack alwaysVisible={alwaysVisible}>
       {!readOnly ? (
         <div className="flex min-w-0 items-center gap-1">
-          <button
-            type="button"
-            className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
-            aria-label={t("copyReply")}
+          <MetaIconButton
+            label={t("copyReply")}
             disabled={!item.publicID}
             onClick={onCopy}
           >
             <Copy size={14} strokeWidth={1.8} animateOnHover="default" />
-          </button>
-          <button
-            type="button"
-            className={[
-              "inline-flex size-6 items-center justify-center rounded-md transition-colors disabled:opacity-40",
-              reaction === "up" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-            ].join(" ")}
-            aria-label={t("likeReply")}
+          </MetaIconButton>
+          <MetaIconButton
+            label={t("likeReply")}
+            className={reaction === "up" ? "text-foreground" : undefined}
             disabled={isLive}
             onClick={() => onReact(reaction === "up" ? null : "up")}
           >
             <ThumbsUp size={14} strokeWidth={1.8} animateOnHover="default" />
-          </button>
-          <button
-            type="button"
-            className={[
-              "inline-flex size-6 items-center justify-center rounded-md transition-colors disabled:opacity-40",
-              reaction === "down" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-            ].join(" ")}
-            aria-label={t("dislikeReply")}
+          </MetaIconButton>
+          <MetaIconButton
+            label={t("dislikeReply")}
+            className={reaction === "down" ? "text-foreground" : undefined}
             disabled={isLive}
             onClick={() => onReact(reaction === "down" ? null : "down")}
           >
             <ThumbsDown size={14} strokeWidth={1.8} animateOnHover="default" />
-          </button>
+          </MetaIconButton>
           {canRetry ? (
-            <button
-              type="button"
-              className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
-              aria-label={t("retryReply")}
+            <MetaIconButton
+              label={t("retryReply")}
               onClick={onRetry}
             >
               <RotateCcw size={14} strokeWidth={1.8} animateOnHover="default" />
-            </button>
+            </MetaIconButton>
+          ) : null}
+          {canContinue && onContinue ? (
+            <MetaIconButton
+              label={t("continueReply")}
+              onClick={onContinue}
+            >
+              <Forward className="size-3.5" strokeWidth={1.8} />
+            </MetaIconButton>
           ) : null}
           <QuickMemoryPin disabled={isLive} />
         </div>

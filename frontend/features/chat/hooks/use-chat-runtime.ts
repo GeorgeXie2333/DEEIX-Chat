@@ -149,6 +149,7 @@ export function useChatRuntime({
     currentLeafMessage: branchState.currentLeafMessage,
     onCycleMessageBranch: submitState.onCycleMessageBranch,
     onEditUserMessage: submitState.onEditUserMessage,
+    onContinueAssistantMessage: submitState.onContinueAssistantMessage,
     onRetryAssistantMessage: submitState.onRetryAssistantMessage,
     onRetryUserMessage: submitState.onRetryUserMessage,
     onSendMessage: submitState.onSendMessage,

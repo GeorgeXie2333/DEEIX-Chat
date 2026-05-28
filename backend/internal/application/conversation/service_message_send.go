@@ -193,10 +193,38 @@ func (s *Service) sendMessageInternal(
 	var userMessage *model.Message
 	var assistantMessage *model.Message
 	var traceRecorder *messageTraceRecorder
+	var streamedText strings.Builder
+	var streamUsageTotal llm.Usage
+	var toolCallRows []model.ToolCall
+	var resolvedRoute *channel.ResolvedRoute
+	var filteredOptions map[string]interface{}
+	var totalServerSideToolUsage map[string]int64
+	estimatedInputTokens := int64(0)
 	runState := newMessageSendRunState(s, input, conversation, startedAt, runID)
 	run := runState.run
 	runState.bind(&userMessage, &assistantMessage, &traceRecorder, &result, ctx)
 	defer func() {
+		if retErr != nil {
+			if retained := s.persistInterruptedMessageGeneration(ctx, persistInterruptedMessageGenerationInput{
+				SendInput:            input,
+				UserMessage:          userMessage,
+				AssistantMessage:     assistantMessage,
+				AssistantText:        streamedText.String(),
+				EstimatedInputTokens: estimatedInputTokens,
+				Usage:                streamUsageTotal,
+				AssistantLatency:     time.Since(startedAt).Milliseconds(),
+				Error:                retErr,
+				ToolCallRows:         toolCallRows,
+				TraceRecorder:        traceRecorder,
+				Route:                resolvedRoute,
+				EffectiveOptions:     filteredOptions,
+				ServerSideToolUsage:  totalServerSideToolUsage,
+				StartedAt:            startedAt,
+			}); retained != nil {
+				result = retained
+				applyRetainedGenerationRunUsage(run, retained, len(toolCallRows), startedAt)
+			}
+		}
 		runState.finalize(ctx, retErr)
 	}()
 
@@ -208,7 +236,7 @@ func (s *Service) sendMessageInternal(
 
 	attachmentsJSON := []byte(marshalAttachmentSnapshots(resolvedAttachments))
 
-	estimatedInputTokens := estimateTokens(input.Content)
+	estimatedInputTokens = estimateTokens(input.Content)
 	userMessage = &model.Message{
 		ConversationID:   input.ConversationID,
 		UserID:           input.UserID,
@@ -306,6 +334,7 @@ func (s *Service) sendMessageInternal(
 		retErr = err
 		return nil, err
 	}
+	resolvedRoute = route
 	if modelChanged || strings.TrimSpace(conversation.Model) != strings.TrimSpace(route.PlatformModelName) {
 		conversation.Model = strings.TrimSpace(route.PlatformModelName)
 		conversation.Provider = inferProvider(conversation.Model)
@@ -609,7 +638,7 @@ func (s *Service) sendMessageInternal(
 		AttributionReferer:  attributionReferer,
 		AttributionTitle:    attributionTitle,
 	}
-	filteredOptions := filterModelOptions(input.Options, route.Protocol, modelOptionPolicyConfig{
+	filteredOptions = filterModelOptions(input.Options, route.Protocol, modelOptionPolicyConfig{
 		Mode:                       cfg.ModelOptionPolicyMode,
 		AllowedPathsJSON:           cfg.ModelOptionAllowedPaths,
 		DeniedPathsJSON:            cfg.ModelOptionDeniedPaths,
@@ -678,8 +707,6 @@ func (s *Service) sendMessageInternal(
 	}
 	sendSpan.SetAttributes(promptShapeTraceAttributes("conversation.prompt", initialPromptShape)...)
 
-	var streamedText strings.Builder
-	streamUsageTotal := llm.Usage{}
 	emitVisibleDelta := func(delta string) error {
 		if delta == "" {
 			return nil
@@ -745,7 +772,7 @@ func (s *Service) sendMessageInternal(
 			if cleanText == "" {
 				cleanText = output.Text
 			}
-			if streamErr := emitFallbackText(cleanText, onDelta); streamErr != nil {
+			if streamErr := emitVisibleDelta(cleanText); streamErr != nil {
 				return streamErr
 			}
 			output.Text = cleanText
@@ -929,11 +956,16 @@ func (s *Service) sendMessageInternal(
 	}
 	s.routeResolver.MarkRouteSuccess(ctx, route)
 
-	toolCallRows := make([]model.ToolCall, 0)
+	toolCallRows = make([]model.ToolCall, 0)
 	assistantText, nativeToolRows := syncUpstreamOutputTrace(traceRecorder, upstreamOutput, runID)
 	toolCallRows = append(toolCallRows, nativeToolRows...)
 	totalUsage := upstreamOutput.Usage
-	totalServerSideToolUsage := addServerSideToolUsage(nil, upstreamOutput.ServerSideToolUsage)
+	if totalUsage == (llm.Usage{}) {
+		totalUsage = streamUsageTotal
+	} else {
+		streamUsageTotal = totalUsage
+	}
+	totalServerSideToolUsage = addServerSideToolUsage(nil, upstreamOutput.ServerSideToolUsage)
 	remainingToolCalls := s.resolveMaxToolCallsPerRun()
 	maxLLMCalls := s.resolveMaxLLMCallsPerRun()
 	if maxLLMCalls <= 0 {
@@ -1018,6 +1050,11 @@ func (s *Service) sendMessageInternal(
 		}
 		s.routeResolver.MarkRouteSuccess(ctx, route)
 		totalUsage = addLLMUsage(totalUsage, nextOutput.Usage)
+		if nextOutput.Usage != (llm.Usage{}) {
+			streamUsageTotal = totalUsage
+		} else if streamUsageTotal != (llm.Usage{}) {
+			totalUsage = streamUsageTotal
+		}
 		totalServerSideToolUsage = addServerSideToolUsage(totalServerSideToolUsage, nextOutput.ServerSideToolUsage)
 		upstreamOutput = nextOutput
 		llmCallCount++
@@ -1042,6 +1079,11 @@ func (s *Service) sendMessageInternal(
 		}
 		s.routeResolver.MarkRouteSuccess(ctx, route)
 		totalUsage = addLLMUsage(totalUsage, nextOutput.Usage)
+		if nextOutput.Usage != (llm.Usage{}) {
+			streamUsageTotal = totalUsage
+		} else if streamUsageTotal != (llm.Usage{}) {
+			totalUsage = streamUsageTotal
+		}
 		totalServerSideToolUsage = addServerSideToolUsage(totalServerSideToolUsage, nextOutput.ServerSideToolUsage)
 		upstreamOutput = nextOutput
 		llmCallCount++

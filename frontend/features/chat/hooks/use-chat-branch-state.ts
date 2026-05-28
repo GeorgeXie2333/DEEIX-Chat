@@ -84,7 +84,7 @@ function buildPendingMessages({
       contentType: pendingExchange.assistantContentType,
       content: pendingExchange.assistantText,
       branchReason: pendingExchange.branchReason,
-      status: pendingExchange.assistantPending ? "pending" : "success",
+      status: pendingExchange.assistantPending ? "pending" : pendingExchange.assistantStatus ?? "success",
       runID: pendingExchange.runID,
       platformModelName: pendingExchange.platformModelName,
       serverMessageID: pendingExchange.assistantServerMessageID,
@@ -149,6 +149,7 @@ function mergePendingAssistantState(messages: ChatAreaMessage[], pendingExchange
       latencyMS: pendingExchange.assistantLatencyMS ?? item.latencyMS,
       compactDone: pendingExchange.compactDone ?? item.compactDone,
       platformModelName: pendingExchange.platformModelName ?? item.platformModelName,
+      status: pendingExchange.assistantPending ? "pending" : pendingExchange.assistantStatus ?? item.status,
     };
   });
 }

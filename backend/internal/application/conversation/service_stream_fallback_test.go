@@ -73,6 +73,36 @@ func TestMessageErrorSummaryIncludesUpstreamBody(t *testing.T) {
 	}
 }
 
+func TestMessageErrorSummaryHidesRawSSEForSuccessfulHTTPStatus(t *testing.T) {
+	err := wrapUpstreamRequestError(&llm.UpstreamError{
+		StatusCode: 200,
+		Message:    `HTTP 200, data: {"id":"resp_1","object":"chat.completion.chunk","choices":[{"delta":{"content":"hello"}}]}`,
+		Body:       "data: {\"id\":\"resp_1\",\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}\n\n",
+		Debug: &llm.UpstreamDebugSnapshot{
+			Request: llm.UpstreamDebugRequest{
+				Method: "POST",
+				Path:   "/v1/responses",
+				Body:   `{"model":"gpt-5.5"}`,
+			},
+			Response: llm.UpstreamDebugResponse{
+				StatusCode: 200,
+				Body:       "data: {\"id\":\"resp_1\",\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}\n\n",
+			},
+		},
+	})
+
+	summary := MessageErrorSummary(err)
+	if strings.Contains(summary, "data:") || strings.Contains(summary, "chat.completion.chunk") {
+		t.Fatalf("summary leaked raw SSE body: %q", summary)
+	}
+	if summary != "模型响应格式不兼容（HTTP 200）\n错误：上游返回成功状态码，但响应格式与当前协议不兼容" {
+		t.Fatalf("unexpected summary: %q", summary)
+	}
+	if debug := MessageErrorDebug(err); debug == nil || !strings.Contains(debug.Response.Body, "data:") {
+		t.Fatalf("expected raw SSE body to stay in debug response, got %#v", debug)
+	}
+}
+
 func TestMessageErrorDebugKeepsSnapshotButRemovesUpstreamNames(t *testing.T) {
 	err := wrapUpstreamRequestError(&llm.UpstreamError{
 		StatusCode: 502,

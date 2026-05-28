@@ -10878,6 +10878,11 @@ const docTemplate = `{
         "internal_transport_http_channel.UpdateUpstreamRequest": {
             "type": "object",
             "properties": {
+                "addAPIKeys": {
+                    "type": "string",
+                    "maxLength": 10000,
+                    "minLength": 2
+                },
                 "apiKeys": {
                     "type": "string",
                     "maxLength": 10000,
@@ -10919,6 +10924,12 @@ const docTemplate = `{
                 },
                 "connectTimeoutMS": {
                     "type": "integer"
+                },
+                "deleteAPIKeyIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "headersJSON": {
                     "type": "string",
@@ -11026,6 +11037,26 @@ const docTemplate = `{
                     "$ref": "#/definitions/internal_transport_http_channel.UpstreamModelDataResponse"
                 },
                 "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_channel.UpstreamAPIKeyResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "keyMasked": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 }
             }
@@ -11250,6 +11281,12 @@ const docTemplate = `{
             "properties": {
                 "activeModelsCount": {
                     "type": "integer"
+                },
+                "apiKeyItems": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_channel.UpstreamAPIKeyResponse"
+                    }
                 },
                 "apiKeysMasked": {
                     "type": "string"

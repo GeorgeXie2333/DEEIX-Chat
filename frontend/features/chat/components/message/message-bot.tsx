@@ -28,7 +28,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { summarizeUpstreamError } from "@/features/chat/utils/chat-runtime";
+import { isUpstreamStreamingDebugBody, summarizeUpstreamError } from "@/features/chat/utils/chat-runtime";
 import type { FileContentResult } from "@/shared/api/file";
 import type { PreviewDialogFile } from "@/features/files/components/preview/file-preview-dialog";
 
@@ -84,6 +84,7 @@ type ChatMessageBotProps = {
   busy: boolean;
   reaction: AssistantReaction;
   onRetryAssistantMessage: (message: ChatAreaMessage) => Promise<void> | void;
+  onContinueAssistantMessage?: (message: ChatAreaMessage) => Promise<void> | void;
   onCycleMessageBranch: (parentPublicID: string | null, direction: "previous" | "next") => void;
   onReactAssistantMessage: (publicID: string, reaction: AssistantReaction) => void;
   onCopy: () => void;
@@ -104,6 +105,7 @@ export function ChatMessageBot({
   busy,
   reaction,
   onRetryAssistantMessage,
+  onContinueAssistantMessage,
   onCycleMessageBranch,
   onReactAssistantMessage,
   onCopy,
@@ -121,6 +123,9 @@ export function ChatMessageBot({
   const onRetry = React.useCallback(() => {
     void onRetryAssistantMessage(item);
   }, [item, onRetryAssistantMessage]);
+  const onContinue = React.useCallback(() => {
+    void onContinueAssistantMessage?.(item);
+  }, [item, onContinueAssistantMessage]);
   const upstreamThink = item.processTrace?.upstreamThink;
   const toolTrace = item.processTrace?.tools;
   const traceEvents = item.processTrace?.events ?? EMPTY_TRACE_EVENTS;
@@ -246,6 +251,7 @@ export function ChatMessageBot({
         reaction={reaction}
         onCycleBranch={onCycleMessageBranch}
         onRetry={onRetry}
+        onContinue={onContinueAssistantMessage ? onContinue : undefined}
         onCopy={onCopy}
         onReact={(value) => onReactAssistantMessage(item.publicID, value)}
         showModelInfo={showModelInfo}
@@ -273,7 +279,12 @@ export function ChatInlineAlertCard({
   const summary = summarizeUpstreamError(message, details, t("retryLater"));
   const hasDetails = Boolean(details?.request || details?.response);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
-  const summaryText = [summary.statusCode ? `HTTP ${summary.statusCode}` : "", summary.reason].filter(Boolean).join(", ");
+  const hasSuccessfulStreamDebug =
+    Boolean(summary.statusCode && summary.statusCode >= 200 && summary.statusCode < 300) &&
+    isUpstreamStreamingDebugBody(details?.response?.body || message);
+  const summaryText = hasSuccessfulStreamDebug
+    ? t("streamResponseParseFailed", { statusCode: summary.statusCode ?? 200 })
+    : [summary.statusCode ? `HTTP ${summary.statusCode}` : "", summary.reason].filter(Boolean).join(", ");
   return (
     <Alert className={cn("min-w-0 max-w-full overflow-hidden", className)} variant="destructive">
       <CircleAlert className="size-4" />

@@ -294,6 +294,11 @@ function handleStreamEvent(event: StreamMessageEvent, options: ConversationStrea
     return event.data;
   }
 
+  if (event.type === "error" && event.data) {
+    options.onInterrupted?.(event);
+    return event.data;
+  }
+
   throw new ApiError(event.message || "stream failed", responseStatus, event.debug, event.errorCode);
 }
 
@@ -833,6 +838,7 @@ export type ConversationStreamOptions = {
   onProcessUpdate?: (event: Extract<StreamMessageEvent, { type: "process_update" }>) => void;
   onUpstreamThinkDelta?: (event: Extract<StreamMessageEvent, { type: "upstream_think_delta" }>) => void;
   onUsage?: (event: Extract<StreamMessageEvent, { type: "usage" }>) => void;
+  onInterrupted?: (event: Extract<StreamMessageEvent, { type: "error" }>) => void;
 };
 
 async function readConversationStream(
