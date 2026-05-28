@@ -40,6 +40,12 @@ test("resolveNativeToolGroup maps supported protocols and hides tools in media m
   );
 });
 
+test("resolveNativeToolGroup marks x_search with the x.com logo icon", () => {
+  const xSearch = resolveNativeToolGroup("xai_responses", false)?.options.find((tool) => tool.type === "x_search");
+
+  assert.equal(xSearch?.iconKind, "x-logo");
+});
+
 test("provider tool helpers ignore malformed tools and count selected native tool types once", () => {
   const openAIGroup = resolveNativeToolGroup("openai_responses", false);
   const options = {

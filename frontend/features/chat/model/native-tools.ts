@@ -4,6 +4,7 @@ export type NativeToolOption = {
   type: string;
   labelKey: string;
   descriptionKey: string;
+  iconKind?: "x-logo";
   payload?: Record<string, unknown>;
 };
 
@@ -22,6 +23,7 @@ const XAI_NATIVE_TOOL_OPTIONS: NativeToolOption[] = [
     type: "x_search",
     labelKey: "xSearch",
     descriptionKey: "grokXSearch",
+    iconKind: "x-logo",
   },
   {
     type: "code_interpreter",

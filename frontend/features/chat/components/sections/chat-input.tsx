@@ -7,9 +7,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Code2,
-  FileUp,
   Globe2,
-  Image,
+  Image as ImageIcon,
   ImageOff,
   ImagePlus,
   Search,
@@ -23,6 +22,7 @@ import { Blocks } from "@/components/animate-ui/icons/blocks";
 import { Pause } from "@/components/animate-ui/icons/pause";
 import { Plus } from "@/components/animate-ui/icons/plus";
 import { Send } from "@/components/animate-ui/icons/send";
+import { Link as LinkIcon } from "@/components/animate-ui/icons/link";
 import { Crop } from "@/components/animate-ui/icons/crop";
 import { X as XIcon } from "@/components/animate-ui/icons/x";
 import type {
@@ -114,56 +114,50 @@ type ComposerModeIndicator = {
 
 type ToolMenuView = "main" | "mcp";
 
-type ToolMenuIcon = React.ComponentType<{
-  className?: string;
-  size?: number;
-  strokeWidth?: number;
-}>;
-
-type ToolMenuButtonProps = {
-  icon: ToolMenuIcon;
+type CompactToolMenuItemProps = {
   label: string;
   description?: string;
   selected?: boolean;
   disabled?: boolean;
-  destructive?: boolean;
   trailing?: React.ReactNode;
+  renderIcon: (hovered: boolean) => React.ReactNode;
   onClick: () => void;
 };
 
-function ToolMenuButton({
-  icon: Icon,
+function CompactToolMenuItem({
   label,
   description,
   selected = false,
   disabled = false,
-  destructive = false,
   trailing,
+  renderIcon,
   onClick,
-}: ToolMenuButtonProps) {
+}: CompactToolMenuItemProps) {
+  const [hovered, setHovered] = React.useState(false);
   return (
     <button
       type="button"
       className={cn(
-        "group/tool-row flex min-h-11 w-full min-w-0 items-center gap-3 rounded-lg px-3 py-2 text-left outline-none transition-colors",
-        "hover:bg-accent/50 focus-visible:bg-accent focus-visible:text-accent-foreground",
-        disabled && "cursor-not-allowed opacity-45 hover:bg-transparent focus-visible:bg-transparent",
-        destructive && "text-destructive",
+        "group/tool-row relative flex w-full min-w-0 cursor-default items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs outline-none transition-colors",
+        "hover:bg-accent/40 hover:text-accent-foreground focus-visible:bg-accent/40 focus-visible:text-accent-foreground",
+        disabled && "pointer-events-none opacity-50",
       )}
       disabled={disabled}
       aria-pressed={selected || undefined}
       title={description}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       onClick={onClick}
     >
-      <span className="flex size-6 shrink-0 items-center justify-center text-foreground/90 group-disabled/tool-row:text-muted-foreground">
-        <Icon className="size-5" size={20} strokeWidth={1.8} />
+      <span className="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
+        {renderIcon(hovered)}
       </span>
-      <span className="min-w-0 flex-1 truncate text-[15px] font-medium leading-5 text-foreground/90 group-disabled/tool-row:text-muted-foreground">
+      <span className="min-w-0 flex-1 truncate">
         {label}
       </span>
       {trailing ? <span className="shrink-0 text-muted-foreground">{trailing}</span> : null}
       {selected ? (
-        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <span className="flex size-3.5 shrink-0 items-center justify-center text-primary">
           <Check className="size-3.5" strokeWidth={2} />
         </span>
       ) : null}
@@ -171,20 +165,36 @@ function ToolMenuButton({
   );
 }
 
-function nativeToolIcon(tool: NativeToolOption): ToolMenuIcon {
+function nativeToolIcon(tool: NativeToolOption, hovered: boolean): React.ReactNode {
+  const iconClassName = cn(
+    "size-3.5 transition-transform duration-200 ease-out",
+    hovered && "translate-x-px scale-105",
+  );
+  if (tool.iconKind === "x-logo") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        alt="X"
+        className={cn("block size-3.5 object-contain transition duration-200 dark:invert", hovered && "scale-105 opacity-90")}
+        decoding="async"
+        loading="lazy"
+        src="/identity-providers/x.svg"
+      />
+    );
+  }
   if (tool.type.includes("image")) {
-    return Image;
+    return <ImageIcon className={iconClassName} strokeWidth={1.6} />;
   }
   if (tool.type.includes("code")) {
-    return Code2;
+    return <Code2 className={iconClassName} strokeWidth={1.6} />;
   }
   if (tool.type === "shell") {
-    return TerminalSquare;
+    return <TerminalSquare className={iconClassName} strokeWidth={1.6} />;
   }
-  if (tool.type.includes("tool_search") || tool.type === "x_search" || tool.type === "advisor_20260301") {
-    return Search;
+  if (tool.type.includes("tool_search") || tool.type === "advisor_20260301") {
+    return <Search className={iconClassName} strokeWidth={1.6} />;
   }
-  return Globe2;
+  return <Globe2 className={iconClassName} strokeWidth={1.6} />;
 }
 
 function resolveComposerModeIndicator(
@@ -207,7 +217,7 @@ function resolveComposerModeIndicator(
       description: decision.blockedReason
         ? t(`mediaMode.blockedDescriptions.${decision.blockedReason}`)
         : t("mediaMode.imageGenerationDescription"),
-      icon: Image,
+      icon: ImageIcon,
       tone: "default",
     };
   }
@@ -319,7 +329,6 @@ function ChatInputComponent({
     [modelOptions, selectedPlatformModelName],
   );
   const selectedProtocol = selectedModel?.protocols[0]?.trim() ?? "";
-  const selectedModelName = selectedModel?.platformModelName || selectedPlatformModelName;
   const submitDecision = resolveChatSubmitDecision(selectedModel, attachments);
   const submitTask = submitDecision.task;
   const isMediaMode = isMediaSubmitTask(submitTask);
@@ -571,22 +580,25 @@ function ChatInputComponent({
                 side="bottom"
                 align="start"
                 sideOffset={8}
-                className="w-[min(88vw,25rem)] overflow-hidden rounded-[1.35rem] p-0 shadow-[0_18px_48px_rgba(15,23,42,0.14)]"
+                className={cn(
+                  "overflow-hidden rounded-xl border-[0.5px] border-border p-1.5 shadow-xs",
+                  toolsMenuView === "mcp" ? "w-[min(calc(100vw-2rem),22rem)]" : "w-[min(calc(100vw-2rem),13rem)]",
+                )}
               >
                 {toolsMenuView === "mcp" ? (
-                  <div className="flex min-h-0 flex-col p-2">
-                    <div className="mb-1 flex h-9 items-center gap-2 px-1">
+                  <div className="flex min-h-0 flex-col">
+                    <div className="mb-1 flex h-8 items-center gap-1 px-0.5">
                       <button
                         type="button"
-                        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent focus-visible:text-foreground"
+                        className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent/40 hover:text-foreground focus-visible:bg-accent/40 focus-visible:text-foreground"
                         aria-label={tComposer("back")}
                         onClick={() => setToolsMenuView("main")}
                       >
-                        <ChevronLeft className="size-4" strokeWidth={1.8} />
+                        <ChevronLeft className="size-3.5" strokeWidth={1.7} />
                       </button>
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{tComposer("mcpTools")}</span>
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium">{tComposer("mcpTools")}</span>
                       {selectedToolIDs.length > 0 ? (
-                        <span className="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                        <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                           {tComposer("enabledCount", { count: selectedToolIDs.length })}
                         </span>
                       ) : null}
@@ -601,40 +613,41 @@ function ChatInputComponent({
                     />
                   </div>
                 ) : (
-                  <div className="p-3">
-                    <ToolMenuButton
-                      icon={FileUp}
+                  <div>
+                    <CompactToolMenuItem
                       label={tComposer("addPhotosAndFiles")}
                       description={tComposer("uploadFile")}
+                      renderIcon={(hovered) => (
+                        <LinkIcon size={12} strokeWidth={1.5} animate={hovered ? "default" : undefined} />
+                      )}
                       onClick={onSelectUploadTool}
                     />
-                    <ToolMenuButton
-                      icon={Crop}
+                    <CompactToolMenuItem
                       label={tComposer("screenshot")}
+                      renderIcon={(hovered) => (
+                        <Crop size={12} strokeWidth={1.5} animate={hovered ? "default" : undefined} />
+                      )}
                       onClick={onSelectScreenshotTool}
                     />
 
                     {nativeToolGroup ? (
                       <>
-                        <div className="mx-3 my-2 h-px bg-border/70" />
-                        <div className="px-3 pb-1 pt-1 text-[11px] font-medium text-muted-foreground">
-                          {tComposer(`nativeTools.${nativeToolGroup.key}`)}
-                        </div>
-                        <div className="space-y-0.5">
+                        <div className="my-1 h-px bg-border/70" />
+                        <div>
                           {nativeToolGroup.options.map((tool) => {
                             const checked = hasProviderTool(options, tool.type);
                             const allowed = isNativeToolTypeAllowed(modelOptionPolicy, selectedProtocol, tool.type);
                             const canToggle = allowed || checked;
                             return (
-                              <ToolMenuButton
+                              <CompactToolMenuItem
                                 key={tool.type}
-                                icon={nativeToolIcon(tool)}
                                 label={tNativeToolLabels(tool.labelKey)}
                                 description={tNativeToolDescriptions(tool.descriptionKey)}
                                 selected={checked}
                                 disabled={!canToggle}
+                                renderIcon={(hovered) => nativeToolIcon(tool, hovered)}
                                 trailing={!allowed ? (
-                                  <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium">
+                                  <span className="rounded-md bg-muted px-1 py-0.5 text-[9px] font-medium">
                                     {tComposer("ignored")}
                                   </span>
                                 ) : null}
@@ -648,19 +661,27 @@ function ChatInputComponent({
 
                     {showMCPToolsButton ? (
                       <>
-                        <div className="mx-3 my-2 h-px bg-border/70" />
-                        <ToolMenuButton
-                          icon={Wrench}
+                        <div className="my-1 h-px bg-border/70" />
+                        <CompactToolMenuItem
                           label={tComposer("mcpTools")}
                           disabled={toolsLoading}
+                          renderIcon={(hovered) => (
+                            <Wrench
+                              className={cn(
+                                "size-3.5 transition-transform duration-200 ease-out",
+                                hovered && "translate-x-px scale-105",
+                              )}
+                              strokeWidth={1.6}
+                            />
+                          )}
                           trailing={
-                            <span className="flex items-center gap-2">
+                            <span className="flex items-center gap-1.5">
                               {selectedToolIDs.length > 0 ? (
-                                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                <span className="rounded-md bg-primary/10 px-1 py-0.5 text-[9px] font-medium text-primary">
                                   {selectedToolIDs.length}
                                 </span>
                               ) : null}
-                              <ChevronRight className="size-4" strokeWidth={1.8} />
+                              <ChevronRight className="size-3.5" strokeWidth={1.7} />
                             </span>
                           }
                           onClick={() => setToolsMenuView("mcp")}
@@ -679,7 +700,6 @@ function ChatInputComponent({
                 defaultOptions={defaultOptions}
                 modelOptionPolicy={modelOptionPolicy}
                 selectedProtocol={selectedProtocol}
-                selectedModelName={selectedModelName}
                 onOptionsChange={onOptionsChange}
                 onOptionsReset={onOptionsReset}
               />
