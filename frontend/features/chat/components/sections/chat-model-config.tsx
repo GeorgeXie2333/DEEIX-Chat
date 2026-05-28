@@ -3,11 +3,9 @@
 import * as React from "react";
 import { CircleHelp } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { toast } from "sonner";
 
 import { Cog } from "@/components/animate-ui/icons/cog";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   isReservedConversationOptionKey,
@@ -33,9 +30,8 @@ import {
 } from "@/features/chat/model/conversation-options";
 import { cn } from "@/lib/utils";
 import type { ConversationOptions } from "@/shared/api/conversation.types";
-import { JsonCodeEditor } from "@/shared/components/json-code-editor";
 import type { ModelOptionPolicy } from "@/shared/lib/model-option-policy";
-import { isModelOptionPathFiltered, isNativeToolTypeAllowed } from "@/shared/lib/model-option-policy";
+import { isModelOptionPathFiltered } from "@/shared/lib/model-option-policy";
 
 type EditableOptionValue = string | number | boolean | null;
 
@@ -43,18 +39,6 @@ type VisualOption = {
   key: string;
   path: string[];
   value: EditableOptionValue;
-};
-
-type FilteredOption = {
-  key: string;
-  value: unknown;
-};
-
-type NativeToolOption = {
-  type: string;
-  labelKey: string;
-  descriptionKey: string;
-  payload?: Record<string, unknown>;
 };
 
 type ModelOptionFilterStatus = "passed" | "filtered" | "unknown";
@@ -66,7 +50,6 @@ type ChatModelConfigProps = {
   modelOptionPolicy: ModelOptionPolicy | null;
   selectedProtocol: string;
   selectedModelName: string;
-  isMediaMode: boolean;
   onOptionsChange: React.Dispatch<React.SetStateAction<ConversationOptions>>;
   onOptionsReset: () => void;
 };
@@ -146,99 +129,6 @@ const OPTION_LABEL_KEYS = new Set<string>([
   "imageConfig.aspectRatio",
   "imageConfig.imageSize",
 ] as const);
-
-const XAI_NATIVE_TOOL_OPTIONS: NativeToolOption[] = [
-  {
-    type: "web_search",
-    labelKey: "webSearch",
-    descriptionKey: "grokWebSearch",
-  },
-  {
-    type: "x_search",
-    labelKey: "xSearch",
-    descriptionKey: "grokXSearch",
-  },
-  {
-    type: "code_interpreter",
-    labelKey: "codeInterpreter",
-    descriptionKey: "grokCodeInterpreter",
-  },
-];
-
-const OPENAI_NATIVE_TOOL_OPTIONS: NativeToolOption[] = [
-  {
-    type: "web_search",
-    labelKey: "webSearch",
-    descriptionKey: "openaiWebSearch",
-    payload: { type: "web_search" },
-  },
-  {
-    type: "shell",
-    labelKey: "shell",
-    descriptionKey: "openaiShell",
-    payload: {
-      type: "shell",
-      environment: { type: "container_auto" },
-    },
-  },
-  {
-    type: "image_generation",
-    labelKey: "imageGeneration",
-    descriptionKey: "openaiImageGeneration",
-    payload: { type: "image_generation" },
-  },
-  {
-    type: "code_interpreter",
-    labelKey: "codeInterpreter",
-    descriptionKey: "openaiCodeInterpreter",
-    payload: {
-      type: "code_interpreter",
-      container: { type: "auto" },
-    },
-  },
-];
-
-const ANTHROPIC_NATIVE_TOOL_OPTIONS: NativeToolOption[] = [
-  {
-    type: "web_search_20260209",
-    labelKey: "webSearch",
-    descriptionKey: "claudeWebSearch",
-    payload: { type: "web_search_20260209", name: "web_search", allowed_callers: ["direct"] },
-  },
-  {
-    type: "web_fetch_20260209",
-    labelKey: "webFetch",
-    descriptionKey: "claudeWebFetch",
-    payload: { type: "web_fetch_20260209", name: "web_fetch", allowed_callers: ["direct"] },
-  },
-  {
-    type: "code_execution_20260120",
-    labelKey: "codeExecution",
-    descriptionKey: "claudeCodeExecution",
-    payload: { type: "code_execution_20260120", name: "code_execution" },
-  },
-  {
-    type: "advisor_20260301",
-    labelKey: "advisor",
-    descriptionKey: "claudeAdvisor",
-    payload: { type: "advisor_20260301", name: "advisor", model: "claude-opus-4-7" },
-  },
-  {
-    type: "tool_search_tool_regex_20251119",
-    labelKey: "toolSearchRegex",
-    descriptionKey: "claudeToolSearchRegex",
-    payload: { type: "tool_search_tool_regex_20251119", name: "tool_search_tool_regex" },
-  },
-  {
-    type: "tool_search_tool_bm25_20251119",
-    labelKey: "toolSearchBm25",
-    descriptionKey: "claudeToolSearchBm25",
-    payload: { type: "tool_search_tool_bm25_20251119", name: "tool_search_tool_bm25" },
-  },
-];
-
-const NATIVE_TOOL_OPTIONS = [...XAI_NATIVE_TOOL_OPTIONS, ...OPENAI_NATIVE_TOOL_OPTIONS, ...ANTHROPIC_NATIVE_TOOL_OPTIONS];
-const NATIVE_TOOL_TYPES = new Set(NATIVE_TOOL_OPTIONS.map((item) => item.type));
 
 const OPTION_ORDER = [
   "temperature",
@@ -425,98 +315,12 @@ const NESTED_VISUAL_OPTION_PATHS = [
   ["toolConfig", "functionCallingConfig", "mode"],
 ];
 
-const PROTOCOL_LABELS: Record<string, string> = {
-  anthropic_messages: "Messages",
-  fal_queue: "Queue",
-  google_generate_content: "Generate Content",
-  google_image_generation: "Image Generation",
-  openai_chat_completions: "Chat Completions",
-  openai_image_edits: "Images Edits",
-  openai_image_generations: "Images Generations",
-  openai_responses: "Responses",
-  openai_video_generations: "Video Generations",
-  replicate_predictions: "Predictions",
-  stability_ai_generate: "Image Generation",
-  xai_image: "Images Generations",
-  xai_image_edits: "Images Edits",
-  xai_responses: "xAI Responses",
-};
-
-function stringifyOptions(value: ConversationOptions): string {
-  if (Object.keys(value).length === 0) {
-    return "";
-  }
-  return JSON.stringify(value, null, 2);
-}
-
-function parseOptionsDraft(value: string): {
-  filteredOptions: FilteredOption[];
-  options: ConversationOptions | null;
-  rawOptions: ConversationOptions | null;
-  error: string;
-} {
-  try {
-    const parsed = JSON.parse(value.trim() || "{}") as unknown;
-    if (parsed === null || Array.isArray(parsed) || typeof parsed !== "object") {
-      return { filteredOptions: [], options: null, rawOptions: null, error: "JSON must be an object" };
-    }
-    const rawOptions = parsed as ConversationOptions;
-    return {
-      filteredOptions: Object.entries(rawOptions)
-        .filter(([key]) => isReservedConversationOptionKey(key))
-        .map(([key, optionValue]) => ({ key, value: optionValue })),
-      options: sanitizeConversationOptions(rawOptions),
-      rawOptions,
-      error: "",
-    };
-  } catch {
-    return { filteredOptions: [], options: null, rawOptions: null, error: "" };
-  }
-}
-
 function isEditableOptionValue(value: unknown): value is EditableOptionValue {
   return value === null || ["string", "number", "boolean"].includes(typeof value);
 }
 
 function isPlainOptionObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-function providerToolObjectsFromOptions(options: ConversationOptions): Record<string, unknown>[] {
-  const rawTools = options.tools;
-  if (!Array.isArray(rawTools)) {
-    return [];
-  }
-  return rawTools.filter(isPlainOptionObject);
-}
-
-function hasProviderTool(options: ConversationOptions, type: string): boolean {
-  return providerToolObjectsFromOptions(options).some((tool) => tool.type === type);
-}
-
-function setProviderToolEnabled(
-  options: ConversationOptions,
-  toolOption: NativeToolOption,
-  enabled: boolean,
-): ConversationOptions {
-  const type = toolOption.type;
-  if (!NATIVE_TOOL_TYPES.has(type)) {
-    return options;
-  }
-  const tools = providerToolObjectsFromOptions(options);
-  const hasTool = tools.some((tool) => tool.type === type);
-  const nextTools = enabled
-    ? hasTool
-      ? tools
-      : [...tools, { ...(toolOption.payload ?? { type }) }]
-    : tools.filter((tool) => tool.type !== type);
-
-  if (nextTools.length === 0) {
-    const { tools: _tools, ...rest } = options;
-    return rest;
-  }
-
-  return { ...options, tools: nextTools };
 }
 
 function optionPathKey(path: string[]): string {
@@ -662,10 +466,6 @@ function parseVisualNumberInput(value: string): number | string | null {
   return value;
 }
 
-function resolveProtocolLabel(protocol: string): string {
-  return PROTOCOL_LABELS[protocol] ?? protocol;
-}
-
 export function ChatModelConfig({
   disabled,
   options,
@@ -673,194 +473,47 @@ export function ChatModelConfig({
   modelOptionPolicy,
   selectedProtocol,
   selectedModelName,
-  isMediaMode,
   onOptionsChange,
   onOptionsReset,
 }: ChatModelConfigProps) {
   const tCommon = useTranslations("common.actions");
   const tComposer = useTranslations("chat.composer");
   const tOptionLabels = useTranslations("chat.optionLabels");
-  const tNativeToolLabels = useTranslations("chat.nativeToolLabels");
-  const tNativeToolDescriptions = useTranslations("chat.nativeToolDescriptions");
   const [hovered, setHovered] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [optionsDraft, setOptionsDraft] = React.useState("");
   const [optionsObject, setOptionsObject] = React.useState<ConversationOptions>({});
-  const [filteredOptions, setFilteredOptions] = React.useState<FilteredOption[]>([]);
-  const [mobileView, setMobileView] = React.useState<"json" | "visual">("json");
-  const optionsObjectRef = React.useRef<ConversationOptions>({});
-  const selectedProtocolLabel = selectedProtocol ? resolveProtocolLabel(selectedProtocol) : "";
   const editableOptions = React.useMemo(() => visualOptionsFromOptions(optionsObject), [optionsObject]);
-  const nativeToolGroup = React.useMemo(() => {
-    if (isMediaMode) {
-      return null;
-    }
-    if (selectedProtocol === "xai_responses") {
-      return {
-        title: tComposer("nativeTools.grok"),
-        options: XAI_NATIVE_TOOL_OPTIONS,
-      };
-    }
-    if (selectedProtocol === "openai_responses") {
-      return {
-        title: tComposer("nativeTools.openai"),
-        options: OPENAI_NATIVE_TOOL_OPTIONS,
-      };
-    }
-    if (selectedProtocol === "anthropic_messages") {
-      return {
-        title: tComposer("nativeTools.claude"),
-        options: ANTHROPIC_NATIVE_TOOL_OPTIONS,
-      };
-    }
-    return null;
-  }, [isMediaMode, selectedProtocol, tComposer]);
-  const hasRecognizedOptions = Boolean(nativeToolGroup) || editableOptions.length > 0 || filteredOptions.length > 0;
-
-  React.useEffect(() => {
-    optionsObjectRef.current = optionsObject;
-  }, [optionsObject]);
+  const hasRecognizedOptions = editableOptions.length > 0;
 
   const openOptionsDialog = React.useCallback(() => {
-    const sanitized = sanitizeConversationOptions(options);
-    optionsObjectRef.current = sanitized;
-    setOptionsObject(sanitized);
-    setFilteredOptions([]);
-    setOptionsDraft(stringifyOptions(sanitized));
-    setMobileView("json");
+    setOptionsObject(sanitizeConversationOptions(options));
     setDialogOpen(true);
   }, [options]);
 
-  const replaceOptionsDraft = React.useCallback((next: ConversationOptions) => {
-    const sanitized = sanitizeConversationOptions(next);
-    optionsObjectRef.current = sanitized;
-    setOptionsObject(sanitized);
-    setFilteredOptions([]);
-    setOptionsDraft(stringifyOptions(sanitized));
-  }, []);
-
-  const replaceRawOptionsDraft = React.useCallback((next: ConversationOptions) => {
-    const parsed = parseOptionsDraft(stringifyOptions(next));
-    const nextOptions = parsed.rawOptions ?? next;
-    optionsObjectRef.current = nextOptions;
-    setOptionsObject(nextOptions);
-    setFilteredOptions(parsed.filteredOptions);
-    setOptionsDraft(stringifyOptions(next));
+  const replaceOptions = React.useCallback((next: ConversationOptions) => {
+    setOptionsObject(sanitizeConversationOptions(next));
   }, []);
 
   const updateOptionValue = React.useCallback(
     (path: string[], value: unknown) => {
-      replaceRawOptionsDraft(setOptionAtPath(optionsObjectRef.current, path, value));
+      setOptionsObject((current) => setOptionAtPath(current, path, value));
     },
-    [replaceRawOptionsDraft],
+    [],
   );
-
-  const updateProviderTool = React.useCallback(
-    (tool: NativeToolOption, enabled: boolean) => {
-      replaceRawOptionsDraft(setProviderToolEnabled(optionsObjectRef.current, tool, enabled));
-    },
-    [replaceRawOptionsDraft],
-  );
-
-  const handleOptionsJSONChange = React.useCallback((value: string) => {
-    setOptionsDraft(value);
-
-    const parsed = parseOptionsDraft(value);
-    if (parsed.rawOptions && parsed.options) {
-      optionsObjectRef.current = parsed.rawOptions;
-      setOptionsObject(parsed.rawOptions);
-      setFilteredOptions(parsed.filteredOptions);
-    }
-  }, []);
 
   const saveOptionsDraft = React.useCallback(() => {
-    const parsed = parseOptionsDraft(optionsDraft);
-    if (!parsed.options) {
-      setMobileView("json");
-      toast.error(tComposer("saveFailed"));
-      return;
-    }
-    if (JSON.stringify(parsed.options) === JSON.stringify(defaultOptions)) {
+    const sanitized = sanitizeConversationOptions(optionsObject);
+    if (JSON.stringify(sanitized) === JSON.stringify(defaultOptions)) {
       onOptionsReset();
       setDialogOpen(false);
       return;
     }
-    onOptionsChange(parsed.options);
+    onOptionsChange(sanitized);
     setDialogOpen(false);
-  }, [defaultOptions, onOptionsChange, onOptionsReset, optionsDraft, tComposer]);
-
-  const renderOptionsViewToggle = () => (
-    <Tabs
-      value={mobileView}
-      onValueChange={(value) => setMobileView(value as "json" | "visual")}
-      className="w-fit gap-0"
-    >
-      <TabsList className="h-7">
-        <TabsTrigger value="json">JSON</TabsTrigger>
-        <TabsTrigger value="visual">{tComposer("visual")}</TabsTrigger>
-      </TabsList>
-    </Tabs>
-  );
-
-  const renderOptionsEditor = () => (
-    <div className="space-y-1.5">
-      <div className="flex min-w-0 items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <p className="shrink-0 text-xs text-muted-foreground">{tComposer("jsonConfig")}</p>
-        </div>
-        {selectedProtocolLabel ? (
-          <span
-            className="max-w-[70%] shrink-0 truncate rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px] leading-none text-muted-foreground"
-            title={selectedProtocol}
-          >
-            {selectedProtocolLabel}
-          </span>
-        ) : null}
-      </div>
-      <div className="p-0.5">
-        <JsonCodeEditor
-          value={optionsDraft}
-          onChange={handleOptionsJSONChange}
-          height="min(52dvh, 420px)"
-          className="min-h-56"
-          actions={
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-[11px]"
-                onClick={() => replaceOptionsDraft({})}
-              >
-                {tComposer("clear")}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-[11px]"
-                onClick={() => replaceOptionsDraft(defaultOptions)}
-              >
-                {tComposer("default")}
-              </Button>
-            </>
-          }
-          placeholder={`{
-  "temperature": 0.7,
-  "thinking": {
-    "type": "enabled"
-  },
-  "reasoning": {
-    "effort": "high"
-  }
-}`}
-        />
-      </div>
-    </div>
-  );
+  }, [defaultOptions, onOptionsChange, onOptionsReset, optionsObject]);
 
   const renderOptionsVisualFields = () => (
-    <div className="flex min-h-0 flex-col space-y-1.5 md:border-l md:pl-5">
+    <div className="flex min-h-0 flex-col space-y-1.5">
       <div className="flex min-h-6 items-center justify-between gap-2 px-2 py-0.5">
         <p className="shrink-0 text-xs text-muted-foreground">{tComposer("visualConfig")}</p>
         <Tooltip>
@@ -881,53 +534,6 @@ export function ChatModelConfig({
       {hasRecognizedOptions ? (
         <div className="min-h-0 flex-1 overflow-y-auto pr-1 md:h-[min(52dvh,420px)] md:max-h-[min(52dvh,420px)]">
           <div className="space-y-2 md:space-y-2.5">
-            {nativeToolGroup ? (
-              <div className="space-y-1.5 px-2 py-1.5">
-                <div className="min-w-0">
-                  <p className="truncate text-xs text-foreground/80">{nativeToolGroup.title}</p>
-                </div>
-                <div className="space-y-1">
-                  {nativeToolGroup.options.map((tool) => {
-                    const checked = hasProviderTool(optionsObject, tool.type);
-                    const allowed = isNativeToolTypeAllowed(modelOptionPolicy, selectedProtocol, tool.type);
-                    const filterStatus: ModelOptionFilterStatus = allowed ? "passed" : "filtered";
-                    return (
-                      <label
-                        key={tool.type}
-                        className={cn(
-                          "flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5",
-                          allowed || checked ? "cursor-pointer hover:bg-muted/50" : "cursor-not-allowed text-muted-foreground",
-                        )}
-                      >
-                        <Checkbox
-                          checked={checked}
-                          disabled={!allowed && !checked}
-                          onCheckedChange={(nextChecked) => {
-                            if (!allowed && nextChecked === true) {
-                              return;
-                            }
-                            updateProviderTool(tool, nextChecked === true);
-                          }}
-                        />
-                        <span className="min-w-0 flex flex-1 items-center gap-2 text-xs">
-                          <span className={cn("shrink-0 text-foreground/80", !allowed && "text-muted-foreground line-through")}>
-                            {tNativeToolLabels(tool.labelKey)}
-                          </span>
-                          <span className={cn("min-w-0 truncate text-[11px] text-muted-foreground", !allowed && "line-through")}>
-                            {tNativeToolDescriptions(tool.descriptionKey)}
-                          </span>
-                        </span>
-                        <ModelOptionFilterBadge
-                          status={filterStatus}
-                          ignoredLabel={tComposer("ignored")}
-                          passedLabel={tComposer("willPass")}
-                        />
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
             {editableOptions.map(({ key, path, value }) => {
               const kind = resolveOptionKind(key, value);
               const selectValues = resolveSelectValues(key);
@@ -1015,23 +621,6 @@ export function ChatModelConfig({
                 </div>
               );
             })}
-            {filteredOptions.length > 0 ? (
-              <div className={cn("space-y-2", editableOptions.length > 0 ? "pt-1" : "")}>
-                {filteredOptions.map((item) => (
-                  <div
-                    key={item.key}
-                    className="grid grid-cols-[minmax(0,1fr)_116px] items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground sm:grid-cols-[minmax(0,1fr)_132px] sm:gap-3 md:grid-cols-[minmax(0,1fr)_148px]"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-xs line-through">{item.key}</p>
-                    </div>
-                    <span className="w-fit text-[11px] sm:justify-self-end">
-                      {tComposer("ignored")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
           </div>
         </div>
       ) : (
@@ -1065,14 +654,11 @@ export function ChatModelConfig({
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent
-          className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] flex-col overflow-hidden p-4 sm:max-h-[min(92vh,760px)] sm:w-full sm:max-w-[800px] sm:p-6 md:max-w-[900px]"
+          className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] flex-col overflow-hidden p-4 sm:max-h-[min(92vh,720px)] sm:w-full sm:max-w-[560px] sm:p-6"
         >
           <DialogHeader className="shrink-0">
-            <div className="flex min-w-0 items-center justify-between gap-3">
-              <DialogTitle className="shrink-0">{tComposer("modelOptions")}</DialogTitle>
-              <div className="shrink-0 md:hidden">{renderOptionsViewToggle()}</div>
-            </div>
-            <DialogDescription className="hidden md:block">
+            <DialogTitle>{tComposer("modelOptions")}</DialogTitle>
+            <DialogDescription>
               {tComposer("dialogDescription", { model: selectedModelName || tComposer("currentModel") })}
             </DialogDescription>
           </DialogHeader>
@@ -1085,16 +671,15 @@ export function ChatModelConfig({
             }}
           >
             <div className="min-h-0 flex-1 overflow-y-auto sm:pr-1">
-              <div className="space-y-3 md:hidden">
-                {mobileView === "json" ? renderOptionsEditor() : renderOptionsVisualFields()}
-              </div>
-
-              <div className="hidden min-w-0 gap-4 md:grid md:grid-cols-[minmax(0,430px)_minmax(300px,1fr)] md:gap-5">
-                {renderOptionsEditor()}
-                {renderOptionsVisualFields()}
-              </div>
+              {renderOptionsVisualFields()}
             </div>
             <DialogFooter className="shrink-0">
+              <Button type="button" variant="ghost" onClick={() => replaceOptions({})}>
+                {tComposer("clear")}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => replaceOptions(defaultOptions)}>
+                {tComposer("default")}
+              </Button>
               <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>
                 {tCommon("cancel")}
               </Button>

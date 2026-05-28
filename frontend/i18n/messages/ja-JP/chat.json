@@ -300,6 +300,7 @@
     }
   },
   "composer": {
+    "addPhotosAndFiles": "写真とファイルを追加",
     "uploadFile": "ファイルをアップロード",
     "dragUploadTitle": "離すとファイルをアップロードします",
     "dragUploadDescription": "ファイルは現在のメッセージ添付としてアップロードされます。",
@@ -309,9 +310,10 @@
     "modelOptions": "モデル設定",
     "mcpTools": "MCP ツール",
     "mcpToolsSelected": "{count} 個のツールを有効化済み",
+    "enabledCount": "{count} 個有効",
+    "back": "戻る",
     "clear": "クリア",
     "default": "既定",
-    "jsonConfig": "JSON 設定",
     "visualConfig": "ビジュアル設定",
     "visual": "ビジュアル",
     "ignored": "無視",
@@ -321,7 +323,6 @@
     "saveFailed": "モデル設定の保存に失敗しました",
     "retryLater": "しばらくしてからもう一度お試しください。",
     "streamResponseParseFailed": "上流が HTTP {statusCode} を返しましたが、ストリーム形式が選択中のプロトコルと互換性がありません。",
-    "jsonMustBeObject": "JSON はオブジェクトである必要があります",
     "currentModel": "現在のモデル",
     "dialogDescription": "{model} のリクエストパラメーター設定です。保存後、モデルリクエストと一緒に送信されます。",
     "ragAllDisabled": "すべての添付で RAG がオフになっているため、全文注入されます。Token 消費が多くなる可能性があります",
@@ -653,6 +654,7 @@
     "grokXSearch": "Grok ネイティブ X 検索",
     "grokCodeInterpreter": "Grok ネイティブコードインタープリター",
     "openaiWebSearch": "OpenAI ネイティブ Web 検索",
+    "openaiWebSearchPreview": "OpenAI ネイティブ Web 検索プレビュー",
     "openaiShell": "OpenAI 管理コンテナ Shell",
     "openaiImageGeneration": "OpenAI ネイティブ画像生成",
     "openaiCodeInterpreter": "OpenAI ネイティブコードインタープリター",
@@ -665,6 +667,7 @@
   },
   "nativeToolLabels": {
     "webSearch": "Web 検索",
+    "webSearchPreview": "Web 検索プレビュー",
     "xSearch": "X 検索",
     "codeInterpreter": "コードインタープリター",
     "shell": "Shell",

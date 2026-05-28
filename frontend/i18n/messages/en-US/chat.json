@@ -300,6 +300,7 @@
     }
   },
   "composer": {
+    "addPhotosAndFiles": "Add photos and files",
     "uploadFile": "Upload file",
     "dragUploadTitle": "Drop files to upload",
     "dragUploadDescription": "Release to attach them to the current message.",
@@ -309,9 +310,10 @@
     "modelOptions": "Parameters",
     "mcpTools": "MCP tools",
     "mcpToolsSelected": "{count} tools enabled",
+    "enabledCount": "{count} enabled",
+    "back": "Back",
     "clear": "Clear",
     "default": "Default",
-    "jsonConfig": "JSON config",
     "visualConfig": "Visual config",
     "visual": "Visual",
     "ignored": "Ignored",
@@ -321,7 +323,6 @@
     "saveFailed": "Failed to save parameters",
     "retryLater": "Please try again later.",
     "streamResponseParseFailed": "The upstream returned HTTP {statusCode}, but the stream format is incompatible with the selected protocol.",
-    "jsonMustBeObject": "JSON must be an object",
     "currentModel": "Current model",
     "dialogDescription": "{model} request parameters. Saved values are sent with model requests.",
     "ragAllDisabled": "All attachments have RAG disabled and will be injected as full context. This may use more tokens.",
@@ -653,6 +654,7 @@
     "grokXSearch": "Grok native X search",
     "grokCodeInterpreter": "Grok native code interpreter",
     "openaiWebSearch": "OpenAI native web search",
+    "openaiWebSearchPreview": "OpenAI native web search preview",
     "openaiShell": "OpenAI managed container shell",
     "openaiImageGeneration": "OpenAI native image generation",
     "openaiCodeInterpreter": "OpenAI native code interpreter",
@@ -665,6 +667,7 @@
   },
   "nativeToolLabels": {
     "webSearch": "Web search",
+    "webSearchPreview": "Web search preview",
     "xSearch": "X search",
     "codeInterpreter": "Code interpreter",
     "shell": "Shell",

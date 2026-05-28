@@ -24,7 +24,8 @@
     "analyze": "next experimental-analyze",
     "analyze:output": "next experimental-analyze --output",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:chat-tools": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test features/chat/model/native-tools.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

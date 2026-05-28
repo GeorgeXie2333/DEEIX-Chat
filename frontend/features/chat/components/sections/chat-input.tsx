@@ -2,7 +2,20 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
-import { Image, ImageOff, ImagePlus } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Code2,
+  FileUp,
+  Globe2,
+  Image,
+  ImageOff,
+  ImagePlus,
+  Search,
+  TerminalSquare,
+  Wrench,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { AudioLines } from "@/components/animate-ui/icons/audio-lines";
@@ -10,7 +23,6 @@ import { Blocks } from "@/components/animate-ui/icons/blocks";
 import { Pause } from "@/components/animate-ui/icons/pause";
 import { Plus } from "@/components/animate-ui/icons/plus";
 import { Send } from "@/components/animate-ui/icons/send";
-import { Link as LinkIcon } from "@/components/animate-ui/icons/link";
 import { Crop } from "@/components/animate-ui/icons/crop";
 import { X as XIcon } from "@/components/animate-ui/icons/x";
 import type {
@@ -19,31 +31,34 @@ import type {
   UploadingAttachment,
 } from "@/features/chat/types/chat-runtime";
 import { useSpeechInput } from "@/features/chat/hooks/use-speech-input";
-import { ChatMCP } from "@/features/chat/components/sections/chat-mcp";
 import { ChatModelPicker } from "@/features/chat/components/sections/chat-model-picker";
 import { ChatModelConfig } from "@/features/chat/components/sections/chat-model-config";
 import { formatBytes, resolveFileIcon } from "@/features/files/utils/file-display";
 import type { ChatSubmitDecision } from "@/features/chat/model/chat-task";
 import { isMediaSubmitTask, resolveChatSubmitDecision } from "@/features/chat/model/chat-task";
+import { ChatMCPPanel } from "@/features/chat/components/sections/chat-mcp";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  countProviderTools,
+  hasProviderTool,
+  resolveNativeToolGroup,
+  setProviderToolEnabled,
+  shouldShowMCPToolsMenu,
+  type NativeToolOption,
+} from "@/features/chat/model/native-tools";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupTextarea,
 } from "@/components/ui/input-group";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { resolveFileProcessingBadge, resolveFileProcessingToneClass } from "@/shared/lib/file-processing";
 import { cn } from "@/lib/utils";
 import type { ConversationOptions } from "@/shared/api/conversation.types";
 import type { MCPToolDTO } from "@/shared/api/mcp.types";
-import type { ModelOptionPolicy } from "@/shared/lib/model-option-policy";
+import { isNativeToolTypeAllowed, type ModelOptionPolicy } from "@/shared/lib/model-option-policy";
 import type { SendShortcut } from "@/features/settings/types/settings";
 import { isSendShortcutEvent, shouldUseMultilineEnterForTouchInput } from "@/shared/lib/platform-shortcuts";
 
@@ -96,6 +111,81 @@ type ComposerModeIndicator = {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   tone: "default" | "warning";
 };
+
+type ToolMenuView = "main" | "mcp";
+
+type ToolMenuIcon = React.ComponentType<{
+  className?: string;
+  size?: number;
+  strokeWidth?: number;
+}>;
+
+type ToolMenuButtonProps = {
+  icon: ToolMenuIcon;
+  label: string;
+  description?: string;
+  selected?: boolean;
+  disabled?: boolean;
+  destructive?: boolean;
+  trailing?: React.ReactNode;
+  onClick: () => void;
+};
+
+function ToolMenuButton({
+  icon: Icon,
+  label,
+  description,
+  selected = false,
+  disabled = false,
+  destructive = false,
+  trailing,
+  onClick,
+}: ToolMenuButtonProps) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "group/tool-row flex min-h-11 w-full min-w-0 items-center gap-3 rounded-lg px-3 py-2 text-left outline-none transition-colors",
+        "hover:bg-accent/50 focus-visible:bg-accent focus-visible:text-accent-foreground",
+        disabled && "cursor-not-allowed opacity-45 hover:bg-transparent focus-visible:bg-transparent",
+        destructive && "text-destructive",
+      )}
+      disabled={disabled}
+      aria-pressed={selected || undefined}
+      title={description}
+      onClick={onClick}
+    >
+      <span className="flex size-6 shrink-0 items-center justify-center text-foreground/90 group-disabled/tool-row:text-muted-foreground">
+        <Icon className="size-5" size={20} strokeWidth={1.8} />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[15px] font-medium leading-5 text-foreground/90 group-disabled/tool-row:text-muted-foreground">
+        {label}
+      </span>
+      {trailing ? <span className="shrink-0 text-muted-foreground">{trailing}</span> : null}
+      {selected ? (
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Check className="size-3.5" strokeWidth={2} />
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function nativeToolIcon(tool: NativeToolOption): ToolMenuIcon {
+  if (tool.type.includes("image")) {
+    return Image;
+  }
+  if (tool.type.includes("code")) {
+    return Code2;
+  }
+  if (tool.type === "shell") {
+    return TerminalSquare;
+  }
+  if (tool.type.includes("tool_search") || tool.type === "x_search" || tool.type === "advisor_20260301") {
+    return Search;
+  }
+  return Globe2;
+}
 
 function resolveComposerModeIndicator(
   decision: ChatSubmitDecision,
@@ -192,12 +282,15 @@ function ChatInputComponent({
 }: ChatInputProps) {
   const tChat = useTranslations("chat");
   const tComposer = useTranslations("chat.composer");
+  const tNativeToolLabels = useTranslations("chat.nativeToolLabels");
+  const tNativeToolDescriptions = useTranslations("chat.nativeToolDescriptions");
   const tFileStatus = useTranslations("files.status");
   const [isPlusHovered, setIsPlusHovered] = React.useState(false);
   const [isBlocksHovered, setIsBlocksHovered] = React.useState(false);
   const [isVoiceHovered, setIsVoiceHovered] = React.useState(false);
   const speechInput = useSpeechInput({ draft, onDraftChange });
-  const [hoveredTool, setHoveredTool] = React.useState<"upload" | "screenshot" | null>(null);
+  const [toolsMenuOpen, setToolsMenuOpen] = React.useState(false);
+  const [toolsMenuView, setToolsMenuView] = React.useState<ToolMenuView>("main");
   const [ragWarnDismissed, setRagWarnDismissed] = React.useState(false);
   const [previewAttachment, setPreviewAttachment] = React.useState<PendingAttachment | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -233,15 +326,41 @@ function ChatInputComponent({
   const composerModeIndicator = resolveComposerModeIndicator(submitDecision, tComposer);
   const ComposerModeIcon = composerModeIndicator?.icon;
   const modelOptionPolicyDisabled = modelOptionPolicy?.mode?.trim() === "disabled";
-  const showMCPToolsButton = availableTools.length > 0 && !isMediaMode;
+  const showMCPToolsButton = shouldShowMCPToolsMenu(availableTools.length, isMediaMode);
   const showHTMLVisualPromptButton = !isMediaMode;
+  const nativeToolGroup = React.useMemo(
+    () => (modelOptionPolicyDisabled ? null : resolveNativeToolGroup(selectedProtocol, isMediaMode)),
+    [isMediaMode, modelOptionPolicyDisabled, selectedProtocol],
+  );
+  const selectedNativeToolCount = React.useMemo(
+    () => countProviderTools(options, nativeToolGroup),
+    [nativeToolGroup, options],
+  );
+  const selectedToolMenuCount = selectedNativeToolCount + selectedToolIDs.length;
+  const onToolsMenuOpenChange = React.useCallback((open: boolean) => {
+    setToolsMenuOpen(open);
+    if (!open) {
+      setToolsMenuView("main");
+    }
+  }, []);
   const onSelectUploadTool = React.useCallback(() => {
+    setToolsMenuOpen(false);
+    setToolsMenuView("main");
     fileInputRef.current?.click();
   }, []);
 
   const onSelectScreenshotTool = React.useCallback(() => {
+    setToolsMenuOpen(false);
+    setToolsMenuView("main");
     void onCaptureScreenshot();
   }, [onCaptureScreenshot]);
+
+  const onToggleNativeTool = React.useCallback(
+    (tool: NativeToolOption, enabled: boolean) => {
+      onOptionsChange((current) => setProviderToolEnabled(current, tool, enabled));
+    },
+    [onOptionsChange],
+  );
 
   return (
     <div className="w-full">
@@ -423,14 +542,14 @@ function ChatInputComponent({
 
         <InputGroupAddon align="block-end" className="items-center justify-between pt-2">
           <div className="flex items-center gap-1">
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
+            <Popover open={toolsMenuOpen} onOpenChange={onToolsMenuOpenChange}>
+              <PopoverTrigger asChild>
                 <InputGroupButton
                   id="chat-tools-menu-trigger"
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  className="rounded-md text-muted-foreground hover:text-foreground"
+                  className="relative rounded-md text-muted-foreground hover:text-foreground"
                   disabled={sending || loading || uploading}
                   aria-label={tComposer("openTools")}
                   onMouseEnter={() => setIsPlusHovered(true)}
@@ -441,33 +560,117 @@ function ChatInputComponent({
                     strokeWidth={1.4}
                     animate={isPlusHovered ? "default" : undefined}
                   />
+                  {selectedToolMenuCount > 0 ? (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-medium leading-none text-primary-foreground">
+                      {selectedToolMenuCount}
+                    </span>
+                  ) : null}
                 </InputGroupButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="bottom" align="start" sideOffset={8} className="w-36">
-                <DropdownMenuItem
-                  onMouseEnter={() => setHoveredTool("upload")}
-                  onMouseLeave={() => setHoveredTool((prev) => (prev === "upload" ? null : prev))}
-                  onSelect={(event) => {
-                    event.preventDefault();
-                    onSelectUploadTool();
-                  }}
-                >
-                  <LinkIcon size={12} strokeWidth={1.5} animate={hoveredTool === "upload" ? "default" : undefined} />
-                  {tComposer("uploadFile")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onMouseEnter={() => setHoveredTool("screenshot")}
-                  onMouseLeave={() => setHoveredTool((prev) => (prev === "screenshot" ? null : prev))}
-                  onSelect={(event) => {
-                    event.preventDefault();
-                    onSelectScreenshotTool();
-                  }}
-                >
-                  <Crop size={12} strokeWidth={1.5} animate={hoveredTool === "screenshot" ? "default" : undefined} />
-                  {tComposer("screenshot")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </PopoverTrigger>
+              <PopoverContent
+                side="bottom"
+                align="start"
+                sideOffset={8}
+                className="w-[min(88vw,25rem)] overflow-hidden rounded-[1.35rem] p-0 shadow-[0_18px_48px_rgba(15,23,42,0.14)]"
+              >
+                {toolsMenuView === "mcp" ? (
+                  <div className="flex min-h-0 flex-col p-2">
+                    <div className="mb-1 flex h-9 items-center gap-2 px-1">
+                      <button
+                        type="button"
+                        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent focus-visible:text-foreground"
+                        aria-label={tComposer("back")}
+                        onClick={() => setToolsMenuView("main")}
+                      >
+                        <ChevronLeft className="size-4" strokeWidth={1.8} />
+                      </button>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{tComposer("mcpTools")}</span>
+                      {selectedToolIDs.length > 0 ? (
+                        <span className="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                          {tComposer("enabledCount", { count: selectedToolIDs.length })}
+                        </span>
+                      ) : null}
+                    </div>
+                    <ChatMCPPanel
+                      availableTools={availableTools}
+                      selectedToolIDs={selectedToolIDs}
+                      maxSelectedTools={maxSelectedTools}
+                      disabled={sending || loading || uploading || toolsLoading}
+                      showHeader={false}
+                      onSelectedToolsChange={onSelectedToolsChange}
+                    />
+                  </div>
+                ) : (
+                  <div className="p-3">
+                    <ToolMenuButton
+                      icon={FileUp}
+                      label={tComposer("addPhotosAndFiles")}
+                      description={tComposer("uploadFile")}
+                      onClick={onSelectUploadTool}
+                    />
+                    <ToolMenuButton
+                      icon={Crop}
+                      label={tComposer("screenshot")}
+                      onClick={onSelectScreenshotTool}
+                    />
+
+                    {nativeToolGroup ? (
+                      <>
+                        <div className="mx-3 my-2 h-px bg-border/70" />
+                        <div className="px-3 pb-1 pt-1 text-[11px] font-medium text-muted-foreground">
+                          {tComposer(`nativeTools.${nativeToolGroup.key}`)}
+                        </div>
+                        <div className="space-y-0.5">
+                          {nativeToolGroup.options.map((tool) => {
+                            const checked = hasProviderTool(options, tool.type);
+                            const allowed = isNativeToolTypeAllowed(modelOptionPolicy, selectedProtocol, tool.type);
+                            const canToggle = allowed || checked;
+                            return (
+                              <ToolMenuButton
+                                key={tool.type}
+                                icon={nativeToolIcon(tool)}
+                                label={tNativeToolLabels(tool.labelKey)}
+                                description={tNativeToolDescriptions(tool.descriptionKey)}
+                                selected={checked}
+                                disabled={!canToggle}
+                                trailing={!allowed ? (
+                                  <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium">
+                                    {tComposer("ignored")}
+                                  </span>
+                                ) : null}
+                                onClick={() => onToggleNativeTool(tool, !checked)}
+                              />
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : null}
+
+                    {showMCPToolsButton ? (
+                      <>
+                        <div className="mx-3 my-2 h-px bg-border/70" />
+                        <ToolMenuButton
+                          icon={Wrench}
+                          label={tComposer("mcpTools")}
+                          disabled={toolsLoading}
+                          trailing={
+                            <span className="flex items-center gap-2">
+                              {selectedToolIDs.length > 0 ? (
+                                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                  {selectedToolIDs.length}
+                                </span>
+                              ) : null}
+                              <ChevronRight className="size-4" strokeWidth={1.8} />
+                            </span>
+                          }
+                          onClick={() => setToolsMenuView("mcp")}
+                        />
+                      </>
+                    ) : null}
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
 
             {!modelOptionPolicyDisabled ? (
               <ChatModelConfig
@@ -477,19 +680,8 @@ function ChatInputComponent({
                 modelOptionPolicy={modelOptionPolicy}
                 selectedProtocol={selectedProtocol}
                 selectedModelName={selectedModelName}
-                isMediaMode={isMediaMode}
                 onOptionsChange={onOptionsChange}
                 onOptionsReset={onOptionsReset}
-              />
-            ) : null}
-
-            {showMCPToolsButton ? (
-              <ChatMCP
-                availableTools={availableTools}
-                selectedToolIDs={selectedToolIDs}
-                maxSelectedTools={maxSelectedTools}
-                disabled={sending || loading || uploading || toolsLoading}
-                onSelectedToolsChange={onSelectedToolsChange}
               />
             ) : null}
 

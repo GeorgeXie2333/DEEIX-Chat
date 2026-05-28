@@ -117,8 +117,36 @@ type UsagePricingSnapshot = {
   output_billed_nanousd?: number;
   call_billed_nanousd?: number;
   duration_billed_nanousd?: number;
+  base_service_billed_nanousd?: number;
   tiered_from_tokens?: number;
   tiered_up_to_tokens?: number | null;
+  service_items?: UsageServiceItemSnapshot[];
+};
+
+type UsageServiceItemSnapshot = {
+  service_code?: string;
+  service_name?: string;
+  pricing_mode?: "token" | "call" | "duration" | "tiered" | string;
+  input_tokens?: number;
+  cache_read_tokens?: number;
+  cache_write_tokens?: number;
+  output_tokens?: number;
+  reasoning_tokens?: number;
+  call_count?: number;
+  duration_seconds?: number;
+  input_nanousd_per_m_tokens?: number;
+  cache_read_nanousd_per_m_tokens?: number;
+  cache_write_nanousd_per_m_tokens?: number;
+  output_nanousd_per_m_tokens?: number;
+  call_nanousd_per_call?: number;
+  duration_nanousd_per_second?: number;
+  input_billed_nanousd?: number;
+  cache_read_billed_nanousd?: number;
+  cache_write_billed_nanousd?: number;
+  output_billed_nanousd?: number;
+  call_billed_nanousd?: number;
+  duration_billed_nanousd?: number;
+  billed_nanousd?: number;
 };
 
 type UsageBillingLabels = {
@@ -126,6 +154,9 @@ type UsageBillingLabels = {
   output: string;
   cacheRead: string;
   total: string;
+  modelSubtotal: string;
+  serviceItems: string;
+  serviceItemFallback: string;
   freeModelNoBilling: string;
   perCall: string;
   perSecond: string;
@@ -153,6 +184,9 @@ function useUsageBillingLabels(): UsageBillingLabels {
       output: t("output"),
       cacheRead: t("cacheRead"),
       total: t("total"),
+      modelSubtotal: t("modelSubtotal"),
+      serviceItems: t("serviceItems"),
+      serviceItemFallback: t("serviceItemFallback"),
       freeModelNoBilling: t("freeModelNoBilling"),
       perCall: t("perCall"),
       perSecond: t("perSecond"),
@@ -227,6 +261,32 @@ function parseUsagePricingSnapshot(raw: string): UsagePricingSnapshot {
 function readUsageSnapshotNumber(snapshot: UsagePricingSnapshot, key: keyof UsagePricingSnapshot): number {
   const value = snapshot[key];
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function readUsageServiceItemNumber(item: UsageServiceItemSnapshot, key: keyof UsageServiceItemSnapshot): number {
+  const value = item[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function readUsageServiceItems(snapshot: UsagePricingSnapshot): UsageServiceItemSnapshot[] {
+  return Array.isArray(snapshot.service_items)
+    ? snapshot.service_items.filter((item): item is UsageServiceItemSnapshot => Boolean(item) && typeof item === "object" && !Array.isArray(item))
+    : [];
+}
+
+function readUsageServiceItemsBilledNanousd(items: UsageServiceItemSnapshot[]): number {
+  return items.reduce((total, item) => total + readUsageServiceItemNumber(item, "billed_nanousd"), 0);
+}
+
+function readUsageMainBilledNanousd(snapshot: UsagePricingSnapshot): number {
+  return (
+    readUsageSnapshotNumber(snapshot, "input_billed_nanousd") +
+    readUsageSnapshotNumber(snapshot, "cache_read_billed_nanousd") +
+    readUsageSnapshotNumber(snapshot, "cache_write_billed_nanousd") +
+    readUsageSnapshotNumber(snapshot, "output_billed_nanousd") +
+    readUsageSnapshotNumber(snapshot, "call_billed_nanousd") +
+    readUsageSnapshotNumber(snapshot, "duration_billed_nanousd")
+  );
 }
 
 function normalizePricingMode(value: string | null | undefined): "token" | "call" | "duration" | "tiered" {
@@ -352,6 +412,49 @@ function usageCountFormulaLine(label: string, count: number, unit: string, rateU
   };
 }
 
+function usageServiceItemName(item: UsageServiceItemSnapshot, labels: UsageBillingLabels): string {
+  return String(item.service_name || item.service_code || labels.serviceItemFallback).trim() || labels.serviceItemFallback;
+}
+
+function usageServiceItemLine(item: UsageServiceItemSnapshot, labels: UsageBillingLabels): UsageBillingTooltipLine {
+  const name = usageServiceItemName(item, labels);
+  const mode = normalizePricingMode(item.pricing_mode);
+  const billedNanousd = readUsageServiceItemNumber(item, "billed_nanousd");
+
+  if (mode === "call") {
+    const count = readUsageServiceItemNumber(item, "call_count");
+    const rate = readUsageServiceItemNumber(item, "call_nanousd_per_call");
+    return usageCountFormulaLine(name, count, labels.callUnit, labels.callUnit, rate, billedNanousd);
+  }
+
+  if (mode === "duration") {
+    const seconds = readUsageServiceItemNumber(item, "duration_seconds");
+    const rate = readUsageServiceItemNumber(item, "duration_nanousd_per_second");
+    return usageCountFormulaLine(name, seconds, labels.secondUnit, labels.secondUnit, rate, billedNanousd);
+  }
+
+  return {
+    type: "row",
+    left: name,
+    right: formatTooltipUsageCost(nanousdToUSD(billedNanousd)),
+  };
+}
+
+function usageServiceItemDetail(item: UsageServiceItemSnapshot, labels: UsageBillingLabels, locale: string): string {
+  const name = usageServiceItemName(item, labels);
+  const mode = normalizePricingMode(item.pricing_mode);
+  const billed = formatTooltipUsageCost(nanousdToUSD(readUsageServiceItemNumber(item, "billed_nanousd")));
+  if (mode === "call") {
+    const count = formatCount(readUsageServiceItemNumber(item, "call_count"), locale);
+    return `${name} · ${count} ${labels.callUnit} · ${billed}`;
+  }
+  if (mode === "duration") {
+    const seconds = formatCount(readUsageServiceItemNumber(item, "duration_seconds"), locale);
+    return `${name} · ${seconds} ${labels.secondUnit} · ${billed}`;
+  }
+  return `${name} · ${billed}`;
+}
+
 function usageTieredTableRow(item: string, tokens: number, rateNanousd: number, billedNanousd: number): UsageBillingTieredTableRow {
   const safeTokens = Number.isFinite(tokens) && tokens > 0 ? tokens : 0;
   const safeBilled = Number.isFinite(billedNanousd) && billedNanousd > 0 ? billedNanousd : 0;
@@ -371,6 +474,26 @@ function usageTotalLine(item: AdminUsageLogDTO, labels: UsageBillingLabels): Usa
   };
 }
 
+function appendUsageServiceItemLines(
+  lines: UsageBillingTooltipLine[],
+  serviceItems: UsageServiceItemSnapshot[],
+  modelSubtotalNanousd: number,
+  totalLine: UsageBillingTooltipLine,
+  labels: UsageBillingLabels,
+): UsageBillingTooltipLine[] {
+  if (serviceItems.length === 0) {
+    return [...lines, { type: "divider" }, totalLine];
+  }
+  return [
+    ...lines,
+    { type: "divider" },
+    { type: "row", left: labels.modelSubtotal, right: formatTooltipUsageCost(nanousdToUSD(modelSubtotalNanousd)) },
+    ...serviceItems.map((serviceItem) => usageServiceItemLine(serviceItem, labels)),
+    { type: "divider" },
+    totalLine,
+  ];
+}
+
 function buildUsageBillingTooltipLines(item: AdminUsageLogDTO, labels: UsageBillingLabels): UsageBillingTooltipLine[] {
   const snapshot = parseUsagePricingSnapshot(item.pricingSnapshotJSON);
   const pricingMode = normalizePricingMode(snapshot.pricing_mode);
@@ -383,25 +506,34 @@ function buildUsageBillingTooltipLines(item: AdminUsageLogDTO, labels: UsageBill
   const cacheWriteLabel = cacheWriteBillingLabel(snapshot, labels.billingDisplay);
   const cacheWriteNote = cacheWriteBillingNote(snapshot, labels.billingDisplay);
   const rateMultiplierNote = billingRateMultiplierNote(snapshot, labels.billingDisplay);
+  const serviceItems = readUsageServiceItems(snapshot);
+  const serviceBilledNanousd = readUsageServiceItemsBilledNanousd(serviceItems);
+  const snapshotMainBilledNanousd = readUsageMainBilledNanousd(snapshot);
+  const fallbackModelSubtotalNanousd = Math.max(0, item.billedNanousd - serviceBilledNanousd);
+  const modelSubtotalNanousd = snapshotMainBilledNanousd > 0 ? snapshotMainBilledNanousd : fallbackModelSubtotalNanousd;
 
   if (pricingMode === "call") {
     const callRate = readUsageSnapshotNumber(snapshot, "call_nanousd_per_call");
     const callBilled = resolveCountBilledNanousd(snapshot, "call_billed_nanousd", item.callCount, callRate);
-    return [
-      usageCountFormulaLine(labels.perCall, item.callCount, labels.callUnit, labels.callUnit, callRate, callBilled),
-      { type: "divider" },
+    return appendUsageServiceItemLines(
+      [usageCountFormulaLine(labels.perCall, item.callCount, labels.callUnit, labels.callUnit, callRate, callBilled)],
+      serviceItems,
+      modelSubtotalNanousd,
       totalLine,
-    ];
+      labels,
+    );
   }
 
   if (pricingMode === "duration") {
     const durationRate = readUsageSnapshotNumber(snapshot, "duration_nanousd_per_second");
     const durationBilled = resolveCountBilledNanousd(snapshot, "duration_billed_nanousd", item.durationSeconds, durationRate);
-    return [
-      usageCountFormulaLine(labels.perSecond, item.durationSeconds, labels.secondUnit, labels.secondUnit, durationRate, durationBilled),
-      { type: "divider" },
+    return appendUsageServiceItemLines(
+      [usageCountFormulaLine(labels.perSecond, item.durationSeconds, labels.secondUnit, labels.secondUnit, durationRate, durationBilled)],
+      serviceItems,
+      modelSubtotalNanousd,
       totalLine,
-    ];
+      labels,
+    );
   }
 
   if (pricingMode === "tiered") {
@@ -424,9 +556,17 @@ function buildUsageBillingTooltipLines(item: AdminUsageLogDTO, labels: UsageBill
         usageTieredTableRow(labels.cacheRead, item.cacheReadTokens, cacheReadRate, readUsageSnapshotNumber(snapshot, "cache_read_billed_nanousd")),
         usageTieredTableRow(cacheWriteLabel, item.cacheWriteTokens, cacheWriteRate, readUsageSnapshotNumber(snapshot, "cache_write_billed_nanousd")),
       ],
-      totalLabel: labels.total,
-      totalAmount: item.isFreeModel ? `$0.000000 (${labels.freeModelNoBilling})` : formatTooltipUsageCost(nanousdToUSD(item.billedNanousd)),
+      totalLabel: serviceItems.length > 0 ? labels.modelSubtotal : labels.total,
+      totalAmount: item.isFreeModel ? `$0.000000 (${labels.freeModelNoBilling})` : formatTooltipUsageCost(nanousdToUSD(serviceItems.length > 0 ? modelSubtotalNanousd : item.billedNanousd)),
     });
+    if (serviceItems.length > 0) {
+      lines.push(
+        { type: "divider" },
+        ...serviceItems.map((serviceItem) => usageServiceItemLine(serviceItem, labels)),
+        { type: "divider" },
+        totalLine,
+      );
+    }
     return lines;
   }
 
@@ -439,8 +579,6 @@ function buildUsageBillingTooltipLines(item: AdminUsageLogDTO, labels: UsageBill
     usageFormulaLine(labels.output, billedOutputTokens, outputRate, outputBilled),
     usageFormulaLine(labels.cacheRead, item.cacheReadTokens, cacheReadRate, cacheReadBilled),
     usageFormulaLine(cacheWriteLabel, item.cacheWriteTokens, cacheWriteRate, cacheWriteBilled),
-    { type: "divider" },
-    totalLine,
   ];
   const noteLines: UsageBillingTooltipLine[] = [];
   if (rateMultiplierNote) {
@@ -452,7 +590,7 @@ function buildUsageBillingTooltipLines(item: AdminUsageLogDTO, labels: UsageBill
   if (noteLines.length > 0) {
     lines.splice(4, 0, ...noteLines);
   }
-  return lines;
+  return appendUsageServiceItemLines(lines, serviceItems, modelSubtotalNanousd, totalLine, labels);
 }
 
 function UsageLogModelCell({ item, labels }: { item: AdminUsageLogDTO; labels: UsageBillingLabels }) {
@@ -589,6 +727,21 @@ function DetailBlock({ title, children }: { title: string; children: React.React
   );
 }
 
+function UsageServiceItemsDetail({ items, labels, locale }: { items: UsageServiceItemSnapshot[]; labels: UsageBillingLabels; locale: string }) {
+  if (items.length === 0) {
+    return null;
+  }
+  return (
+    <div className="grid gap-1">
+      {items.map((item, index) => (
+        <div key={`${item.service_code || item.service_name || "service"}-${index}`} className="min-w-0 truncate font-mono" title={usageServiceItemDetail(item, labels, locale)}>
+          {usageServiceItemDetail(item, labels, locale)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function LogDetailSheet({ detail, onClose }: { detail: LogDetail | null; onClose: () => void }) {
   const locale = useLocale();
   const t = useTranslations("adminLogs.detail");
@@ -627,6 +780,7 @@ function LogDetailSheet({ detail, onClose }: { detail: LogDetail | null; onClose
   const requestID = detail && detail.kind !== "usage" ? detail.item.requestID : "";
   const detailJSON = detail?.kind === "usage" ? detail.item.pricingSnapshotJSON : detail?.item.detailJSON;
   const formattedJSON = formatJSON(detailJSON);
+  const usageServiceItems = detail?.kind === "usage" ? readUsageServiceItems(parseUsagePricingSnapshot(detail.item.pricingSnapshotJSON)) : [];
 
   return (
     <Sheet open={Boolean(detail)} onOpenChange={(open) => !open && onClose()}>
@@ -725,6 +879,9 @@ function LogDetailSheet({ detail, onClose }: { detail: LogDetail | null; onClose
                 <DetailRow label={usageLabels.output} value={formatCount(detail.item.outputTokens, locale)} mono />
                 <DetailRow label={t("fields.reasoning")} value={formatCount(detail.item.reasoningTokens, locale)} mono />
                 <DetailRow label={t("fields.callCount")} value={formatCount(detail.item.callCount, locale)} mono />
+                {usageServiceItems.length > 0 ? (
+                  <DetailRow label={usageLabels.serviceItems} value={<UsageServiceItemsDetail items={usageServiceItems} labels={usageLabels} locale={locale} />} />
+                ) : null}
                 <DetailRow label={t("fields.latency")} value={`${formatCount(detail.item.latencyMS, locale)} ms`} mono />
               </DetailBlock>
             </>
