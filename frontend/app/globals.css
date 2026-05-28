@@ -1099,7 +1099,6 @@
     h5,
     h6,
     em,
-    strong,
     a,
     table,
     thead,
@@ -1113,6 +1112,15 @@
   ):not(pre *):not(code):not(code *) {
     font-family: var(--font-chat);
     font-weight: var(--font-chat-weight);
+  }
+
+  .chat-font-content :where(strong):not(pre *):not(code):not(code *) {
+    font-family: var(--font-chat);
+    font-weight: bolder;
+  }
+
+  .chat-font-content :where(strong *):not(pre *):not(code):not(code *) {
+    font-weight: inherit;
   }
 
   .chat-font-content .katex,
