@@ -38,6 +38,11 @@ test("resolveNativeToolGroup maps supported protocols and hides tools in media m
       "tool_search_tool_bm25_20251119",
     ],
   );
+  assert.equal(resolveNativeToolGroup("gemini_generate_content", false, "gemini-2.5-pro"), null);
+  assert.deepEqual(
+    resolveNativeToolGroup("gemini_generate_content", false, "gemini-3-pro-preview")?.options.map((tool) => tool.type),
+    ["google_search", "code_execution"],
+  );
 });
 
 test("resolveNativeToolGroup marks x_search with the x.com logo icon", () => {
@@ -94,6 +99,28 @@ test("setProviderToolEnabled adds protocol payloads, preserves unrelated options
 
   const enabledAgain = setProviderToolEnabled(enabled, shell, true);
   assert.deepEqual(enabledAgain.tools, enabled.tools);
+});
+
+test("Gemini native tools use key-based payloads without unofficial type fields", () => {
+  const geminiGroup = resolveNativeToolGroup("gemini_generate_content", false, "gemini-3-pro-preview");
+  const googleSearch = geminiGroup?.options.find((tool) => tool.type === "google_search");
+  const codeExecution = geminiGroup?.options.find((tool) => tool.type === "code_execution");
+  assert.ok(geminiGroup);
+  assert.ok(googleSearch);
+  assert.ok(codeExecution);
+
+  const enabled = setProviderToolEnabled({ tools: [{ type: "unrelated" }] }, googleSearch, true);
+  assert.deepEqual(enabled, {
+    tools: [{ type: "unrelated" }, { google_search: {} }],
+  });
+  assert.equal(hasProviderTool(enabled, "google_search"), true);
+  assert.equal(countProviderTools({ tools: [{ google_search: {} }, { type: "google_search" }, { code_execution: {} }] }, geminiGroup), 2);
+
+  const enabledAgain = setProviderToolEnabled(enabled, googleSearch, true);
+  assert.deepEqual(enabledAgain.tools, enabled.tools);
+
+  const removed = setProviderToolEnabled({ tools: [{ google_search: {} }, { code_execution: {} }] }, googleSearch, false);
+  assert.deepEqual(removed, { tools: [{ code_execution: {} }] });
 });
 
 test("setProviderToolEnabled removes only the selected tool and deletes tools when empty", () => {

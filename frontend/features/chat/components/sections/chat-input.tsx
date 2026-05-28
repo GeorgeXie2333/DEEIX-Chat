@@ -338,8 +338,8 @@ function ChatInputComponent({
   const showMCPToolsButton = shouldShowMCPToolsMenu(availableTools.length, isMediaMode);
   const showHTMLVisualPromptButton = !isMediaMode;
   const nativeToolGroup = React.useMemo(
-    () => (modelOptionPolicyDisabled ? null : resolveNativeToolGroup(selectedProtocol, isMediaMode)),
-    [isMediaMode, modelOptionPolicyDisabled, selectedProtocol],
+    () => (modelOptionPolicyDisabled ? null : resolveNativeToolGroup(selectedProtocol, isMediaMode, selectedPlatformModelName)),
+    [isMediaMode, modelOptionPolicyDisabled, selectedPlatformModelName, selectedProtocol],
   );
   const selectedNativeToolCount = React.useMemo(
     () => countProviderTools(options, nativeToolGroup),
@@ -700,6 +700,7 @@ function ChatInputComponent({
                 defaultOptions={defaultOptions}
                 modelOptionPolicy={modelOptionPolicy}
                 selectedProtocol={selectedProtocol}
+                selectedModelName={selectedPlatformModelName}
                 onOptionsChange={onOptionsChange}
                 onOptionsReset={onOptionsReset}
               />

@@ -1,15 +1,17 @@
 import type { ConversationOptions } from "@/shared/api/conversation.types";
+import { isGemini3PlusModel } from "./advanced-settings.ts";
 
 export type NativeToolOption = {
   type: string;
   labelKey: string;
   descriptionKey: string;
   iconKind?: "x-logo";
+  matchKey?: string;
   payload?: Record<string, unknown>;
 };
 
 export type NativeToolGroup = {
-  key: "grok" | "openai" | "claude";
+  key: "grok" | "openai" | "claude" | "gemini";
   options: NativeToolOption[];
 };
 
@@ -119,20 +121,48 @@ const ANTHROPIC_NATIVE_TOOL_OPTIONS: NativeToolOption[] = [
   },
 ];
 
+const GEMINI_NATIVE_TOOL_OPTIONS: NativeToolOption[] = [
+  {
+    type: "google_search",
+    labelKey: "webSearch",
+    descriptionKey: "geminiWebSearch",
+    matchKey: "google_search",
+    payload: { google_search: {} },
+  },
+  {
+    type: "code_execution",
+    labelKey: "codeExecution",
+    descriptionKey: "geminiCodeExecution",
+    matchKey: "code_execution",
+    payload: { code_execution: {} },
+  },
+];
+
 const NATIVE_TOOL_TYPES = new Set(
   [
     ...XAI_NATIVE_TOOL_OPTIONS,
     ...OPENAI_RESPONSES_NATIVE_TOOL_OPTIONS,
     ...OPENAI_CHAT_NATIVE_TOOL_OPTIONS,
     ...ANTHROPIC_NATIVE_TOOL_OPTIONS,
+    ...GEMINI_NATIVE_TOOL_OPTIONS,
   ].map((item) => item.type),
+);
+
+const NATIVE_TOOL_OPTIONS_BY_TYPE = new Map(
+  [
+    ...XAI_NATIVE_TOOL_OPTIONS,
+    ...OPENAI_RESPONSES_NATIVE_TOOL_OPTIONS,
+    ...OPENAI_CHAT_NATIVE_TOOL_OPTIONS,
+    ...ANTHROPIC_NATIVE_TOOL_OPTIONS,
+    ...GEMINI_NATIVE_TOOL_OPTIONS,
+  ].map((item) => [item.type, item]),
 );
 
 function isPlainOptionObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-export function resolveNativeToolGroup(protocol: string, isMediaMode: boolean): NativeToolGroup | null {
+export function resolveNativeToolGroup(protocol: string, isMediaMode: boolean, modelName = ""): NativeToolGroup | null {
   if (isMediaMode) {
     return null;
   }
@@ -157,6 +187,14 @@ export function resolveNativeToolGroup(protocol: string, isMediaMode: boolean): 
         key: "claude",
         options: ANTHROPIC_NATIVE_TOOL_OPTIONS,
       };
+    case "gemini_generate_content":
+    case "google_generate_content":
+      return isGemini3PlusModel(modelName)
+        ? {
+            key: "gemini",
+            options: GEMINI_NATIVE_TOOL_OPTIONS,
+          }
+        : null;
     default:
       return null;
   }
@@ -170,20 +208,30 @@ export function providerToolObjectsFromOptions(options: ConversationOptions): Re
   return rawTools.filter(isPlainOptionObject);
 }
 
+function toolMatchesOption(tool: Record<string, unknown>, option: NativeToolOption): boolean {
+  if (tool.type === option.type) {
+    return true;
+  }
+  return Boolean(option.matchKey && option.matchKey in tool);
+}
+
 export function hasProviderTool(options: ConversationOptions, type: string): boolean {
-  return providerToolObjectsFromOptions(options).some((tool) => tool.type === type);
+  const option = NATIVE_TOOL_OPTIONS_BY_TYPE.get(type);
+  return providerToolObjectsFromOptions(options).some((tool) => (
+    option ? toolMatchesOption(tool, option) : tool.type === type
+  ));
 }
 
 export function countProviderTools(options: ConversationOptions, group: NativeToolGroup | null): number {
   if (!group) {
     return 0;
   }
-  const groupTypes = new Set(group.options.map((tool) => tool.type));
   const selectedTypes = new Set<string>();
   providerToolObjectsFromOptions(options).forEach((tool) => {
-    const type = typeof tool.type === "string" ? tool.type : "";
-    if (groupTypes.has(type)) {
-      selectedTypes.add(type);
+    for (const option of group.options) {
+      if (toolMatchesOption(tool, option)) {
+        selectedTypes.add(option.type);
+      }
     }
   });
   return selectedTypes.size;
@@ -203,12 +251,12 @@ export function setProviderToolEnabled(
     return options;
   }
   const tools = providerToolObjectsFromOptions(options);
-  const hasTool = tools.some((tool) => tool.type === type);
+  const hasTool = tools.some((tool) => toolMatchesOption(tool, toolOption));
   const nextTools = enabled
     ? hasTool
       ? tools
       : [...tools, { ...(toolOption.payload ?? { type }) }]
-    : tools.filter((tool) => tool.type !== type);
+    : tools.filter((tool) => !toolMatchesOption(tool, toolOption));
 
   if (nextTools.length === 0) {
     const { tools: _tools, ...rest } = options;

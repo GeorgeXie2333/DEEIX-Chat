@@ -444,9 +444,13 @@ generationConfig.safetySettings.threshold`}
     "thinking.type"
   ],
   "anthropic_messages": [
+    "output_config.effort",
     "speed",
     "thinking.type",
     "thinking.budget_tokens"
+  ],
+  "gemini_generate_content": [
+    "thinkingConfig.thinkingLevel"
   ]
 }`}
                 </pre>

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import {
+  isAdvancedSettingCustomValueValid,
   resetAdvancedSettings,
   resolveAdvancedSettings,
   setAdvancedSettingValue,
@@ -30,9 +31,12 @@ type ChatModelConfigProps = {
   defaultOptions: ConversationOptions;
   modelOptionPolicy: ModelOptionPolicy | null;
   selectedProtocol: string;
+  selectedModelName: string;
   onOptionsChange: React.Dispatch<React.SetStateAction<ConversationOptions>>;
   onOptionsReset: () => void;
 };
+
+const CUSTOM_SELECT_VALUE = "__custom__";
 
 function formatTemperature(value: number | string): string {
   const numeric = typeof value === "number" ? value : Number(value);
@@ -50,6 +54,10 @@ function labelKeyForSetting(setting: AdvancedSettingItem): string {
       return "reasoning_effort";
     case "verbosity":
       return "verbosity";
+    case "imageQuality":
+      return "quality";
+    case "imageResolution":
+      return "resolution";
   }
 }
 
@@ -59,22 +67,29 @@ export function ChatModelConfig({
   defaultOptions,
   modelOptionPolicy,
   selectedProtocol,
+  selectedModelName,
   onOptionsChange,
   onOptionsReset,
 }: ChatModelConfigProps) {
   const tComposer = useTranslations("chat.composer");
   const tOptionLabels = useTranslations("chat.optionLabels");
   const [hovered, setHovered] = React.useState(false);
+  const [customInputs, setCustomInputs] = React.useState<Record<string, string>>({});
   const settings = React.useMemo(
     () =>
       resolveAdvancedSettings({
         protocol: selectedProtocol,
+        modelName: selectedModelName,
         options,
         defaultOptions,
         policy: modelOptionPolicy,
       }),
-    [defaultOptions, modelOptionPolicy, options, selectedProtocol],
+    [defaultOptions, modelOptionPolicy, options, selectedModelName, selectedProtocol],
   );
+
+  React.useEffect(() => {
+    setCustomInputs({});
+  }, [selectedModelName, selectedProtocol]);
 
   const updateSetting = React.useCallback(
     (setting: AdvancedSettingItem, value: number | string) => {
@@ -84,13 +99,14 @@ export function ChatModelConfig({
   );
 
   const resetSettings = React.useCallback(() => {
-    const nextOptions = resetAdvancedSettings(options, defaultOptions, selectedProtocol, modelOptionPolicy);
+    const nextOptions = resetAdvancedSettings(options, defaultOptions, selectedProtocol, modelOptionPolicy, selectedModelName);
+    setCustomInputs({});
     if (JSON.stringify(nextOptions) === JSON.stringify(defaultOptions)) {
       onOptionsReset();
       return;
     }
     onOptionsChange(nextOptions);
-  }, [defaultOptions, modelOptionPolicy, onOptionsChange, onOptionsReset, options, selectedProtocol]);
+  }, [defaultOptions, modelOptionPolicy, onOptionsChange, onOptionsReset, options, selectedModelName, selectedProtocol]);
 
   if (settings.length === 0) {
     return null;
@@ -162,21 +178,75 @@ export function ChatModelConfig({
                 </div>
               );
             }
+            const currentValue = String(setting.value);
+            const presetValues = setting.values ?? [];
+            const isPresetValue = presetValues.includes(currentValue);
+            const customMode = Boolean(setting.customValueKind) && (customInputs[setting.key] !== undefined || !isPresetValue);
+            const selectValue = customMode ? CUSTOM_SELECT_VALUE : currentValue;
+            const customInputValue = customInputs[setting.key] ?? (isPresetValue ? "" : currentValue);
+            const customValueInvalid =
+              customMode &&
+              customInputValue.trim() !== "" &&
+              !isAdvancedSettingCustomValueValid(setting, customInputValue);
             return (
-              <div key={setting.key} className="grid grid-cols-[minmax(0,1fr)_9rem] items-center gap-3 rounded-md px-1 py-1">
-                <span className="truncate text-xs text-foreground/85">{label}</span>
-                <Select value={String(setting.value)} onValueChange={(nextValue) => updateSetting(setting, nextValue)}>
-                  <SelectTrigger size="sm" className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(setting.values ?? []).map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {value}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div key={setting.key} className="space-y-2 rounded-md px-1 py-1">
+                <div className="grid grid-cols-[minmax(0,1fr)_9rem] items-center gap-3">
+                  <span className="truncate text-xs text-foreground/85">{label}</span>
+                  <Select
+                    value={selectValue}
+                    onValueChange={(nextValue) => {
+                      if (nextValue === CUSTOM_SELECT_VALUE) {
+                        setCustomInputs((current) => ({
+                          ...current,
+                          [setting.key]: isPresetValue ? "" : currentValue,
+                        }));
+                        return;
+                      }
+                      setCustomInputs((current) => {
+                        const { [setting.key]: _removed, ...remaining } = current;
+                        return remaining;
+                      });
+                      updateSetting(setting, nextValue);
+                    }}
+                  >
+                    <SelectTrigger size="sm" className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {presetValues.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {value}
+                        </SelectItem>
+                      ))}
+                      {setting.customValueKind ? (
+                        <SelectItem value={CUSTOM_SELECT_VALUE}>
+                          {tComposer("customResolution")}
+                        </SelectItem>
+                      ) : null}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {customMode ? (
+                  <div className="space-y-1">
+                    <Input
+                      className="h-7 px-2 text-xs"
+                      placeholder={tComposer("customResolutionPlaceholder")}
+                      value={customInputValue}
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setCustomInputs((current) => ({ ...current, [setting.key]: nextValue }));
+                        if (isAdvancedSettingCustomValueValid(setting, nextValue)) {
+                          updateSetting(setting, nextValue);
+                        }
+                      }}
+                    />
+                    {customValueInvalid ? (
+                      <p className="px-1 text-[11px] leading-4 text-destructive">
+                        {tComposer("invalidResolution")}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             );
           })}

@@ -2,7 +2,13 @@ import type { ConversationOptions } from "@/shared/api/conversation.types";
 import type { ModelOptionPolicy } from "../../../shared/lib/model-option-policy.ts";
 import { isModelOptionPathFiltered } from "../../../shared/lib/model-option-policy.ts";
 
-export type AdvancedSettingKind = "temperature" | "reasoningEffort" | "verbosity";
+export type AdvancedSettingKind =
+  | "temperature"
+  | "reasoningEffort"
+  | "verbosity"
+  | "imageQuality"
+  | "imageResolution";
+export type AdvancedSettingCustomValueKind = "openaiImage2Resolution";
 
 export type AdvancedSettingDefinition = {
   kind: AdvancedSettingKind;
@@ -10,6 +16,7 @@ export type AdvancedSettingDefinition = {
   valueType: "number" | "select";
   fallbackValue: number | string;
   values?: string[];
+  customValueKind?: AdvancedSettingCustomValueKind;
   min?: number;
   max?: number;
   step?: number;
@@ -43,7 +50,31 @@ const RESPONSES_REASONING_EFFORT: AdvancedSettingDefinition = {
   path: ["reasoning", "effort"],
   valueType: "select",
   fallbackValue: "medium",
-  values: ["low", "medium", "high"],
+  values: ["none", "low", "medium", "high", "xhigh"],
+};
+
+const XAI_RESPONSES_REASONING_EFFORT: AdvancedSettingDefinition = {
+  kind: "reasoningEffort",
+  path: ["reasoning", "effort"],
+  valueType: "select",
+  fallbackValue: "medium",
+  values: ["none", "low", "medium", "high"],
+};
+
+const ANTHROPIC_EFFORT: AdvancedSettingDefinition = {
+  kind: "reasoningEffort",
+  path: ["output_config", "effort"],
+  valueType: "select",
+  fallbackValue: "medium",
+  values: ["low", "medium", "high", "xhigh", "max"],
+};
+
+const GEMINI_THINKING_LEVEL: AdvancedSettingDefinition = {
+  kind: "reasoningEffort",
+  path: ["thinkingConfig", "thinkingLevel"],
+  valueType: "select",
+  fallbackValue: "medium",
+  values: ["minimal", "low", "medium", "high"],
 };
 
 const CHAT_VERBOSITY: AdvancedSettingDefinition = {
@@ -60,6 +91,76 @@ const RESPONSES_VERBOSITY: AdvancedSettingDefinition = {
   valueType: "select",
   fallbackValue: "medium",
   values: ["low", "medium", "high"],
+};
+
+const OPENAI_GPT_IMAGE_QUALITY_VALUES = ["auto", "low", "medium", "high"];
+const OPENAI_GPT_IMAGE_SIZE_VALUES = ["auto", "1024x1024", "1536x1024", "1024x1536"];
+const OPENAI_GPT_IMAGE_2_SIZE_VALUES = [
+  "auto",
+  "1024x1024",
+  "1536x1024",
+  "1024x1536",
+  "2048x2048",
+  "2048x1152",
+  "3840x2160",
+  "2160x3840",
+];
+
+const OPENAI_IMAGE_QUALITY: AdvancedSettingDefinition = {
+  kind: "imageQuality",
+  path: ["quality"],
+  valueType: "select",
+  fallbackValue: "auto",
+  values: OPENAI_GPT_IMAGE_QUALITY_VALUES,
+};
+
+const OPENAI_IMAGE_RESOLUTION: AdvancedSettingDefinition = {
+  kind: "imageResolution",
+  path: ["size"],
+  valueType: "select",
+  fallbackValue: "auto",
+  values: OPENAI_GPT_IMAGE_SIZE_VALUES,
+};
+
+const OPENAI_IMAGE_2_RESOLUTION: AdvancedSettingDefinition = {
+  kind: "imageResolution",
+  path: ["size"],
+  valueType: "select",
+  fallbackValue: "auto",
+  values: OPENAI_GPT_IMAGE_2_SIZE_VALUES,
+  customValueKind: "openaiImage2Resolution",
+};
+
+const DALL_E_3_IMAGE_QUALITY: AdvancedSettingDefinition = {
+  kind: "imageQuality",
+  path: ["quality"],
+  valueType: "select",
+  fallbackValue: "standard",
+  values: ["standard", "hd"],
+};
+
+const DALL_E_3_IMAGE_RESOLUTION: AdvancedSettingDefinition = {
+  kind: "imageResolution",
+  path: ["size"],
+  valueType: "select",
+  fallbackValue: "1024x1024",
+  values: ["1024x1024", "1792x1024", "1024x1792"],
+};
+
+const DALL_E_2_IMAGE_QUALITY: AdvancedSettingDefinition = {
+  kind: "imageQuality",
+  path: ["quality"],
+  valueType: "select",
+  fallbackValue: "standard",
+  values: ["standard"],
+};
+
+const DALL_E_2_IMAGE_RESOLUTION: AdvancedSettingDefinition = {
+  kind: "imageResolution",
+  path: ["size"],
+  valueType: "select",
+  fallbackValue: "1024x1024",
+  values: ["256x256", "512x512", "1024x1024"],
 };
 
 function isPlainOptionObject(value: unknown): value is Record<string, unknown> {
@@ -131,7 +232,69 @@ function numericValue(value: unknown): number | null {
   return null;
 }
 
-function selectValue(value: unknown, values: string[] | undefined): string | null {
+export function isGemini3PlusModel(modelName: string): boolean {
+  const normalized = modelName.trim().toLowerCase();
+  const match = normalized.match(/gemini[^0-9]*(\d+)(?:[._-](\d+))?/);
+  if (!match) {
+    return false;
+  }
+  return Number(match[1]) >= 3;
+}
+
+function normalizedModelName(modelName: string): string {
+  return modelName.trim().toLowerCase();
+}
+
+function isOpenAIImage2Model(modelName: string): boolean {
+  return normalizedModelName(modelName).includes("gpt-image-2");
+}
+
+function isDALLE3Model(modelName: string): boolean {
+  return normalizedModelName(modelName).includes("dall-e-3");
+}
+
+function isDALLE2Model(modelName: string): boolean {
+  return normalizedModelName(modelName).includes("dall-e-2");
+}
+
+export function isValidOpenAIImage2Resolution(value: string): boolean {
+  const match = value.trim().match(/^(\d+)x(\d+)$/i);
+  if (!match) {
+    return false;
+  }
+  const width = Number(match[1]);
+  const height = Number(match[2]);
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0) {
+    return false;
+  }
+  if (width > 3840 || height > 3840 || width % 16 !== 0 || height % 16 !== 0) {
+    return false;
+  }
+  const longEdge = Math.max(width, height);
+  const shortEdge = Math.min(width, height);
+  const pixels = width * height;
+  return longEdge / shortEdge <= 3 && pixels >= 655360 && pixels <= 8294400;
+}
+
+function isCustomValueValid(kind: AdvancedSettingCustomValueKind, value: string): boolean {
+  switch (kind) {
+    case "openaiImage2Resolution":
+      return isValidOpenAIImage2Resolution(value);
+  }
+}
+
+export function isAdvancedSettingCustomValueValid(
+  setting: Pick<AdvancedSettingDefinition, "customValueKind">,
+  value: string,
+): boolean {
+  return setting.customValueKind ? isCustomValueValid(setting.customValueKind, value) : true;
+}
+
+function selectValue(
+  value: unknown,
+  values: string[] | undefined,
+  customValueKind?: AdvancedSettingCustomValueKind,
+): string | null {
   if (typeof value !== "string") {
     return null;
   }
@@ -139,7 +302,13 @@ function selectValue(value: unknown, values: string[] | undefined): string | nul
   if (!trimmed) {
     return null;
   }
-  if (values && !values.includes(trimmed)) {
+  if (values?.includes(trimmed)) {
+    return trimmed;
+  }
+  if (customValueKind && isCustomValueValid(customValueKind, trimmed)) {
+    return trimmed;
+  }
+  if (values) {
     return null;
   }
   return trimmed;
@@ -155,23 +324,40 @@ function valueForDefinition(
   if (definition.valueType === "number") {
     return numericValue(explicit) ?? numericValue(defaultValue) ?? Number(definition.fallbackValue);
   }
-  return selectValue(explicit, definition.values) ??
-    selectValue(defaultValue, definition.values) ??
+  return selectValue(explicit, definition.values, definition.customValueKind) ??
+    selectValue(defaultValue, definition.values, definition.customValueKind) ??
     String(definition.fallbackValue);
 }
 
-export function resolveAdvancedSettingDefinitions(protocol: string): AdvancedSettingDefinition[] {
+function resolveOpenAIImageSettings(modelName: string): AdvancedSettingDefinition[] {
+  if (isOpenAIImage2Model(modelName)) {
+    return [OPENAI_IMAGE_QUALITY, OPENAI_IMAGE_2_RESOLUTION];
+  }
+  if (isDALLE3Model(modelName)) {
+    return [DALL_E_3_IMAGE_QUALITY, DALL_E_3_IMAGE_RESOLUTION];
+  }
+  if (isDALLE2Model(modelName)) {
+    return [DALL_E_2_IMAGE_QUALITY, DALL_E_2_IMAGE_RESOLUTION];
+  }
+  return [OPENAI_IMAGE_QUALITY, OPENAI_IMAGE_RESOLUTION];
+}
+
+export function resolveAdvancedSettingDefinitions(protocol: string, modelName = ""): AdvancedSettingDefinition[] {
   switch (protocol.trim()) {
     case "openai_chat_completions":
       return [TEMPERATURE_SETTING, CHAT_REASONING_EFFORT, CHAT_VERBOSITY];
     case "openai_responses":
       return [TEMPERATURE_SETTING, RESPONSES_REASONING_EFFORT, RESPONSES_VERBOSITY];
     case "xai_responses":
-      return [TEMPERATURE_SETTING, RESPONSES_REASONING_EFFORT];
+      return [TEMPERATURE_SETTING, XAI_RESPONSES_REASONING_EFFORT];
     case "anthropic_messages":
+      return [TEMPERATURE_SETTING, ANTHROPIC_EFFORT];
+    case "openai_image_generations":
+    case "openai_image_edits":
+      return resolveOpenAIImageSettings(modelName);
     case "gemini_generate_content":
     case "google_generate_content":
-      return [TEMPERATURE_SETTING];
+      return isGemini3PlusModel(modelName) ? [TEMPERATURE_SETTING, GEMINI_THINKING_LEVEL] : [];
     default:
       return [];
   }
@@ -197,13 +383,15 @@ export function resolveAdvancedSettings({
   options,
   defaultOptions,
   policy,
+  modelName = "",
 }: {
   protocol: string;
+  modelName?: string;
   options: ConversationOptions;
   defaultOptions: ConversationOptions;
   policy: ModelOptionPolicy | null;
 }): AdvancedSettingItem[] {
-  return resolveAdvancedSettingDefinitions(protocol)
+  return resolveAdvancedSettingDefinitions(protocol, modelName)
     .filter((definition) => !isSettingFiltered(definition, policy, protocol))
     .map((definition) => ({
       ...definition,
@@ -214,7 +402,7 @@ export function resolveAdvancedSettings({
 
 export function setAdvancedSettingValue(
   options: ConversationOptions,
-  setting: Pick<AdvancedSettingDefinition, "path" | "valueType" | "values" | "min" | "max">,
+  setting: Pick<AdvancedSettingDefinition, "path" | "valueType" | "values" | "customValueKind" | "min" | "max">,
   value: number | string,
 ): ConversationOptions {
   if (setting.valueType === "number") {
@@ -226,7 +414,7 @@ export function setAdvancedSettingValue(
     const max = setting.max ?? Number.POSITIVE_INFINITY;
     return setOptionAtPath(options, setting.path, Math.min(max, Math.max(min, numeric)));
   }
-  const selected = selectValue(value, setting.values);
+  const selected = selectValue(value, setting.values, setting.customValueKind);
   if (!selected) {
     return options;
   }
@@ -238,15 +426,16 @@ export function resetAdvancedSettings(
   defaultOptions: ConversationOptions,
   protocol: string,
   policy: ModelOptionPolicy | null,
+  modelName = "",
 ): ConversationOptions {
-  return resolveAdvancedSettings({ protocol, options, defaultOptions, policy }).reduce((current, setting) => {
+  return resolveAdvancedSettings({ protocol, modelName, options, defaultOptions, policy }).reduce((current, setting) => {
     const withoutCurrentValue = removeOptionAtPath(current, setting.path);
     const defaultValue = getOptionAtPath(defaultOptions, setting.path);
     if (setting.valueType === "number") {
       const numeric = numericValue(defaultValue);
       return numeric === null ? withoutCurrentValue : setOptionAtPath(withoutCurrentValue, setting.path, numeric);
     }
-    const selected = selectValue(defaultValue, setting.values);
+    const selected = selectValue(defaultValue, setting.values, setting.customValueKind);
     return selected ? setOptionAtPath(withoutCurrentValue, setting.path, selected) : withoutCurrentValue;
   }, options);
 }

@@ -89,6 +89,7 @@ export const DEFAULT_MODEL_OPTION_ALLOWED_PATHS = `{
     "generationConfig.responseFormat.image.imageSize"
   ],
   "anthropic_messages": [
+    "output_config.effort",
     "speed",
     "top_k",
     "thinking.type",
@@ -113,7 +114,8 @@ export const DEFAULT_MODEL_OPTION_ALLOWED_PATHS = `{
     "generationConfig.temperature",
     "generationConfig.topP",
     "generationConfig.maxOutputTokens",
-    "generationConfig.responseMimeType"
+    "generationConfig.responseMimeType",
+    "thinkingConfig.thinkingLevel"
   ]
 }`;
 
