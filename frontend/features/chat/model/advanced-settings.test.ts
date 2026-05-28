@@ -128,10 +128,10 @@ test("resolveAdvancedSettings only exposes Gemini thinking level for Gemini 3+",
   );
 });
 
-test("resolveAdvancedSettings exposes OpenAI image quality and gpt-image-2 custom resolution", () => {
+test("resolveAdvancedSettings exposes fixed GPT Image 2 quality and resolution options for OpenAI Images", () => {
   const settings = resolveAdvancedSettings({
     protocol: "openai_image_generations",
-    modelName: "gpt-image-2",
+    modelName: "GPT Image 2",
     options: { quality: "high", size: "2048x1152" },
     defaultOptions: {},
     policy: allowAdvancedPolicy,
@@ -161,6 +161,16 @@ test("resolveAdvancedSettings exposes OpenAI image quality and gpt-image-2 custo
   assert.deepEqual(setAdvancedSettingValue({ size: "1024x1024" }, resolution!, "1000x1000"), {
     size: "1024x1024",
   });
+
+  const editResolution = resolveAdvancedSettings({
+    protocol: "openai_image_edits",
+    modelName: "dall-e-3",
+    options: {},
+    defaultOptions: {},
+    policy: allowAdvancedPolicy,
+  }).find((item) => item.kind === "imageResolution");
+  assert.deepEqual(editResolution?.values, resolution?.values);
+  assert.equal(editResolution?.customValueKind, "openaiImage2Resolution");
 });
 
 test("resolveAdvancedSettings hides fields blocked by the model option policy", () => {

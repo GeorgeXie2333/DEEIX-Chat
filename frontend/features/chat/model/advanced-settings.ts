@@ -94,7 +94,6 @@ const RESPONSES_VERBOSITY: AdvancedSettingDefinition = {
 };
 
 const OPENAI_GPT_IMAGE_QUALITY_VALUES = ["auto", "low", "medium", "high"];
-const OPENAI_GPT_IMAGE_SIZE_VALUES = ["auto", "1024x1024", "1536x1024", "1024x1536"];
 const OPENAI_GPT_IMAGE_2_SIZE_VALUES = [
   "auto",
   "1024x1024",
@@ -114,14 +113,6 @@ const OPENAI_IMAGE_QUALITY: AdvancedSettingDefinition = {
   values: OPENAI_GPT_IMAGE_QUALITY_VALUES,
 };
 
-const OPENAI_IMAGE_RESOLUTION: AdvancedSettingDefinition = {
-  kind: "imageResolution",
-  path: ["size"],
-  valueType: "select",
-  fallbackValue: "auto",
-  values: OPENAI_GPT_IMAGE_SIZE_VALUES,
-};
-
 const OPENAI_IMAGE_2_RESOLUTION: AdvancedSettingDefinition = {
   kind: "imageResolution",
   path: ["size"],
@@ -129,38 +120,6 @@ const OPENAI_IMAGE_2_RESOLUTION: AdvancedSettingDefinition = {
   fallbackValue: "auto",
   values: OPENAI_GPT_IMAGE_2_SIZE_VALUES,
   customValueKind: "openaiImage2Resolution",
-};
-
-const DALL_E_3_IMAGE_QUALITY: AdvancedSettingDefinition = {
-  kind: "imageQuality",
-  path: ["quality"],
-  valueType: "select",
-  fallbackValue: "standard",
-  values: ["standard", "hd"],
-};
-
-const DALL_E_3_IMAGE_RESOLUTION: AdvancedSettingDefinition = {
-  kind: "imageResolution",
-  path: ["size"],
-  valueType: "select",
-  fallbackValue: "1024x1024",
-  values: ["1024x1024", "1792x1024", "1024x1792"],
-};
-
-const DALL_E_2_IMAGE_QUALITY: AdvancedSettingDefinition = {
-  kind: "imageQuality",
-  path: ["quality"],
-  valueType: "select",
-  fallbackValue: "standard",
-  values: ["standard"],
-};
-
-const DALL_E_2_IMAGE_RESOLUTION: AdvancedSettingDefinition = {
-  kind: "imageResolution",
-  path: ["size"],
-  valueType: "select",
-  fallbackValue: "1024x1024",
-  values: ["256x256", "512x512", "1024x1024"],
 };
 
 function isPlainOptionObject(value: unknown): value is Record<string, unknown> {
@@ -241,22 +200,6 @@ export function isGemini3PlusModel(modelName: string): boolean {
   return Number(match[1]) >= 3;
 }
 
-function normalizedModelName(modelName: string): string {
-  return modelName.trim().toLowerCase();
-}
-
-function isOpenAIImage2Model(modelName: string): boolean {
-  return normalizedModelName(modelName).includes("gpt-image-2");
-}
-
-function isDALLE3Model(modelName: string): boolean {
-  return normalizedModelName(modelName).includes("dall-e-3");
-}
-
-function isDALLE2Model(modelName: string): boolean {
-  return normalizedModelName(modelName).includes("dall-e-2");
-}
-
 export function isValidOpenAIImage2Resolution(value: string): boolean {
   const match = value.trim().match(/^(\d+)x(\d+)$/i);
   if (!match) {
@@ -329,19 +272,6 @@ function valueForDefinition(
     String(definition.fallbackValue);
 }
 
-function resolveOpenAIImageSettings(modelName: string): AdvancedSettingDefinition[] {
-  if (isOpenAIImage2Model(modelName)) {
-    return [OPENAI_IMAGE_QUALITY, OPENAI_IMAGE_2_RESOLUTION];
-  }
-  if (isDALLE3Model(modelName)) {
-    return [DALL_E_3_IMAGE_QUALITY, DALL_E_3_IMAGE_RESOLUTION];
-  }
-  if (isDALLE2Model(modelName)) {
-    return [DALL_E_2_IMAGE_QUALITY, DALL_E_2_IMAGE_RESOLUTION];
-  }
-  return [OPENAI_IMAGE_QUALITY, OPENAI_IMAGE_RESOLUTION];
-}
-
 export function resolveAdvancedSettingDefinitions(protocol: string, modelName = ""): AdvancedSettingDefinition[] {
   switch (protocol.trim()) {
     case "openai_chat_completions":
@@ -354,7 +284,7 @@ export function resolveAdvancedSettingDefinitions(protocol: string, modelName = 
       return [TEMPERATURE_SETTING, ANTHROPIC_EFFORT];
     case "openai_image_generations":
     case "openai_image_edits":
-      return resolveOpenAIImageSettings(modelName);
+      return [OPENAI_IMAGE_QUALITY, OPENAI_IMAGE_2_RESOLUTION];
     case "gemini_generate_content":
     case "google_generate_content":
       return isGemini3PlusModel(modelName) ? [TEMPERATURE_SETTING, GEMINI_THINKING_LEVEL] : [];
