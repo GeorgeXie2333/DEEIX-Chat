@@ -143,16 +143,16 @@ func NormalizeModelOptionAllowedPathsJSON(raw string) string {
 	if normalized == "" {
 		return DefaultModelOptionAllowedPathsJSON()
 	}
-	current, ok := parseModelOptionPathRules(DefaultModelOptionAllowedPathsJSON())
-	if !ok {
-		return raw
-	}
 	existing, ok := parseModelOptionPathRules(normalized)
 	if !ok {
 		return raw
 	}
-	if isLegacyModelOptionAllowedPaths(existing, current) {
-		return DefaultModelOptionAllowedPathsJSON()
+	if upgradeLegacyModelOptionAllowedPaths(existing) {
+		payload, err := json.MarshalIndent(existing, "", "  ")
+		if err != nil {
+			return raw
+		}
+		return string(payload)
 	}
 	return raw
 }
@@ -177,43 +177,59 @@ func parseModelOptionPathRules(raw string) (map[string][]string, bool) {
 	return parsed, true
 }
 
-func isLegacyModelOptionAllowedPaths(existing map[string][]string, current map[string][]string) bool {
-	allowedMissing := map[string]map[string]struct{}{
-		"anthropic_messages": {
-			"output_config.effort": {},
+func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
+	upgrades := []struct {
+		protocol   string
+		anchors    []string
+		minAnchors int
+		additions  []string
+	}{
+		{
+			protocol:   "anthropic_messages",
+			anchors:    []string{"speed", "top_k", "thinking.type"},
+			minAnchors: 2,
+			additions:  []string{"output_config.effort"},
 		},
-		"gemini_generate_content": {
-			"thinkingConfig.thinkingLevel": {},
+		{
+			protocol: "gemini_generate_content",
+			anchors: []string{
+				"generationConfig.temperature",
+				"generationConfig.topP",
+				"generationConfig.maxOutputTokens",
+				"generationConfig.responseMimeType",
+			},
+			minAnchors: 2,
+			additions:  []string{"thinkingConfig.thinkingLevel"},
 		},
 	}
-	missingCount := 0
-	for protocol, existingPaths := range existing {
-		currentSet, ok := stringSet(current[protocol])
+	changed := false
+	for _, upgrade := range upgrades {
+		paths, ok := rules[upgrade.protocol]
 		if !ok {
-			return false
+			continue
 		}
-		for _, path := range existingPaths {
-			if _, ok := currentSet[path]; !ok {
-				return false
+		pathSet := stringSet(paths)
+		anchorMatches := 0
+		for _, anchor := range upgrade.anchors {
+			if _, ok := pathSet[anchor]; ok {
+				anchorMatches++
 			}
 		}
-	}
-	for protocol, currentPaths := range current {
-		existingSet, _ := stringSet(existing[protocol])
-		for _, path := range currentPaths {
-			if _, ok := existingSet[path]; ok {
+		if anchorMatches < upgrade.minAnchors {
+			continue
+		}
+		for _, addition := range upgrade.additions {
+			if _, ok := pathSet[addition]; ok {
 				continue
 			}
-			if _, ok := allowedMissing[protocol][path]; !ok {
-				return false
-			}
-			missingCount++
+			rules[upgrade.protocol] = append(rules[upgrade.protocol], addition)
+			changed = true
 		}
 	}
-	return missingCount == 2
+	return changed
 }
 
-func stringSet(values []string) (map[string]struct{}, bool) {
+func stringSet(values []string) map[string]struct{} {
 	result := make(map[string]struct{}, len(values))
 	for _, value := range values {
 		trimmed := strings.TrimSpace(value)
@@ -222,7 +238,7 @@ func stringSet(values []string) (map[string]struct{}, bool) {
 		}
 		result[trimmed] = struct{}{}
 	}
-	return result, len(result) > 0
+	return result
 }
 
 // DefaultModelOptionDeniedPathsJSON 返回所有策略模式都会叠加拦截的默认黑名单。

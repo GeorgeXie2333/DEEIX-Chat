@@ -180,6 +180,42 @@ test("resolveAdvancedSettings hides fields blocked by the model option policy", 
   );
 });
 
+test("resolveAdvancedSettings upgrades legacy default policy paths for Claude and Gemini", () => {
+  const legacyDefaultPolicy: ModelOptionPolicy = {
+    ...allowAdvancedPolicy,
+    allowedPathsJSON: JSON.stringify({
+      default: ["temperature"],
+      anthropic_messages: ["speed", "top_k", "thinking.type"],
+      gemini_generate_content: [
+        "generationConfig.temperature",
+        "generationConfig.topP",
+        "generationConfig.maxOutputTokens",
+        "generationConfig.responseMimeType",
+      ],
+    }),
+  };
+
+  assert.deepEqual(
+    resolveAdvancedSettings({
+      protocol: "anthropic_messages",
+      options: {},
+      defaultOptions: {},
+      policy: legacyDefaultPolicy,
+    }).map((item) => item.key),
+    ["temperature", "output_config.effort"],
+  );
+  assert.deepEqual(
+    resolveAdvancedSettings({
+      protocol: "gemini_generate_content",
+      modelName: "gemini-3-pro-preview",
+      options: {},
+      defaultOptions: {},
+      policy: legacyDefaultPolicy,
+    }).map((item) => item.key),
+    ["temperature", "thinkingConfig.thinkingLevel"],
+  );
+});
+
 test("setAdvancedSettingValue writes nested Responses verbosity without disturbing sibling text options", () => {
   const verbosity = resolveAdvancedSettings({
     protocol: "openai_responses",

@@ -114,6 +114,62 @@ export function uniqueModelOptionPaths(paths: string[]): string[] {
   return [...new Set(paths.map((path) => path.trim()).filter(Boolean))];
 }
 
+export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
+  const parsed = parseModelOptionRuleMap(raw);
+  if (parsed.error) {
+    return raw;
+  }
+  const next: ModelOptionRuleMap = {};
+  for (const [protocol, paths] of Object.entries(parsed.value)) {
+    next[protocol] = [...(paths ?? [])];
+  }
+  const upgrades: Array<{
+    protocol: string;
+    anchors: string[];
+    minAnchors: number;
+    additions: string[];
+  }> = [
+    {
+      protocol: "anthropic_messages",
+      anchors: ["speed", "top_k", "thinking.type"],
+      minAnchors: 2,
+      additions: ["output_config.effort"],
+    },
+    {
+      protocol: "gemini_generate_content",
+      anchors: [
+        "generationConfig.temperature",
+        "generationConfig.topP",
+        "generationConfig.maxOutputTokens",
+        "generationConfig.responseMimeType",
+      ],
+      minAnchors: 2,
+      additions: ["thinkingConfig.thinkingLevel"],
+    },
+  ];
+  let changed = false;
+  for (const upgrade of upgrades) {
+    const paths = next[upgrade.protocol];
+    if (!paths) {
+      continue;
+    }
+    const pathSet = new Set(paths);
+    const anchorMatches = upgrade.anchors.filter((anchor) => pathSet.has(anchor)).length;
+    if (anchorMatches < upgrade.minAnchors) {
+      continue;
+    }
+    for (const addition of upgrade.additions) {
+      if (pathSet.has(addition)) {
+        continue;
+      }
+      paths.push(addition);
+      pathSet.add(addition);
+      changed = true;
+    }
+  }
+  return changed ? JSON.stringify(next) : raw;
+}
+
 export function resolveModelOptionPolicyProtocol(protocol: string): ModelOptionPolicyProtocol {
   switch (protocol.trim()) {
     case "openai_chat_completions":
@@ -197,7 +253,7 @@ export function isModelOptionPathFiltered({
   }
 
   const policyProtocol = resolveModelOptionPolicyProtocol(protocol);
-  const allowed = parseModelOptionRuleMap(policy.allowedPathsJSON).value;
+  const allowed = parseModelOptionRuleMap(normalizeModelOptionAllowedPathsJSON(policy.allowedPathsJSON)).value;
   const denied = parseModelOptionRuleMap(policy.deniedPathsJSON).value;
   const deniedPaths = uniqueModelOptionPaths([
     ...HARD_DENIED_MODEL_OPTION_PATHS,

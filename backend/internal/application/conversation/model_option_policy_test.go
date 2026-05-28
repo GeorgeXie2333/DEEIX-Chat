@@ -175,6 +175,35 @@ func TestFilterModelOptionsAllowsAnthropicEffortByDefault(t *testing.T) {
 	}
 }
 
+func TestFilterModelOptionsUpgradesLegacyDefaultAllowedPaths(t *testing.T) {
+	legacyAllowedPathsJSON := `{
+		"default":["temperature"],
+		"anthropic_messages":["speed","top_k","thinking.type"],
+		"gemini_generate_content":["generationConfig.temperature","generationConfig.topP","generationConfig.responseMimeType"]
+	}`
+	anthropic := filterModelOptions(map[string]interface{}{
+		"output_config": map[string]interface{}{"effort": "high"},
+	}, llm.AdapterAnthropicMessages, modelOptionPolicyConfig{
+		Mode:             modelOptionPolicyAllowlist,
+		AllowedPathsJSON: legacyAllowedPathsJSON,
+		DeniedPathsJSON:  config.DefaultModelOptionDeniedPathsJSON(),
+	})
+	if outputConfig := anthropic["output_config"].(map[string]interface{}); outputConfig["effort"] != "high" {
+		t.Fatalf("expected legacy default policy to allow anthropic effort, got %#v", outputConfig)
+	}
+
+	gemini := filterModelOptions(map[string]interface{}{
+		"thinkingConfig": map[string]interface{}{"thinkingLevel": "medium"},
+	}, llm.AdapterGoogleGenerateContent, modelOptionPolicyConfig{
+		Mode:             modelOptionPolicyAllowlist,
+		AllowedPathsJSON: legacyAllowedPathsJSON,
+		DeniedPathsJSON:  config.DefaultModelOptionDeniedPathsJSON(),
+	})
+	if thinkingConfig := gemini["thinkingConfig"].(map[string]interface{}); thinkingConfig["thinkingLevel"] != "medium" {
+		t.Fatalf("expected legacy default policy to allow gemini thinking level, got %#v", thinkingConfig)
+	}
+}
+
 func TestFilterModelOptionsPreservesXAINativeToolsWhenToolsIsExplicitlyDenied(t *testing.T) {
 	filtered := filterModelOptions(map[string]interface{}{
 		"tools": []interface{}{

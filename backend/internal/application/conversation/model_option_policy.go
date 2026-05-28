@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/llm"
 )
 
@@ -63,7 +64,7 @@ func filterModelOptions(options map[string]interface{}, protocol string, cfg mod
 		filtered = policyOptions
 	default:
 		filtered = make(map[string]interface{})
-		for _, path := range modelOptionPathsForProtocol(cfg.AllowedPathsJSON, protocolKey) {
+		for _, path := range modelOptionPathsForProtocol(config.NormalizeModelOptionAllowedPathsJSON(cfg.AllowedPathsJSON), protocolKey) {
 			copyModelOptionPath(filtered, policyOptions, path)
 		}
 	}
