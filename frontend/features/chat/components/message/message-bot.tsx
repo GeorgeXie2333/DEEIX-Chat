@@ -211,7 +211,7 @@ export function ChatMessageBot({
       )}
 
       <div
-        className="w-full min-w-0 max-w-none overflow-hidden text-[15px] leading-8 text-foreground [overflow-wrap:anywhere]"
+        className="w-full min-w-0 max-w-none overflow-hidden text-base leading-7 text-foreground [overflow-wrap:anywhere]"
         style={{ fontFamily: "var(--font-chat)", fontWeight: "var(--font-chat-weight)" }}
       >
         {isImageGenerationLoading && !item.inlineAlert ? (

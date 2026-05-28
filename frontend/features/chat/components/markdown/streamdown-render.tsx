@@ -111,7 +111,7 @@ const DISPLAY_MATH_RE = /(?:^|\n)\s*\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\begin\{[
 const INLINE_MATH_RE = /(^|[^\\$])\$[^$\n]{1,400}\$/;
 
 const BASE_MARKDOWN_CLASSNAME = cn(
-  "chat-font-content min-w-0 max-w-full overflow-hidden leading-6 text-foreground [overflow-wrap:anywhere]",
+  "chat-font-content min-w-0 max-w-full overflow-hidden leading-7 text-foreground [overflow-wrap:anywhere]",
   "[&>*:last-child]:after:text-muted-foreground/55",
   "[&_*]:min-w-0",
   "[&_p]:max-w-full [&_p]:break-words [&_p]:[overflow-wrap:anywhere]",
@@ -134,7 +134,7 @@ const BASE_MARKDOWN_CLASSNAME = cn(
   "[&_thead]:border-table-border [&_tbody]:border-table-border [&_tfoot]:border-table-border",
   "[&_tr]:border-table-border/50 [&_thead_tr]:border-table-border/50 [&_tbody_tr]:border-table-border/50",
   "[&_th]:px-0 [&_th]:py-2 [&_th]:pr-8 [&_th]:text-left [&_th]:align-bottom [&_th]:font-semibold [&_th]:tracking-[-0.01em] [&_th]:text-foreground",
-  "[&_td]:px-0 [&_td]:py-1 [&_td]:pr-8 [&_td]:align-middle [&_td]:leading-8 [&_td]:text-foreground/90",
+  "[&_td]:px-0 [&_td]:py-1 [&_td]:pr-8 [&_td]:align-middle [&_td]:leading-7 [&_td]:text-foreground/90",
   "[&_th]:border-0 [&_td]:border-0",
   "[&_th:last-child]:pr-0 [&_td:last-child]:pr-0",
   "[&_thead]:bg-transparent [&_tbody]:bg-transparent [&_tr]:bg-transparent",
@@ -448,7 +448,7 @@ export const StreamdownRender = React.memo(function StreamdownRender({
     () => thinkingSegments.some((segment) => segment.incomplete),
     [thinkingSegments],
   );
-  const contentSpacingClassName = variant === "thinking" ? "space-y-1.5 leading-6" : "space-y-3 leading-8";
+  const contentSpacingClassName = variant === "thinking" ? "space-y-1.5 leading-6" : "space-y-3 leading-7";
   const activeMarkdownClassName = variant === "thinking" ? THINKING_MARKDOWN_CLASSNAME : BASE_MARKDOWN_CLASSNAME;
   const components = variant === "thinking" ? THINKING_STREAMDOWN_COMPONENTS : DEFAULT_STREAMDOWN_COMPONENTS;
 

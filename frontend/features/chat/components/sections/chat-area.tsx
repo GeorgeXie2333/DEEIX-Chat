@@ -196,7 +196,7 @@ const ChatMessageRow = React.memo(function ChatMessageRow({
   }
 
   return (
-    <div className="min-w-0 max-w-none overflow-hidden text-sm leading-8 text-foreground [overflow-wrap:anywhere]">
+    <div className="min-w-0 max-w-none overflow-hidden text-base leading-7 text-foreground [overflow-wrap:anywhere]">
       {item.content.trim() && markdownRender ? (
         <StreamdownRender content={item.content} streaming={Boolean(item.isStreaming)} />
       ) : item.content.trim() ? (

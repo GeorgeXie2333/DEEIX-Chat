@@ -75,7 +75,7 @@ export function ChatMessageUser({
           <Textarea
             autoFocus
             value={editingValue}
-            className="chat-font-content min-h-[120px] resize-none rounded-lg border-border border-[0.5px] bg-background px-3 py-2 text-sm leading-7 shadow-none focus-visible:border-primary focus-visible:ring-0"
+            className="chat-font-content min-h-[120px] resize-none rounded-lg border-border border-[0.5px] bg-background px-3 py-2 text-base leading-7 shadow-none focus-visible:border-primary focus-visible:ring-0"
             style={{ fontFamily: "var(--font-chat)", fontWeight: "var(--font-chat-weight)" }}
             onChange={(event) => setEditingValue(event.target.value)}
           />
@@ -117,7 +117,7 @@ export function ChatMessageUser({
         />
       ) : null}
       <div
-        className="chat-font-content min-w-0 max-w-[70%] overflow-hidden rounded-xl bg-muted/60 p-3 text-[15px] leading-8 text-foreground [overflow-wrap:anywhere] max-sm:max-w-[88%]"
+        className="chat-font-content min-w-0 max-w-[70%] overflow-hidden rounded-xl bg-muted/60 p-3 text-base leading-7 text-foreground [overflow-wrap:anywhere] max-sm:max-w-[88%]"
         style={{ fontFamily: "var(--font-chat)", fontWeight: "var(--font-chat-weight)" }}
       >
         {item.content.trim() ? (
