@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -122,6 +123,37 @@ security:
 	}
 }
 
+func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T) {
+	var legacy map[string][]string
+	if err := json.Unmarshal([]byte(DefaultModelOptionAllowedPathsJSON()), &legacy); err != nil {
+		t.Fatalf("parse default model option paths: %v", err)
+	}
+	legacy["anthropic_messages"] = removeString(legacy["anthropic_messages"], "output_config.effort")
+	legacy["gemini_generate_content"] = removeString(legacy["gemini_generate_content"], "thinkingConfig.thinkingLevel")
+	rawLegacy, err := json.Marshal(legacy)
+	if err != nil {
+		t.Fatalf("marshal legacy model option paths: %v", err)
+	}
+
+	var normalized map[string][]string
+	if err = json.Unmarshal([]byte(NormalizeModelOptionAllowedPathsJSON(string(rawLegacy))), &normalized); err != nil {
+		t.Fatalf("parse normalized model option paths: %v", err)
+	}
+	if !containsString(normalized["anthropic_messages"], "output_config.effort") {
+		t.Fatalf("expected normalized anthropic allowlist to include output_config.effort, got %#v", normalized["anthropic_messages"])
+	}
+	if !containsString(normalized["gemini_generate_content"], "thinkingConfig.thinkingLevel") {
+		t.Fatalf("expected normalized gemini allowlist to include thinkingConfig.thinkingLevel, got %#v", normalized["gemini_generate_content"])
+	}
+}
+
+func TestNormalizeModelOptionAllowedPathsJSONKeepsCustomPolicy(t *testing.T) {
+	custom := `{"default":["temperature"],"anthropic_messages":["speed"]}`
+	if got := NormalizeModelOptionAllowedPathsJSON(custom); got != custom {
+		t.Fatalf("expected custom allowlist unchanged, got %s", got)
+	}
+}
+
 func TestValidateAllowsOnlyDevAndProdEnvironment(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -209,6 +241,25 @@ func assertPath(t *testing.T, label string, got string, want string) {
 	if gotPath != wantPath {
 		t.Fatalf("expected %s path %q, got %q", label, wantPath, gotPath)
 	}
+}
+
+func removeString(values []string, target string) []string {
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		if value != target {
+			result = append(result, value)
+		}
+	}
+	return result
+}
+
+func containsString(values []string, target string) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
 }
 
 func canonicalPath(t *testing.T, path string) string {

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -104,6 +105,7 @@ func DefaultModelOptionAllowedPathsJSON() string {
     "generationConfig.responseFormat.image.imageSize"
   ],
   "anthropic_messages": [
+    "output_config.effort",
     "speed",
     "top_k",
     "thinking.type",
@@ -128,9 +130,99 @@ func DefaultModelOptionAllowedPathsJSON() string {
     "generationConfig.temperature",
     "generationConfig.topP",
     "generationConfig.maxOutputTokens",
-    "generationConfig.responseMimeType"
+    "generationConfig.responseMimeType",
+    "thinkingConfig.thinkingLevel"
   ]
 }`
+}
+
+// NormalizeModelOptionAllowedPathsJSON upgrades the old built-in allowlist to
+// the current built-in allowlist without changing administrator-customized JSON.
+func NormalizeModelOptionAllowedPathsJSON(raw string) string {
+	normalized := strings.TrimSpace(raw)
+	if normalized == "" {
+		return DefaultModelOptionAllowedPathsJSON()
+	}
+	current, ok := parseModelOptionPathRules(DefaultModelOptionAllowedPathsJSON())
+	if !ok {
+		return raw
+	}
+	existing, ok := parseModelOptionPathRules(normalized)
+	if !ok {
+		return raw
+	}
+	if isLegacyModelOptionAllowedPaths(existing, current) {
+		return DefaultModelOptionAllowedPathsJSON()
+	}
+	return raw
+}
+
+func parseModelOptionPathRules(raw string) (map[string][]string, bool) {
+	var parsed map[string][]string
+	if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
+		return nil, false
+	}
+	if parsed == nil {
+		return nil, false
+	}
+	for protocol, paths := range parsed {
+		cleaned := make([]string, 0, len(paths))
+		for _, path := range paths {
+			if trimmed := strings.TrimSpace(path); trimmed != "" {
+				cleaned = append(cleaned, trimmed)
+			}
+		}
+		parsed[protocol] = cleaned
+	}
+	return parsed, true
+}
+
+func isLegacyModelOptionAllowedPaths(existing map[string][]string, current map[string][]string) bool {
+	allowedMissing := map[string]map[string]struct{}{
+		"anthropic_messages": {
+			"output_config.effort": {},
+		},
+		"gemini_generate_content": {
+			"thinkingConfig.thinkingLevel": {},
+		},
+	}
+	missingCount := 0
+	for protocol, existingPaths := range existing {
+		currentSet, ok := stringSet(current[protocol])
+		if !ok {
+			return false
+		}
+		for _, path := range existingPaths {
+			if _, ok := currentSet[path]; !ok {
+				return false
+			}
+		}
+	}
+	for protocol, currentPaths := range current {
+		existingSet, _ := stringSet(existing[protocol])
+		for _, path := range currentPaths {
+			if _, ok := existingSet[path]; ok {
+				continue
+			}
+			if _, ok := allowedMissing[protocol][path]; !ok {
+				return false
+			}
+			missingCount++
+		}
+	}
+	return missingCount == 2
+}
+
+func stringSet(values []string) (map[string]struct{}, bool) {
+	result := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		result[trimmed] = struct{}{}
+	}
+	return result, len(result) > 0
 }
 
 // DefaultModelOptionDeniedPathsJSON 返回所有策略模式都会叠加拦截的默认黑名单。

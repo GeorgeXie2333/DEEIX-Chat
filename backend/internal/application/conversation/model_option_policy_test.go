@@ -154,6 +154,27 @@ func TestFilterModelOptionsPreservesOfficialNativeToolsOutsidePathPolicy(t *test
 	}
 }
 
+func TestFilterModelOptionsAllowsAnthropicEffortByDefault(t *testing.T) {
+	filtered := filterModelOptions(map[string]interface{}{
+		"output_config": map[string]interface{}{
+			"effort": "xhigh",
+			"extra":  true,
+		},
+	}, llm.AdapterAnthropicMessages, modelOptionPolicyConfig{
+		Mode:             modelOptionPolicyAllowlist,
+		AllowedPathsJSON: config.DefaultModelOptionAllowedPathsJSON(),
+		DeniedPathsJSON:  config.DefaultModelOptionDeniedPathsJSON(),
+	})
+
+	outputConfig := filtered["output_config"].(map[string]interface{})
+	if outputConfig["effort"] != "xhigh" {
+		t.Fatalf("expected anthropic output_config.effort to pass, got %#v", outputConfig)
+	}
+	if _, ok := outputConfig["extra"]; ok {
+		t.Fatalf("expected unlisted anthropic output_config field removed, got %#v", outputConfig)
+	}
+}
+
 func TestFilterModelOptionsPreservesXAINativeToolsWhenToolsIsExplicitlyDenied(t *testing.T) {
 	filtered := filterModelOptions(map[string]interface{}{
 		"tools": []interface{}{
@@ -235,6 +256,9 @@ func TestFilterModelOptionsGeminiPolicyKeyMatchesGoogleAdapter(t *testing.T) {
 			"responseMimeType": "application/json",
 			"candidateCount":   3,
 		},
+		"thinkingConfig": map[string]interface{}{
+			"thinkingLevel": "high",
+		},
 	}, llm.AdapterGoogleGenerateContent, modelOptionPolicyConfig{
 		Mode:             modelOptionPolicyAllowlist,
 		AllowedPathsJSON: config.DefaultModelOptionAllowedPathsJSON(),
@@ -247,6 +271,10 @@ func TestFilterModelOptionsGeminiPolicyKeyMatchesGoogleAdapter(t *testing.T) {
 	}
 	if _, ok := generationConfig["candidateCount"]; ok {
 		t.Fatalf("expected unlisted gemini option removed, got %#v", generationConfig)
+	}
+	thinkingConfig := filtered["thinkingConfig"].(map[string]interface{})
+	if thinkingConfig["thinkingLevel"] != "high" {
+		t.Fatalf("expected gemini thinking level to pass, got %#v", thinkingConfig)
 	}
 }
 
