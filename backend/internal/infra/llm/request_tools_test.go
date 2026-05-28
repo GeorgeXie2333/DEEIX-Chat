@@ -368,6 +368,9 @@ func TestBuildGeminiToolsMergesProviderAndMCPTools(t *testing.T) {
 				map[string]interface{}{
 					"url_context": map[string]interface{}{},
 				},
+				map[string]interface{}{
+					"code_execution": map[string]interface{}{},
+				},
 			},
 		},
 		Tools: []ToolDefinition{{
@@ -378,18 +381,21 @@ func TestBuildGeminiToolsMergesProviderAndMCPTools(t *testing.T) {
 	})
 
 	tools := payload["tools"].([]map[string]interface{})
-	if len(tools) != 3 {
+	if len(tools) != 4 {
 		t.Fatalf("expected provider, web search, and MCP tools, got %#v", tools)
 	}
 	if _, ok := tools[0]["url_context"]; !ok {
 		t.Fatalf("expected provider tool first, got %#v", tools[0])
 	}
-	if _, ok := tools[1]["google_search"]; !ok {
-		t.Fatalf("expected Gemini web search second, got %#v", tools[1])
+	if _, ok := tools[1]["code_execution"]; !ok {
+		t.Fatalf("expected code execution provider tool second, got %#v", tools[1])
 	}
-	declarations := tools[2]["functionDeclarations"].([]map[string]interface{})
+	if _, ok := tools[2]["google_search"]; !ok {
+		t.Fatalf("expected Gemini web search third, got %#v", tools[2])
+	}
+	declarations := tools[3]["functionDeclarations"].([]map[string]interface{})
 	if declarations[0]["name"] != "bing_search" {
-		t.Fatalf("expected MCP tool third, got %#v", tools[2])
+		t.Fatalf("expected MCP tool fourth, got %#v", tools[3])
 	}
 }
 

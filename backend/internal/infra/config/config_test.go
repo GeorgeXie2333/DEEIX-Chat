@@ -154,6 +154,19 @@ func TestNormalizeModelOptionAllowedPathsJSONKeepsCustomPolicy(t *testing.T) {
 	}
 }
 
+func TestDefaultNativeToolAllowedTypesIncludesGeminiTools(t *testing.T) {
+	var rules map[string][]string
+	if err := json.Unmarshal([]byte(DefaultNativeToolAllowedTypesJSON()), &rules); err != nil {
+		t.Fatalf("parse native tool allowed types: %v", err)
+	}
+	if !containsString(rules["gemini_generate_content"], "google_search") {
+		t.Fatalf("expected Gemini google_search in native tool defaults, got %#v", rules["gemini_generate_content"])
+	}
+	if !containsString(rules["gemini_generate_content"], "code_execution") {
+		t.Fatalf("expected Gemini code_execution in native tool defaults, got %#v", rules["gemini_generate_content"])
+	}
+}
+
 func TestValidateAllowsOnlyDevAndProdEnvironment(t *testing.T) {
 	tests := []struct {
 		name    string

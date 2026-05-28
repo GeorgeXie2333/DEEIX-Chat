@@ -65,6 +65,7 @@ const NATIVE_TOOL_PROTOCOLS = [
   "openai_chat_completions",
   "openai_responses",
   "anthropic_messages",
+  "gemini_generate_content",
   "xai_responses",
 ] as const;
 

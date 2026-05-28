@@ -288,6 +288,10 @@ func DefaultNativeToolAllowedTypesJSON() string {
     "tool_search_tool_regex_20251119",
     "tool_search_tool_bm25_20251119"
   ],
+  "gemini_generate_content": [
+    "google_search",
+    "code_execution"
+  ],
   "xai_responses": [
     "web_search",
     "x_search",

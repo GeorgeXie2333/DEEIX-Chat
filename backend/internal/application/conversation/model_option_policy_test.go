@@ -204,6 +204,57 @@ func TestFilterModelOptionsUpgradesLegacyDefaultAllowedPaths(t *testing.T) {
 	}
 }
 
+func TestFilterModelOptionsPreservesGeminiNativeTools(t *testing.T) {
+	filtered := filterModelOptions(map[string]interface{}{
+		"tools": []interface{}{
+			map[string]interface{}{"google_search": map[string]interface{}{"ignored": true}},
+			map[string]interface{}{"code_execution": map[string]interface{}{}},
+			map[string]interface{}{"type": "google_search"},
+			map[string]interface{}{"url_context": map[string]interface{}{}},
+		},
+	}, llm.AdapterGoogleGenerateContent, modelOptionPolicyConfig{
+		Mode:             modelOptionPolicyAllowlist,
+		AllowedPathsJSON: `{"default":[]}`,
+		DeniedPathsJSON:  config.DefaultModelOptionDeniedPathsJSON(),
+	})
+
+	tools, ok := filtered["tools"].([]map[string]interface{})
+	if !ok || len(tools) != 2 {
+		t.Fatalf("expected sanitized Gemini native tools, got %#v", filtered)
+	}
+	if _, ok := tools[0]["google_search"]; !ok {
+		t.Fatalf("expected google_search tool first, got %#v", tools[0])
+	}
+	if _, ok := tools[0]["type"]; ok {
+		t.Fatalf("expected Gemini tool payload without synthetic type, got %#v", tools[0])
+	}
+	if _, ok := tools[1]["code_execution"]; !ok {
+		t.Fatalf("expected code_execution tool second, got %#v", tools[1])
+	}
+}
+
+func TestFilterModelOptionsRemovesGeminiNativeToolsDisabledByPolicy(t *testing.T) {
+	filtered := filterModelOptions(map[string]interface{}{
+		"tools": []interface{}{
+			map[string]interface{}{"google_search": map[string]interface{}{}},
+			map[string]interface{}{"code_execution": map[string]interface{}{}},
+		},
+	}, llm.AdapterGoogleGenerateContent, modelOptionPolicyConfig{
+		Mode:                       modelOptionPolicyAllowlist,
+		AllowedPathsJSON:           `{"default":[]}`,
+		DeniedPathsJSON:            config.DefaultModelOptionDeniedPathsJSON(),
+		NativeToolAllowedTypesJSON: `{"gemini_generate_content":["google_search"]}`,
+	})
+
+	tools, ok := filtered["tools"].([]map[string]interface{})
+	if !ok || len(tools) != 1 {
+		t.Fatalf("expected only enabled Gemini native tool, got %#v", filtered)
+	}
+	if _, ok := tools[0]["google_search"]; !ok {
+		t.Fatalf("expected google_search to remain, got %#v", tools[0])
+	}
+}
+
 func TestFilterModelOptionsPreservesXAINativeToolsWhenToolsIsExplicitlyDenied(t *testing.T) {
 	filtered := filterModelOptions(map[string]interface{}{
 		"tools": []interface{}{

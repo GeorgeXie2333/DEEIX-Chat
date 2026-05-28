@@ -99,11 +99,10 @@ func nativeProviderToolsFromOption(protocolKey string, raw interface{}, allowedT
 	seen := make(map[string]struct{}, len(rawTools))
 	tools := make([]map[string]interface{}, 0, len(rawTools))
 	for _, rawTool := range rawTools {
-		tool, ok := sanitizeNativeProviderTool(protocolKey, rawTool)
+		tool, toolType, ok := sanitizeNativeProviderTool(protocolKey, rawTool)
 		if !ok {
 			continue
 		}
-		toolType := stringModelOptionValue(tool["type"])
 		if _, allowed := allowedTypes[toolType]; !allowed {
 			continue
 		}
@@ -164,6 +163,8 @@ func defaultNativeToolAllowedTypes(protocolKey string) map[string]struct{} {
 			"tool_search_tool_regex_20251119",
 			"tool_search_tool_bm25_20251119",
 		}
+	case "gemini_generate_content":
+		types = []string{"google_search", "code_execution"}
 	}
 	allowed := make(map[string]struct{}, len(types))
 	for _, toolType := range types {
@@ -191,20 +192,26 @@ func providerToolOptionPayloads(raw interface{}) []map[string]interface{} {
 }
 
 // sanitizeNativeProviderTool 按协议选择官方工具清洗规则，未知协议和未知类型一律丢弃。
-func sanitizeNativeProviderTool(protocolKey string, tool map[string]interface{}) (map[string]interface{}, bool) {
+func sanitizeNativeProviderTool(protocolKey string, tool map[string]interface{}) (map[string]interface{}, string, bool) {
+	if protocolKey == "gemini_generate_content" {
+		return sanitizeGeminiNativeProviderTool(tool)
+	}
 	toolType := strings.TrimSpace(stringModelOptionValue(tool["type"]))
 	if toolType == "" {
-		return nil, false
+		return nil, "", false
 	}
 	switch protocolKey {
 	case "openai_chat_completions", "openai_responses":
-		return sanitizeOpenAINativeProviderTool(toolType)
+		payload, ok := sanitizeOpenAINativeProviderTool(toolType)
+		return payload, toolType, ok
 	case "xai_responses":
-		return sanitizeXAINativeProviderTool(toolType)
+		payload, ok := sanitizeXAINativeProviderTool(toolType)
+		return payload, toolType, ok
 	case "anthropic_messages":
-		return sanitizeAnthropicNativeProviderTool(toolType, tool)
+		payload, ok := sanitizeAnthropicNativeProviderTool(toolType, tool)
+		return payload, toolType, ok
 	default:
-		return nil, false
+		return nil, "", false
 	}
 }
 
@@ -260,6 +267,17 @@ func sanitizeAnthropicNativeProviderTool(toolType string, raw map[string]interfa
 	default:
 		return nil, false
 	}
+}
+
+// sanitizeGeminiNativeProviderTool 保留 Gemini REST API 官方内置工具对象。
+func sanitizeGeminiNativeProviderTool(raw map[string]interface{}) (map[string]interface{}, string, bool) {
+	if _, ok := raw["google_search"]; ok {
+		return map[string]interface{}{"google_search": map[string]interface{}{}}, "google_search", true
+	}
+	if _, ok := raw["code_execution"]; ok {
+		return map[string]interface{}{"code_execution": map[string]interface{}{}}, "code_execution", true
+	}
+	return nil, "", false
 }
 
 // stringModelOptionValue 从自由 JSON 值中安全读取字符串。
