@@ -50,6 +50,11 @@ type MarkdownLinkProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
   href?: string;
 };
 
+type MarkdownStrongProps = React.HTMLAttributes<HTMLElement> & {
+  children?: React.ReactNode;
+  node?: unknown;
+};
+
 type MarkdownImageProps = React.ImgHTMLAttributes<HTMLImageElement> & {
   alt?: string;
   src?: string;
@@ -733,6 +738,14 @@ export function MarkdownLink({ children, className, href, onClick, ...props }: M
         url={pendingURL}
       />
     </>
+  );
+}
+
+export function MarkdownStrong({ children, className, node: _node, ...props }: MarkdownStrongProps) {
+  return (
+    <strong {...props} className={cn("font-semibold", className)} data-streamdown="strong">
+      {children}
+    </strong>
   );
 }
 
