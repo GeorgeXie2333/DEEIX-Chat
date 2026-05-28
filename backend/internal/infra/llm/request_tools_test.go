@@ -700,6 +700,67 @@ func TestResponsesStreamReasoningSummaryDeltaIsEmittedAndStored(t *testing.T) {
 	}
 }
 
+func TestResponsesStreamReasoningSummaryPartDoneIsEmittedAndStored(t *testing.T) {
+	result := &GenerateOutput{ToolCalls: make([]ToolCall, 0)}
+	rawStream := strings.Join([]string{
+		`event: response.reasoning_summary_part.done`,
+		`data: {"type":"response.reasoning_summary_part.done","item_id":"rs_1","part":{"type":"summary_text","text":"先确认目标，再组织答案。"}}`,
+		``,
+	}, "\n")
+
+	reasoningText := ""
+	err := consumeOpenAIGenerateStream(EndpointResponses, AdapterOpenAIResponses, strings.NewReader(rawStream), result, func(event GenerateStreamEvent) error {
+		if event.Reasoning != nil {
+			reasoningText += event.Reasoning.Text
+			if event.Reasoning.Kind != "summary_text" {
+				t.Fatalf("expected summary_text reasoning kind, got %q", event.Reasoning.Kind)
+			}
+			if event.Reasoning.Status != "completed" {
+				t.Fatalf("expected completed reasoning status, got %q", event.Reasoning.Status)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("consume stream: %v", err)
+	}
+	if reasoningText != "先确认目标，再组织答案。" {
+		t.Fatalf("expected reasoning part done to be emitted, got %q", reasoningText)
+	}
+	if result.Reasoning == nil || result.Reasoning.Summary != reasoningText {
+		t.Fatalf("expected reasoning part done to be stored, got %#v", result.Reasoning)
+	}
+}
+
+func TestResponsesStreamReasoningSummaryPartAddedDoesNotDuplicateDone(t *testing.T) {
+	result := &GenerateOutput{ToolCalls: make([]ToolCall, 0)}
+	rawStream := strings.Join([]string{
+		`event: response.reasoning_summary_part.added`,
+		`data: {"type":"response.reasoning_summary_part.added","item_id":"rs_1","part":{"type":"summary_text","text":"摘要片段"}}`,
+		``,
+		`event: response.reasoning_summary_part.done`,
+		`data: {"type":"response.reasoning_summary_part.done","item_id":"rs_1","part":{"type":"summary_text","text":"摘要片段"}}`,
+		``,
+	}, "\n")
+
+	reasoningText := ""
+	err := consumeOpenAIGenerateStream(EndpointResponses, AdapterOpenAIResponses, strings.NewReader(rawStream), result, func(event GenerateStreamEvent) error {
+		if event.Reasoning != nil {
+			reasoningText += event.Reasoning.Text
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("consume stream: %v", err)
+	}
+	if reasoningText != "摘要片段" {
+		t.Fatalf("expected reasoning part text to be emitted once, got %q", reasoningText)
+	}
+	if result.Reasoning == nil || result.Reasoning.Summary != "摘要片段" {
+		t.Fatalf("expected reasoning part text to be stored once, got %#v", result.Reasoning)
+	}
+}
+
 func TestResponsesCompletedReasoningSummaryIsEmittedWhenNoDeltaArrived(t *testing.T) {
 	result := &GenerateOutput{ToolCalls: make([]ToolCall, 0)}
 	rawStream := strings.Join([]string{
@@ -726,6 +787,38 @@ func TestResponsesCompletedReasoningSummaryIsEmittedWhenNoDeltaArrived(t *testin
 	}
 	if result.Reasoning == nil || result.Reasoning.Summary != reasoningText {
 		t.Fatalf("expected completed reasoning summary to be stored, got %#v", result.Reasoning)
+	}
+}
+
+func TestOpenAIResponsesRawReasoningTextIsNotSurfaced(t *testing.T) {
+	result := &GenerateOutput{ToolCalls: make([]ToolCall, 0)}
+	rawStream := strings.Join([]string{
+		`event: response.reasoning_text.delta`,
+		`data: {"type":"response.reasoning_text.delta","item_id":"rs_1","delta":"raw chain of thought"}`,
+		``,
+		`event: response.completed`,
+		`data: {"type":"response.completed","response":{"id":"resp_1","output":[{"id":"rs_1","type":"reasoning","status":"completed","content":[{"type":"reasoning_text","text":"raw chain of thought"}],"summary":[{"type":"summary_text","text":"安全摘要。"}]},{"type":"message","content":[{"type":"output_text","text":"最终答案"}]}]}}`,
+		``,
+	}, "\n")
+
+	reasoningText := ""
+	err := consumeOpenAIGenerateStream(EndpointResponses, AdapterOpenAIResponses, strings.NewReader(rawStream), result, func(event GenerateStreamEvent) error {
+		if event.Reasoning != nil {
+			reasoningText += event.Reasoning.Text
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("consume stream: %v", err)
+	}
+	if reasoningText != "安全摘要。" {
+		t.Fatalf("expected only reasoning summary to be emitted, got %q", reasoningText)
+	}
+	if result.Reasoning == nil || result.Reasoning.Text != "" || result.Reasoning.Summary != "安全摘要。" {
+		t.Fatalf("expected raw reasoning text to be suppressed, got %#v", result.Reasoning)
+	}
+	if result.Text != "最终答案" {
+		t.Fatalf("expected final answer text, got %q", result.Text)
 	}
 }
 

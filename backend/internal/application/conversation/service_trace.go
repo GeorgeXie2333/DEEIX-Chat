@@ -460,7 +460,11 @@ func (r *messageTraceRecorder) syncStructuredThink(content string, summary strin
 	if strings.TrimSpace(draft.status) == "" {
 		draft.status = messageTraceStatusStreaming
 	}
-	mergeUpstreamReasoningPayload(draft, messageTraceThinkKindContent, payload)
+	kind := messageTraceThinkKindContent
+	if strings.TrimSpace(content) == "" && strings.TrimSpace(summary) != "" {
+		kind = messageTraceThinkKindSummary
+	}
+	mergeUpstreamReasoningPayload(draft, kind, payload)
 	r.persistDraft(draft, false)
 }
 

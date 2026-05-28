@@ -60,6 +60,8 @@ func DefaultModelOptionAllowedPathsJSON() string {
     "service_tier",
     "reasoning.effort",
     "reasoning.summary",
+    "reasoning_effort",
+    "reasoning_summary",
     "text.verbosity"
   ],
   "openai_image_generations": [

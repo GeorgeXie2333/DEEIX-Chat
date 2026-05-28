@@ -26,15 +26,92 @@ func TestBuildOpenAIResponsesMinimalRequestHasOnlyProtocolDefaults(t *testing.T)
 	}, true)
 
 	expectedKeys := map[string]struct{}{
-		"model":   {},
-		"input":   {},
-		"stream":  {},
-		"include": {},
+		"model":     {},
+		"input":     {},
+		"stream":    {},
+		"reasoning": {},
+		"include":   {},
 	}
 	assertOnlyPayloadKeys(t, payload, expectedKeys)
+	reasoning, ok := payload["reasoning"].(map[string]interface{})
+	if !ok || reasoning["summary"] != "auto" {
+		t.Fatalf("expected responses reasoning.summary=auto by default, got %#v", payload["reasoning"])
+	}
 	include, ok := payload["include"].([]string)
 	if !ok || len(include) != 1 || include[0] != "reasoning.encrypted_content" {
 		t.Fatalf("expected responses encrypted reasoning include only, got %#v", payload["include"])
+	}
+}
+
+func TestBuildOpenAIResponsesReasoningSummaryDefaultAndOverrides(t *testing.T) {
+	tests := []struct {
+		name             string
+		options          map[string]interface{}
+		wantSummary      string
+		wantSummaryField bool
+	}{
+		{name: "default auto", wantSummary: "auto", wantSummaryField: true},
+		{
+			name: "nested concise",
+			options: map[string]interface{}{
+				"reasoning": map[string]interface{}{"summary": "concise"},
+			},
+			wantSummary:      "concise",
+			wantSummaryField: true,
+		},
+		{
+			name: "top level detailed overrides nested",
+			options: map[string]interface{}{
+				"reasoning":         map[string]interface{}{"summary": "concise"},
+				"reasoning_summary": "detailed",
+			},
+			wantSummary:      "detailed",
+			wantSummaryField: true,
+		},
+		{
+			name: "nested none disables default",
+			options: map[string]interface{}{
+				"reasoning": map[string]interface{}{"effort": "low", "summary": "none"},
+			},
+			wantSummaryField: false,
+		},
+		{
+			name: "top level none disables default",
+			options: map[string]interface{}{
+				"reasoning":         map[string]interface{}{"effort": "low", "summary": "auto"},
+				"reasoning_summary": "none",
+			},
+			wantSummaryField: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			payload := mustBuildRequestBody(t, AdapterOpenAIResponses, "gpt-5", EndpointResponses, GenerateInput{
+				Messages: []Message{{Role: "user", Content: "hello"}},
+				Options:  tt.options,
+			}, true)
+			reasoning, ok := payload["reasoning"].(map[string]interface{})
+			if !ok {
+				t.Fatalf("expected reasoning config, got %#v", payload["reasoning"])
+			}
+			summary, hasSummary := reasoning["summary"]
+			if hasSummary != tt.wantSummaryField {
+				t.Fatalf("expected summary field presence %v, got %v in %#v", tt.wantSummaryField, hasSummary, reasoning)
+			}
+			if tt.wantSummaryField && summary != tt.wantSummary {
+				t.Fatalf("expected reasoning.summary=%q, got %#v", tt.wantSummary, summary)
+			}
+		})
+	}
+}
+
+func TestBuildXAIResponsesDoesNotDefaultReasoningSummary(t *testing.T) {
+	payload := mustBuildRequestBody(t, AdapterXAIResponses, "grok-4.3", EndpointResponses, GenerateInput{
+		Messages: []Message{{Role: "user", Content: "hello"}},
+	}, true)
+	if _, ok := payload["reasoning"]; ok {
+		t.Fatalf("expected xAI responses not to default reasoning summary, got %#v", payload["reasoning"])
 	}
 }
 

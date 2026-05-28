@@ -17,6 +17,7 @@ func TestFilterModelOptionsAllowlistUsesDefaultAndProtocolPaths(t *testing.T) {
 			"summary": "auto",
 			"extra":   true,
 		},
+		"reasoning_summary": "detailed",
 		"text": map[string]interface{}{
 			"verbosity": "low",
 		},
@@ -44,6 +45,9 @@ func TestFilterModelOptionsAllowlistUsesDefaultAndProtocolPaths(t *testing.T) {
 	}
 	if _, ok := reasoning["extra"]; ok {
 		t.Fatalf("expected unlisted reasoning.extra to be removed, got %#v", reasoning)
+	}
+	if filtered["reasoning_summary"] != "detailed" {
+		t.Fatalf("expected top-level reasoning_summary alias to pass, got %#v", filtered)
 	}
 	if _, ok := filtered["stream_options"]; ok {
 		t.Fatalf("expected chat-only stream_options to be removed for responses, got %#v", filtered)

@@ -48,7 +48,7 @@ func buildResponsesRequestBody(
 		payload["max_output_tokens"] = maxTokens
 	}
 	applyOpenAICompatibleSamplingParams(payload, input.Options, false)
-	applyOpenAIResponsesReasoningParams(payload, input.Options)
+	applyOpenAIResponsesReasoningParams(payload, input.Options, adapter == AdapterOpenAIResponses)
 	applyOpenAIResponsesTextParams(payload, input.Options, adapter == AdapterOpenAIResponses)
 	webSearchTools := []map[string]interface{}{}
 	if toolsEnabled && modelParamBool(input.Options, "web_search") && adapter == AdapterOpenAIResponses {
@@ -112,7 +112,7 @@ func responsesStreamOptions(options map[string]interface{}) map[string]interface
 	return result
 }
 
-func applyOpenAIResponsesReasoningParams(payload map[string]interface{}, options map[string]interface{}) {
+func applyOpenAIResponsesReasoningParams(payload map[string]interface{}, options map[string]interface{}, defaultSummaryAuto bool) {
 	reasoning := map[string]interface{}{}
 	if existing := modelParamMap(options, "reasoning"); len(existing) > 0 {
 		for key, value := range existing {
@@ -122,10 +122,41 @@ func applyOpenAIResponsesReasoningParams(payload map[string]interface{}, options
 	if effort := modelParamString(options, "reasoning_effort"); effort != "" {
 		reasoning["effort"] = effort
 	}
+	summaryConfigured := false
+	if summary, ok := normalizedResponsesReasoningSummary(reasoning["summary"]); ok {
+		summaryConfigured = true
+		if responsesReasoningSummaryDisabled(summary) {
+			delete(reasoning, "summary")
+		} else {
+			reasoning["summary"] = summary
+		}
+	} else {
+		delete(reasoning, "summary")
+	}
 	if summary := modelParamString(options, "reasoning_summary"); summary != "" {
-		reasoning["summary"] = summary
+		summaryConfigured = true
+		if responsesReasoningSummaryDisabled(summary) {
+			delete(reasoning, "summary")
+		} else {
+			reasoning["summary"] = summary
+		}
+	} else if defaultSummaryAuto && !summaryConfigured {
+		reasoning["summary"] = "auto"
 	}
 	mergeObjectParam(payload, "reasoning", reasoning)
+}
+
+func normalizedResponsesReasoningSummary(raw interface{}) (string, bool) {
+	value, ok := raw.(string)
+	if !ok {
+		return "", false
+	}
+	value = strings.TrimSpace(value)
+	return value, value != ""
+}
+
+func responsesReasoningSummaryDisabled(value string) bool {
+	return strings.EqualFold(strings.TrimSpace(value), "none")
 }
 
 func applyOpenAIResponsesTextParams(payload map[string]interface{}, options map[string]interface{}, allowVerbosity bool) {
@@ -355,7 +386,10 @@ func applyResponsesStreamEvent(
 		if text != "" && !strings.Contains(result.Text, text) {
 			result.Text += text
 		}
-	case "response.reasoning_summary_text.delta", "response.reasoning_text.delta", "response.thinking.delta":
+	case "response.reasoning_summary_text.delta", "response.reasoning_summary_part.added", "response.reasoning_text.delta", "response.thinking.delta":
+		if shouldSuppressResponsesRawReasoning(adapter, eventType) {
+			return nil
+		}
 		reasoning := parseResponsesReasoningDelta(eventType, parsed)
 		if reasoning == nil || reasoning.Text == "" {
 			return nil
@@ -367,27 +401,29 @@ func applyResponsesStreamEvent(
 				ResponseID: result.ResponseID,
 			})
 		}
-	case "response.reasoning_summary_text.done", "response.reasoning_text.done", "response.thinking.done":
+	case "response.reasoning_summary_text.done", "response.reasoning_summary_part.done", "response.reasoning_text.done", "response.thinking.done":
+		if shouldSuppressResponsesRawReasoning(adapter, eventType) {
+			return nil
+		}
 		reasoning := parseResponsesReasoningDone(eventType, parsed)
 		if reasoning == nil || reasoning.Text == "" {
 			return nil
 		}
 		if result.Reasoning == nil || !reasoningOutputContains(result.Reasoning, reasoning.Text) {
 			mergeReasoningDeltaOutput(&result.Reasoning, reasoning)
+			if onEvent != nil {
+				return onEvent(GenerateStreamEvent{
+					Reasoning:  reasoning,
+					ResponseID: result.ResponseID,
+				})
+			}
 		}
 	case "response.completed":
 		output := buildGenerateOutputFromParsedForAdapter(EndpointResponses, adapter, asMap(parsed["response"]))
 		if result.Reasoning == nil && output.Reasoning != nil && onEvent != nil {
-			if text := firstNonEmptyString(output.Reasoning.Text, output.Reasoning.Summary); text != "" {
+			if reasoning := responsesReasoningDeltaFromOutput(eventType, output.Reasoning); reasoning != nil {
 				if err := onEvent(GenerateStreamEvent{
-					Reasoning: &ReasoningDelta{
-						EventType:        eventType,
-						ItemID:           output.Reasoning.ItemID,
-						Status:           output.Reasoning.Status,
-						Kind:             "content_text",
-						Text:             text,
-						EncryptedContent: output.Reasoning.EncryptedContent,
-					},
+					Reasoning:  reasoning,
 					ResponseID: firstNonEmptyString(result.ResponseID, output.ResponseID),
 				}); err != nil {
 					return err
@@ -406,6 +442,34 @@ func applyResponsesStreamEvent(
 	}
 
 	return nil
+}
+
+func shouldSuppressResponsesRawReasoning(adapter string, eventType string) bool {
+	return adapter == AdapterOpenAIResponses && strings.HasPrefix(strings.TrimSpace(eventType), "response.reasoning_text.")
+}
+
+func responsesReasoningDeltaFromOutput(eventType string, output *ReasoningOutput) *ReasoningDelta {
+	if output == nil {
+		return nil
+	}
+	kind := "content_text"
+	text := strings.TrimSpace(output.Text)
+	if text == "" {
+		text = strings.TrimSpace(output.Summary)
+		kind = "summary_text"
+	}
+	if text == "" {
+		return nil
+	}
+	return &ReasoningDelta{
+		EventType:        eventType,
+		ItemID:           output.ItemID,
+		Status:           output.Status,
+		Kind:             kind,
+		Text:             text,
+		Signature:        output.Signature,
+		EncryptedContent: output.EncryptedContent,
+	}
 }
 
 func parseResponsesServerToolStatusEvent(eventType string, parsed map[string]interface{}) (ToolCall, bool) {
@@ -543,6 +607,7 @@ func parseResponsesOutput(adapter string, parsed map[string]interface{}, result 
 	result.Usage = parseOpenAICompatibleUsageForAdapter(adapter, parsed)
 	result.ServerSideToolUsage = parseServerSideToolUsage(parsed)
 	result.Citations = appendUniqueStrings(result.Citations, parseResponseCitations(parsed)...)
+	suppressOpenAIResponsesRawReasoning(adapter, result)
 }
 
 func mergeResponsesTopLevelToolCalls(result *GenerateOutput, raw interface{}) {
@@ -594,7 +659,10 @@ func mergeReasoningDeltaOutput(dst **ReasoningOutput, delta *ReasoningDelta) {
 }
 
 func parseResponsesReasoningDelta(eventType string, parsed map[string]interface{}) *ReasoningDelta {
-	text := extractReasoningDeltaText(parsed["delta"])
+	text := firstNonEmptyString(
+		extractReasoningDeltaText(parsed["delta"]),
+		extractReasoningDeltaText(parsed["part"]),
+	)
 	if text == "" {
 		return nil
 	}
@@ -619,6 +687,7 @@ func parseResponsesReasoningDone(eventType string, parsed map[string]interface{}
 		extractReasoningDeltaText(parsed["text"]),
 		extractReasoningDeltaText(parsed["summary"]),
 		extractReasoningDeltaText(parsed["delta"]),
+		extractReasoningDeltaText(parsed["part"]),
 	)
 	if text == "" {
 		return nil
@@ -632,11 +701,25 @@ func parseResponsesReasoningDone(eventType string, parsed map[string]interface{}
 	return &ReasoningDelta{
 		EventType:        eventType,
 		ItemID:           firstNonEmptyString(getString(parsed["item_id"]), getStringFromPath(parsed, "item", "id")),
-		Status:           firstNonEmptyString(getString(parsed["status"]), getStringFromPath(parsed, "item", "status")),
+		Status:           firstNonEmptyString(getString(parsed["status"]), getStringFromPath(parsed, "item", "status"), "completed"),
 		Kind:             kind,
 		Text:             text,
 		EncryptedContent: firstNonEmptyString(getString(parsed["encrypted_content"]), getStringFromPath(parsed, "item", "encrypted_content")),
 	}
+}
+
+func suppressOpenAIResponsesRawReasoning(adapter string, result *GenerateOutput) {
+	if adapter != AdapterOpenAIResponses || result == nil || result.Reasoning == nil {
+		return
+	}
+	result.Reasoning.Text = ""
+	if strings.TrimSpace(result.Reasoning.Summary) != "" ||
+		strings.TrimSpace(result.Reasoning.ItemID) != "" ||
+		strings.TrimSpace(result.Reasoning.Status) != "" ||
+		strings.TrimSpace(result.Reasoning.EncryptedContent) != "" {
+		return
+	}
+	result.Reasoning = nil
 }
 
 func reasoningOutputContains(output *ReasoningOutput, text string) bool {
