@@ -32,6 +32,7 @@ const (
 	CodeFileTooLarge             = "file.too_large"
 	CodeFileNotReady             = "file.not_ready"
 	CodeFileTypeBlocked          = "file.type_blocked"
+	CodeMessageSensitiveBlocked  = "message.sensitive_prompt_blocked"
 	CodeUpstreamUnavailable      = "upstream.unavailable"
 	CodeServiceUnavailable       = "service.unavailable"
 	CodeInternal                 = "internal.error"
@@ -150,6 +151,7 @@ var exactErrorSpecs = map[string]errorSpec{
 	"message generation canceled":                             {Code: "conversation_run.canceled", Message: "message generation canceled"},
 	"too many files in one message":                           {Code: "message.too_many_files", Message: "too many files in one message"},
 	"too many selected tools":                                 {Code: "message.too_many_selected_tools", Message: "too many selected tools"},
+	"sensitive prompt blocked":                                {Code: CodeMessageSensitiveBlocked, Message: "message violates safety policy"},
 	"generation stream not found":                             {Code: "conversation_run.stream_not_found", Message: "generation stream not found"},
 	"image prompt is required":                                {Code: "media.image_prompt_required", Message: "image prompt is required"},
 	"image generation does not accept input images":           {Code: "media.image_generation_rejects_inputs", Message: "image generation does not accept input images"},
@@ -524,6 +526,7 @@ var fallbackMessages = map[string]string{
 	"file.required":                                   "file is required",
 	"file.invalid_stream":                             "invalid file stream",
 	"file.invalid_reference":                          "invalid file reference",
+	"message.sensitive_prompt_blocked":                "message violates safety policy",
 	"context_artifact.invalid_id":                     "invalid context artifact id",
 	"context_artifact.not_found":                      "context artifact not found",
 	"llm.model_route_not_configured":                  "model route is not configured",

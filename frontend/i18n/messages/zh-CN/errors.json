@@ -184,6 +184,7 @@
     "invalidFeedback": "消息反馈无效。",
     "invalidId": "消息 ID 无效。",
     "notFound": "消息不存在。",
+    "sensitivePromptBlocked": "内容不符合安全策略，请修改后再试。",
     "tooManyFiles": "单条消息包含的文件过多。"
   },
   "payment": {

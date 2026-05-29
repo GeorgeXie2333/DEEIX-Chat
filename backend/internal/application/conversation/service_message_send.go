@@ -128,6 +128,10 @@ func (s *Service) sendMessageInternal(
 	onDelta func(string) error,
 	preferStream bool,
 ) (result *SendMessageResult, retErr error) {
+	if err := s.ValidatePromptSensitiveWords(input.Content); err != nil {
+		return nil, err
+	}
+
 	ctx, sendSpan := platformtracing.Start(ctx, "conversation.send",
 		trace.WithAttributes(
 			attribute.Int64("conversation.id", int64(input.ConversationID)),

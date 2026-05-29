@@ -60,6 +60,9 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 	if strings.TrimSpace(input.Prompt) == "" {
 		return nil, ErrMediaImagePromptRequired
 	}
+	if err := s.ValidatePromptSensitiveWords(input.Prompt); err != nil {
+		return nil, err
+	}
 	if input.TaskType == MediaImageTaskGeneration && len(input.FileIDs) > 0 {
 		return nil, ErrMediaImageGenerationRejectsInputs
 	}

@@ -184,6 +184,7 @@
     "invalidFeedback": "Invalid message feedback.",
     "invalidId": "Invalid message ID.",
     "notFound": "Message not found.",
+    "sensitivePromptBlocked": "This content does not meet the safety policy. Edit it and try again.",
     "tooManyFiles": "Too many files in one message."
   },
   "payment": {

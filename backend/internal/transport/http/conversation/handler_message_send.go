@@ -71,6 +71,10 @@ func (h *Handler) parseSendMessageInput(c *gin.Context) (appconversation.SendMes
 		handleSendMessageError(c, err)
 		return appconversation.SendMessageInput{}, nil, nil, err
 	}
+	if err = h.service.ValidatePromptSensitiveWords(req.Content); err != nil {
+		handleSendMessageError(c, err)
+		return appconversation.SendMessageInput{}, nil, nil, err
+	}
 
 	conversation, err := h.service.GetConversationByPublicID(c.Request.Context(), userID, publicID)
 	if err != nil {
@@ -301,6 +305,8 @@ func handleSendMessageError(c *gin.Context, err error) {
 		response.Error(c, http.StatusBadRequest, "too many files in one message")
 	case errors.Is(err, appconversation.ErrTooManySelectedTools):
 		response.Error(c, http.StatusBadRequest, "too many selected tools")
+	case errors.Is(err, appconversation.ErrSensitivePromptBlocked):
+		response.Error(c, http.StatusBadRequest, "sensitive prompt blocked")
 	case errors.Is(err, appconversation.ErrInvalidMessageBranch):
 		response.Error(c, http.StatusBadRequest, "invalid message branch")
 	case errors.Is(err, appconversation.ErrFileProcessingNotReady):

@@ -21,6 +21,11 @@
       "description": "作为所有聊天模型的全局行为指令；空值表示不注入。模型级提示词会在其后追加。",
       "placeholder": "例如：保持回答准确、清晰，并遵循平台安全要求。"
     },
+    "promptSensitiveWords": {
+      "label": "敏感词库",
+      "description": "审查用户提交给模型的提示词，一行一个词；留空表示关闭审查。",
+      "placeholder": "一行一个敏感词"
+    },
     "optionPolicyMode": {
       "label": "参数透传策略",
       "description": "控制用户请求 options 是否允许透传到上游。默认仅放行白名单路径。"

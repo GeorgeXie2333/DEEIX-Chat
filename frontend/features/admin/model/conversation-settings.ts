@@ -9,6 +9,7 @@ export type ConversationSettingsField = {
   key:
     | "conversation_task_model"
     | "default_system_prompt"
+    | "prompt_sensitive_words"
     | "conversation_title_prompt"
     | "conversation_labels_prompt"
     | "model_option_policy_mode"
@@ -210,6 +211,14 @@ export function buildConversationSettingsFields(t: ConversationSettingsTranslato
       type: "textarea",
       placeholder: t("fields.defaultSystemPrompt.placeholder"),
     },
+    {
+      namespace: "chat",
+      key: "prompt_sensitive_words",
+      label: t("fields.promptSensitiveWords.label"),
+      description: t("fields.promptSensitiveWords.description"),
+      type: "textarea",
+      placeholder: t("fields.promptSensitiveWords.placeholder"),
+    },
   ];
 }
 
@@ -245,6 +254,7 @@ export function applyConversationDefaults(settings: Record<string, string>): Rec
   result["chat.conversation_title_prompt"] = normalizeConversationPromptValue(result["chat.conversation_title_prompt"] ?? "");
   result["chat.conversation_labels_prompt"] = normalizeConversationPromptValue(result["chat.conversation_labels_prompt"] ?? "");
   result["chat.default_system_prompt"] = normalizeConversationPromptValue(result["chat.default_system_prompt"] ?? "");
+  result["chat.prompt_sensitive_words"] = result["chat.prompt_sensitive_words"] ?? "";
   return result;
 }
 

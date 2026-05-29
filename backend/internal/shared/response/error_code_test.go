@@ -21,6 +21,7 @@ func TestInferErrorCode(t *testing.T) {
 		{name: "quota", status: http.StatusConflict, msg: "storage quota exceeded", want: CodeQuotaExceeded},
 		{name: "upstream", status: http.StatusBadGateway, msg: "remote models unavailable", want: "llm.remote_models_unavailable"},
 		{name: "generation canceled", status: http.StatusBadRequest, msg: "message generation canceled", want: "conversation_run.canceled"},
+		{name: "sensitive prompt", status: http.StatusBadRequest, msg: "sensitive prompt blocked", want: CodeMessageSensitiveBlocked},
 		{name: "internal", status: http.StatusInternalServerError, msg: "update settings failed: pq: bad column", want: CodeInternal},
 		{name: "provider", status: http.StatusBadRequest, msg: "invalid oauth state", want: "auth.oauth_state_invalid"},
 		{name: "verification", status: http.StatusBadRequest, msg: "verification code is invalid or expired", want: "auth.verification_code_invalid"},

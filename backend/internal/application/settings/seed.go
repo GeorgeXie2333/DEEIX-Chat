@@ -68,6 +68,7 @@ func defaultSettings() []domainsettings.SystemSetting {
 		{Namespace: "chat", Key: "conversation_title_prompt", Value: "", ValueType: "string", Description: "会话标题生成提示词，支持 {{MESSAGES}} 占位符；空串使用内置默认值"},
 		{Namespace: "chat", Key: "conversation_labels_prompt", Value: "", ValueType: "string", Description: "会话标签生成提示词，支持 {{MESSAGES}} 占位符；空串使用内置默认值"},
 		{Namespace: "chat", Key: "default_system_prompt", Value: "", ValueType: "string", Description: "全局默认系统提示词，仅对聊天任务生效；空串表示不注入"},
+		{Namespace: "chat", Key: "prompt_sensitive_words", Value: "", ValueType: "string", Description: "提示词敏感词库，一行一个词；空串表示关闭审查"},
 		{Namespace: "chat", Key: "model_option_policy_mode", Value: "allowlist", ValueType: "string", Description: "模型 options 透传策略：allowlist=仅白名单，denylist=黑名单拦截，disabled=禁止透传"},
 		{Namespace: "chat", Key: "model_option_allowed_paths", Value: config.DefaultModelOptionAllowedPathsJSON(), ValueType: "json", Description: "模型 options 白名单路径 JSON，default 对所有协议生效"},
 		{Namespace: "chat", Key: "model_option_denied_paths", Value: config.DefaultModelOptionDeniedPathsJSON(), ValueType: "json", Description: "模型 options 黑名单路径 JSON，default 对所有协议生效"},

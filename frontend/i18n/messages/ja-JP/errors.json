@@ -184,6 +184,7 @@
     "invalidFeedback": "メッセージフィードバックが無効です。",
     "invalidId": "メッセージ ID が無効です。",
     "notFound": "メッセージが見つかりません。",
+    "sensitivePromptBlocked": "この内容は安全ポリシーを満たしていません。修正してもう一度お試しください。",
     "tooManyFiles": "1つのメッセージ内のファイルが多すぎます。"
   },
   "payment": {

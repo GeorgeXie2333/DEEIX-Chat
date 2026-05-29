@@ -52,6 +52,10 @@ func (h *Handler) streamMediaImage(c *gin.Context, taskType appconversation.Medi
 	}
 	req.ClientRunID = appconversation.EnsureMessageGenerationRunID(req.ClientRunID)
 	req.Options = sanitizeMessageOptions(req.Options)
+	if err = h.service.ValidatePromptSensitiveWords(req.Prompt); err != nil {
+		handleSendMessageError(c, err)
+		return
+	}
 	if err = h.ensureMediaImageBillingModelAccess(c, conversation, &req); err != nil {
 		return
 	}

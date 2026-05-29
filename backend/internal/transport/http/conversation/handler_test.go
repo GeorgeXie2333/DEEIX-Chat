@@ -38,6 +38,19 @@ type httpBillingRepositoryStub struct {
 	freeModelRateLimit domainbilling.FreeModelRateLimit
 }
 
+type sensitivePromptConversationRepoStub struct {
+	repository.ConversationRepository
+}
+
+func (r sensitivePromptConversationRepoStub) GetConversationByPublicID(ctx context.Context, publicID string, userID uint) (*conversationmodel.Conversation, error) {
+	return &conversationmodel.Conversation{
+		ID:       1,
+		UserID:   userID,
+		PublicID: publicID,
+		Model:    "free-chat",
+	}, nil
+}
+
 func (r *httpBillingRepositoryStub) GetBillingMode(context.Context) (string, error) {
 	return r.mode, nil
 }
@@ -89,6 +102,39 @@ func newFreeModelLimitedHandler(minuteExceeded bool, dailyExceeded bool) *Handle
 	)
 	conversationSvc.SetBillingService(billingSvc)
 	return NewHandler(conversationSvc, config.NewRuntime(config.Config{}))
+}
+
+func newSensitivePromptHandler() *Handler {
+	cfg := config.Config{PromptSensitiveWords: "blocked"}
+	conversationSvc := appconversation.NewService(
+		cfg,
+		sensitivePromptConversationRepoStub{},
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		zap.NewNop(),
+	)
+	return NewHandler(conversationSvc, config.NewRuntime(cfg))
+}
+
+func newSensitivePromptContext(path string, body string) (*gin.Context, *httptest.ResponseRecorder) {
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
+	ctx.Request.Header.Set("Content-Type", "application/json")
+	ctx.Params = gin.Params{{Key: "id", Value: "conv_test"}}
+	ctx.Set(middleware.ContextKeyUserID, uint(7))
+	return ctx, recorder
 }
 
 func newBillingAccessTestContext() (*gin.Context, *httptest.ResponseRecorder) {
@@ -183,6 +229,67 @@ func TestBillingStreamErrorPayloadFreeModelLimitUsesRateLimitCode(t *testing.T) 
 	}
 	if mapped.Code != "rate_limit.exceeded" || mapped.Message != "free model rate limit exceeded" {
 		t.Fatalf("unexpected stream mapping: %#v", mapped)
+	}
+}
+
+func TestSendMessageSensitivePromptBlockedBeforeGeneration(t *testing.T) {
+	handler := newSensitivePromptHandler()
+	ctx, recorder := newSensitivePromptContext(
+		"/conversations/conv_test/messages",
+		`{"contentType":"text","content":"please use ＢＬＯＣＫＥＤ term"}`,
+	)
+
+	handler.SendMessage(ctx)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", recorder.Code)
+	}
+	if contentType := recorder.Header().Get("Content-Type"); strings.Contains(contentType, "application/x-ndjson") {
+		t.Fatalf("did not expect stream content type for preflight error, got %q", contentType)
+	}
+	var body struct {
+		ErrorCode string `json:"errorCode"`
+		ErrorMsg  string `json:"errorMsg"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode error response: %v", err)
+	}
+	if body.ErrorCode != "message.sensitive_prompt_blocked" || body.ErrorMsg != "message violates safety policy" {
+		t.Fatalf("unexpected error body: %#v", body)
+	}
+}
+
+func TestStreamMessageSensitivePromptBlockedBeforeNDJSON(t *testing.T) {
+	handler := newSensitivePromptHandler()
+	ctx, recorder := newSensitivePromptContext(
+		"/conversations/conv_test/messages/stream",
+		`{"contentType":"text","content":"blocked content"}`,
+	)
+
+	handler.StreamMessage(ctx)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", recorder.Code)
+	}
+	if contentType := recorder.Header().Get("Content-Type"); strings.Contains(contentType, "application/x-ndjson") {
+		t.Fatalf("did not expect stream content type for preflight error, got %q", contentType)
+	}
+}
+
+func TestMediaImageSensitivePromptBlockedBeforeNDJSON(t *testing.T) {
+	handler := newSensitivePromptHandler()
+	ctx, recorder := newSensitivePromptContext(
+		"/conversations/conv_test/images/generations/stream",
+		`{"prompt":"blocked image prompt"}`,
+	)
+
+	handler.StreamImageGeneration(ctx)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", recorder.Code)
+	}
+	if contentType := recorder.Header().Get("Content-Type"); strings.Contains(contentType, "application/x-ndjson") {
+		t.Fatalf("did not expect stream content type for preflight error, got %q", contentType)
 	}
 }
 

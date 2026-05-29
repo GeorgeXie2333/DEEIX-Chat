@@ -45,6 +45,8 @@ var (
 	ErrTooManyMessageFiles = errors.New("too many message files")
 	// ErrTooManySelectedTools 单条消息选择的 MCP 工具数超限。
 	ErrTooManySelectedTools = errors.New("too many selected tools")
+	// ErrSensitivePromptBlocked 用户提示词命中敏感词库。
+	ErrSensitivePromptBlocked = errors.New("sensitive prompt blocked")
 	// ErrInvalidMessageBranch 消息分支参数无效。
 	ErrInvalidMessageBranch = errors.New("invalid message branch")
 	// ErrMessageNotFound 消息不存在或无权限。

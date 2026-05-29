@@ -13,6 +13,7 @@ import (
 	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
 	mineruextract "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/mineru"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/promptfilter"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 )
 
@@ -300,6 +301,11 @@ func validatePatchItem(item PatchItem) error {
 		return validateStringMax(value, 512, key)
 	case "chat:default_system_prompt":
 		return validateStringMax(value, 20000, key)
+	case "chat:prompt_sensitive_words":
+		if _, err := promptfilter.ParseDictionary(value); err != nil {
+			return fmt.Errorf("%s %v", key, err)
+		}
+		return nil
 	case "auth:smtp_port":
 		return validateIntMinMax(value, 1, 65535, key)
 	case "auth:email_registration_allowed_domains":

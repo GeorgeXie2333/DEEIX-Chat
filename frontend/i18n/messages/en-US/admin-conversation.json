@@ -21,6 +21,11 @@
       "description": "Global behavior instructions for all chat models. Leave empty to inject nothing. Model-level prompts are appended after it.",
       "placeholder": "Example: keep answers accurate and clear, and follow platform safety requirements."
     },
+    "promptSensitiveWords": {
+      "label": "Sensitive word dictionary",
+      "description": "Reviews user prompts before they are sent to models. Enter one word per line. Leave empty to disable review.",
+      "placeholder": "One sensitive word per line"
+    },
     "optionPolicyMode": {
       "label": "Option passthrough policy",
       "description": "Controls whether user request options can be passed to upstream providers. By default, only allowlisted paths are passed."

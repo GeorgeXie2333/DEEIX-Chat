@@ -463,6 +463,7 @@ type Config struct {
 	ConversationTitlePrompt  string
 	ConversationLabelsPrompt string
 	DefaultSystemPrompt      string
+	PromptSensitiveWords    string
 	ModelOptionPolicyMode    string
 	ModelOptionAllowedPaths  string
 	ModelOptionDeniedPaths   string
@@ -665,6 +666,7 @@ func Load() Config {
 		ConversationTitlePrompt:           "",
 		ConversationLabelsPrompt:          "",
 		DefaultSystemPrompt:               "",
+		PromptSensitiveWords:              "",
 		ModelOptionPolicyMode:             "allowlist",
 		ModelOptionAllowedPaths:           DefaultModelOptionAllowedPathsJSON(),
 		ModelOptionDeniedPaths:            DefaultModelOptionDeniedPathsJSON(),

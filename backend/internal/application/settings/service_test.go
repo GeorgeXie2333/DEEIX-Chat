@@ -169,6 +169,30 @@ func TestValidateModelOptionPolicySettings(t *testing.T) {
 	}
 }
 
+func TestValidatePromptSensitiveWordsSetting(t *testing.T) {
+	if err := validatePatchItem(PatchItem{Namespace: "chat", Key: "prompt_sensitive_words", Value: "Block\n敏感词\n"}); err != nil {
+		t.Fatalf("expected sensitive word dictionary to pass, got %v", err)
+	}
+	if err := validatePatchItem(PatchItem{Namespace: "chat", Key: "prompt_sensitive_words", Value: strings.Repeat("x", 129)}); err == nil {
+		t.Fatal("expected overlong sensitive word to fail")
+	}
+}
+
+func TestRuntimeSettingsAppliesPromptSensitiveWords(t *testing.T) {
+	repo := &testSettingsRepo{byNamespace: map[string][]domainsettings.SystemSetting{
+		"chat": {
+			{Namespace: "chat", Key: "prompt_sensitive_words", Value: "Block\n敏感词"},
+		},
+	}}
+	runtime := config.NewRuntime(config.Config{})
+	if err := NewRuntimeSettings(repo, nil, "test-data-encryption-key").ApplyTo(context.Background(), runtime); err != nil {
+		t.Fatalf("ApplyTo() error = %v", err)
+	}
+	if got := runtime.Snapshot().PromptSensitiveWords; got != "Block\n敏感词" {
+		t.Fatalf("PromptSensitiveWords = %q", got)
+	}
+}
+
 func TestValidateNativeToolPricingSettings(t *testing.T) {
 	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "native_tool_pricing_json", Value: `{"xaiWebSearch":7000000,"openaiShell":0}`}); err != nil {
 		t.Fatalf("expected valid native tool pricing to pass, got %v", err)
