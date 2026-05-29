@@ -35,6 +35,7 @@ import {
   streamImageEdit,
   streamImageGeneration,
   streamMessage as streamConversationMessage,
+  streamVideoGeneration,
   type ConversationStreamOptions,
 } from "@/shared/api/conversation";
 import type {
@@ -91,11 +92,11 @@ function resolveMediaStatusLabel(
 ): string {
   switch (status.trim()) {
     case "queued":
-      return t("mediaStatus.queued");
+      return fallbackMessage.toLowerCase().includes("video") ? t("mediaStatus.videoQueued") : t("mediaStatus.queued");
     case "running":
-      return t("mediaStatus.running");
+      return fallbackMessage.toLowerCase().includes("video") ? t("mediaStatus.videoRunning") : t("mediaStatus.running");
     case "saving_artifact":
-      return t("mediaStatus.savingArtifact");
+      return fallbackMessage.toLowerCase().includes("video") ? t("mediaStatus.videoSavingArtifact") : t("mediaStatus.savingArtifact");
     default:
       return fallbackMessage.trim() || status.trim();
   }
@@ -342,6 +343,7 @@ export function useChatMessageSubmit({
       const sanitizedOptions = sanitizeConversationOptions(options);
       const assistantImageAspectRatio =
         submitTask === "chat" ? undefined : resolveImageLoadingAspectRatio(sanitizedOptions);
+      const assistantContentType = submitTask === "chat" ? "markdown" : submitTask === "video_generation" ? "video" : "image";
       let targetConversationID = conversationID;
       let targetConversation = activeConversation;
 
@@ -374,7 +376,7 @@ export function useChatMessageSubmit({
         assistantText: "",
         assistantPending: true,
         assistantStreaming: true,
-        assistantContentType: submitTask === "chat" ? "markdown" : "image",
+        assistantContentType,
         assistantImageAspectRatio,
         assistantInlineAlert: undefined,
         assistantCreatedAt: createdAt,
@@ -552,10 +554,13 @@ export function useChatMessageSubmit({
             ...commonStreamPayload,
             prompt: payloadContent,
           };
-          completed =
-            submitTask === "image_generation"
-              ? await streamImageGeneration(token, targetConversationID, mediaPayload, streamOptions)
-              : await streamImageEdit(token, targetConversationID, mediaPayload, streamOptions);
+          if (submitTask === "image_generation") {
+            completed = await streamImageGeneration(token, targetConversationID, mediaPayload, streamOptions);
+          } else if (submitTask === "image_edit") {
+            completed = await streamImageEdit(token, targetConversationID, mediaPayload, streamOptions);
+          } else {
+            completed = await streamVideoGeneration(token, targetConversationID, mediaPayload, streamOptions);
+          }
         }
 
         sentSuccessfully = true;

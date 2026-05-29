@@ -21,6 +21,7 @@ const allowAdvancedPolicy: ModelOptionPolicy = {
     gemini_generate_content: ["thinkingConfig.thinkingLevel"],
     openai_image_generations: ["quality", "size"],
     openai_image_edits: ["quality", "size"],
+    openai_video_generations: ["size", "seconds"],
   }),
   deniedPathsJSON: "{}",
   nativeToolAllowedTypesJSON: "{}",
@@ -171,6 +172,43 @@ test("resolveAdvancedSettings exposes fixed GPT Image 2 quality and resolution o
   }).find((item) => item.kind === "imageResolution");
   assert.deepEqual(editResolution?.values, resolution?.values);
   assert.equal(editResolution?.customValueKind, "openaiImage2Resolution");
+});
+
+test("resolveAdvancedSettings exposes Sora video resolution and seconds options", () => {
+  const baseSettings = resolveAdvancedSettings({
+    protocol: "openai_video_generations",
+    modelName: "sora-2",
+    options: { size: "720x1280", seconds: "8" },
+    defaultOptions: {},
+    policy: allowAdvancedPolicy,
+  });
+  const baseResolution = baseSettings.find((item) => item.kind === "videoResolution");
+  const baseSeconds = baseSettings.find((item) => item.kind === "videoSeconds");
+
+  assert.equal(baseResolution?.key, "size");
+  assert.equal(baseResolution?.value, "720x1280");
+  assert.deepEqual(baseResolution?.values, ["720x1280", "1280x720"]);
+  assert.equal(baseSeconds?.key, "seconds");
+  assert.equal(baseSeconds?.value, "8");
+  assert.deepEqual(baseSeconds?.values, ["4", "8", "12"]);
+  assert.deepEqual(setAdvancedSettingValue({}, baseSeconds!, "16"), {});
+
+  const proResolution = resolveAdvancedSettings({
+    protocol: "openai_video_generations",
+    modelName: "sora-2-pro",
+    options: { size: "1920x1080", seconds: "12" },
+    defaultOptions: {},
+    policy: allowAdvancedPolicy,
+  }).find((item) => item.kind === "videoResolution");
+
+  assert.deepEqual(proResolution?.values, [
+    "720x1280",
+    "1280x720",
+    "1024x1792",
+    "1792x1024",
+    "1080x1920",
+    "1920x1080",
+  ]);
 });
 
 test("resolveAdvancedSettings hides fields blocked by the model option policy", () => {

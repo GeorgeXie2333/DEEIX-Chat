@@ -495,6 +495,8 @@ export type MediaImageRequest = {
   branchReason?: "default" | "retry" | "edit";
 };
 
+export type MediaVideoRequest = MediaImageRequest;
+
 export type SendMessageResult = {
   userMessage: MessageDTO;
   assistantMessage: MessageDTO;

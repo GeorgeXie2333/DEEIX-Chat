@@ -508,6 +508,12 @@ func TestIsRouteAllowedForTaskSeparatesChatAndImageProtocols(t *testing.T) {
 	if IsRouteAllowedForTask(TaskTypeImageEdit, `["image_edit"]`, "xai_image") {
 		t.Fatalf("expected image edit task to reject xAI image generation protocol")
 	}
+	if !IsRouteAllowedForTask(TaskTypeVideoGeneration, `["video_gen"]`, "openai_video_generations") {
+		t.Fatalf("expected video generation task to allow OpenAI video protocol")
+	}
+	if IsRouteAllowedForTask(TaskTypeVideoGeneration, `["image_gen"]`, "openai_image_generations") {
+		t.Fatalf("expected video generation task to reject image generation protocol")
+	}
 }
 
 func TestDefaultRouteModelMatchesTaskFiltersByKind(t *testing.T) {
@@ -522,6 +528,9 @@ func TestDefaultRouteModelMatchesTaskFiltersByKind(t *testing.T) {
 	}
 	if defaultRouteModelMatchesTask(`["chat"]`, TaskTypeImageGeneration) {
 		t.Fatal("expected image generation default route to reject chat model")
+	}
+	if !defaultRouteModelMatchesTask(`["video_gen"]`, TaskTypeVideoGeneration) {
+		t.Fatal("expected video generation default route to accept video model")
 	}
 }
 

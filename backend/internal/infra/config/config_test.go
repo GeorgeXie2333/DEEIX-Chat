@@ -130,6 +130,7 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T)
 	}
 	legacy["anthropic_messages"] = removeString(legacy["anthropic_messages"], "output_config.effort")
 	legacy["gemini_generate_content"] = removeString(legacy["gemini_generate_content"], "thinkingConfig.thinkingLevel")
+	delete(legacy, "openai_video_generations")
 	rawLegacy, err := json.Marshal(legacy)
 	if err != nil {
 		t.Fatalf("marshal legacy model option paths: %v", err)
@@ -144,6 +145,9 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T)
 	}
 	if !containsString(normalized["gemini_generate_content"], "thinkingConfig.thinkingLevel") {
 		t.Fatalf("expected normalized gemini allowlist to include thinkingConfig.thinkingLevel, got %#v", normalized["gemini_generate_content"])
+	}
+	if !containsString(normalized["openai_video_generations"], "seconds") || !containsString(normalized["openai_video_generations"], "size") {
+		t.Fatalf("expected normalized OpenAI video allowlist to include seconds and size, got %#v", normalized["openai_video_generations"])
 	}
 }
 

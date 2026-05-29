@@ -146,6 +146,7 @@ export function ChatMessageBot({
   );
   const hasTraceEvents = postProcessEvents.length > 0;
   const isImageGenerationLoading = item.contentType === "image" && item.isStreaming && !hasStreamdownContent;
+  const isVideoGenerationLoading = item.contentType === "video" && item.isStreaming && !hasStreamdownContent;
   const editableImageAttachments = React.useMemo(
     () => (item.attachments ?? []).filter(isEditableImageAttachment),
     [item.attachments],
@@ -214,7 +215,7 @@ export function ChatMessageBot({
         className="w-full min-w-0 max-w-none overflow-hidden text-base leading-7 text-foreground [overflow-wrap:anywhere]"
         style={{ fontFamily: "var(--font-chat)", fontWeight: "var(--font-chat-weight)" }}
       >
-        {isImageGenerationLoading && !item.inlineAlert ? (
+        {(isImageGenerationLoading || isVideoGenerationLoading) && !item.inlineAlert ? (
           <AssistantImageGenerationSkeleton label={item.activityLabel} aspectRatio={item.imageAspectRatio} />
         ) : item.isStreaming && !hasStreamdownContent && !item.inlineAlert ? (
           <AssistantMessageSkeleton fileProc={item.isFileProc} label={item.activityLabel} />

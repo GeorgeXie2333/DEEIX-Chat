@@ -13,6 +13,7 @@ const (
 	AdapterOpenAIChatCompletions  = "openai_chat_completions"  // POST /v1/chat/completions
 	AdapterOpenAIImageGenerations = "openai_image_generations" // POST /v1/images/generations
 	AdapterOpenAIImageEdits       = "openai_image_edits"       // POST /v1/images/edits
+	AdapterOpenAIVideoGenerations = "openai_video_generations" // POST /v1/videos
 	AdapterAnthropicMessages      = "anthropic_messages"       // POST /v1/messages
 	AdapterGoogleGenerateContent  = "google_generate_content"  // POST /v1beta/models/{model}:generateContent
 	AdapterGoogleImageGeneration  = "google_image_generation"  // POST /v1beta/models/{model}:generateContent
@@ -51,6 +52,7 @@ func IsKnownAdapter(raw string) bool {
 		AdapterOpenAIChatCompletions,
 		AdapterOpenAIImageGenerations,
 		AdapterOpenAIImageEdits,
+		AdapterOpenAIVideoGenerations,
 		AdapterAnthropicMessages,
 		AdapterGoogleGenerateContent,
 		AdapterGoogleImageGeneration,
@@ -67,7 +69,7 @@ func IsKnownAdapter(raw string) bool {
 func IsImplementedAdapter(raw string) bool {
 	switch NormalizeAdapter(raw) {
 	case AdapterOpenAIResponses, AdapterOpenAIChatCompletions, AdapterOpenAIImageGenerations, AdapterOpenAIImageEdits, AdapterXAIResponses,
-		AdapterAnthropicMessages, AdapterGoogleGenerateContent, AdapterGoogleImageGeneration, AdapterXAIImage, AdapterXAIImageEdits:
+		AdapterOpenAIVideoGenerations, AdapterAnthropicMessages, AdapterGoogleGenerateContent, AdapterGoogleImageGeneration, AdapterXAIImage, AdapterXAIImageEdits:
 		return true
 	default:
 		return false
@@ -125,6 +127,11 @@ func IsImageEditAdapter(raw string) bool {
 	}
 }
 
+// IsVideoGenerationAdapter 返回协议是否属于独立视频生成链路。
+func IsVideoGenerationAdapter(raw string) bool {
+	return NormalizeAdapter(raw) == AdapterOpenAIVideoGenerations
+}
+
 // DefaultEndpointForAdapter 返回协议对应的固定端点标识。
 func DefaultEndpointForAdapter(adapter string) string {
 	switch NormalizeAdapter(adapter) {
@@ -134,6 +141,8 @@ func DefaultEndpointForAdapter(adapter string) string {
 		return EndpointImageGenerations
 	case AdapterOpenAIImageEdits, AdapterXAIImageEdits:
 		return EndpointImageEdits
+	case AdapterOpenAIVideoGenerations:
+		return EndpointVideoGenerations
 	default:
 		// openai_responses、xai_responses 及所有未知值均使用 Responses 端点。
 		return EndpointResponses

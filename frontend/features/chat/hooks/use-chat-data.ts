@@ -169,19 +169,26 @@ export function useChatData(
           },
           onMediaStatus: (event) => {
             const status = event.status.trim();
+            const isVideoStatus = event.message.toLowerCase().includes("video");
             const activityLabel =
               status === "queued"
-                ? tSubmit("mediaStatus.queued")
+                ? isVideoStatus
+                  ? tSubmit("mediaStatus.videoQueued")
+                  : tSubmit("mediaStatus.queued")
                 : status === "running"
-                  ? tSubmit("mediaStatus.running")
+                  ? isVideoStatus
+                    ? tSubmit("mediaStatus.videoRunning")
+                    : tSubmit("mediaStatus.running")
                   : status === "saving_artifact"
-                    ? tSubmit("mediaStatus.savingArtifact")
+                    ? isVideoStatus
+                      ? tSubmit("mediaStatus.videoSavingArtifact")
+                      : tSubmit("mediaStatus.savingArtifact")
                     : event.message.trim() || status;
             setState((prev) => ({
               ...prev,
               messages: prev.messages.map((message) =>
                 message.runID === pendingRunID && message.role === "assistant" && message.status === "pending"
-                  ? { ...message, activityLabel, contentType: "image" }
+                  ? { ...message, activityLabel, contentType: isVideoStatus ? "video" : "image" }
                   : message,
               ),
             }));

@@ -34,6 +34,12 @@ func TestBuildOpenAICompatibleURLsRespectVersionedBasePath(t *testing.T) {
 			want:     "https://api.openai.com/v1/images/edits",
 		},
 		{
+			name:     "openai video generations endpoint",
+			baseURL:  "https://api.openai.com/v1",
+			endpoint: EndpointVideoGenerations,
+			want:     "https://api.openai.com/v1/videos",
+		},
+		{
 			name:     "xai v1 base is not duplicated",
 			baseURL:  "https://api.x.ai/v1",
 			endpoint: EndpointResponses,

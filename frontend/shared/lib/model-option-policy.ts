@@ -4,6 +4,7 @@ export const MODEL_OPTION_POLICY_PROTOCOLS = [
   "openai_responses",
   "openai_image_generations",
   "openai_image_edits",
+  "openai_video_generations",
   "anthropic_messages",
   "gemini_generate_content",
   "google_image_generation",
@@ -66,6 +67,7 @@ export const MODEL_OPTION_POLICY_PROTOCOL_LABELS: Record<ModelOptionPolicyProtoc
   openai_responses: "OpenAI（Responses）",
   openai_image_generations: "OpenAI（Images Generations）",
   openai_image_edits: "OpenAI（Images Edits）",
+  openai_video_generations: "OpenAI（Video Generations）",
   anthropic_messages: "Anthropic（Messages）",
   gemini_generate_content: "Google（Generate Content）",
   google_image_generation: "Google（Image Generation）",
@@ -130,6 +132,12 @@ export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
     additions: string[];
   }> = [
     {
+      protocol: "openai_video_generations",
+      anchors: [],
+      minAnchors: 0,
+      additions: ["seconds", "size"],
+    },
+    {
       protocol: "anthropic_messages",
       anchors: ["speed", "top_k", "thinking.type"],
       minAnchors: 2,
@@ -167,6 +175,10 @@ export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
       changed = true;
     }
   }
+  if (!next.openai_video_generations && next.openai_image_generations && next.openai_image_edits) {
+    next.openai_video_generations = ["seconds", "size"];
+    changed = true;
+  }
   return changed ? JSON.stringify(next) : raw;
 }
 
@@ -178,6 +190,8 @@ export function resolveModelOptionPolicyProtocol(protocol: string): ModelOptionP
       return "openai_image_generations";
     case "openai_image_edits":
       return "openai_image_edits";
+    case "openai_video_generations":
+      return "openai_video_generations";
     case "anthropic_messages":
       return "anthropic_messages";
     case "xai_responses":

@@ -13,6 +13,7 @@ import {
   ImagePlus,
   Search,
   TerminalSquare,
+  Video,
   Wrench,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -210,6 +211,15 @@ function resolveComposerModeIndicator(
       tone: "warning",
     };
   }
+  if (decision.blockedReason === "video_generation_rejects_non_image_attachments" || decision.blockedReason === "video_generation_too_many_reference_images") {
+    return {
+      label: t("mediaMode.invalidFile"),
+      intro: t("mediaMode.videoInvalidFileIntro"),
+      description: t(`mediaMode.blockedDescriptions.${decision.blockedReason}`),
+      icon: Video,
+      tone: "warning",
+    };
+  }
   if (decision.task === "image_generation") {
     return {
       label: t("mediaMode.imageGeneration"),
@@ -229,6 +239,17 @@ function resolveComposerModeIndicator(
         ? t(`mediaMode.blockedDescriptions.${decision.blockedReason}`)
         : t("mediaMode.imageEditDescription"),
       icon: ImagePlus,
+      tone: "default",
+    };
+  }
+  if (decision.task === "video_generation") {
+    return {
+      label: t("mediaMode.videoGeneration"),
+      intro: t("mediaMode.videoGenerationIntro"),
+      description: decision.blockedReason
+        ? t(`mediaMode.blockedDescriptions.${decision.blockedReason}`)
+        : t("mediaMode.videoGenerationDescription"),
+      icon: Video,
       tone: "default",
     };
   }

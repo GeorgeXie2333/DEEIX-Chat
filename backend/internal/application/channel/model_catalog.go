@@ -14,6 +14,8 @@ const (
 	TaskTypeImageGeneration = "image_generation"
 	// TaskTypeImageEdit 表示图片编辑任务。
 	TaskTypeImageEdit = "image_edit"
+	// TaskTypeVideoGeneration 表示视频生成任务。
+	TaskTypeVideoGeneration = "video_generation"
 
 	modelKindChat      = "chat"
 	modelKindAudio     = "audio"
@@ -30,7 +32,7 @@ const (
 
 	protocolOpenAIImageGenerations = llm.AdapterOpenAIImageGenerations
 	protocolOpenAIImageEdits       = llm.AdapterOpenAIImageEdits
-	protocolOpenAIVideoGenerations = "openai_video_generations"
+	protocolOpenAIVideoGenerations = llm.AdapterOpenAIVideoGenerations
 	protocolGoogleImageGeneration  = llm.AdapterGoogleImageGeneration
 	protocolXAIImage               = llm.AdapterXAIImage
 	protocolXAIImageEdits          = llm.AdapterXAIImageEdits
@@ -377,6 +379,8 @@ func NormalizeTaskType(raw string) string {
 		return TaskTypeImageGeneration
 	case TaskTypeImageEdit:
 		return TaskTypeImageEdit
+	case TaskTypeVideoGeneration:
+		return TaskTypeVideoGeneration
 	default:
 		return TaskTypeChat
 	}
@@ -393,6 +397,8 @@ func IsRouteAllowedForTask(taskType string, kindsJSON string, protocol string) b
 			return isProtocolAllowedForKind(modelKindImageGen, protocol)
 		case TaskTypeImageEdit:
 			return isProtocolAllowedForKind(modelKindImageEdit, protocol)
+		case TaskTypeVideoGeneration:
+			return isProtocolAllowedForKind(modelKindVideoGen, protocol)
 		default:
 			return isProtocolAllowedForKind(modelKindChat, protocol) || isProtocolAllowedForKind(modelKindAudio, protocol)
 		}
@@ -402,6 +408,8 @@ func IsRouteAllowedForTask(taskType string, kindsJSON string, protocol string) b
 		return hasModelKind(kinds, modelKindImageGen) && isProtocolAllowedForKind(modelKindImageGen, protocol)
 	case TaskTypeImageEdit:
 		return hasModelKind(kinds, modelKindImageEdit) && isProtocolAllowedForKind(modelKindImageEdit, protocol)
+	case TaskTypeVideoGeneration:
+		return hasModelKind(kinds, modelKindVideoGen) && isProtocolAllowedForKind(modelKindVideoGen, protocol)
 	default:
 		for _, kind := range kinds {
 			if (kind == modelKindChat || kind == modelKindAudio) && isProtocolAllowedForKind(kind, protocol) {
@@ -442,7 +450,7 @@ func inferKindsJSON(platformModelName string) string {
 		return `["image_gen","image_edit"]`
 	case code == "dall-e-3", strings.HasPrefix(code, "imagen-"):
 		return `["image_gen"]`
-	case code == "sora", code == "veo-2", strings.HasPrefix(code, "kling"):
+	case code == "sora", code == "sora-2", strings.HasPrefix(code, "sora-2-"), code == "veo-2", strings.HasPrefix(code, "kling"):
 		return `["video_gen"]`
 	case strings.HasPrefix(code, "gpt-4o-audio"):
 		return `["audio"]`

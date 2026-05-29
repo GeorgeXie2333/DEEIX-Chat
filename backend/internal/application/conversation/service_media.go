@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	_ "image/gif" // 注册 GIF 解码器。
+
+	_ "golang.org/x/image/webp" // 注册 WebP 解码器。
 )
 
 // resizeImageIfNeeded 在图片尺寸超过 maxDim 时进行缩放并重新编码。

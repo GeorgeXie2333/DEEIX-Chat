@@ -90,6 +90,10 @@ func DefaultModelOptionAllowedPathsJSON() string {
     "size",
     "user"
   ],
+  "openai_video_generations": [
+    "seconds",
+    "size"
+  ],
   "google_image_generation": [
     "aspect_ratio",
     "aspectRatio",
@@ -191,6 +195,12 @@ func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 			additions:  []string{"output_config.effort"},
 		},
 		{
+			protocol:   "openai_video_generations",
+			anchors:    []string{},
+			minAnchors: 0,
+			additions:  []string{"seconds", "size"},
+		},
+		{
 			protocol: "gemini_generate_content",
 			anchors: []string{
 				"generationConfig.temperature",
@@ -224,6 +234,14 @@ func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 			}
 			rules[upgrade.protocol] = append(rules[upgrade.protocol], addition)
 			changed = true
+		}
+	}
+	if _, ok := rules["openai_video_generations"]; !ok {
+		if _, hasImageGeneration := rules["openai_image_generations"]; hasImageGeneration {
+			if _, hasImageEdits := rules["openai_image_edits"]; hasImageEdits {
+				rules["openai_video_generations"] = []string{"seconds", "size"}
+				changed = true
+			}
 		}
 	}
 	return changed
@@ -463,7 +481,7 @@ type Config struct {
 	ConversationTitlePrompt  string
 	ConversationLabelsPrompt string
 	DefaultSystemPrompt      string
-	PromptSensitiveWords    string
+	PromptSensitiveWords     string
 	ModelOptionPolicyMode    string
 	ModelOptionAllowedPaths  string
 	ModelOptionDeniedPaths   string
@@ -681,7 +699,7 @@ func Load() Config {
 		FileImageMaxBytes:                 0,
 		FileDocMaxBytes:                   0,
 		FileFullContextPDFMaxPages:        20,
-		FileAllowedMIMETypes:              "image/jpeg,image/png,image/webp,image/gif,text/plain,text/markdown,text/csv,text/yaml,application/json,application/yaml,application/x-yaml,application/toml,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel",
+		FileAllowedMIMETypes:              "image/jpeg,image/png,image/webp,image/gif,video/mp4,text/plain,text/markdown,text/csv,text/yaml,application/json,application/yaml,application/x-yaml,application/toml,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel",
 		ExtractEngine:                     "builtin",
 		ExtractOCREngine:                  "rapidocr",
 		ExtractImageOCREnabled:            false,

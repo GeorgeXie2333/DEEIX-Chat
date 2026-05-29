@@ -11,6 +11,7 @@ var validModelOptionProtocolKeys = map[string]struct{}{
 	"openai_chat_completions":  {},
 	"openai_image_generations": {},
 	"openai_image_edits":       {},
+	"openai_video_generations": {},
 	"openai_responses":         {},
 	"anthropic_messages":       {},
 	"xai_responses":            {},

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"image"
 	"io"
 	"net/http"
 	"strings"
@@ -29,6 +30,8 @@ const (
 	MediaImageTaskGeneration MediaImageTaskType = "image_generation"
 	// MediaImageTaskEdit 表示基于输入图片的编辑任务。
 	MediaImageTaskEdit MediaImageTaskType = "image_edit"
+	// MediaVideoTaskGeneration 表示纯文本或参考图视频生成任务。
+	MediaVideoTaskGeneration MediaImageTaskType = "video_generation"
 )
 
 const maxMediaImageEditInputImages = 16
@@ -54,10 +57,13 @@ type MediaImageInput struct {
 // StreamMediaImage 执行图片生成任务并把结果保存为文件对象。
 // 图片能力不复用聊天生成链路，只通过图片任务类型和图片协议路由。
 func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (*SendMessageResult, error) {
-	if input.TaskType != MediaImageTaskGeneration && input.TaskType != MediaImageTaskEdit {
+	if input.TaskType != MediaImageTaskGeneration && input.TaskType != MediaImageTaskEdit && input.TaskType != MediaVideoTaskGeneration {
 		return nil, ErrInvalidMediaGenerationTask
 	}
 	if strings.TrimSpace(input.Prompt) == "" {
+		if input.TaskType == MediaVideoTaskGeneration {
+			return nil, ErrMediaVideoPromptRequired
+		}
 		return nil, ErrMediaImagePromptRequired
 	}
 	if err := s.ValidatePromptSensitiveWords(input.Prompt); err != nil {
@@ -68,6 +74,9 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 	}
 	if input.TaskType == MediaImageTaskEdit && len(input.FileIDs) == 0 {
 		return nil, ErrMediaImageEditInputRequired
+	}
+	if input.TaskType == MediaVideoTaskGeneration && len(input.FileIDs) > 1 {
+		return nil, ErrMediaVideoTooManyReferenceImages
 	}
 	if s.routeResolver == nil || s.llmClient == nil {
 		return nil, ErrModelRouteNotConfigured
@@ -108,6 +117,9 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 	if input.TaskType == MediaImageTaskEdit {
 		taskRouteType = channel.TaskTypeImageEdit
 		endpoint = llm.EndpointImageEdits
+	} else if input.TaskType == MediaVideoTaskGeneration {
+		taskRouteType = channel.TaskTypeVideoGeneration
+		endpoint = llm.EndpointVideoGenerations
 	}
 	route, err := s.routeResolver.ResolveRoute(ctx, channel.ResolveRouteInput{
 		PlatformModelName: platformModelName,
@@ -125,6 +137,9 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 	if input.TaskType == MediaImageTaskEdit && !llm.IsImageEditAdapter(route.Protocol) {
 		return nil, ErrMediaRouteProtocolMismatch
 	}
+	if input.TaskType == MediaVideoTaskGeneration && !llm.IsVideoGenerationAdapter(route.Protocol) {
+		return nil, ErrMediaRouteProtocolMismatch
+	}
 	// 图片任务会把会话当前模型更新为实际执行的图片模型；标题、标签等内部文本任务会单独回退到聊天模型。
 	if strings.TrimSpace(conversation.Model) != strings.TrimSpace(route.PlatformModelName) {
 		conversation.Model = strings.TrimSpace(route.PlatformModelName)
@@ -140,13 +155,34 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		return nil, err
 	}
 
+	cfg := s.cfg.Snapshot()
+	filteredOptions := filterModelOptions(input.Options, route.Protocol, modelOptionPolicyConfig{
+		Mode:                       cfg.ModelOptionPolicyMode,
+		AllowedPathsJSON:           cfg.ModelOptionAllowedPaths,
+		DeniedPathsJSON:            cfg.ModelOptionDeniedPaths,
+		NativeToolAllowedTypesJSON: cfg.NativeToolAllowedTypes,
+	})
+	if input.TaskType == MediaVideoTaskGeneration {
+		filteredOptions = sanitizeOpenAIVideoGenerationOptions(route.UpstreamModel, filteredOptions)
+	}
+
 	resolvedAttachments, imageEditParts, err := s.resolveMediaImageEditInputs(ctx, input)
 	if err != nil {
 		return nil, err
 	}
-	maskPart, err := s.resolveMediaImageEditMask(ctx, input.UserID, input.MaskFileID)
-	if err != nil {
-		return nil, err
+	var videoReferenceParts []llm.ContentPart
+	if input.TaskType == MediaVideoTaskGeneration {
+		resolvedAttachments, videoReferenceParts, err = s.resolveMediaVideoReferenceInputs(ctx, input, route.UpstreamModel, filteredOptions)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var maskPart *llm.ContentPart
+	if input.TaskType == MediaImageTaskEdit {
+		maskPart, err = s.resolveMediaImageEditMask(ctx, input.UserID, input.MaskFileID)
+		if err != nil {
+			return nil, err
+		}
 	}
 	attachmentsJSON := marshalAttachmentSnapshots(resolvedAttachments)
 
@@ -199,7 +235,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		ParentMessageID: branchState.ParentMessageID,
 		RunID:           runID,
 		Role:            "user",
-		ContentType:     mediaImageUserContentType(input.TaskType),
+		ContentType:     mediaUserContentType(input.TaskType, len(resolvedAttachments) > 0),
 		Content:         strings.TrimSpace(input.Prompt),
 		BranchReason:    normalizedBranchReason,
 		SourceMessageID: branchState.SourceMessageID,
@@ -235,7 +271,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		PublicID:       normalizePublicID(uuid.NewString()),
 		RunID:          runID,
 		Role:           "assistant",
-		ContentType:    "image",
+		ContentType:    mediaAssistantContentType(input.TaskType),
 		Content:        "",
 		BranchReason:   normalizedBranchReason,
 		Status:         "pending",
@@ -256,9 +292,8 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 			traceRecorder.attachToMessage(assistantMessage)
 		}
 	}()
-	emitMediaEvent(input.OnEvent, "queued", "image task queued")
+	emitMediaEvent(input.OnEvent, "queued", mediaQueuedMessage(input.TaskType))
 
-	cfg := s.cfg.Snapshot()
 	attributionReferer, attributionTitle := s.llmAttribution()
 	routeConfig := llm.RouteConfig{
 		Protocol:            route.Protocol,
@@ -273,13 +308,6 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		AttributionReferer:  attributionReferer,
 		AttributionTitle:    attributionTitle,
 	}
-	filteredOptions := filterModelOptions(input.Options, route.Protocol, modelOptionPolicyConfig{
-		Mode:                       cfg.ModelOptionPolicyMode,
-		AllowedPathsJSON:           cfg.ModelOptionAllowedPaths,
-		DeniedPathsJSON:            cfg.ModelOptionDeniedPaths,
-		NativeToolAllowedTypesJSON: cfg.NativeToolAllowedTypes,
-	})
-
 	emitMediaEvent(input.OnEvent, "running", mediaImageRunningMessage(input.TaskType))
 	generateInput := llm.GenerateInput{
 		RequestID:      strings.TrimSpace(input.RequestID),
@@ -302,6 +330,18 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 			Parts: parts,
 		}}
 		generateInput.ImageEditMask = maskPart
+	}
+	if input.TaskType == MediaVideoTaskGeneration && len(videoReferenceParts) > 0 {
+		parts := make([]llm.ContentPart, 0, 1+len(videoReferenceParts))
+		parts = append(parts, llm.ContentPart{
+			Kind: llm.ContentPartText,
+			Text: strings.TrimSpace(input.Prompt),
+		})
+		parts = append(parts, videoReferenceParts...)
+		generateInput.Messages = []llm.Message{{
+			Role:  "user",
+			Parts: parts,
+		}}
 	}
 	var output *llm.GenerateOutput
 	if shouldUseUpstreamMediaImageStream(routeConfig.Protocol, routeConfig.UpstreamModel, filteredOptions) {
@@ -332,6 +372,34 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		return nil, retErr
 	}
 	s.routeResolver.MarkRouteSuccess(ctx, route)
+	if input.TaskType == MediaVideoTaskGeneration {
+		if output == nil || len(output.GeneratedVideos) == 0 {
+			retErr = ErrUpstreamEmptyResponse
+			_ = s.repo.UpdateMessageState(ctx, assistantMessage.ID, "error", classifyRunErrorCode(retErr), truncateError(messageErrorSummary(retErr), 255))
+			return nil, retErr
+		}
+		result, saveErr := s.completeMediaVideoGeneration(ctx, mediaVideoCompletionInput{
+			Input:            input,
+			Conversation:     conversation,
+			UserMessage:      userMessage,
+			AssistantMessage: assistantMessage,
+			Route:            route,
+			FilteredOptions:  filteredOptions,
+			Output:           output,
+			StartedAt:        startedAt,
+		})
+		if saveErr != nil {
+			retErr = saveErr
+			return nil, saveErr
+		}
+		usage := output.Usage
+		run.InputTokens = usage.InputTokens
+		run.OutputTokens = usage.OutputTokens
+		run.CacheReadTokens = usage.CacheReadTokens
+		run.CacheWriteTokens = usage.CacheWriteTokens
+		run.ReasoningTokens = usage.ReasoningTokens
+		return result, nil
+	}
 	if output == nil || len(output.GeneratedImages) == 0 {
 		retErr = ErrUpstreamEmptyResponse
 		_ = s.repo.UpdateMessageState(ctx, assistantMessage.ID, "error", classifyRunErrorCode(retErr), truncateError(messageErrorSummary(retErr), 255))
@@ -442,8 +510,8 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 	}, nil
 }
 
-func mediaImageUserContentType(taskType MediaImageTaskType) string {
-	if taskType == MediaImageTaskEdit {
+func mediaUserContentType(taskType MediaImageTaskType, hasAttachments bool) string {
+	if taskType == MediaImageTaskEdit || hasAttachments {
 		return "mixed"
 	}
 	return "text"
@@ -453,7 +521,24 @@ func mediaImageRunningMessage(taskType MediaImageTaskType) string {
 	if taskType == MediaImageTaskEdit {
 		return "editing image"
 	}
+	if taskType == MediaVideoTaskGeneration {
+		return "generating video"
+	}
 	return "generating image"
+}
+
+func mediaQueuedMessage(taskType MediaImageTaskType) string {
+	if taskType == MediaVideoTaskGeneration {
+		return "video task queued"
+	}
+	return "image task queued"
+}
+
+func mediaAssistantContentType(taskType MediaImageTaskType) string {
+	if taskType == MediaVideoTaskGeneration {
+		return "video"
+	}
+	return "image"
 }
 
 // resolveMediaImageEditInputs 读取图片编辑输入图，确保只有图片文件进入图片编辑协议。
@@ -529,6 +614,145 @@ func (s *Service) readMediaImageEditFile(ctx context.Context, userID uint, fileI
 		Data:     data,
 		FileName: strings.TrimSpace(content.File.FileName),
 	}, nil
+}
+
+func (s *Service) resolveMediaVideoReferenceInputs(
+	ctx context.Context,
+	input MediaImageInput,
+	modelName string,
+	options map[string]interface{},
+) ([]AttachmentInput, []llm.ContentPart, error) {
+	if input.TaskType != MediaVideoTaskGeneration {
+		return nil, nil, nil
+	}
+	attachments, err := s.resolveAttachments(ctx, input.UserID, input.FileIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(attachments) == 0 {
+		return nil, nil, nil
+	}
+	if len(attachments) > 1 {
+		return nil, nil, ErrMediaVideoTooManyReferenceImages
+	}
+	attachment := attachments[0]
+	if normalizeAttachmentKind(attachment.Kind, attachment.MimeType) != "image" {
+		return nil, nil, ErrMediaVideoReferenceImageInvalid
+	}
+	part, err := s.readMediaVideoReferenceImageFile(ctx, input.UserID, attachment.FileID)
+	if err != nil {
+		return nil, nil, err
+	}
+	part.FileName = strings.TrimSpace(attachment.FileName)
+	targetSize := resolveMediaVideoSize(modelName, options)
+	width, height, err := imageDimensionsFromBytes(part.Data)
+	if err != nil {
+		return nil, nil, ErrMediaVideoReferenceImageInvalid
+	}
+	if fmt.Sprintf("%dx%d", width, height) != targetSize {
+		return nil, nil, ErrMediaVideoReferenceSizeMismatch
+	}
+	return attachments, []llm.ContentPart{part}, nil
+}
+
+func (s *Service) readMediaVideoReferenceImageFile(ctx context.Context, userID uint, fileID string) (llm.ContentPart, error) {
+	content, err := s.OpenFileContent(ctx, userID, strings.TrimSpace(fileID))
+	if err != nil {
+		return llm.ContentPart{}, err
+	}
+	defer content.Reader.Close() //nolint:errcheck
+
+	limit := s.cfg.Snapshot().MaxUploadFileBytes
+	if limit <= 0 {
+		limit = 20 * 1024 * 1024
+	}
+	data, err := io.ReadAll(io.LimitReader(content.Reader, limit+1))
+	if err != nil {
+		return llm.ContentPart{}, err
+	}
+	if int64(len(data)) > limit {
+		return llm.ContentPart{}, ErrFileTooLarge
+	}
+	mimeType := strings.TrimSpace(content.ContentType)
+	if mimeType == "" {
+		mimeType = strings.TrimSpace(content.File.DetectedMIME)
+	}
+	data, mimeType, err = validateMediaVideoReferenceImageBytes(data, mimeType)
+	if err != nil {
+		return llm.ContentPart{}, ErrMediaVideoReferenceImageInvalid
+	}
+	return llm.ContentPart{
+		Kind:     llm.ContentPartImage,
+		MimeType: mimeType,
+		Data:     data,
+		FileName: strings.TrimSpace(content.File.FileName),
+	}, nil
+}
+
+func sanitizeOpenAIVideoGenerationOptions(modelName string, options map[string]interface{}) map[string]interface{} {
+	if len(options) == 0 {
+		return nil
+	}
+	seconds := strings.TrimSpace(stringModelOptionValue(options["seconds"]))
+	switch seconds {
+	case "4", "8", "12":
+		options["seconds"] = seconds
+	default:
+		delete(options, "seconds")
+	}
+	size := strings.TrimSpace(stringModelOptionValue(options["size"]))
+	if !isMediaVideoSizeAllowed(modelName, size) {
+		delete(options, "size")
+	} else {
+		options["size"] = size
+	}
+	if len(options) == 0 {
+		return nil
+	}
+	return options
+}
+
+func resolveMediaVideoSize(modelName string, options map[string]interface{}) string {
+	size := strings.TrimSpace(stringModelOptionValue(options["size"]))
+	if isMediaVideoSizeAllowed(modelName, size) {
+		return size
+	}
+	return "1280x720"
+}
+
+func isMediaVideoSizeAllowed(modelName string, value string) bool {
+	value = strings.TrimSpace(value)
+	for _, item := range mediaVideoSizeValues(modelName) {
+		if value == item {
+			return true
+		}
+	}
+	return false
+}
+
+func mediaVideoSizeValues(modelName string) []string {
+	if strings.Contains(strings.ToLower(strings.TrimSpace(modelName)), "sora-2-pro") {
+		return []string{"720x1280", "1280x720", "1024x1792", "1792x1024", "1080x1920", "1920x1080"}
+	}
+	return []string{"720x1280", "1280x720"}
+}
+
+func validateMediaVideoReferenceImageBytes(data []byte, declaredMIME string) ([]byte, string, error) {
+	detected := detectGeneratedImageMIME(data)
+	switch detected {
+	case "image/jpeg", "image/png", "image/webp":
+		return data, detected, nil
+	default:
+		return nil, strings.TrimSpace(declaredMIME), fmt.Errorf("video reference image content is not a supported image")
+	}
+}
+
+func imageDimensionsFromBytes(data []byte) (int, int, error) {
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return 0, 0, err
+	}
+	return cfg.Width, cfg.Height, nil
 }
 
 // emitMediaEvent 输出媒体任务状态事件；失败不影响主流程。
@@ -722,6 +946,195 @@ func generatedImageMarkdown(files []model.FileObject) string {
 		blocks = append(blocks, fmt.Sprintf("![%s](/api/v1/files/%s/content)", alt, file.FileID))
 	}
 	return strings.Join(blocks, "\n\n")
+}
+
+type mediaVideoCompletionInput struct {
+	Input            MediaImageInput
+	Conversation     *model.Conversation
+	UserMessage      *model.Message
+	AssistantMessage *model.Message
+	Route            *channel.ResolvedRoute
+	FilteredOptions  map[string]interface{}
+	Output           *llm.GenerateOutput
+	StartedAt        time.Time
+}
+
+func (s *Service) completeMediaVideoGeneration(ctx context.Context, input mediaVideoCompletionInput) (*SendMessageResult, error) {
+	emitMediaEvent(input.Input.OnEvent, "saving_artifact", "saving video")
+	uploaded, attachmentRows, err := s.saveGeneratedVideos(ctx, assistantGeneratedVideoSaveInput{
+		UserID:         input.Input.UserID,
+		ConversationID: input.Input.ConversationID,
+		MessageID:      input.AssistantMessage.ID,
+		ModelName:      input.Route.PlatformModelName,
+		Videos:         input.Output.GeneratedVideos,
+	})
+	if err != nil {
+		_ = s.repo.UpdateMessageState(ctx, input.AssistantMessage.ID, "error", classifyRunErrorCode(err), truncateError(messageErrorSummary(err), 255))
+		return nil, err
+	}
+	usage := input.Output.Usage
+	input.UserMessage.InputTokens = usage.InputTokens
+	input.UserMessage.CacheReadTokens = usage.CacheReadTokens
+	input.UserMessage.CacheWriteTokens = usage.CacheWriteTokens
+	input.UserMessage.TokenUsage = usage.InputTokens + usage.CacheReadTokens + usage.CacheWriteTokens
+
+	content := generatedVideoMarkdown(uploaded)
+	latencyMS := time.Since(input.StartedAt).Milliseconds()
+	if err = s.repo.CompleteAssistantMessageWithAttachments(ctx,
+		input.UserMessage.ID,
+		repository.MessageUsageUpdate{
+			InputTokens:      usage.InputTokens,
+			CacheReadTokens:  usage.CacheReadTokens,
+			CacheWriteTokens: usage.CacheWriteTokens,
+		},
+		input.AssistantMessage.ID,
+		repository.AssistantMessageCompletionUpdate{
+			Content:         content,
+			OutputTokens:    usage.OutputTokens,
+			ReasoningTokens: usage.ReasoningTokens,
+			LatencyMS:       latencyMS,
+			Status:          "success",
+		},
+		attachmentRows,
+	); err != nil {
+		return nil, err
+	}
+	input.AssistantMessage.Content = content
+	input.AssistantMessage.OutputTokens = usage.OutputTokens
+	input.AssistantMessage.ReasoningTokens = usage.ReasoningTokens
+	input.AssistantMessage.TokenUsage = input.AssistantMessage.OutputTokens + input.AssistantMessage.ReasoningTokens
+	input.AssistantMessage.LatencyMS = latencyMS
+	input.AssistantMessage.Status = "success"
+	input.AssistantMessage.Attachments = string(marshalAttachmentSnapshots(videoAttachmentsFromFiles(uploaded)))
+	s.maybeGenerateConversationMetadataAsync(*input.Conversation, *input.UserMessage, model.Message{})
+
+	return &SendMessageResult{
+		UserMessage:        *input.UserMessage,
+		AssistantMessage:   *input.AssistantMessage,
+		UpstreamID:         input.Route.UpstreamID,
+		UpstreamName:       input.Route.UpstreamName,
+		PlatformModelName:  input.Route.PlatformModelName,
+		RoutedBindingCode:  input.Route.BindingCode,
+		UpstreamModelName:  input.Route.UpstreamModel,
+		UpstreamProtocol:   input.Route.Protocol,
+		EffectiveOptions:   input.FilteredOptions,
+		UsageSpeed:         usage.Speed,
+		UsageServiceTier:   usage.ServiceTier,
+		CacheWrite5mTokens: usage.CacheWrite5mTokens,
+		CacheWrite1hTokens: usage.CacheWrite1hTokens,
+		LatencyMS:          latencyMS,
+	}, nil
+}
+
+type assistantGeneratedVideoSaveInput struct {
+	UserID         uint
+	ConversationID uint
+	MessageID      uint
+	ModelName      string
+	Videos         []llm.GeneratedVideo
+}
+
+func (s *Service) saveGeneratedVideos(ctx context.Context, input assistantGeneratedVideoSaveInput) ([]model.FileObject, []model.Attachment, error) {
+	if len(input.Videos) == 0 {
+		return nil, nil, nil
+	}
+	uploaded := make([]model.FileObject, 0, len(input.Videos))
+	attachmentRows := make([]model.Attachment, 0, len(input.Videos))
+	now := time.Now()
+	for i, video := range input.Videos {
+		data, mimeType, err := validateGeneratedVideoBytes(video.Data, video.MIMEType)
+		if err != nil {
+			return nil, nil, err
+		}
+		fileName := generatedVideoFileName(input.ModelName, now, i, len(input.Videos), mimeType)
+		uploadResult, err := s.UploadFile(ctx, appupload.UploadFileInput{
+			UserID:       input.UserID,
+			Purpose:      "generated_video",
+			FileName:     fileName,
+			MimeType:     mimeType,
+			DeclaredSize: int64(len(data)),
+			Reader:       bytes.NewReader(data),
+		})
+		if err != nil {
+			return nil, nil, err
+		}
+		file := uploadResult.File
+		uploaded = append(uploaded, file)
+		attachmentRows = append(attachmentRows, model.Attachment{
+			ConversationID: input.ConversationID,
+			MessageID:      input.MessageID,
+			UserID:         input.UserID,
+			FileID:         file.FileID,
+			Kind:           "video",
+			FileName:       file.FileName,
+			MimeType:       file.DetectedMIME,
+			FileSize:       file.SizeBytes,
+			SHA256:         file.SHA256,
+			StoragePath:    file.StoragePath,
+			Status:         "active",
+			UploadedAt:     now,
+		})
+	}
+	return uploaded, attachmentRows, nil
+}
+
+func validateGeneratedVideoBytes(data []byte, declaredMIME string) ([]byte, string, error) {
+	if len(data) < 12 || !bytes.Equal(data[4:8], []byte("ftyp")) {
+		return nil, strings.TrimSpace(declaredMIME), fmt.Errorf("generated video content is not a supported mp4")
+	}
+	return data, "video/mp4", nil
+}
+
+func generatedVideoFileName(modelName string, capturedAt time.Time, index int, total int, mimeType string) string {
+	base := sanitizeGeneratedImageFileBase(modelName)
+	if base == "image" {
+		base = "video"
+	}
+	timestamp := fmt.Sprintf("%s-%03d", capturedAt.Format("20060102-150405"), capturedAt.Nanosecond()/int(time.Millisecond))
+	if total > 1 {
+		return fmt.Sprintf("%s-%s-%02d%s", base, timestamp, index+1, videoFileExtension(mimeType))
+	}
+	return fmt.Sprintf("%s-%s%s", base, timestamp, videoFileExtension(mimeType))
+}
+
+func videoFileExtension(mimeType string) string {
+	if strings.EqualFold(strings.TrimSpace(mimeType), "video/mp4") {
+		return ".mp4"
+	}
+	return ".mp4"
+}
+
+func generatedVideoMarkdown(files []model.FileObject) string {
+	blocks := make([]string, 0, len(files))
+	for i, file := range files {
+		label := "Generated video"
+		if len(files) > 1 {
+			label = fmt.Sprintf("Generated video %d", i+1)
+		}
+		blocks = append(blocks, fmt.Sprintf("[%s](/api/v1/files/%s/content)", label, file.FileID))
+	}
+	return strings.Join(blocks, "\n\n")
+}
+
+func videoAttachmentsFromFiles(files []model.FileObject) []AttachmentInput {
+	items := make([]AttachmentInput, 0, len(files))
+	for _, file := range files {
+		items = append(items, AttachmentInput{
+			FileObjID:        file.ID,
+			FileID:           file.FileID,
+			Kind:             "video",
+			FileName:         file.FileName,
+			MimeType:         file.MimeType,
+			DetectedMIME:     file.DetectedMIME,
+			FileCategory:     file.FileCategory,
+			FileSize:         file.SizeBytes,
+			SHA256:           file.SHA256,
+			StoragePath:      file.StoragePath,
+			ProcessingStatus: file.ProcessingStatus,
+			ProcessingReady:  file.ProcessingReady,
+		})
+	}
+	return items
 }
 
 // attachmentsFromFiles 生成消息附件快照，供流式完成事件立即返回给前端。

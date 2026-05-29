@@ -77,6 +77,14 @@ var (
 	ErrMediaImageEditTooManyInputs = errors.New("too many image edit input images")
 	// ErrMediaImageEditInputInvalid 图片编辑输入图不合法。
 	ErrMediaImageEditInputInvalid = errors.New("image edit input image is invalid")
+	// ErrMediaVideoPromptRequired 视频任务提示词不能为空。
+	ErrMediaVideoPromptRequired = errors.New("video prompt is required")
+	// ErrMediaVideoTooManyReferenceImages 视频生成最多只能携带一张参考图。
+	ErrMediaVideoTooManyReferenceImages = errors.New("video generation accepts at most one reference image")
+	// ErrMediaVideoReferenceImageInvalid 视频生成参考图不合法。
+	ErrMediaVideoReferenceImageInvalid = errors.New("video reference image is invalid")
+	// ErrMediaVideoReferenceSizeMismatch 视频生成参考图尺寸必须与目标分辨率一致。
+	ErrMediaVideoReferenceSizeMismatch = errors.New("video reference image size must match selected resolution")
 	// ErrMediaRouteProtocolMismatch 图片任务命中的路由协议与任务类型不匹配。
 	ErrMediaRouteProtocolMismatch = errors.New("media route protocol does not match task")
 	// ErrDuplicateMessageGenerationRun 表示客户端重复提交同一个生成 run。

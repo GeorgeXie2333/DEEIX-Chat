@@ -318,6 +318,19 @@ func sanitizeModelOptionValues(options map[string]interface{}, protocolKey strin
 		if value < 0 || value > 3 {
 			delete(options, "partial_images")
 		}
+	case "openai_video_generations":
+		switch strings.TrimSpace(stringModelOptionValue(options["seconds"])) {
+		case "4", "8", "12":
+			options["seconds"] = strings.TrimSpace(stringModelOptionValue(options["seconds"]))
+		default:
+			delete(options, "seconds")
+		}
+		switch strings.TrimSpace(stringModelOptionValue(options["size"])) {
+		case "720x1280", "1280x720", "1024x1792", "1792x1024", "1080x1920", "1920x1080":
+			options["size"] = strings.TrimSpace(stringModelOptionValue(options["size"]))
+		default:
+			delete(options, "size")
+		}
 	}
 }
 
@@ -346,6 +359,8 @@ func modelOptionPolicyProtocolKey(protocol string) string {
 		return "openai_image_generations"
 	case llm.AdapterOpenAIImageEdits:
 		return "openai_image_edits"
+	case llm.AdapterOpenAIVideoGenerations:
+		return "openai_video_generations"
 	case llm.AdapterAnthropicMessages:
 		return "anthropic_messages"
 	case llm.AdapterXAIImage:

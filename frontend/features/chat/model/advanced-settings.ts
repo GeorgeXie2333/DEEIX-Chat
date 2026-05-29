@@ -7,7 +7,9 @@ export type AdvancedSettingKind =
   | "reasoningEffort"
   | "verbosity"
   | "imageQuality"
-  | "imageResolution";
+  | "imageResolution"
+  | "videoResolution"
+  | "videoSeconds";
 export type AdvancedSettingCustomValueKind = "openaiImage2Resolution";
 
 export type AdvancedSettingDefinition = {
@@ -121,6 +123,36 @@ const OPENAI_IMAGE_2_RESOLUTION: AdvancedSettingDefinition = {
   values: OPENAI_GPT_IMAGE_2_SIZE_VALUES,
   customValueKind: "openaiImage2Resolution",
 };
+
+const OPENAI_VIDEO_SECONDS: AdvancedSettingDefinition = {
+  kind: "videoSeconds",
+  path: ["seconds"],
+  valueType: "select",
+  fallbackValue: "4",
+  values: ["4", "8", "12"],
+};
+
+const OPENAI_VIDEO_SIZE_BASE_VALUES = ["720x1280", "1280x720"];
+const OPENAI_VIDEO_SIZE_PRO_VALUES = [
+  "720x1280",
+  "1280x720",
+  "1024x1792",
+  "1792x1024",
+  "1080x1920",
+  "1920x1080",
+];
+
+function openAIVideoResolutionSetting(modelName: string): AdvancedSettingDefinition {
+  return {
+    kind: "videoResolution",
+    path: ["size"],
+    valueType: "select",
+    fallbackValue: "1280x720",
+    values: modelName.trim().toLowerCase().includes("sora-2-pro")
+      ? OPENAI_VIDEO_SIZE_PRO_VALUES
+      : OPENAI_VIDEO_SIZE_BASE_VALUES,
+  };
+}
 
 function isPlainOptionObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -285,6 +317,8 @@ export function resolveAdvancedSettingDefinitions(protocol: string, modelName = 
     case "openai_image_generations":
     case "openai_image_edits":
       return [OPENAI_IMAGE_QUALITY, OPENAI_IMAGE_2_RESOLUTION];
+    case "openai_video_generations":
+      return [openAIVideoResolutionSetting(modelName), OPENAI_VIDEO_SECONDS];
     case "gemini_generate_content":
     case "google_generate_content":
       return isGemini3PlusModel(modelName) ? [TEMPERATURE_SETTING, GEMINI_THINKING_LEVEL] : [];

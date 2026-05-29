@@ -27,6 +27,8 @@ const (
 	EndpointImageGenerations = "image_generations"
 	// EndpointImageEdits 表示 OpenAI Images API 编辑端点。
 	EndpointImageEdits = "image_edits"
+	// EndpointVideoGenerations 表示 OpenAI Videos API 生成端点。
+	EndpointVideoGenerations = "video_generations"
 )
 
 // 超时默认值。
@@ -547,6 +549,7 @@ type GenerateOutput struct {
 	ServerSideToolUsage map[string]int64
 	Citations           []string
 	GeneratedImages     []GeneratedImage
+	GeneratedVideos     []GeneratedVideo
 	RawJSON             string
 	Debug               *UpstreamDebugSnapshot `json:"-"`
 }
@@ -557,6 +560,15 @@ type GeneratedImage struct {
 	B64JSON       string
 	MIMEType      string
 	RevisedPrompt string
+}
+
+// GeneratedVideo 表示视频生成接口返回的一段视频。
+type GeneratedVideo struct {
+	ID       string
+	Data     []byte
+	MIMEType string
+	Size     string
+	Seconds  string
 }
 
 // ReasoningDelta 定义流式 reasoning 增量。
@@ -650,6 +662,7 @@ func NewClientWithEnv(env string, ssrfProtectionEnabled bool) *Client {
 		AdapterOpenAIChatCompletions:  &openAIChatCompletionsAdapter{client: client},
 		AdapterOpenAIImageGenerations: &openAIImageGenerationsAdapter{client: client},
 		AdapterOpenAIImageEdits:       &openAIImageEditsAdapter{client: client},
+		AdapterOpenAIVideoGenerations: &openAIVideoGenerationsAdapter{client: client},
 		AdapterXAIResponses:           &xAIResponsesAdapter{client: client},
 		AdapterXAIImage:               &xAIImageAdapter{client: client},
 		AdapterXAIImageEdits:          &xAIImageEditsAdapter{client: client},
@@ -1395,6 +1408,8 @@ func normalizeEndpoint(raw string) string {
 		return EndpointImageGenerations
 	case EndpointImageEdits:
 		return EndpointImageEdits
+	case EndpointVideoGenerations:
+		return EndpointVideoGenerations
 	default:
 		return EndpointResponses
 	}

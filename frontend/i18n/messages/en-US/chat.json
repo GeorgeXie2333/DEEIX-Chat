@@ -233,12 +233,17 @@
       "image_edit_unsupported": "This model does not support image editing. Remove the image or select an editing-capable model.",
       "image_generation_rejects_attachments": "Image generation accepts text prompts only. Remove attachments or select a model that handles them.",
       "image_task_rejects_non_image_attachments": "Image tasks only support image attachments. Remove non-image files.",
+      "video_generation_rejects_non_image_attachments": "Video generation only supports one image as a reference. Remove non-image files.",
+      "video_generation_too_many_reference_images": "Video generation can use at most one reference image. Remove extra images.",
       "model_task_unsupported": "This model cannot process the current input. Select another model and try again."
     },
     "mediaStatus": {
       "queued": "Image task queued",
       "running": "Generating image",
-      "savingArtifact": "Saving image"
+      "savingArtifact": "Saving image",
+      "videoQueued": "Video task queued",
+      "videoRunning": "Generating video",
+      "videoSavingArtifact": "Saving video"
     },
     "generationInterrupted": "Generation interrupted",
     "sendFailed": "Send failed",
@@ -365,13 +370,19 @@
       "imageEdit": "Image editing",
       "imageEditIntro": "Image editing mode is active.",
       "imageEditDescription": "Edits the uploaded image using the text prompt.",
+      "videoGeneration": "Video generation",
+      "videoGenerationIntro": "Video generation mode is active.",
+      "videoGenerationDescription": "Creates a video from the text prompt. You may upload one matching-resolution image as the first-frame reference.",
       "invalidFile": "Invalid file detected",
       "invalidFileIntro": "This file cannot be used for an image task.",
+      "videoInvalidFileIntro": "This file cannot be used for video generation.",
       "blockedDescriptions": {
         "image_edit_input_required": "Upload an image to edit first.",
         "image_edit_unsupported": "The selected model does not support image editing. Remove the image or switch models.",
         "image_generation_rejects_attachments": "Image generation only accepts text prompts. Remove attachments.",
         "image_task_rejects_non_image_attachments": "Image tasks only support image attachments. Remove non-image files.",
+        "video_generation_rejects_non_image_attachments": "Video generation only supports one image as a reference. Remove non-image files.",
+        "video_generation_too_many_reference_images": "Video generation can use at most one reference image. Remove extra images.",
         "model_task_unsupported": "The selected model cannot process this input. Switch models and try again."
       }
     },
@@ -614,6 +625,8 @@
     "reasoning_effort": "Reasoning effort",
     "reasoning_summary": "Reasoning summary",
     "resolution": "Resolution",
+    "videoResolution": "Video resolution",
+    "videoSeconds": "Video seconds",
     "aspect_ratio": "Aspect ratio",
     "aspectRatio": "Aspect ratio",
     "image_size": "Image size",

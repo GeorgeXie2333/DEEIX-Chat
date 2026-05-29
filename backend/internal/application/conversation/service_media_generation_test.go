@@ -51,3 +51,35 @@ func TestAppendGeneratedImageMarkdownPreservesAssistantText(t *testing.T) {
 		t.Fatalf("unexpected assistant content with image: %q", got)
 	}
 }
+
+func TestSanitizeOpenAIVideoGenerationOptions(t *testing.T) {
+	got := sanitizeOpenAIVideoGenerationOptions("sora-2", map[string]interface{}{
+		"size":    "1920x1080",
+		"seconds": "20",
+	})
+	if len(got) != 0 {
+		t.Fatalf("expected unsupported Sora 2 options to be removed, got %#v", got)
+	}
+
+	got = sanitizeOpenAIVideoGenerationOptions("sora-2-pro", map[string]interface{}{
+		"size":    "1920x1080",
+		"seconds": "12",
+	})
+	if got["size"] != "1920x1080" || got["seconds"] != "12" {
+		t.Fatalf("expected supported Sora 2 Pro options to pass, got %#v", got)
+	}
+}
+
+func TestValidateGeneratedVideoBytesRequiresMP4(t *testing.T) {
+	if _, _, err := validateGeneratedVideoBytes([]byte("not a video"), "video/mp4"); err == nil {
+		t.Fatal("expected invalid video bytes to be rejected")
+	}
+	data := []byte{0, 0, 0, 24, 'f', 't', 'y', 'p', 'i', 's', 'o', 'm'}
+	got, mimeType, err := validateGeneratedVideoBytes(data, "application/octet-stream")
+	if err != nil {
+		t.Fatalf("expected mp4 bytes to pass: %v", err)
+	}
+	if !bytes.Equal(got, data) || mimeType != "video/mp4" {
+		t.Fatalf("unexpected validated video: mime=%q data=%v", mimeType, got)
+	}
+}

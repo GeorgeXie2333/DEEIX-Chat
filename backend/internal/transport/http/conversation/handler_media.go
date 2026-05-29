@@ -28,6 +28,11 @@ func (h *Handler) StreamImageEdit(c *gin.Context) {
 	h.streamMediaImage(c, appconversation.MediaImageTaskEdit)
 }
 
+// StreamVideoGeneration 处理会话内视频生成流式状态接口。
+func (h *Handler) StreamVideoGeneration(c *gin.Context) {
+	h.streamMediaImage(c, appconversation.MediaVideoTaskGeneration)
+}
+
 // streamMediaImage 只负责 HTTP 绑定、计费预扣和 NDJSON 事件转发，图片业务由 application 执行。
 func (h *Handler) streamMediaImage(c *gin.Context, taskType appconversation.MediaImageTaskType) {
 	userID := middleware.MustUserID(c)
@@ -108,7 +113,7 @@ func (h *Handler) streamMediaImage(c *gin.Context, taskType appconversation.Medi
 		},
 	})
 	if err != nil {
-		if releaseErr := h.releaseSendMessageUsageReservation(reservation, "图片生成失败退回预扣"); releaseErr != nil {
+		if releaseErr := h.releaseSendMessageUsageReservation(reservation, mediaFailureReservationDescription(taskType)); releaseErr != nil {
 			_ = flushStreamEvent(billingStreamErrorPayload(releaseErr))
 			h.service.FinishMessageGeneration(req.ClientRunID)
 			return
@@ -140,6 +145,13 @@ func (h *Handler) streamMediaImage(c *gin.Context, taskType appconversation.Medi
 		"data": toSendMessageResponse(result),
 	})
 	h.service.FinishMessageGeneration(req.ClientRunID)
+}
+
+func mediaFailureReservationDescription(taskType appconversation.MediaImageTaskType) string {
+	if taskType == appconversation.MediaVideoTaskGeneration {
+		return "视频生成失败退回预扣"
+	}
+	return "图片生成失败退回预扣"
 }
 
 // mediaImageBillingInput 构造媒体任务复用消息计费链路所需的上下文。

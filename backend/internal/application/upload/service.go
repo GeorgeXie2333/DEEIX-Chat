@@ -199,6 +199,9 @@ func (s *Service) UploadFile(ctx context.Context, input UploadFileInput) (*Uploa
 	if maxUploadBytes <= 0 {
 		maxUploadBytes = 20 * 1024 * 1024
 	}
+	if normalizePurpose(input.Purpose) == "generated_video" && maxUploadBytes < 512*1024*1024 {
+		maxUploadBytes = 512 * 1024 * 1024
+	}
 	if input.DeclaredSize > 0 && input.DeclaredSize > maxUploadBytes {
 		return nil, s.errFileTooLarge()
 	}
@@ -535,6 +538,7 @@ func (s *Service) OpenFileContent(ctx context.Context, userID uint, fileID strin
 
 const (
 	fileCategoryImage   = "image"
+	fileCategoryVideo   = "video"
 	fileCategoryPDF     = "pdf"
 	fileCategoryWord    = "word"
 	fileCategoryExcel   = "excel"
@@ -665,6 +669,8 @@ func normalizeDetectedMIME(detected string, fileName string) string {
 		return "text/markdown"
 	case "json":
 		return "application/json"
+	case "mp4":
+		return "video/mp4"
 	case "yaml", "yml":
 		return "text/yaml"
 	case "toml":
@@ -733,6 +739,8 @@ func inferFileCategory(mimeType string, fileName string) string {
 	switch {
 	case strings.HasPrefix(mimeType, "image/"):
 		return fileCategoryImage
+	case strings.HasPrefix(mimeType, "video/") || ext == "mp4":
+		return fileCategoryVideo
 	case mimeType == "application/pdf" || ext == "pdf":
 		return fileCategoryPDF
 	case strings.Contains(mimeType, "wordprocessingml") || strings.Contains(mimeType, "msword") || ext == "docx" || ext == "doc":
@@ -766,6 +774,9 @@ func isAllowedMIME(mimeType string, cfg config.Config) bool {
 func maxBytesForCategory(category string, cfg config.Config) int64 {
 	if category == fileCategoryImage {
 		return cfg.FileImageMaxBytes
+	}
+	if category == fileCategoryVideo {
+		return 0
 	}
 	return cfg.FileDocMaxBytes
 }

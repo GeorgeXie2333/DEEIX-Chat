@@ -185,6 +185,14 @@ func classifyRunErrorCode(err error) string {
 		return "media_image_edit_too_many_inputs"
 	case errors.Is(err, ErrMediaImageEditInputInvalid):
 		return "media_image_edit_input_invalid"
+	case errors.Is(err, ErrMediaVideoPromptRequired):
+		return "media_video_prompt_required"
+	case errors.Is(err, ErrMediaVideoTooManyReferenceImages):
+		return "media_video_reference_too_many"
+	case errors.Is(err, ErrMediaVideoReferenceImageInvalid):
+		return "media_video_reference_invalid"
+	case errors.Is(err, ErrMediaVideoReferenceSizeMismatch):
+		return "media_video_reference_size_mismatch"
 	case errors.Is(err, ErrMediaRouteProtocolMismatch):
 		return "media_route_protocol_mismatch"
 	case errors.Is(err, ErrUpstreamRequestFailed):

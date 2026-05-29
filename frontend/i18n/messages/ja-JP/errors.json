@@ -175,8 +175,12 @@
     "imageEditInputRequired": "画像編集には少なくとも1つの入力画像が必要です。",
     "imageEditTooManyInputs": "画像編集の入力画像が多すぎます。",
     "imageEditInputInvalid": "画像編集では有効な画像ファイルのみ使用できます。",
-    "routeProtocolMismatch": "現在のモデルルートプロトコルはこの画像タスクと一致しません。モデルバインドを確認してください。",
-    "invalidTask": "画像タスクのパラメーターが無効です。"
+    "videoPromptRequired": "動画プロンプトを入力してください。",
+    "videoReferenceTooMany": "動画生成で使用できる参照画像は1枚までです。",
+    "videoReferenceInvalid": "動画参照画像が無効です。JPEG、PNG、WebP を使用してください。",
+    "videoReferenceSizeMismatch": "動画参照画像のサイズは選択した解像度と一致している必要があります。",
+    "routeProtocolMismatch": "現在のモデルルートプロトコルはこのメディアタスクと一致しません。モデルバインドを確認してください。",
+    "invalidTask": "メディアタスクのパラメーターが無効です。"
   },
   "message": {
     "feedbackTargetInvalid": "メッセージフィードバック対象が無効です。",

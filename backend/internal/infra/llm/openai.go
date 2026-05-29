@@ -311,6 +311,8 @@ func buildOpenAIRequestURL(baseURL string, endpoint string) string {
 		return buildVersionedEndpointURL(baseURL, "v1", "/images/generations")
 	case EndpointImageEdits:
 		return buildVersionedEndpointURL(baseURL, "v1", "/images/edits")
+	case EndpointVideoGenerations:
+		return buildVersionedEndpointURL(baseURL, "v1", "/videos")
 	default:
 		return buildVersionedEndpointURL(baseURL, "v1", "/responses")
 	}

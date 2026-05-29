@@ -233,12 +233,17 @@
       "image_edit_unsupported": "このモデルは画像編集に対応していません。画像を削除するか、編集対応モデルへ切り替えてください。",
       "image_generation_rejects_attachments": "画像生成ではテキストプロンプトのみ受け付けます。添付を削除するか、添付を処理できるモデルへ切り替えてください。",
       "image_task_rejects_non_image_attachments": "画像タスクでは画像添付のみ対応しています。画像以外のファイルを削除してください。",
+      "video_generation_rejects_non_image_attachments": "動画生成では参照画像を1枚だけ使用できます。画像以外のファイルを削除してください。",
+      "video_generation_too_many_reference_images": "動画生成で使用できる参照画像は1枚までです。余分な画像を削除してください。",
       "model_task_unsupported": "このモデルは現在の入力を処理できません。モデルを切り替えてから再試行してください。"
     },
     "mediaStatus": {
       "queued": "画像タスクはキューに入りました",
       "running": "画像を生成しています",
-      "savingArtifact": "画像を保存しています"
+      "savingArtifact": "画像を保存しています",
+      "videoQueued": "動画タスクはキューに入りました",
+      "videoRunning": "動画を生成しています",
+      "videoSavingArtifact": "動画を保存しています"
     },
     "generationInterrupted": "生成が中断されました",
     "sendFailed": "送信に失敗しました",
@@ -365,13 +370,19 @@
       "imageEdit": "画像編集",
       "imageEditIntro": "現在は画像編集モードです。",
       "imageEditDescription": "アップロード済み画像とテキストプロンプトに基づいて編集します。",
+      "videoGeneration": "動画生成",
+      "videoGenerationIntro": "現在は動画生成モードです。",
+      "videoGenerationDescription": "テキストプロンプトに基づいて動画を作成します。解像度が一致する画像1枚を先頭フレーム参照としてアップロードできます。",
       "invalidFile": "無効なファイルを検出しました",
       "invalidFileIntro": "現在のファイルは画像タスクに使用できません。",
+      "videoInvalidFileIntro": "現在のファイルは動画生成に使用できません。",
       "blockedDescriptions": {
         "image_edit_input_required": "先に編集する画像をアップロードしてください。",
         "image_edit_unsupported": "現在のモデルは画像編集に対応していません。画像を削除するかモデルを切り替えてください。",
         "image_generation_rejects_attachments": "画像生成ではテキストプロンプトのみ受け付けます。添付を削除してください。",
         "image_task_rejects_non_image_attachments": "画像タスクでは画像添付のみ対応しています。画像以外のファイルを削除してください。",
+        "video_generation_rejects_non_image_attachments": "動画生成では参照画像を1枚だけ使用できます。画像以外のファイルを削除してください。",
+        "video_generation_too_many_reference_images": "動画生成で使用できる参照画像は1枚までです。余分な画像を削除してください。",
         "model_task_unsupported": "現在のモデルはこの入力に対応していません。モデルを切り替えてから再試行してください。"
       }
     },
@@ -614,6 +625,8 @@
     "reasoning_effort": "推論強度",
     "reasoning_summary": "推論要約",
     "resolution": "解像度",
+    "videoResolution": "動画解像度",
+    "videoSeconds": "動画秒数",
     "aspect_ratio": "アスペクト比",
     "aspectRatio": "アスペクト比",
     "image_size": "画像サイズ",

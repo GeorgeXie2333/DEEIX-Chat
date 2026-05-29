@@ -175,8 +175,12 @@
     "imageEditInputRequired": "Image editing requires at least one input image.",
     "imageEditTooManyInputs": "Too many input images for image editing.",
     "imageEditInputInvalid": "Image editing only supports valid image files.",
-    "routeProtocolMismatch": "The current model route protocol does not match this image task. Check the model binding.",
-    "invalidTask": "Invalid image task parameters."
+    "videoPromptRequired": "Enter a video prompt.",
+    "videoReferenceTooMany": "Video generation can use at most one reference image.",
+    "videoReferenceInvalid": "The video reference image is invalid. Use JPEG, PNG, or WebP.",
+    "videoReferenceSizeMismatch": "The video reference image size must match the selected resolution.",
+    "routeProtocolMismatch": "The current model route protocol does not match this media task. Check the model binding.",
+    "invalidTask": "Invalid media task parameters."
   },
   "message": {
     "feedbackTargetInvalid": "Invalid message feedback target.",

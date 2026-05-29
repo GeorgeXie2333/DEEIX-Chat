@@ -58,6 +58,10 @@ function labelKeyForSetting(setting: AdvancedSettingItem): string {
       return "quality";
     case "imageResolution":
       return "resolution";
+    case "videoResolution":
+      return "videoResolution";
+    case "videoSeconds":
+      return "videoSeconds";
   }
 }
 

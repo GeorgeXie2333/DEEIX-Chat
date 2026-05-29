@@ -175,8 +175,12 @@
     "imageEditInputRequired": "图片编辑需要至少上传一张输入图片。",
     "imageEditTooManyInputs": "图片编辑输入图片过多。",
     "imageEditInputInvalid": "图片编辑只支持有效的图片文件。",
-    "routeProtocolMismatch": "当前模型路由协议与图片任务不匹配，请检查模型绑定。",
-    "invalidTask": "图片任务参数无效。"
+    "videoPromptRequired": "请输入视频提示词。",
+    "videoReferenceTooMany": "视频生成最多只能使用一张参考图。",
+    "videoReferenceInvalid": "视频参考图无效，仅支持 JPEG、PNG 或 WebP。",
+    "videoReferenceSizeMismatch": "视频参考图尺寸必须与所选分辨率一致。",
+    "routeProtocolMismatch": "当前模型路由协议与媒体任务不匹配，请检查模型绑定。",
+    "invalidTask": "媒体任务参数无效。"
   },
   "message": {
     "feedbackTargetInvalid": "消息反馈目标无效。",
