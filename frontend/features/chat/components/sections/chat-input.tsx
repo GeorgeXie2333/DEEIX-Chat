@@ -341,9 +341,16 @@ function ChatInputComponent({
     () => (modelOptionPolicyDisabled ? null : resolveNativeToolGroup(selectedProtocol, isMediaMode, selectedPlatformModelName)),
     [isMediaMode, modelOptionPolicyDisabled, selectedPlatformModelName, selectedProtocol],
   );
+  const visibleNativeToolGroup = React.useMemo(() => {
+    if (!nativeToolGroup) {
+      return null;
+    }
+    const options = nativeToolGroup.options.filter((tool) => isNativeToolTypeAllowed(modelOptionPolicy, selectedProtocol, tool.type));
+    return options.length > 0 ? { ...nativeToolGroup, options } : null;
+  }, [modelOptionPolicy, nativeToolGroup, selectedProtocol]);
   const selectedNativeToolCount = React.useMemo(
-    () => countProviderTools(options, nativeToolGroup),
-    [nativeToolGroup, options],
+    () => countProviderTools(options, visibleNativeToolGroup),
+    [options, visibleNativeToolGroup],
   );
   const selectedToolMenuCount = selectedNativeToolCount + selectedToolIDs.length;
   const onToolsMenuOpenChange = React.useCallback((open: boolean) => {
@@ -630,27 +637,19 @@ function ChatInputComponent({
                       onClick={onSelectScreenshotTool}
                     />
 
-                    {nativeToolGroup ? (
+                    {visibleNativeToolGroup ? (
                       <>
                         <div className="my-1 h-px bg-border/70" />
                         <div>
-                          {nativeToolGroup.options.map((tool) => {
+                          {visibleNativeToolGroup.options.map((tool) => {
                             const checked = hasProviderTool(options, tool.type);
-                            const allowed = isNativeToolTypeAllowed(modelOptionPolicy, selectedProtocol, tool.type);
-                            const canToggle = allowed || checked;
                             return (
                               <CompactToolMenuItem
                                 key={tool.type}
                                 label={tNativeToolLabels(tool.labelKey)}
                                 description={tNativeToolDescriptions(tool.descriptionKey)}
                                 selected={checked}
-                                disabled={!canToggle}
                                 renderIcon={(hovered) => nativeToolIcon(tool, hovered)}
-                                trailing={!allowed ? (
-                                  <span className="rounded-md bg-muted px-1 py-0.5 text-[9px] font-medium">
-                                    {tComposer("ignored")}
-                                  </span>
-                                ) : null}
                                 onClick={() => onToggleNativeTool(tool, !checked)}
                               />
                             );
