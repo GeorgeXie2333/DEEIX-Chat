@@ -141,6 +141,7 @@ var exactErrorSpecs = map[string]errorSpec{
 
 	"invalid conversation title":                              {Code: "conversation.invalid_title", Message: "invalid conversation title"},
 	"invalid conversation share":                              {Code: "conversation_share.invalid", Message: "invalid conversation share"},
+	"conversation archive too large":                          {Code: "conversation_archive.too_large", Message: "conversation archive too large"},
 	"conversation share schema outdated":                      {Code: "conversation_share.schema_outdated", Message: "conversation share schema is outdated"},
 	"conversation share schema is outdated, rebuild database": {Code: "conversation_share.schema_outdated", Message: "conversation share schema is outdated"},
 	"message feedback target invalid":                         {Code: "message.feedback_target_invalid", Message: "message feedback target invalid"},
@@ -205,6 +206,8 @@ var exactErrorSpecs = map[string]errorSpec{
 	"subscription expiry required":                                 {Code: "billing.subscription_expiry_required", Message: "subscription expiry required"},
 	"invalid subscription expiry":                                  {Code: "billing.invalid_subscription_expiry", Message: "invalid subscription expiry"},
 	"invalid model pricing":                                        {Code: "billing.invalid_model_pricing", Message: "invalid model pricing"},
+	"free model rate limit exceeded":                               {Code: CodeRateLimitExceeded, Message: "free model rate limit exceeded"},
+	"free model daily limit exceeded":                              {Code: CodeRateLimitExceeded, Message: "free model daily limit exceeded"},
 	"invalid daily usage date range":                               {Code: "billing.invalid_daily_usage_date_range", Message: "invalid daily usage date range"},
 	"invalid daily usage days":                                     {Code: "billing.invalid_daily_usage_days", Message: "invalid daily usage days"},
 	"payment is required":                                          {Code: CodeBillingPaymentRequired, Message: "payment is required"},

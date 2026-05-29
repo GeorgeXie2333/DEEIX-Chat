@@ -47,9 +47,19 @@ type UpsertModelPricingRequest struct {
 
 // BillingConfigRequest 保存计费全局配置。
 type BillingConfigRequest struct {
-	Mode                     string   `json:"mode" binding:"required,oneof=self period usage"`
-	PrepaidAmountUSD         *float64 `json:"prepaidAmountUSD" binding:"omitempty,min=0"`
-	NativeToolBillingEnabled *bool    `json:"nativeToolBillingEnabled"`
+	Mode                           string                      `json:"mode" binding:"required,oneof=self period usage"`
+	PrepaidAmountUSD               *float64                    `json:"prepaidAmountUSD" binding:"omitempty,min=0"`
+	NativeToolBillingEnabled       *bool                       `json:"nativeToolBillingEnabled"`
+	NativeToolPricing              *[]NativeToolPricingRequest `json:"nativeToolPricing"`
+	FreeModelRateLimitRPM          *int                        `json:"freeModelRateLimitRPM" binding:"omitempty,min=0"`
+	FreeModelDailyLimit            *int                        `json:"freeModelDailyLimit" binding:"omitempty,min=0"`
+	FreeModelRateLimitExemptModels *[]string                   `json:"freeModelRateLimitExemptModels"`
+}
+
+// NativeToolPricingRequest 保存原生工具价格。金额单位为美元。
+type NativeToolPricingRequest struct {
+	ToolKey  string  `json:"toolKey" binding:"required,max=128"`
+	PriceUSD float64 `json:"priceUSD" binding:"min=0"`
 }
 
 // UpdateBillingAccountBalanceRequest 管理员设置用户按量余额。
@@ -300,24 +310,31 @@ type ModelPricingDataResponse struct {
 
 // BillingConfigResponse 计费全局配置响应。
 type BillingConfigResponse struct {
-	Mode                     string                      `json:"mode"`
-	PrepaidAmountUSD         float64                     `json:"prepaidAmountUSD"`
-	PrepaidAmountNanousd     int64                       `json:"prepaidAmountNanousd"`
-	NativeToolBillingEnabled bool                        `json:"nativeToolBillingEnabled"`
-	NativeToolPricing        []NativeToolPricingResponse `json:"nativeToolPricing"`
-	PaymentProviders         []string                    `json:"paymentProviders"`
-	USDToCNYRate             float64                     `json:"usdToCNYRate"`
-	EPayTypes                []PaymentTypeResponse       `json:"epayTypes"`
+	Mode                           string                      `json:"mode"`
+	PrepaidAmountUSD               float64                     `json:"prepaidAmountUSD"`
+	PrepaidAmountNanousd           int64                       `json:"prepaidAmountNanousd"`
+	NativeToolBillingEnabled       bool                        `json:"nativeToolBillingEnabled"`
+	NativeToolPricing              []NativeToolPricingResponse `json:"nativeToolPricing"`
+	FreeModelRateLimitRPM          int                         `json:"freeModelRateLimitRPM"`
+	FreeModelDailyLimit            int                         `json:"freeModelDailyLimit"`
+	FreeModelRateLimitExemptModels []string                    `json:"freeModelRateLimitExemptModels"`
+	PaymentProviders               []string                    `json:"paymentProviders"`
+	USDToCNYRate                   float64                     `json:"usdToCNYRate"`
+	EPayTypes                      []PaymentTypeResponse       `json:"epayTypes"`
 }
 
 // NativeToolPricingResponse 原生工具默认价格响应。
 type NativeToolPricingResponse struct {
-	Provider     string `json:"provider"`
-	ToolKey      string `json:"toolKey"`
-	PriceNanousd int64  `json:"priceNanousd"`
-	Unit         string `json:"unit"`
-	PriceLabel   string `json:"priceLabel"`
-	Billable     bool   `json:"billable"`
+	Provider            string  `json:"provider"`
+	ToolKey             string  `json:"toolKey"`
+	PriceNanousd        int64   `json:"priceNanousd"`
+	PriceUSD            float64 `json:"priceUSD"`
+	DefaultPriceNanousd int64   `json:"defaultPriceNanousd"`
+	DefaultPriceUSD     float64 `json:"defaultPriceUSD"`
+	Unit                string  `json:"unit"`
+	PriceLabel          string  `json:"priceLabel"`
+	Billable            bool    `json:"billable"`
+	Customized          bool    `json:"customized"`
 }
 
 // PaymentTypeResponse 支付类型响应。
@@ -457,12 +474,16 @@ func toNativeToolPricingResponses(items []appbilling.NativeToolPricingView) []Na
 	results := make([]NativeToolPricingResponse, 0, len(items))
 	for _, item := range items {
 		results = append(results, NativeToolPricingResponse{
-			Provider:     strings.TrimSpace(item.Provider),
-			ToolKey:      strings.TrimSpace(item.ToolKey),
-			PriceNanousd: item.PriceNanousd,
-			Unit:         strings.TrimSpace(item.Unit),
-			PriceLabel:   strings.TrimSpace(item.PriceLabel),
-			Billable:     item.Billable,
+			Provider:            strings.TrimSpace(item.Provider),
+			ToolKey:             strings.TrimSpace(item.ToolKey),
+			PriceNanousd:        item.PriceNanousd,
+			PriceUSD:            item.PriceUSD,
+			DefaultPriceNanousd: item.DefaultPriceNanousd,
+			DefaultPriceUSD:     item.DefaultPriceUSD,
+			Unit:                strings.TrimSpace(item.Unit),
+			PriceLabel:          strings.TrimSpace(item.PriceLabel),
+			Billable:            item.Billable,
+			Customized:          item.Customized,
 		})
 	}
 	return results

@@ -3,10 +3,54 @@ package cache
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-redis/redis/v8"
 )
+
+var freeModelRateLimitScript = redis.NewScript(`
+local minute_limit = tonumber(ARGV[3]) or 0
+local daily_limit = tonumber(ARGV[5]) or 0
+
+local minute_exceeded = 0
+local daily_exceeded = 0
+
+if minute_limit > 0 then
+  local now = tonumber(ARGV[1])
+  local window_ms = tonumber(ARGV[2])
+  redis.call('ZREMRANGEBYSCORE', KEYS[1], '0', tostring(now - window_ms))
+  local minute_count = tonumber(redis.call('ZCARD', KEYS[1])) or 0
+  if minute_count >= minute_limit then
+    minute_exceeded = 1
+  end
+end
+
+if daily_limit > 0 then
+  local daily_count = tonumber(redis.call('GET', KEYS[2]) or '0') or 0
+  if daily_count >= daily_limit then
+    daily_exceeded = 1
+  end
+end
+
+if minute_exceeded == 1 or daily_exceeded == 1 then
+  return {0, minute_exceeded, daily_exceeded}
+end
+
+if minute_limit > 0 then
+  redis.call('ZADD', KEYS[1], tonumber(ARGV[1]), ARGV[7])
+  redis.call('EXPIRE', KEYS[1], tonumber(ARGV[4]))
+end
+
+if daily_limit > 0 then
+  redis.call('INCR', KEYS[2])
+  redis.call('EXPIRE', KEYS[2], tonumber(ARGV[6]))
+end
+
+return {1, 0, 0}
+`)
+
+var rateLimitMemberSequence uint64
 
 // rateLimiter 提供基于 Redis 的 HTTP 限流存储能力。
 type rateLimiter struct {
@@ -79,4 +123,61 @@ func (r *rateLimiter) AllowFixedWindow(ctx context.Context, keys []string, limit
 		}
 	}
 	return true, nil
+}
+
+// AllowFreeModelUsage 原子检查并记录免费模型共享池的分钟与每日窗口。
+func (r *rateLimiter) AllowFreeModelUsage(ctx context.Context, userID uint, requestsPerMinute int, dailyLimit int, now time.Time) (bool, bool, bool, error) {
+	if r == nil || r.client == nil || userID == 0 || (requestsPerMinute <= 0 && dailyLimit <= 0) {
+		return true, false, false, nil
+	}
+	if now.IsZero() {
+		now = time.Now()
+	}
+	minuteKey := fmt.Sprintf("ratelimit:free-model:user:%d:minute", userID)
+	dailyKey := fmt.Sprintf("ratelimit:free-model:user:%d:day:%s", userID, now.Format("20060102"))
+	member := fmt.Sprintf("%d:%d", now.UnixMilli(), atomic.AddUint64(&rateLimitMemberSequence, 1))
+	dailyTTL := secondsUntilNextLocalDay(now)
+	raw, err := freeModelRateLimitScript.Run(
+		ctx,
+		r.client,
+		[]string{minuteKey, dailyKey},
+		now.UnixMilli(),
+		time.Minute.Milliseconds(),
+		requestsPerMinute,
+		int((2 * time.Minute).Seconds()),
+		dailyLimit,
+		dailyTTL,
+		member,
+	).Result()
+	if err != nil {
+		return true, false, false, err
+	}
+	values, ok := raw.([]interface{})
+	if !ok || len(values) < 3 {
+		return true, false, false, nil
+	}
+	allowed := redisScriptInt(values[0]) == 1
+	minuteExceeded := redisScriptInt(values[1]) == 1
+	dailyExceeded := redisScriptInt(values[2]) == 1
+	return allowed, minuteExceeded, dailyExceeded, nil
+}
+
+func secondsUntilNextLocalDay(now time.Time) int {
+	nextDay := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
+	ttl := int(nextDay.Sub(now).Seconds())
+	if ttl < 60 {
+		return 60
+	}
+	return ttl
+}
+
+func redisScriptInt(value interface{}) int64 {
+	switch typed := value.(type) {
+	case int64:
+		return typed
+	case int:
+		return int64(typed)
+	default:
+		return 0
+	}
 }

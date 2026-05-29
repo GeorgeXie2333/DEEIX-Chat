@@ -892,7 +892,7 @@ func (r *Repo) GetBillingPrepaidAmountNanousd(ctx context.Context) (int64, error
 	return int64(math.Round(amount * 1000000000)), nil
 }
 
-// GetNativeToolBillingEnabled 查询模型原生工具是否按官方默认价计费。
+// GetNativeToolBillingEnabled 查询模型原生工具是否计费。
 func (r *Repo) GetNativeToolBillingEnabled(ctx context.Context) (bool, error) {
 	var item model.SystemSetting
 	if err := r.db.WithContext(ctx).
@@ -908,6 +908,62 @@ func (r *Repo) GetNativeToolBillingEnabled(ctx context.Context) (bool, error) {
 		return false, repository.ErrInvalidInput
 	}
 	return enabled, nil
+}
+
+// GetNativeToolPricingJSON 查询模型原生工具价格覆盖 JSON。
+func (r *Repo) GetNativeToolPricingJSON(ctx context.Context) (string, error) {
+	var item model.SystemSetting
+	if err := r.db.WithContext(ctx).
+		Where("namespace = ? AND key = ?", "billing", "native_tool_pricing_json").
+		First(&item).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", nil
+		}
+		return "", translateError(err)
+	}
+	return strings.TrimSpace(item.Value), nil
+}
+
+// GetFreeModelRateLimit 查询免费模型共享池限流配置。
+func (r *Repo) GetFreeModelRateLimit(ctx context.Context) (domainbilling.FreeModelRateLimit, error) {
+	items := make([]model.SystemSetting, 0, 3)
+	if err := r.db.WithContext(ctx).
+		Where("namespace = ? AND key IN ?", "billing", []string{"free_model_rate_limit_rpm", "free_model_daily_limit", "free_model_rate_limit_exempt_models"}).
+		Find(&items).Error; err != nil {
+		return domainbilling.FreeModelRateLimit{}, translateError(err)
+	}
+	result := domainbilling.FreeModelRateLimit{}
+	for _, item := range items {
+		switch item.Key {
+		case "free_model_rate_limit_rpm":
+			value, err := parseNonNegativeSettingInt(item.Value)
+			if err != nil {
+				return domainbilling.FreeModelRateLimit{}, err
+			}
+			result.RequestsPerMinute = value
+		case "free_model_daily_limit":
+			value, err := parseNonNegativeSettingInt(item.Value)
+			if err != nil {
+				return domainbilling.FreeModelRateLimit{}, err
+			}
+			result.DailyRequests = value
+		case "free_model_rate_limit_exempt_models":
+			result.ExemptModelNames = domainbilling.ParseModelNameList(item.Value)
+		}
+	}
+	return result, nil
+}
+
+func parseNonNegativeSettingInt(raw string) (int, error) {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return 0, nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed < 0 {
+		return 0, repository.ErrInvalidInput
+	}
+	return parsed, nil
 }
 
 // GetModelPricing 查询模型计费配置。

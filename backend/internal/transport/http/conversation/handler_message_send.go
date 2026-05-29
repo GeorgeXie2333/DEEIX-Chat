@@ -235,6 +235,14 @@ func (h *Handler) recordSendMessageAuditCtx(
 }
 
 func handleSendMessageBillingError(c *gin.Context, err error) {
+	if errors.Is(err, billing.ErrFreeModelRateLimitExceeded) {
+		response.Error(c, http.StatusTooManyRequests, "free model rate limit exceeded")
+		return
+	}
+	if errors.Is(err, billing.ErrFreeModelDailyLimitExceeded) {
+		response.Error(c, http.StatusTooManyRequests, "free model daily limit exceeded")
+		return
+	}
 	if errors.Is(err, billing.ErrUsageBalanceInsufficient) {
 		response.Error(c, http.StatusPaymentRequired, "usage balance is insufficient")
 		return
@@ -256,6 +264,14 @@ func mapBillingStreamError(err error) streamError {
 	if errors.Is(err, billing.ErrModelPricingRequired) {
 		status = http.StatusPaymentRequired
 		message = "model pricing is required"
+	}
+	if errors.Is(err, billing.ErrFreeModelRateLimitExceeded) {
+		status = http.StatusTooManyRequests
+		message = "free model rate limit exceeded"
+	}
+	if errors.Is(err, billing.ErrFreeModelDailyLimitExceeded) {
+		status = http.StatusTooManyRequests
+		message = "free model daily limit exceeded"
 	}
 	code := response.InferErrorCode(status, message)
 	return streamError{
@@ -642,6 +658,14 @@ func (h *Handler) ensureBillingModelAccess(c *gin.Context, conversation *model.C
 		}
 		if errors.Is(err, billing.ErrUsageBalanceInsufficient) {
 			response.Error(c, http.StatusPaymentRequired, "usage balance is insufficient")
+			return err
+		}
+		if errors.Is(err, billing.ErrFreeModelRateLimitExceeded) {
+			response.Error(c, http.StatusTooManyRequests, "free model rate limit exceeded")
+			return err
+		}
+		if errors.Is(err, billing.ErrFreeModelDailyLimitExceeded) {
+			response.Error(c, http.StatusTooManyRequests, "free model daily limit exceeded")
 			return err
 		}
 		response.Error(c, http.StatusInternalServerError, "billing access check failed")

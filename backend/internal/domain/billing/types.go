@@ -1,6 +1,9 @@
 package billing
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 const (
 	// PricingModeToken 表示按 token 用量计费。
@@ -177,6 +180,60 @@ type ModelPricing struct {
 	TieredPricingJSON           string
 	CreatedAt                   time.Time
 	UpdatedAt                   time.Time
+}
+
+// FreeModelRateLimit 表示免费模型共享池限流配置。
+type FreeModelRateLimit struct {
+	RequestsPerMinute int
+	DailyRequests     int
+	ExemptModelNames  []string
+}
+
+// ParseModelNameList 将逗号或换行分隔的平台模型名解析为去重后的列表。
+func ParseModelNameList(raw string) []string {
+	return NormalizeModelNameList(strings.FieldsFunc(raw, func(r rune) bool {
+		return r == ',' || r == '\n' || r == '\r' || r == '\t'
+	}))
+}
+
+// NormalizeModelNameList 清理平台模型名列表，保留首次出现顺序。
+func NormalizeModelNameList(items []string) []string {
+	if len(items) == 0 {
+		return []string{}
+	}
+	results := make([]string, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		name := strings.TrimSpace(item)
+		if name == "" {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		results = append(results, name)
+	}
+	return results
+}
+
+// JoinModelNameList 将平台模型名列表序列化为设置值。
+func JoinModelNameList(items []string) string {
+	return strings.Join(NormalizeModelNameList(items), "\n")
+}
+
+// ContainsModelName 判断列表中是否包含指定平台模型名。
+func ContainsModelName(items []string, modelName string) bool {
+	target := strings.TrimSpace(modelName)
+	if target == "" {
+		return false
+	}
+	for _, item := range items {
+		if strings.TrimSpace(item) == target {
+			return true
+		}
+	}
+	return false
 }
 
 // UsageLedger 表示用量账本。

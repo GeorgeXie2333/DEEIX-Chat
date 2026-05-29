@@ -60,9 +60,13 @@ export type NativeToolPricingDTO = {
   provider: string;
   toolKey: string;
   priceNanousd: number;
+  priceUSD: number;
+  defaultPriceNanousd: number;
+  defaultPriceUSD: number;
   unit: "call" | "search" | string;
   priceLabel: "included" | "notMetered" | string;
   billable: boolean;
+  customized: boolean;
 };
 
 export type BillingConfigData = {
@@ -70,6 +74,9 @@ export type BillingConfigData = {
     mode: BillingMode;
     nativeToolBillingEnabled: boolean;
     nativeToolPricing: NativeToolPricingDTO[];
+    freeModelRateLimitRPM: number;
+    freeModelDailyLimit: number;
+    freeModelRateLimitExemptModels: string[];
     paymentProviders: Array<"stripe" | "epay" | string>;
     usdToCNYRate: number;
     epayTypes: Array<{ name: string; type: string }>;

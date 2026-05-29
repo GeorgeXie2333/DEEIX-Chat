@@ -43,7 +43,11 @@ func defaultSettings() []domainsettings.SystemSetting {
 		// 计费配置
 		{Namespace: "billing", Key: "mode", Value: "self", ValueType: "string", Description: "计费方式：self=自用模式，period=周期计费，usage=按量计费"},
 		{Namespace: "billing", Key: "prepaid_amount_usd", Value: "0", ValueType: "string", Description: "按量调用前要求账户保留的最低预付余额(美元)"},
-		{Namespace: "billing", Key: "native_tool_billing_enabled", Value: "true", ValueType: "bool", Description: "是否按官方默认价格计费模型原生工具调用"},
+		{Namespace: "billing", Key: "native_tool_billing_enabled", Value: "true", ValueType: "bool", Description: "是否按管理员配置价格计费模型原生工具调用"},
+		{Namespace: "billing", Key: "native_tool_pricing_json", Value: "{}", ValueType: "json", Description: "模型原生工具价格覆盖 JSON，key 为工具标识，value 为纳美元单价"},
+		{Namespace: "billing", Key: "free_model_rate_limit_rpm", Value: "0", ValueType: "int", Description: "免费模型每用户每分钟请求数，0表示不限"},
+		{Namespace: "billing", Key: "free_model_daily_limit", Value: "0", ValueType: "int", Description: "免费模型每用户每日请求数，0表示不限"},
+		{Namespace: "billing", Key: "free_model_rate_limit_exempt_models", Value: "", ValueType: "string", Description: "免费模型限流豁免平台模型名，逗号或换行分隔"},
 		{Namespace: "billing", Key: "usd_to_cny_rate", Value: "7.2", ValueType: "string", Description: "美元换人民币支付汇率"},
 		{Namespace: "billing", Key: "payment_providers", Value: "disabled", ValueType: "string", Description: "启用支付渠道，多个用英文逗号分隔：stripe,epay"},
 		{Namespace: "billing", Key: "stripe_publishable_key", Value: "", ValueType: "string", Description: "Stripe Publishable Key"},

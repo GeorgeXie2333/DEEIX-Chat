@@ -7,7 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/extraction"
+	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
 	mineruextract "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/mineru"
@@ -229,6 +231,30 @@ func validatePatchItem(item PatchItem) error {
 		return validateFloatMinMax(value, 0.000001, 1000, key)
 	case "billing:prepaid_amount_usd":
 		return validateFloatMinMax(value, 0, 1000000, key)
+	case "billing:free_model_rate_limit_rpm":
+		return validateIntMinMax(value, 0, 1000000, key)
+	case "billing:free_model_daily_limit":
+		return validateIntMinMax(value, 0, 100000000, key)
+	case "billing:free_model_rate_limit_exempt_models":
+		if err := validateStringMax(value, 20000, key); err != nil {
+			return err
+		}
+		modelNames := domainbilling.ParseModelNameList(value)
+		if len(modelNames) > 500 {
+			return fmt.Errorf("%s must contain at most 500 model names", key)
+		}
+		for _, modelName := range modelNames {
+			if len(modelName) > 256 {
+				return fmt.Errorf("%s contains a model name longer than 256 characters", key)
+			}
+		}
+		return nil
+	case "billing:native_tool_pricing_json":
+		if err := validateStringMax(value, 4000, key); err != nil {
+			return err
+		}
+		_, err := appbilling.ParseNativeToolPricingOverridesJSON(value)
+		return err
 	case "billing:stripe_publishable_key", "billing:stripe_secret_key", "billing:stripe_webhook_secret", "billing:epay_pid", "billing:epay_key":
 		return validateStringMax(value, 512, key)
 	case "billing:epay_types":

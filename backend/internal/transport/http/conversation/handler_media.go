@@ -176,6 +176,14 @@ func (h *Handler) ensureMediaImageBillingModelAccess(c *gin.Context, conversatio
 			response.Error(c, http.StatusPaymentRequired, "usage balance is insufficient")
 			return err
 		}
+		if errors.Is(err, billing.ErrFreeModelRateLimitExceeded) {
+			response.Error(c, http.StatusTooManyRequests, "free model rate limit exceeded")
+			return err
+		}
+		if errors.Is(err, billing.ErrFreeModelDailyLimitExceeded) {
+			response.Error(c, http.StatusTooManyRequests, "free model daily limit exceeded")
+			return err
+		}
 		response.Error(c, http.StatusInternalServerError, "billing access check failed")
 		return err
 	}

@@ -1282,6 +1282,16 @@ definitions:
     type: object
   internal_transport_http_billing.BillingConfigRequest:
     properties:
+      freeModelDailyLimit:
+        minimum: 0
+        type: integer
+      freeModelRateLimitExemptModels:
+        items:
+          type: string
+        type: array
+      freeModelRateLimitRPM:
+        minimum: 0
+        type: integer
       mode:
         enum:
         - self
@@ -1290,6 +1300,10 @@ definitions:
         type: string
       nativeToolBillingEnabled:
         type: boolean
+      nativeToolPricing:
+        items:
+          $ref: '#/definitions/internal_transport_http_billing.NativeToolPricingRequest'
+        type: array
       prepaidAmountUSD:
         minimum: 0
         type: number
@@ -1302,6 +1316,14 @@ definitions:
         items:
           $ref: '#/definitions/internal_transport_http_billing.PaymentTypeResponse'
         type: array
+      freeModelDailyLimit:
+        type: integer
+      freeModelRateLimitExemptModels:
+        items:
+          type: string
+        type: array
+      freeModelRateLimitRPM:
+        type: integer
       mode:
         type: string
       nativeToolBillingEnabled:
@@ -1573,14 +1595,33 @@ definitions:
       updatedAt:
         type: string
     type: object
+  internal_transport_http_billing.NativeToolPricingRequest:
+    properties:
+      priceUSD:
+        minimum: 0
+        type: number
+      toolKey:
+        maxLength: 128
+        type: string
+    required:
+    - toolKey
+    type: object
   internal_transport_http_billing.NativeToolPricingResponse:
     properties:
       billable:
         type: boolean
+      customized:
+        type: boolean
+      defaultPriceNanousd:
+        type: integer
+      defaultPriceUSD:
+        type: number
       priceLabel:
         type: string
       priceNanousd:
         type: integer
+      priceUSD:
+        type: number
       provider:
         type: string
       toolKey:

@@ -11,6 +11,8 @@ var (
 	ErrModelPricingRequired = errors.New("model pricing is required")
 	// ErrInvalidModelPricing 表示模型定价输入非法或目标平台模型不存在。
 	ErrInvalidModelPricing = errors.New("invalid model pricing")
+	// ErrInvalidNativeToolPricing 表示模型原生工具价格输入非法。
+	ErrInvalidNativeToolPricing = errors.New("invalid native tool pricing")
 	// ErrPaymentRequired 付费套餐必须先完成支付。
 	ErrPaymentRequired = errors.New("payment is required")
 	// ErrPaymentProviderUnavailable 支付渠道未配置。
@@ -19,6 +21,10 @@ var (
 	ErrUsageBalanceInsufficient = errors.New("usage balance is insufficient")
 	// ErrInvalidSubscriptionTier 非法订阅套餐。
 	ErrInvalidSubscriptionTier = errors.New("invalid subscription tier")
+	// ErrFreeModelRateLimitExceeded 免费模型分钟请求限流已触发。
+	ErrFreeModelRateLimitExceeded = errors.New("free model rate limit exceeded")
+	// ErrFreeModelDailyLimitExceeded 免费模型每日请求限额已触发。
+	ErrFreeModelDailyLimitExceeded = errors.New("free model daily limit exceeded")
 	// ErrSubscriptionExpiryRequired 付费订阅必须指定到期时间。
 	ErrSubscriptionExpiryRequired = errors.New("subscription expiry required")
 	// ErrInvalidSubscriptionExpiry 非法订阅到期时间。

@@ -8966,6 +8966,20 @@ const docTemplate = `{
                 "mode"
             ],
             "properties": {
+                "freeModelDailyLimit": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "freeModelRateLimitExemptModels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "freeModelRateLimitRPM": {
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "mode": {
                     "type": "string",
                     "enum": [
@@ -8976,6 +8990,12 @@ const docTemplate = `{
                 },
                 "nativeToolBillingEnabled": {
                     "type": "boolean"
+                },
+                "nativeToolPricing": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_billing.NativeToolPricingRequest"
+                    }
                 },
                 "prepaidAmountUSD": {
                     "type": "number",
@@ -8991,6 +9011,18 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/internal_transport_http_billing.PaymentTypeResponse"
                     }
+                },
+                "freeModelDailyLimit": {
+                    "type": "integer"
+                },
+                "freeModelRateLimitExemptModels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "freeModelRateLimitRPM": {
+                    "type": "integer"
                 },
                 "mode": {
                     "type": "string"
@@ -9402,17 +9434,45 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_transport_http_billing.NativeToolPricingRequest": {
+            "type": "object",
+            "required": [
+                "toolKey"
+            ],
+            "properties": {
+                "priceUSD": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "toolKey": {
+                    "type": "string",
+                    "maxLength": 128
+                }
+            }
+        },
         "internal_transport_http_billing.NativeToolPricingResponse": {
             "type": "object",
             "properties": {
                 "billable": {
                     "type": "boolean"
                 },
+                "customized": {
+                    "type": "boolean"
+                },
+                "defaultPriceNanousd": {
+                    "type": "integer"
+                },
+                "defaultPriceUSD": {
+                    "type": "number"
+                },
                 "priceLabel": {
                     "type": "string"
                 },
                 "priceNanousd": {
                     "type": "integer"
+                },
+                "priceUSD": {
+                    "type": "number"
                 },
                 "provider": {
                     "type": "string"

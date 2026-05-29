@@ -2,6 +2,7 @@ package settings
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
@@ -165,6 +166,42 @@ func TestValidateModelOptionPolicySettings(t *testing.T) {
 	}
 	if err := validatePatchItem(PatchItem{Namespace: "chat", Key: "model_option_native_tool_types", Value: `{"anthropic_messages":["unknown_tool"]}`}); err == nil {
 		t.Fatal("expected unsupported native tool type to fail")
+	}
+}
+
+func TestValidateNativeToolPricingSettings(t *testing.T) {
+	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "native_tool_pricing_json", Value: `{"xaiWebSearch":7000000,"openaiShell":0}`}); err != nil {
+		t.Fatalf("expected valid native tool pricing to pass, got %v", err)
+	}
+	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "native_tool_pricing_json", Value: `{"unknownTool":1}`}); err == nil {
+		t.Fatal("expected unknown native tool key to fail")
+	}
+	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "native_tool_pricing_json", Value: `{"xaiWebSearch":-1}`}); err == nil {
+		t.Fatal("expected negative native tool price to fail")
+	}
+	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "native_tool_pricing_json", Value: `{"xaiWebSearch":"bad"}`}); err == nil {
+		t.Fatal("expected non-number native tool price to fail")
+	}
+}
+
+func TestValidateFreeModelRateLimitSettings(t *testing.T) {
+	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "free_model_rate_limit_rpm", Value: "0"}); err != nil {
+		t.Fatalf("expected zero rpm to pass, got %v", err)
+	}
+	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "free_model_daily_limit", Value: "100"}); err != nil {
+		t.Fatalf("expected daily limit to pass, got %v", err)
+	}
+	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "free_model_rate_limit_exempt_models", Value: "gpt-free\nimage-free,trial-free"}); err != nil {
+		t.Fatalf("expected exempt model list to pass, got %v", err)
+	}
+	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "free_model_rate_limit_rpm", Value: "-1"}); err == nil {
+		t.Fatal("expected negative rpm to fail")
+	}
+	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "free_model_daily_limit", Value: "bad"}); err == nil {
+		t.Fatal("expected invalid daily limit to fail")
+	}
+	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "free_model_rate_limit_exempt_models", Value: strings.Repeat("x", 257)}); err == nil {
+		t.Fatal("expected overlong exempt model name to fail")
 	}
 }
 

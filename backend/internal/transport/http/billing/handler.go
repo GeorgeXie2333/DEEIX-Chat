@@ -10,6 +10,7 @@ import (
 
 	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
 	appsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/settings"
+	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
@@ -68,6 +69,10 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 	mode := "self"
 	prepaidAmountUSD := 0.0
 	nativeToolBillingEnabled := true
+	nativeToolPricingJSON := ""
+	freeModelRateLimitRPM := 0
+	freeModelDailyLimit := 0
+	freeModelRateLimitExemptModels := []string{}
 	paymentProviders := []string{}
 	usdToCNYRate := 7.2
 	epayTypes := defaultEPayTypes()
@@ -91,6 +96,18 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 				if parsed, parseErr := strconv.ParseBool(value); parseErr == nil {
 					nativeToolBillingEnabled = parsed
 				}
+			case "native_tool_pricing_json":
+				nativeToolPricingJSON = value
+			case "free_model_rate_limit_rpm":
+				if parsed, parseErr := strconv.Atoi(value); parseErr == nil && parsed >= 0 {
+					freeModelRateLimitRPM = parsed
+				}
+			case "free_model_daily_limit":
+				if parsed, parseErr := strconv.Atoi(value); parseErr == nil && parsed >= 0 {
+					freeModelDailyLimit = parsed
+				}
+			case "free_model_rate_limit_exempt_models":
+				freeModelRateLimitExemptModels = domainbilling.ParseModelNameList(value)
 			case "payment_providers":
 				paymentProviders = normalizePaymentProviders(value)
 			case "usd_to_cny_rate":
@@ -102,15 +119,22 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 			}
 		}
 	}
+	nativeToolPricingOverrides, err := appbilling.ParseNativeToolPricingOverridesJSON(nativeToolPricingJSON)
+	if err != nil {
+		return BillingConfigResponse{}, err
+	}
 	return BillingConfigResponse{
-		Mode:                     mode,
-		PrepaidAmountUSD:         prepaidAmountUSD,
-		PrepaidAmountNanousd:     usdToNanousd(prepaidAmountUSD),
-		NativeToolBillingEnabled: nativeToolBillingEnabled,
-		NativeToolPricing:        toNativeToolPricingResponses(appbilling.ListNativeToolDefaultPricing()),
-		PaymentProviders:         paymentProviders,
-		USDToCNYRate:             usdToCNYRate,
-		EPayTypes:                epayTypes,
+		Mode:                           mode,
+		PrepaidAmountUSD:               prepaidAmountUSD,
+		PrepaidAmountNanousd:           usdToNanousd(prepaidAmountUSD),
+		NativeToolBillingEnabled:       nativeToolBillingEnabled,
+		NativeToolPricing:              toNativeToolPricingResponses(appbilling.ListNativeToolPricing(nativeToolPricingOverrides)),
+		FreeModelRateLimitRPM:          freeModelRateLimitRPM,
+		FreeModelDailyLimit:            freeModelDailyLimit,
+		FreeModelRateLimitExemptModels: freeModelRateLimitExemptModels,
+		PaymentProviders:               paymentProviders,
+		USDToCNYRate:                   usdToCNYRate,
+		EPayTypes:                      epayTypes,
 	}, nil
 }
 
@@ -154,6 +178,44 @@ func (h *Handler) PatchBillingConfig(c *gin.Context) {
 			Value:     strconv.FormatBool(*req.NativeToolBillingEnabled),
 		})
 	}
+	if req.NativeToolPricing != nil {
+		overrides, err := nativeToolPricingOverridesFromRequest(*req.NativeToolPricing)
+		if err != nil {
+			response.ErrorFrom(c, http.StatusBadRequest, err)
+			return
+		}
+		value, err := appbilling.MarshalNativeToolPricingOverridesJSON(overrides)
+		if err != nil {
+			response.ErrorFrom(c, http.StatusBadRequest, err)
+			return
+		}
+		patches = append(patches, appsettings.PatchItem{
+			Namespace: "billing",
+			Key:       "native_tool_pricing_json",
+			Value:     value,
+		})
+	}
+	if req.FreeModelRateLimitRPM != nil {
+		patches = append(patches, appsettings.PatchItem{
+			Namespace: "billing",
+			Key:       "free_model_rate_limit_rpm",
+			Value:     strconv.Itoa(*req.FreeModelRateLimitRPM),
+		})
+	}
+	if req.FreeModelDailyLimit != nil {
+		patches = append(patches, appsettings.PatchItem{
+			Namespace: "billing",
+			Key:       "free_model_daily_limit",
+			Value:     strconv.Itoa(*req.FreeModelDailyLimit),
+		})
+	}
+	if req.FreeModelRateLimitExemptModels != nil {
+		patches = append(patches, appsettings.PatchItem{
+			Namespace: "billing",
+			Key:       "free_model_rate_limit_exempt_models",
+			Value:     domainbilling.JoinModelNameList(*req.FreeModelRateLimitExemptModels),
+		})
+	}
 	if _, err := h.settings.BatchUpdate(c.Request.Context(), patches); err != nil {
 		response.ErrorFrom(c, http.StatusBadRequest, err)
 		return
@@ -167,9 +229,13 @@ func (h *Handler) PatchBillingConfig(c *gin.Context) {
 		"billing_config",
 		"mode",
 		map[string]interface{}{
-			"mode":                        mode,
-			"prepaid_amount_usd":          req.PrepaidAmountUSD,
-			"native_tool_billing_enabled": req.NativeToolBillingEnabled,
+			"mode":                                mode,
+			"prepaid_amount_usd":                  req.PrepaidAmountUSD,
+			"native_tool_billing_enabled":         req.NativeToolBillingEnabled,
+			"native_tool_pricing_updated":         req.NativeToolPricing != nil,
+			"free_model_rate_limit_rpm":           req.FreeModelRateLimitRPM,
+			"free_model_daily_limit":              req.FreeModelDailyLimit,
+			"free_model_rate_limit_exempt_models": req.FreeModelRateLimitExemptModels,
 		},
 	)
 
@@ -179,6 +245,17 @@ func (h *Handler) PatchBillingConfig(c *gin.Context) {
 		return
 	}
 	response.Success(c, BillingConfigDataResponse{Config: config})
+}
+
+func nativeToolPricingOverridesFromRequest(items []NativeToolPricingRequest) (map[string]int64, error) {
+	inputs := make([]appbilling.NativeToolPricingInput, 0, len(items))
+	for _, item := range items {
+		inputs = append(inputs, appbilling.NativeToolPricingInput{
+			ToolKey:  strings.TrimSpace(item.ToolKey),
+			PriceUSD: item.PriceUSD,
+		})
+	}
+	return appbilling.NativeToolPricingOverridesFromUSD(inputs)
 }
 
 // ListPlans godoc

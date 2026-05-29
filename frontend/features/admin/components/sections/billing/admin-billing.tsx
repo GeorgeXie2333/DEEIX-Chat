@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Copy, Download, Pencil, Save, Upload } from "lucide-react";
+import { Copy, Download, Pencil, RotateCcw, Save, Upload } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -48,7 +48,7 @@ import {
   updateAdminBillingPlan,
   upsertAdminModelPricing,
 } from "@/features/admin/api";
-import type { AdminBillingMode, AdminBillingPlanDTO, AdminModelPricingDTO, NativeToolPricingDTO } from "@/features/admin/api/billing.types";
+import type { AdminBillingMode, AdminBillingPlanDTO, AdminModelPricingDTO, NativeToolPricingDTO, NativeToolPricingUpdateDTO } from "@/features/admin/api/billing.types";
 import type { AdminLLMModelDTO } from "@/features/admin/api/llm.types";
 import { resolveErrorMessage } from "@/features/admin/types/llm";
 import {
@@ -84,11 +84,54 @@ import { LobeHubIcon } from "@/shared/components/lobehub-icon";
 import { configuredSettingsMap } from "@/shared/lib/settings-meta";
 import { KNOWN_VENDOR_OPTIONS, resolveLobeHubIconURL, resolveModelIdentity } from "@/shared/lib/model-identity";
 
+type NativeToolPricingFormState = Record<string, { price: string; customized: boolean }>;
+
 function formatBillingAmountInput(value: number | null | undefined): string {
   if (!Number.isFinite(value ?? NaN) || (value ?? 0) <= 0) {
     return "0";
   }
   return String(value);
+}
+
+function formatLimitInput(value: number | null | undefined): string {
+  if (!Number.isFinite(value ?? NaN) || (value ?? 0) <= 0) {
+    return "0";
+  }
+  return String(Math.floor(value ?? 0));
+}
+
+function parseLimitInput(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
+  }
+  return Math.floor(parsed);
+}
+
+function normalizeModelNameList(items: string[]): string[] {
+  const results: string[] = [];
+  const seen = new Set<string>();
+  for (const item of items) {
+    const name = item.trim();
+    if (!name || seen.has(name)) {
+      continue;
+    }
+    seen.add(name);
+    results.push(name);
+  }
+  return results;
+}
+
+function parseModelNameText(value: string): string[] {
+  return normalizeModelNameList(value.split(/[,\n\r\t]+/));
+}
+
+function formatModelNameList(items: string[] | null | undefined): string {
+  return normalizeModelNameList(items ?? []).join("\n");
+}
+
+function normalizeModelNameText(value: string): string {
+  return parseModelNameText(value).join("\n");
 }
 
 function modelPricingExportFilename(): string {
@@ -104,6 +147,53 @@ function formatNativeToolPriceUSD(priceNanousd: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 4,
   })}`;
+}
+
+function formatNativeToolPriceInput(value: number | null | undefined): string {
+  if (!Number.isFinite(value ?? NaN) || (value ?? 0) <= 0) {
+    return "0";
+  }
+  return (value ?? 0).toLocaleString("en-US", {
+    useGrouping: false,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 9,
+  });
+}
+
+function nativeToolPriceUSD(row: NativeToolPricingDTO): number {
+  if (Number.isFinite(row.priceUSD)) {
+    return row.priceUSD;
+  }
+  return row.priceNanousd / 1_000_000_000;
+}
+
+function nativeToolDefaultPriceUSD(row: NativeToolPricingDTO): number {
+  if (Number.isFinite(row.defaultPriceUSD)) {
+    return row.defaultPriceUSD;
+  }
+  return row.defaultPriceNanousd / 1_000_000_000;
+}
+
+function buildNativeToolPricingFormState(items: NativeToolPricingDTO[]): NativeToolPricingFormState {
+  return items.reduce<NativeToolPricingFormState>((acc, item) => {
+    acc[item.toolKey] = {
+      price: formatNativeToolPriceInput(nativeToolPriceUSD(item)),
+      customized: Boolean(item.customized),
+    };
+    return acc;
+  }, {});
+}
+
+function nativeToolPricingFormChanged(current: NativeToolPricingFormState, saved: NativeToolPricingFormState): boolean {
+  const keys = new Set([...Object.keys(current), ...Object.keys(saved)]);
+  for (const key of keys) {
+    const currentItem = current[key] ?? { price: "0", customized: false };
+    const savedItem = saved[key] ?? { price: "0", customized: false };
+    if (currentItem.price.trim() !== savedItem.price.trim() || currentItem.customized !== savedItem.customized) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function downloadJSONFile(filename: string, value: unknown): void {
@@ -146,9 +236,17 @@ export function AdminBillingPage() {
   const [billingMode, setBillingMode] = React.useState<AdminBillingMode>("self");
   const [prepaidAmount, setPrepaidAmount] = React.useState("0");
   const [savedPrepaidAmount, setSavedPrepaidAmount] = React.useState("0");
+  const [freeModelRateLimitRPM, setFreeModelRateLimitRPM] = React.useState("0");
+  const [savedFreeModelRateLimitRPM, setSavedFreeModelRateLimitRPM] = React.useState("0");
+  const [freeModelDailyLimit, setFreeModelDailyLimit] = React.useState("0");
+  const [savedFreeModelDailyLimit, setSavedFreeModelDailyLimit] = React.useState("0");
+  const [freeModelRateLimitExemptModels, setFreeModelRateLimitExemptModels] = React.useState("");
+  const [savedFreeModelRateLimitExemptModels, setSavedFreeModelRateLimitExemptModels] = React.useState("");
   const [nativeToolBillingEnabled, setNativeToolBillingEnabled] = React.useState(true);
   const [savedNativeToolBillingEnabled, setSavedNativeToolBillingEnabled] = React.useState(true);
   const [nativeToolPricing, setNativeToolPricing] = React.useState<NativeToolPricingDTO[]>([]);
+  const [nativeToolPricingForm, setNativeToolPricingForm] = React.useState<NativeToolPricingFormState>({});
+  const [savedNativeToolPricingForm, setSavedNativeToolPricingForm] = React.useState<NativeToolPricingFormState>({});
   const [nativeToolBillingSaving, setNativeToolBillingSaving] = React.useState(false);
   const [paymentSettings, setPaymentSettings] = React.useState<PaymentSettings>(PAYMENT_DEFAULTS);
   const [savedPaymentSettings, setSavedPaymentSettings] = React.useState<PaymentSettings>(PAYMENT_DEFAULTS);
@@ -187,12 +285,25 @@ export function AdminBillingPage() {
       const nextPaymentSettings = flattenPaymentSettings(billingSettings);
       const nextPaymentConfiguredMap = configuredSettingsMap({ billing: billingSettings });
       const nextPrepaidAmount = formatBillingAmountInput(referenceData.billingConfig.config.prepaidAmountUSD);
+      const nextFreeModelRateLimitRPM = formatLimitInput(referenceData.billingConfig.config.freeModelRateLimitRPM);
+      const nextFreeModelDailyLimit = formatLimitInput(referenceData.billingConfig.config.freeModelDailyLimit);
+      const nextFreeModelRateLimitExemptModels = formatModelNameList(referenceData.billingConfig.config.freeModelRateLimitExemptModels);
       setBillingMode(referenceData.billingConfig.config.mode);
       setNativeToolBillingEnabled(Boolean(referenceData.billingConfig.config.nativeToolBillingEnabled));
       setSavedNativeToolBillingEnabled(Boolean(referenceData.billingConfig.config.nativeToolBillingEnabled));
-      setNativeToolPricing(referenceData.billingConfig.config.nativeToolPricing ?? []);
+      const nextNativeToolPricing = referenceData.billingConfig.config.nativeToolPricing ?? [];
+      const nextNativeToolPricingForm = buildNativeToolPricingFormState(nextNativeToolPricing);
+      setNativeToolPricing(nextNativeToolPricing);
+      setNativeToolPricingForm(nextNativeToolPricingForm);
+      setSavedNativeToolPricingForm(nextNativeToolPricingForm);
       setPrepaidAmount(nextPrepaidAmount);
       setSavedPrepaidAmount(nextPrepaidAmount);
+      setFreeModelRateLimitRPM(nextFreeModelRateLimitRPM);
+      setSavedFreeModelRateLimitRPM(nextFreeModelRateLimitRPM);
+      setFreeModelDailyLimit(nextFreeModelDailyLimit);
+      setSavedFreeModelDailyLimit(nextFreeModelDailyLimit);
+      setFreeModelRateLimitExemptModels(nextFreeModelRateLimitExemptModels);
+      setSavedFreeModelRateLimitExemptModels(nextFreeModelRateLimitExemptModels);
       setPlans(referenceData.billingPlans);
       setModels(referenceData.models);
       setPricingItems(referenceData.modelPricing);
@@ -265,15 +376,23 @@ export function AdminBillingPage() {
   );
   const paymentProviders = React.useMemo(() => normalizePaymentProviders(paymentSettings.payment_providers), [paymentSettings.payment_providers]);
   const prepaidAmountChanged = prepaidAmount.trim() !== savedPrepaidAmount.trim();
+  const freeModelRateLimitChanged =
+    freeModelRateLimitRPM.trim() !== savedFreeModelRateLimitRPM.trim() ||
+    freeModelDailyLimit.trim() !== savedFreeModelDailyLimit.trim() ||
+    normalizeModelNameText(freeModelRateLimitExemptModels) !== normalizeModelNameText(savedFreeModelRateLimitExemptModels);
   const nativeToolBillingChanged = nativeToolBillingEnabled !== savedNativeToolBillingEnabled;
-  const billingConfigActions = billingMode !== "self" && prepaidAmountChanged ? (
+  const nativeToolPricingChanged = React.useMemo(
+    () => nativeToolPricingFormChanged(nativeToolPricingForm, savedNativeToolPricingForm),
+    [nativeToolPricingForm, savedNativeToolPricingForm],
+  );
+  const billingConfigActions = ((billingMode !== "self" && prepaidAmountChanged) || freeModelRateLimitChanged) ? (
     <Button
       type="button"
       size="sm"
       disabled={loading || saving}
-      onClick={() => void handlePrepaidAmountSave()}
+      onClick={() => void handleBillingConfigSave()}
     >
-            {saving ? <SpinnerLabel>{tActions("saving")}</SpinnerLabel> : (
+      {saving ? <SpinnerLabel>{tActions("saving")}</SpinnerLabel> : (
         <>
           <Save className="size-3.5" />
           {tActions("save")}
@@ -281,7 +400,7 @@ export function AdminBillingPage() {
       )}
     </Button>
   ) : null;
-  const toolPricingActions = nativeToolBillingChanged ? (
+  const toolPricingActions = nativeToolBillingChanged || nativeToolPricingChanged ? (
     <Button
       type="button"
       size="sm"
@@ -353,6 +472,26 @@ export function AdminBillingPage() {
 
   function updatePaymentSetting(key: keyof PaymentSettings, value: string) {
     setPaymentSettings((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateNativeToolPrice(toolKey: string, value: string) {
+    setNativeToolPricingForm((current) => ({
+      ...current,
+      [toolKey]: {
+        price: value,
+        customized: true,
+      },
+    }));
+  }
+
+  function restoreNativeToolDefault(row: NativeToolPricingDTO) {
+    setNativeToolPricingForm((current) => ({
+      ...current,
+      [row.toolKey]: {
+        price: formatNativeToolPriceInput(nativeToolDefaultPriceUSD(row)),
+        customized: false,
+      },
+    }));
   }
 
   function setPaymentProviderEnabled(provider: PaymentProvider, enabled: boolean) {
@@ -428,6 +567,27 @@ export function AdminBillingPage() {
   }
 
   async function handleNativeToolBillingSave() {
+    const nativeToolPricingPayload: NativeToolPricingUpdateDTO[] = [];
+    for (const row of nativeToolPricing) {
+      const formItem = nativeToolPricingForm[row.toolKey] ?? {
+        price: formatNativeToolPriceInput(nativeToolPriceUSD(row)),
+        customized: Boolean(row.customized),
+      };
+      if (!formItem.customized) {
+        continue;
+      }
+      if (formItem.price.trim() === "") {
+        toast.error(t("toast.nativeToolPricingInvalid"), { description: t("toast.nativeToolPricingInvalidDescription") });
+        return;
+      }
+      const priceUSD = Number(formItem.price);
+      if (!Number.isFinite(priceUSD) || priceUSD < 0) {
+        toast.error(t("toast.nativeToolPricingInvalid"), { description: t("toast.nativeToolPricingInvalidDescription") });
+        return;
+      }
+      nativeToolPricingPayload.push({ toolKey: row.toolKey, priceUSD });
+    }
+
     setNativeToolBillingSaving(true);
     try {
       const token = await resolveAccessToken();
@@ -438,11 +598,16 @@ export function AdminBillingPage() {
       const result = await patchAdminBillingConfig(token, {
         mode: billingMode,
         nativeToolBillingEnabled,
+        nativeToolPricing: nativeToolPricingPayload,
       });
       const savedValue = Boolean(result.config.nativeToolBillingEnabled);
+      const nextNativeToolPricing = result.config.nativeToolPricing ?? nativeToolPricing;
+      const nextNativeToolPricingForm = buildNativeToolPricingFormState(nextNativeToolPricing);
       setNativeToolBillingEnabled(savedValue);
       setSavedNativeToolBillingEnabled(savedValue);
-      setNativeToolPricing(result.config.nativeToolPricing ?? nativeToolPricing);
+      setNativeToolPricing(nextNativeToolPricing);
+      setNativeToolPricingForm(nextNativeToolPricingForm);
+      setSavedNativeToolPricingForm(nextNativeToolPricingForm);
       invalidateAdminReferenceDataCache();
       toast.success(t("toast.nativeToolBillingSaved"));
     } catch (error) {
@@ -452,12 +617,15 @@ export function AdminBillingPage() {
     }
   }
 
-  async function handlePrepaidAmountSave() {
+  async function handleBillingConfigSave() {
     const amount = Number(prepaidAmount);
     if (!Number.isFinite(amount) || amount < 0) {
       toast.error(t("toast.prepaidInvalid"), { description: t("toast.prepaidInvalidDescription") });
       return;
     }
+    const nextFreeModelRateLimitRPM = parseLimitInput(freeModelRateLimitRPM);
+    const nextFreeModelDailyLimit = parseLimitInput(freeModelDailyLimit);
+    const nextFreeModelRateLimitExemptModels = parseModelNameText(freeModelRateLimitExemptModels);
     setSaving(true);
     try {
       const token = await resolveAccessToken();
@@ -468,14 +636,26 @@ export function AdminBillingPage() {
       const result = await patchAdminBillingConfig(token, {
         mode: billingMode,
         prepaidAmountUSD: amount,
+        freeModelRateLimitRPM: nextFreeModelRateLimitRPM,
+        freeModelDailyLimit: nextFreeModelDailyLimit,
+        freeModelRateLimitExemptModels: nextFreeModelRateLimitExemptModels,
       });
       const nextAmount = formatBillingAmountInput(result.config.prepaidAmountUSD);
+      const savedRPM = formatLimitInput(result.config.freeModelRateLimitRPM);
+      const savedDailyLimit = formatLimitInput(result.config.freeModelDailyLimit);
+      const savedExemptModels = formatModelNameList(result.config.freeModelRateLimitExemptModels);
       setPrepaidAmount(nextAmount);
       setSavedPrepaidAmount(nextAmount);
+      setFreeModelRateLimitRPM(savedRPM);
+      setSavedFreeModelRateLimitRPM(savedRPM);
+      setFreeModelDailyLimit(savedDailyLimit);
+      setSavedFreeModelDailyLimit(savedDailyLimit);
+      setFreeModelRateLimitExemptModels(savedExemptModels);
+      setSavedFreeModelRateLimitExemptModels(savedExemptModels);
       invalidateAdminReferenceDataCache();
-      toast.success(t("toast.prepaidSaved"));
+      toast.success(t("toast.billingConfigSaved"));
     } catch (error) {
-      toast.error(t("toast.prepaidSaveFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.billingConfigSaveFailed"), { description: resolveErrorMessage(error) });
     } finally {
       setSaving(false);
     }
@@ -865,6 +1045,58 @@ export function AdminBillingPage() {
               </SettingsFieldRow>
             </SettingsFieldItem>
           ) : null}
+          <SettingsFieldItem index={billingMode !== "self" ? 2 : 1}>
+            <SettingsFieldRow
+              title={t("billingConfig.freeModelRateLimitRPM")}
+              description={t("billingConfig.freeModelRateLimitRPMDescription")}
+            >
+              <div className="w-full">
+                <Input
+                  type="number"
+                  min={0}
+                  step="1"
+                  value={freeModelRateLimitRPM}
+                  className="text-right"
+                  disabled={loading || saving}
+                  onChange={(event) => setFreeModelRateLimitRPM(event.target.value)}
+                />
+              </div>
+            </SettingsFieldRow>
+          </SettingsFieldItem>
+          <SettingsFieldItem index={billingMode !== "self" ? 3 : 2}>
+            <SettingsFieldRow
+              title={t("billingConfig.freeModelDailyLimit")}
+              description={t("billingConfig.freeModelDailyLimitDescription")}
+            >
+              <div className="w-full">
+                <Input
+                  type="number"
+                  min={0}
+                  step="1"
+                  value={freeModelDailyLimit}
+                  className="text-right"
+                  disabled={loading || saving}
+                  onChange={(event) => setFreeModelDailyLimit(event.target.value)}
+                />
+              </div>
+            </SettingsFieldRow>
+          </SettingsFieldItem>
+          <SettingsFieldItem index={billingMode !== "self" ? 4 : 3}>
+            <SettingsFieldRow
+              title={t("billingConfig.freeModelRateLimitExemptModels")}
+              description={t("billingConfig.freeModelRateLimitExemptModelsDescription")}
+            >
+              <div className="w-full">
+                <Textarea
+                  value={freeModelRateLimitExemptModels}
+                  className="h-24 w-full resize-none overflow-y-auto font-mono text-xs [field-sizing:fixed]"
+                  disabled={loading || saving}
+                  spellCheck={false}
+                  onChange={(event) => setFreeModelRateLimitExemptModels(event.target.value)}
+                />
+              </div>
+            </SettingsFieldRow>
+          </SettingsFieldItem>
         </SettingsFieldList>
       </SettingsSection>
 
@@ -1088,21 +1320,55 @@ export function AdminBillingPage() {
               <TableRow>
                 <TableHead>{t("toolPricing.provider")}</TableHead>
                 <TableHead>{t("toolPricing.tool")}</TableHead>
+                <TableHead className="text-right">{t("toolPricing.defaultPrice")}</TableHead>
                 <TableHead className="text-right">{t("toolPricing.price")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {nativeToolPricing.map((row) => (
-                <TableRow key={`${row.provider}-${row.toolKey}`}>
-                  <TableCell className="py-1.5 text-xs text-muted-foreground">{row.provider}</TableCell>
-                  <TableCell className="py-1.5 text-xs text-foreground">{t(`toolPricing.tools.${row.toolKey}`)}</TableCell>
-                  <TableCell className="py-1.5 text-right font-mono text-xs text-muted-foreground">
-                    {row.billable && row.priceNanousd > 0
-                      ? `${formatNativeToolPriceUSD(row.priceNanousd)} / ${t(`toolPricing.units.${row.unit || "call"}`)}`
-                      : t(`toolPricing.prices.${row.priceLabel || "notMetered"}`)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {nativeToolPricing.map((row) => {
+                const formItem = nativeToolPricingForm[row.toolKey] ?? {
+                  price: formatNativeToolPriceInput(nativeToolPriceUSD(row)),
+                  customized: Boolean(row.customized),
+                };
+                const defaultPrice = row.defaultPriceNanousd > 0
+                  ? `${formatNativeToolPriceUSD(row.defaultPriceNanousd)} / ${t(`toolPricing.units.${row.unit || "call"}`)}`
+                  : t(`toolPricing.prices.${row.priceLabel || "notMetered"}`);
+                return (
+                  <TableRow key={`${row.provider}-${row.toolKey}`}>
+                    <TableCell className="py-1.5 text-xs text-muted-foreground">{row.provider}</TableCell>
+                    <TableCell className="py-1.5 text-xs text-foreground">{t(`toolPricing.tools.${row.toolKey}`)}</TableCell>
+                    <TableCell className="py-1.5 text-right font-mono text-xs text-muted-foreground">
+                      {defaultPrice}
+                    </TableCell>
+                    <TableCell className="py-1.5">
+                      <div className="flex justify-end gap-1.5">
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.000001"
+                          value={formItem.price}
+                          className="h-8 w-32 text-right font-mono text-xs"
+                          disabled={loading || nativeToolBillingSaving}
+                          aria-label={t("toolPricing.price")}
+                          onChange={(event) => updateNativeToolPrice(row.toolKey, event.target.value)}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          className="h-8 w-8 text-muted-foreground shadow-none"
+                          disabled={loading || nativeToolBillingSaving || !formItem.customized}
+                          onClick={() => restoreNativeToolDefault(row)}
+                          aria-label={t("toolPricing.restoreDefault")}
+                          title={t("toolPricing.restoreDefault")}
+                        >
+                          <RotateCcw className="size-3.5 stroke-1" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           <p className="text-[11px] leading-5 text-muted-foreground">{t("toolPricing.note")}</p>

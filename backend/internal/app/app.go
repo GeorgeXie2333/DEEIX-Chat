@@ -144,7 +144,9 @@ func NewApp() (*App, error) {
 	userRepo := userrepo.NewRepo(db)
 	userService := user.NewService(userRepo)
 	billingRepo := billingrepo.NewRepo(db)
+	rateLimiter := platformcache.NewRateLimiter(redisClient)
 	billingService := billing.NewService(billingRepo)
+	billingService.SetFreeModelRateLimiter(rateLimiter)
 	billingService.SetAuditWriter(auditService)
 	billingHandler := billinghttp.NewHandler(billingService, settingsService, runtimeCfg)
 	billingModule := billinghttp.NewModule(billingHandler)
@@ -231,7 +233,6 @@ func NewApp() (*App, error) {
 	userSettingsModule := usersettingshttp.NewModule(userSettingsHandler)
 
 	hc := newHealthChecker(db, redisClient)
-	rateLimiter := platformcache.NewRateLimiter(redisClient)
 	engine, err := platformhttp.NewEngine(runtimeCfg, log, platformhttp.Modules{
 		Auth:         authModule,
 		AuthService:  authService,

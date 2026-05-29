@@ -87,9 +87,18 @@ export type NativeToolPricingDTO = {
   provider: string;
   toolKey: string;
   priceNanousd: number;
+  priceUSD: number;
+  defaultPriceNanousd: number;
+  defaultPriceUSD: number;
   unit: "call" | "search" | string;
   priceLabel: "included" | "notMetered" | string;
   billable: boolean;
+  customized: boolean;
+};
+
+export type NativeToolPricingUpdateDTO = {
+  toolKey: string;
+  priceUSD: number;
 };
 
 export type AdminBillingConfigDTO = {
@@ -98,6 +107,9 @@ export type AdminBillingConfigDTO = {
   prepaidAmountNanousd: number;
   nativeToolBillingEnabled: boolean;
   nativeToolPricing: NativeToolPricingDTO[];
+  freeModelRateLimitRPM: number;
+  freeModelDailyLimit: number;
+  freeModelRateLimitExemptModels: string[];
   paymentProviders: Array<"stripe" | "epay" | string>;
   usdToCNYRate: number;
   epayTypes: Array<{ name: string; type: string }>;
@@ -107,6 +119,10 @@ export type UpdateAdminBillingConfigRequest = {
   mode: AdminBillingMode;
   prepaidAmountUSD?: number;
   nativeToolBillingEnabled?: boolean;
+  nativeToolPricing?: NativeToolPricingUpdateDTO[];
+  freeModelRateLimitRPM?: number;
+  freeModelDailyLimit?: number;
+  freeModelRateLimitExemptModels?: string[];
 };
 
 export type AdminBillingConfigData = {
