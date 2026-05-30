@@ -165,6 +165,80 @@ func buildGeminiRequestBody(input GenerateInput) (map[string]interface{}, error)
 	return payload, nil
 }
 
+func withGeminiThoughtSummaryDefault(input GenerateInput) GenerateInput {
+	if geminiIncludeThoughtsConfigured(input.Options) {
+		return input
+	}
+	options := cloneGeminiOptions(input.Options)
+	thinkingConfig := cloneGeminiOptionMap(options["thinkingConfig"])
+	thinkingConfig["includeThoughts"] = true
+	options["thinkingConfig"] = thinkingConfig
+	input.Options = options
+	return input
+}
+
+func geminiIncludeThoughtsConfigured(options map[string]interface{}) bool {
+	if len(options) == 0 {
+		return false
+	}
+	for _, key := range []string{"includeThoughts", "include_thoughts"} {
+		if _, ok := options[key]; ok {
+			return true
+		}
+	}
+	if _, ok := options["thinking"].(bool); ok {
+		return true
+	}
+	if hasGeminiIncludeThoughts(asMap(options["thinkingConfig"])) {
+		return true
+	}
+	if hasGeminiIncludeThoughts(asMap(options["thinking"])) {
+		return true
+	}
+	generationConfig := asMap(options["generationConfig"])
+	if len(generationConfig) == 0 {
+		generationConfig = asMap(options["generation_config"])
+	}
+	return hasGeminiIncludeThoughts(asMap(generationConfig["thinkingConfig"])) ||
+		hasGeminiIncludeThoughts(asMap(generationConfig["thinking_config"]))
+}
+
+func hasGeminiIncludeThoughts(payload map[string]interface{}) bool {
+	if len(payload) == 0 {
+		return false
+	}
+	if _, ok := payload["includeThoughts"]; ok {
+		return true
+	}
+	if _, ok := payload["include_thoughts"]; ok {
+		return true
+	}
+	if _, ok := payload["type"]; ok {
+		return true
+	}
+	return false
+}
+
+func cloneGeminiOptions(options map[string]interface{}) map[string]interface{} {
+	if len(options) == 0 {
+		return map[string]interface{}{}
+	}
+	cloned := make(map[string]interface{}, len(options)+1)
+	for key, value := range options {
+		cloned[key] = value
+	}
+	return cloned
+}
+
+func cloneGeminiOptionMap(value interface{}) map[string]interface{} {
+	source := asMap(value)
+	cloned := make(map[string]interface{}, len(source)+1)
+	for key, item := range source {
+		cloned[key] = item
+	}
+	return cloned
+}
+
 func geminiProtectedProviderOptionKeys() []string {
 	return []string{
 		"budget_tokens",
@@ -648,7 +722,7 @@ func (c *Client) generateGemini(
 	base := geminiBaseURL(route)
 	requestURL := buildGeminiGenerateURL(base, route.UpstreamModel)
 
-	requestBody, err := buildGeminiRequestBody(input)
+	requestBody, err := buildGeminiRequestBody(withGeminiThoughtSummaryDefault(input))
 	if err != nil {
 		return nil, err
 	}
@@ -734,12 +808,12 @@ func extractGeminiReasoning(parsed map[string]interface{}) *ReasoningOutput {
 		if !ok || !thought {
 			continue
 		}
-		result.Text += extractReasoningDeltaText(part)
+		result.Summary += extractReasoningDeltaText(part)
 		if signature := strings.TrimSpace(getString(part["thoughtSignature"])); signature != "" {
 			result.Signature = signature
 		}
 	}
-	if result.Text == "" && result.Signature == "" {
+	if result.Summary == "" && result.Signature == "" {
 		return nil
 	}
 	return result
@@ -825,7 +899,7 @@ func (c *Client) generateGeminiStream(
 	base := geminiBaseURL(route)
 	requestURL := buildGeminiStreamURL(base, route.UpstreamModel)
 
-	requestBody, err := buildGeminiRequestBody(input)
+	requestBody, err := buildGeminiRequestBody(withGeminiThoughtSummaryDefault(input))
 	if err != nil {
 		return nil, err
 	}
@@ -948,7 +1022,7 @@ func applyGeminiStreamChunk(
 			}
 			reasoning := &ReasoningDelta{
 				EventType: "google.generate_content",
-				Kind:      "content_text",
+				Kind:      "summary_text",
 				Text:      think,
 				Signature: strings.TrimSpace(getString(part["thoughtSignature"])),
 			}

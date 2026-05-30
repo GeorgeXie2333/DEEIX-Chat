@@ -146,6 +146,9 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T)
 	if !containsString(normalized["gemini_generate_content"], "thinkingConfig.thinkingLevel") {
 		t.Fatalf("expected normalized gemini allowlist to include thinkingConfig.thinkingLevel, got %#v", normalized["gemini_generate_content"])
 	}
+	if !containsString(normalized["gemini_generate_content"], "thinkingConfig.includeThoughts") {
+		t.Fatalf("expected normalized gemini allowlist to include thinkingConfig.includeThoughts, got %#v", normalized["gemini_generate_content"])
+	}
 	if !containsString(normalized["openai_video_generations"], "seconds") || !containsString(normalized["openai_video_generations"], "size") {
 		t.Fatalf("expected normalized OpenAI video allowlist to include seconds and size, got %#v", normalized["openai_video_generations"])
 	}

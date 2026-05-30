@@ -16,7 +16,7 @@ func TestParseGeminiResponseReasoningAndCitations(t *testing.T) {
 			{
 				"content": {
 					"parts": [
-						{"text": "internal reasoning", "thought": true, "thoughtSignature": "sig-1"},
+						{"text": "thought summary", "thought": true, "thoughtSignature": "sig-1"},
 						{"text": "final answer"}
 					]
 				},
@@ -40,7 +40,7 @@ func TestParseGeminiResponseReasoningAndCitations(t *testing.T) {
 	if result.Text != "final answer" {
 		t.Fatalf("expected final answer without thought text, got %#v", result.Text)
 	}
-	if result.Reasoning == nil || result.Reasoning.Text != "internal reasoning" || result.Reasoning.Signature != "sig-1" {
+	if result.Reasoning == nil || result.Reasoning.Summary != "thought summary" || result.Reasoning.Signature != "sig-1" {
 		t.Fatalf("expected Gemini reasoning output, got %#v", result.Reasoning)
 	}
 	if len(result.Citations) != 3 || result.Citations[0] != "https://example.com/a" || result.Citations[2] != "https://example.com/c" {
@@ -51,6 +51,7 @@ func TestParseGeminiResponseReasoningAndCitations(t *testing.T) {
 func TestApplyGeminiStreamChunkStoresReasoningAndCitations(t *testing.T) {
 	result := &GenerateOutput{ToolCalls: make([]ToolCall, 0)}
 	var reasoningText string
+	var reasoningKind string
 	err := applyGeminiStreamChunk(mustDecodeObject(t, `{
 		"responseId": "gemini-stream-1",
 		"candidates": [
@@ -71,6 +72,7 @@ func TestApplyGeminiStreamChunkStoresReasoningAndCitations(t *testing.T) {
 	}`), result, func(event GenerateStreamEvent) error {
 		if event.Reasoning != nil {
 			reasoningText += event.Reasoning.Text
+			reasoningKind = event.Reasoning.Kind
 		}
 		return nil
 	})
@@ -80,11 +82,87 @@ func TestApplyGeminiStreamChunkStoresReasoningAndCitations(t *testing.T) {
 	if result.ResponseID != "gemini-stream-1" || result.Text != "answer" {
 		t.Fatalf("expected response id and answer text, got %#v", result)
 	}
-	if reasoningText != "think" || result.Reasoning == nil || result.Reasoning.Text != "think" || result.Reasoning.Signature != "sig-stream" {
+	if reasoningText != "think" || result.Reasoning == nil || result.Reasoning.Summary != "think" || result.Reasoning.Signature != "sig-stream" {
 		t.Fatalf("expected stored and emitted reasoning, got text=%q result=%#v", reasoningText, result.Reasoning)
+	}
+	if reasoningKind != "summary_text" {
+		t.Fatalf("expected Gemini thoughts to be treated as summaries, got kind=%q result=%#v", reasoningKind, result.Reasoning)
 	}
 	if len(result.Citations) != 1 || result.Citations[0] != "https://example.com/source" {
 		t.Fatalf("expected stream citations, got %#v", result.Citations)
+	}
+}
+
+func TestGeminiGenerateRequestsThoughtSummariesByDefault(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1beta/models/gemini-2.0-flash:generateContent" {
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
+		var requestBody map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		generationConfig := asMap(requestBody["generationConfig"])
+		thinkingConfig := asMap(generationConfig["thinkingConfig"])
+		if thinkingConfig["includeThoughts"] != true {
+			t.Fatalf("expected Gemini thought summaries enabled by default, got %#v", requestBody)
+		}
+		if thinkingConfig["thinkingLevel"] != "low" {
+			t.Fatalf("expected existing Gemini thinking config to be preserved, got %#v", thinkingConfig)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"candidates":[{"content":{"parts":[{"text":"summary","thought":true},{"text":"answer"}]}}]}`))
+	}))
+	defer server.Close()
+
+	output, err := NewClient().Generate(context.Background(), RouteConfig{
+		Protocol:      AdapterGoogleGenerateContent,
+		BaseURL:       server.URL,
+		UpstreamModel: "gemini-2.0-flash",
+	}, GenerateInput{
+		Messages: []Message{{Role: "user", Content: "hello"}},
+		Options: map[string]interface{}{
+			"thinkingConfig": map[string]interface{}{"thinkingLevel": "low"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("gemini generate: %v", err)
+	}
+	if output.Text != "answer" || output.Reasoning == nil || output.Reasoning.Summary != "summary" {
+		t.Fatalf("expected answer plus thought summary, got %#v", output)
+	}
+}
+
+func TestGeminiGenerateRespectsExplicitIncludeThoughtsFalse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var requestBody map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		generationConfig := asMap(requestBody["generationConfig"])
+		thinkingConfig := asMap(generationConfig["thinkingConfig"])
+		if thinkingConfig["includeThoughts"] != false {
+			t.Fatalf("expected explicit includeThoughts=false to be preserved, got %#v", requestBody)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"candidates":[{"content":{"parts":[{"text":"answer"}]}}]}`))
+	}))
+	defer server.Close()
+
+	_, err := NewClient().Generate(context.Background(), RouteConfig{
+		Protocol:      AdapterGoogleGenerateContent,
+		BaseURL:       server.URL,
+		UpstreamModel: "gemini-2.5-pro",
+	}, GenerateInput{
+		Messages: []Message{{Role: "user", Content: "hello"}},
+		Options: map[string]interface{}{
+			"thinkingConfig": map[string]interface{}{"includeThoughts": false},
+		},
+	})
+	if err != nil {
+		t.Fatalf("gemini generate: %v", err)
 	}
 }
 

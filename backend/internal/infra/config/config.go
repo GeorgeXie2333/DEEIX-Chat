@@ -135,6 +135,7 @@ func DefaultModelOptionAllowedPathsJSON() string {
     "generationConfig.topP",
     "generationConfig.maxOutputTokens",
     "generationConfig.responseMimeType",
+    "thinkingConfig.includeThoughts",
     "thinkingConfig.thinkingLevel"
   ]
 }`
@@ -209,7 +210,7 @@ func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 				"generationConfig.responseMimeType",
 			},
 			minAnchors: 2,
-			additions:  []string{"thinkingConfig.thinkingLevel"},
+			additions:  []string{"thinkingConfig.includeThoughts", "thinkingConfig.thinkingLevel"},
 		},
 	}
 	changed := false

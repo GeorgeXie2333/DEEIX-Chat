@@ -451,6 +451,7 @@ generationConfig.safetySettings.threshold`}
     "thinking.budget_tokens"
   ],
   "gemini_generate_content": [
+    "thinkingConfig.includeThoughts",
     "thinkingConfig.thinkingLevel"
   ]
 }`}

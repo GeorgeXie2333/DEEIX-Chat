@@ -116,6 +116,7 @@ export const DEFAULT_MODEL_OPTION_ALLOWED_PATHS = `{
     "generationConfig.topP",
     "generationConfig.maxOutputTokens",
     "generationConfig.responseMimeType",
+    "thinkingConfig.includeThoughts",
     "thinkingConfig.thinkingLevel"
   ]
 }`;

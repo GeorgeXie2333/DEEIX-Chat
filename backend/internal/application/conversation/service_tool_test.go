@@ -131,6 +131,11 @@ func TestOutputReasoningContentPrefersStructuredReasoning(t *testing.T) {
 		t.Fatalf("expected structured reasoning content, got %q", got)
 	}
 
+	got = outputReasoningContent(&llm.GenerateOutput{Reasoning: &llm.ReasoningOutput{Summary: "summary only"}})
+	if got != "summary only" {
+		t.Fatalf("expected structured reasoning summary fallback, got %q", got)
+	}
+
 	got = outputReasoningContent(&llm.GenerateOutput{Text: "<think>fallback</think>"})
 	if got != "fallback" {
 		t.Fatalf("expected parsed thinking fallback, got %q", got)

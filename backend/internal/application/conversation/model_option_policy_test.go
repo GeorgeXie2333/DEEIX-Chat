@@ -337,7 +337,8 @@ func TestFilterModelOptionsGeminiPolicyKeyMatchesGoogleAdapter(t *testing.T) {
 			"candidateCount":   3,
 		},
 		"thinkingConfig": map[string]interface{}{
-			"thinkingLevel": "high",
+			"includeThoughts": false,
+			"thinkingLevel":   "high",
 		},
 	}, llm.AdapterGoogleGenerateContent, modelOptionPolicyConfig{
 		Mode:             modelOptionPolicyAllowlist,
@@ -355,6 +356,9 @@ func TestFilterModelOptionsGeminiPolicyKeyMatchesGoogleAdapter(t *testing.T) {
 	thinkingConfig := filtered["thinkingConfig"].(map[string]interface{})
 	if thinkingConfig["thinkingLevel"] != "high" {
 		t.Fatalf("expected gemini thinking level to pass, got %#v", thinkingConfig)
+	}
+	if thinkingConfig["includeThoughts"] != false {
+		t.Fatalf("expected gemini includeThoughts override to pass, got %#v", thinkingConfig)
 	}
 }
 

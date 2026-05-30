@@ -61,6 +61,9 @@ func outputReasoningContent(output *llm.GenerateOutput) string {
 		if text := strings.TrimSpace(output.Reasoning.Text); text != "" {
 			return text
 		}
+		if summary := strings.TrimSpace(output.Reasoning.Summary); summary != "" {
+			return summary
+		}
 	}
 	_, extractedThink := splitAssistantOutputThinkingContent(output.Text)
 	return strings.TrimSpace(extractedThink)
