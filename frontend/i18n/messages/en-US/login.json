@@ -48,7 +48,7 @@
     "previewContextDescription": "Use Gemini for images, source material, and complex information.",
     "previewGovernance": "Fast answers",
     "previewGovernanceDescription": "Use Grok for quick questions and fresh topics.",
-    "previewMetricModelsValue": "4",
+    "previewMetricModelsValue": "Top",
     "previewMetricSwitchesValue": "Free",
     "previewMetricApiValue": "API",
     "previewMetricModels": "models",

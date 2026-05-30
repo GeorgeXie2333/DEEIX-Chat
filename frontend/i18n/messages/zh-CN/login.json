@@ -48,7 +48,7 @@
     "previewContextDescription": "用 Gemini 处理图片、资料和复杂信息。",
     "previewGovernance": "实时问答",
     "previewGovernanceDescription": "用 Grok 处理快速问答和新鲜话题。",
-    "previewMetricModelsValue": "4",
+    "previewMetricModelsValue": "主流",
     "previewMetricSwitchesValue": "自由",
     "previewMetricApiValue": "官方",
     "previewMetricModels": "模型",

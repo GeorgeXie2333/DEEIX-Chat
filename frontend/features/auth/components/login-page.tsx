@@ -212,8 +212,8 @@ export function LoginPage({ nextPath }: LoginPageProps) {
   const twoFactorUsesEmail = twoFactorVerificationMethod === "email";
 
   return (
-    <main className="min-h-screen overflow-y-auto bg-background text-foreground" aria-busy={!configReady}>
-      <section className="mx-auto grid min-h-screen w-full max-w-[1180px] grid-cols-1 gap-5 px-4 py-5 sm:gap-7 sm:px-6 sm:py-6 md:gap-9 md:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] lg:grid-rows-[auto_auto] lg:items-center lg:gap-x-14 lg:gap-y-8 lg:px-8 xl:px-0">
+    <main className="h-svh overflow-x-hidden overflow-y-auto bg-background text-foreground" aria-busy={!configReady}>
+      <section className="mx-auto grid min-h-full w-full max-w-[1180px] grid-cols-1 gap-5 px-4 py-5 sm:gap-7 sm:px-6 sm:py-6 md:gap-9 md:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] lg:grid-rows-[auto_auto] lg:items-center lg:gap-x-14 lg:gap-y-8 lg:px-8 xl:px-0">
         <LoginLandingCopy t={t} />
 
         <div className="w-full max-w-[420px] justify-self-center rounded-2xl border border-border/70 bg-card/80 p-4 shadow-xl shadow-foreground/5 backdrop-blur-sm sm:p-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:justify-self-end">
