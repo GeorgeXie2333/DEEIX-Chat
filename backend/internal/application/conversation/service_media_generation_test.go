@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/llm"
 )
 
 func TestDetectGeneratedImageMIMERejectsNonImageBytes(t *testing.T) {
@@ -67,6 +68,39 @@ func TestSanitizeOpenAIVideoGenerationOptions(t *testing.T) {
 	})
 	if got["size"] != "1920x1080" || got["seconds"] != "12" {
 		t.Fatalf("expected supported Sora 2 Pro options to pass, got %#v", got)
+	}
+}
+
+func TestEmitMediaVideoStatusIncludesProgress(t *testing.T) {
+	progress := 33
+	var gotType string
+	var gotPayload map[string]interface{}
+
+	err := emitMediaVideoStatus(func(eventType string, payload map[string]interface{}) error {
+		gotType = eventType
+		gotPayload = payload
+		return nil
+	}, &llm.GeneratedVideoStatus{
+		ID:       "video_1",
+		Status:   "in_progress",
+		Progress: &progress,
+		Size:     "1280x720",
+		Seconds:  "4",
+	})
+	if err != nil {
+		t.Fatalf("emitMediaVideoStatus returned error: %v", err)
+	}
+	if gotType != "media_status" {
+		t.Fatalf("unexpected event type: %q", gotType)
+	}
+	if gotPayload["status"] != "running" || gotPayload["message"] != "generating video" {
+		t.Fatalf("unexpected media status payload: %#v", gotPayload)
+	}
+	if gotPayload["upstream_status"] != "in_progress" || gotPayload["video_id"] != "video_1" {
+		t.Fatalf("expected upstream video metadata, got %#v", gotPayload)
+	}
+	if gotPayload["progress"] != 33 {
+		t.Fatalf("expected progress 33, got %#v", gotPayload["progress"])
 	}
 }
 

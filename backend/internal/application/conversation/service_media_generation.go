@@ -344,7 +344,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		}}
 	}
 	var output *llm.GenerateOutput
-	if shouldUseUpstreamMediaImageStream(routeConfig.Protocol, routeConfig.UpstreamModel, filteredOptions) {
+	if input.TaskType == MediaVideoTaskGeneration || shouldUseUpstreamMediaImageStream(routeConfig.Protocol, routeConfig.UpstreamModel, filteredOptions) {
 		output, err = s.llmClient.GenerateStream(ctx, routeConfig, generateInput, func(event llm.GenerateStreamEvent) error {
 			if event.Usage != (llm.Usage{}) && input.OnEvent != nil {
 				if streamErr := input.OnEvent("usage", map[string]interface{}{
@@ -359,6 +359,9 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 			}
 			if event.GeneratedImage != nil && event.GeneratedImagePartial {
 				return emitMediaImageDelta(input.OnEvent, event)
+			}
+			if event.GeneratedVideoStatus != nil {
+				return emitMediaVideoStatus(input.OnEvent, event.GeneratedVideoStatus)
 			}
 			return nil
 		})
@@ -781,6 +784,46 @@ func emitMediaImageDelta(onEvent func(string, map[string]interface{}) error, eve
 		"mime_type":      strings.TrimSpace(image.MIMEType),
 		"revised_prompt": strings.TrimSpace(image.RevisedPrompt),
 	})
+}
+
+func emitMediaVideoStatus(onEvent func(string, map[string]interface{}) error, status *llm.GeneratedVideoStatus) error {
+	if onEvent == nil || status == nil {
+		return nil
+	}
+	upstreamStatus := strings.TrimSpace(status.Status)
+	normalized := strings.ToLower(upstreamStatus)
+	appStatus := "running"
+	message := mediaImageRunningMessage(MediaVideoTaskGeneration)
+	if normalized == "queued" {
+		appStatus = "queued"
+		message = mediaQueuedMessage(MediaVideoTaskGeneration)
+	}
+	payload := map[string]interface{}{
+		"status":          appStatus,
+		"message":         message,
+		"video_id":        strings.TrimSpace(status.ID),
+		"upstream_status": upstreamStatus,
+	}
+	if status.Progress != nil {
+		payload["progress"] = clampPercent(*status.Progress)
+	}
+	if size := strings.TrimSpace(status.Size); size != "" {
+		payload["size"] = size
+	}
+	if seconds := strings.TrimSpace(status.Seconds); seconds != "" {
+		payload["seconds"] = seconds
+	}
+	return onEvent("media_status", payload)
+}
+
+func clampPercent(value int) int {
+	if value < 0 {
+		return 0
+	}
+	if value > 100 {
+		return 100
+	}
+	return value
 }
 
 // readGeneratedImage 读取上游图片结果，并统一校验为可保存的图片字节。

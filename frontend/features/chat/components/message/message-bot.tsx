@@ -227,7 +227,11 @@ export function ChatMessageBot({
         style={{ fontFamily: "var(--font-chat)", fontWeight: "var(--font-chat-weight)" }}
       >
         {(isImageGenerationLoading || isVideoGenerationLoading) && !item.inlineAlert ? (
-          <AssistantImageGenerationSkeleton label={item.activityLabel} aspectRatio={item.imageAspectRatio} />
+          <AssistantImageGenerationSkeleton
+            label={item.activityLabel}
+            progress={item.activityProgress}
+            aspectRatio={item.imageAspectRatio}
+          />
         ) : item.isStreaming && !hasStreamdownContent && !item.inlineAlert ? (
           <AssistantMessageSkeleton fileProc={item.isFileProc} label={item.activityLabel} />
         ) : leadingImagePending ? (
@@ -463,22 +467,36 @@ export function AssistantMessageSkeleton({ fileProc, label }: { fileProc?: boole
 
 export function AssistantImageGenerationSkeleton({
   label,
+  progress,
   aspectRatio = "wide",
 }: {
   label?: string;
+  progress?: number;
   aspectRatio?: ChatAreaMessage["imageAspectRatio"];
 }) {
   const t = useTranslations("chat.messages");
+  const normalizedProgress =
+    typeof progress === "number" && Number.isFinite(progress) ? Math.max(0, Math.min(100, Math.round(progress))) : undefined;
   const frameClassName =
     aspectRatio === "portrait" ? "max-w-[18rem]" : aspectRatio === "square" ? "max-w-[24rem]" : "max-w-[32rem]";
   const aspectClassName =
     aspectRatio === "portrait" ? "aspect-[9/16]" : aspectRatio === "square" ? "aspect-square" : "aspect-video";
   return (
     <div className={cn("my-4 w-full space-y-2.5", frameClassName)}>
-      <div className="flex items-center gap-2 pt-1 text-[13px] text-muted-foreground">
-        <span className="inline-block size-3.5 animate-spin rounded-full border-2 border-muted border-t-foreground/50" />
-        {label?.trim() || t("processing")}
+      <div className="flex items-center justify-between gap-3 pt-1 text-[13px] text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="inline-block size-3.5 shrink-0 animate-spin rounded-full border-2 border-muted border-t-foreground/50" />
+          <span className="min-w-0 truncate">{label?.trim() || t("processing")}</span>
+        </div>
+        {normalizedProgress !== undefined ? (
+          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{normalizedProgress}%</span>
+        ) : null}
       </div>
+      {normalizedProgress !== undefined ? (
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/30">
+          <div className="h-full rounded-full bg-primary/70 transition-[width] duration-500 ease-out" style={{ width: `${normalizedProgress}%` }} />
+        </div>
+      ) : null}
       <div className={cn("relative w-full overflow-hidden rounded-xl bg-muted/20 text-primary", aspectClassName)}>
         <GrainientBackground
           className="absolute inset-0 text-primary/75"

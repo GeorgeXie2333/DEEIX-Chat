@@ -572,6 +572,15 @@ type GeneratedVideo struct {
 	Seconds  string
 }
 
+// GeneratedVideoStatus 表示视频异步任务的状态更新。
+type GeneratedVideoStatus struct {
+	ID       string
+	Status   string
+	Progress *int
+	Size     string
+	Seconds  string
+}
+
 // ReasoningDelta 定义流式 reasoning 增量。
 type ReasoningDelta struct {
 	EventType        string
@@ -593,6 +602,7 @@ type GenerateStreamEvent struct {
 	GeneratedImage        *GeneratedImage
 	GeneratedImageIndex   int
 	GeneratedImagePartial bool
+	GeneratedVideoStatus  *GeneratedVideoStatus
 }
 
 // ModelItem 定义上游模型目录项。

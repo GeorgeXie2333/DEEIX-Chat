@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { cancelMessageGeneration, listMessages, resumeMessageGenerationStream } from "@/shared/api/conversation";
 import { buildMediaImagePreviewMarkdown } from "@/features/chat/model/media-image-preview";
+import { resolveMediaStatusProgress } from "@/features/chat/model/media-status";
 import type { MessageDTO } from "@/shared/api/conversation.types";
 
 type ChatDataState = {
@@ -170,6 +171,7 @@ export function useChatData(
           onMediaStatus: (event) => {
             const status = event.status.trim();
             const isVideoStatus = event.message.toLowerCase().includes("video");
+            const activityProgress = resolveMediaStatusProgress(event.progress);
             const activityLabel =
               status === "queued"
                 ? isVideoStatus
@@ -188,7 +190,7 @@ export function useChatData(
               ...prev,
               messages: prev.messages.map((message) =>
                 message.runID === pendingRunID && message.role === "assistant" && message.status === "pending"
-                  ? { ...message, activityLabel, contentType: isVideoStatus ? "video" : "image" }
+                  ? { ...message, activityLabel, activityProgress, contentType: isVideoStatus ? "video" : "image" }
                   : message,
               ),
             }));
@@ -202,7 +204,7 @@ export function useChatData(
               ...prev,
               messages: prev.messages.map((message) =>
                 message.runID === pendingRunID && message.role === "assistant" && message.status === "pending"
-                  ? { ...message, content: previewMarkdown, contentType: "image", activityLabel: "" }
+                  ? { ...message, content: previewMarkdown, contentType: "image", activityLabel: "", activityProgress: undefined }
                   : message,
               ),
             }));

@@ -143,6 +143,7 @@ export type ChatAreaMessage = {
   isStreaming?: boolean;
   isFileProc?: boolean; // Active file_proc stream stage.
   activityLabel?: string;
+  activityProgress?: number;
   imageAspectRatio?: ImageLoadingAspectRatio;
   myFeedback?: "up" | "down" | null;
   thumbsUpCount?: number;

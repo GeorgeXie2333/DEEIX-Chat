@@ -10,6 +10,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -31,17 +32,18 @@ func (a *openAIVideoGenerationsAdapter) Name() string { return AdapterOpenAIVide
 // Generate 调用 OpenAI 视频生成接口，创建任务、轮询完成并下载 MP4。
 func (a *openAIVideoGenerationsAdapter) Generate(ctx context.Context, route RouteConfig, input GenerateInput) (*GenerateOutput, error) {
 	route.Endpoint = EndpointVideoGenerations
-	return a.client.generateOpenAIVideoGeneration(ctx, route, input)
+	return a.client.generateOpenAIVideoGeneration(ctx, route, input, nil)
 }
 
-// GenerateStream 当前 OpenAI Videos API 是异步任务，不支持上游增量流。
+// GenerateStream 通过轮询 OpenAI Videos API 状态端点，把任务进度转成应用层流式事件。
 func (a *openAIVideoGenerationsAdapter) GenerateStream(
 	ctx context.Context,
 	route RouteConfig,
 	input GenerateInput,
 	onEvent func(GenerateStreamEvent) error,
 ) (*GenerateOutput, error) {
-	return nil, fmt.Errorf("%w: %s", ErrUnsupportedStream, AdapterOpenAIVideoGenerations)
+	route.Endpoint = EndpointVideoGenerations
+	return a.client.generateOpenAIVideoGeneration(ctx, route, input, onEvent)
 }
 
 // ListModels 复用 OpenAI 兼容 models 目录，供渠道校验和展示使用。
@@ -50,15 +52,21 @@ func (a *openAIVideoGenerationsAdapter) ListModels(ctx context.Context, route Ro
 }
 
 type openAIVideoJob struct {
-	ID      string
-	Status  string
-	Size    string
-	Seconds string
-	Error   string
-	RawJSON string
+	ID       string
+	Status   string
+	Progress *int
+	Size     string
+	Seconds  string
+	Error    string
+	RawJSON  string
 }
 
-func (c *Client) generateOpenAIVideoGeneration(ctx context.Context, route RouteConfig, input GenerateInput) (*GenerateOutput, error) {
+func (c *Client) generateOpenAIVideoGeneration(
+	ctx context.Context,
+	route RouteConfig,
+	input GenerateInput,
+	onEvent func(GenerateStreamEvent) error,
+) (*GenerateOutput, error) {
 	requestURL := buildOpenAIRequestURL(route.BaseURL, EndpointVideoGenerations)
 	if requestURL == "" {
 		return nil, fmt.Errorf("invalid base url")
@@ -98,8 +106,11 @@ func (c *Client) generateOpenAIVideoGeneration(ctx context.Context, route RouteC
 	if strings.TrimSpace(job.ID) == "" {
 		return nil, fmt.Errorf("upstream returned video job without id")
 	}
+	if err = emitOpenAIVideoStatus(onEvent, job); err != nil {
+		return nil, err
+	}
 
-	job, err = c.pollOpenAIVideoJob(requestCtx, route, job)
+	job, err = c.pollOpenAIVideoJob(requestCtx, route, job, onEvent)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +214,12 @@ func buildOpenAIVideoGenerationDebugBody(fields map[string]string, hasInputRefer
 	return raw
 }
 
-func (c *Client) pollOpenAIVideoJob(ctx context.Context, route RouteConfig, initial openAIVideoJob) (openAIVideoJob, error) {
+func (c *Client) pollOpenAIVideoJob(
+	ctx context.Context,
+	route RouteConfig,
+	initial openAIVideoJob,
+	onEvent func(GenerateStreamEvent) error,
+) (openAIVideoJob, error) {
 	job := initial
 	for {
 		switch strings.TrimSpace(strings.ToLower(job.Status)) {
@@ -234,7 +250,13 @@ func (c *Client) pollOpenAIVideoJob(ctx context.Context, route RouteConfig, init
 		if strings.TrimSpace(next.Seconds) == "" {
 			next.Seconds = job.Seconds
 		}
+		if next.Progress == nil {
+			next.Progress = job.Progress
+		}
 		job = next
+		if err := emitOpenAIVideoStatus(onEvent, job); err != nil {
+			return job, err
+		}
 	}
 }
 
@@ -305,11 +327,12 @@ func parseOpenAIVideoJob(body []byte) (openAIVideoJob, error) {
 		return openAIVideoJob{}, err
 	}
 	job := openAIVideoJob{
-		ID:      strings.TrimSpace(getString(parsed["id"])),
-		Status:  strings.TrimSpace(getString(parsed["status"])),
-		Size:    strings.TrimSpace(getString(parsed["size"])),
-		Seconds: strings.TrimSpace(getString(parsed["seconds"])),
-		RawJSON: string(body),
+		ID:       strings.TrimSpace(getString(parsed["id"])),
+		Status:   strings.TrimSpace(getString(parsed["status"])),
+		Progress: getOptionalInt(parsed["progress"]),
+		Size:     strings.TrimSpace(getString(parsed["size"])),
+		Seconds:  strings.TrimSpace(getString(parsed["seconds"])),
+		RawJSON:  string(body),
 	}
 	if errorPayload := asMap(parsed["error"]); len(errorPayload) > 0 {
 		job.Error = firstNonEmptyString(getString(errorPayload["message"]), getString(errorPayload["code"]), getString(errorPayload["type"]))
@@ -317,6 +340,38 @@ func parseOpenAIVideoJob(body []byte) (openAIVideoJob, error) {
 		job.Error = getString(parsed["error"])
 	}
 	return job, nil
+}
+
+func emitOpenAIVideoStatus(onEvent func(GenerateStreamEvent) error, job openAIVideoJob) error {
+	if onEvent == nil {
+		return nil
+	}
+	return onEvent(GenerateStreamEvent{
+		ResponseID: strings.TrimSpace(job.ID),
+		GeneratedVideoStatus: &GeneratedVideoStatus{
+			ID:       strings.TrimSpace(job.ID),
+			Status:   strings.TrimSpace(job.Status),
+			Progress: job.Progress,
+			Size:     strings.TrimSpace(job.Size),
+			Seconds:  strings.TrimSpace(job.Seconds),
+		},
+	})
+}
+
+func getOptionalInt(raw interface{}) *int {
+	if raw == nil {
+		return nil
+	}
+	text := strings.TrimSpace(getString(raw))
+	if text == "" {
+		return nil
+	}
+	value, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		return nil
+	}
+	parsed := int(value)
+	return &parsed
 }
 
 func buildOpenAIVideoResourceURL(baseURL string, videoID string) string {

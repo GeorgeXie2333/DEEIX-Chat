@@ -102,6 +102,81 @@ func TestOpenAIVideoGenerationCreatesPollsAndDownloads(t *testing.T) {
 	}
 }
 
+func TestOpenAIVideoGenerationStreamEmitsProgressStatus(t *testing.T) {
+	var pollCount int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/videos":
+			if r.Method != http.MethodPost {
+				t.Fatalf("expected POST /v1/videos, got %s", r.Method)
+			}
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"id":       "video_1",
+				"status":   "queued",
+				"progress": 0,
+				"size":     "1280x720",
+				"seconds":  "4",
+			})
+		case "/v1/videos/video_1":
+			pollCount++
+			if pollCount == 1 {
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"id":       "video_1",
+					"status":   "in_progress",
+					"progress": 33,
+					"size":     "1280x720",
+					"seconds":  "4",
+				})
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"id":       "video_1",
+				"status":   "completed",
+				"progress": 100,
+				"size":     "1280x720",
+				"seconds":  "4",
+			})
+		case "/v1/videos/video_1/content":
+			w.Header().Set("Content-Type", "video/mp4")
+			_, _ = w.Write(sampleMP4Bytes())
+		default:
+			t.Fatalf("unexpected request path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	var statuses []GeneratedVideoStatus
+	output, err := NewClient().GenerateStream(context.Background(), RouteConfig{
+		Protocol:      AdapterOpenAIVideoGenerations,
+		BaseURL:       server.URL,
+		APIKey:        "test-key",
+		UpstreamModel: "sora-2",
+		ReadTimeoutMS: 5000,
+	}, GenerateInput{
+		Messages: []Message{{Role: "user", Content: "make a short shot"}},
+	}, func(event GenerateStreamEvent) error {
+		if event.GeneratedVideoStatus != nil {
+			statuses = append(statuses, *event.GeneratedVideoStatus)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("GenerateStream returned error: %v", err)
+	}
+	if pollCount != 2 {
+		t.Fatalf("expected two status polls, got %d", pollCount)
+	}
+	if output.ResponseID != "video_1" || len(output.GeneratedVideos) != 1 {
+		t.Fatalf("unexpected video output: %#v", output)
+	}
+	if len(statuses) != 3 {
+		t.Fatalf("expected queued, in_progress, and completed statuses, got %#v", statuses)
+	}
+	assertVideoStatus(t, statuses[0], "queued", 0)
+	assertVideoStatus(t, statuses[1], "in_progress", 33)
+	assertVideoStatus(t, statuses[2], "completed", 100)
+}
+
 func TestOpenAIVideoGenerationLimitsSecondsToSupportedValues(t *testing.T) {
 	body, _, _, err := buildOpenAIVideoGenerationMultipartRequest("sora-2", GenerateInput{
 		Messages: []Message{{Role: "user", Content: "prompt"}},
@@ -113,6 +188,16 @@ func TestOpenAIVideoGenerationLimitsSecondsToSupportedValues(t *testing.T) {
 	// The builder falls back to safe defaults when unsupported values reach the adapter.
 	if !strings.Contains(string(body), "1280x720") || !strings.Contains(string(body), "\r\n4\r\n") {
 		t.Fatalf("expected default size and seconds in multipart body: %s", string(body))
+	}
+}
+
+func assertVideoStatus(t *testing.T, status GeneratedVideoStatus, wantStatus string, wantProgress int) {
+	t.Helper()
+	if status.ID != "video_1" || status.Status != wantStatus {
+		t.Fatalf("unexpected status: %#v", status)
+	}
+	if status.Progress == nil || *status.Progress != wantProgress {
+		t.Fatalf("expected progress %d, got %#v", wantProgress, status.Progress)
 	}
 }
 

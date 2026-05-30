@@ -547,6 +547,11 @@ export type StreamMessageEvent =
       seq?: number;
       status: string;
       message: string;
+      progress?: number;
+      video_id?: string;
+      upstream_status?: string;
+      size?: string;
+      seconds?: string;
     }
   | {
       type: "media_image_delta";

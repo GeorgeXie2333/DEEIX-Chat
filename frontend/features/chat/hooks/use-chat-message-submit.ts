@@ -27,6 +27,7 @@ import {
 import { buildChildrenIndex, toBranchKey } from "@/features/chat/model/chat-thread";
 import { sanitizeConversationOptions } from "@/features/chat/model/conversation-options";
 import { buildMediaImagePreviewMarkdown } from "@/features/chat/model/media-image-preview";
+import { resolveMediaStatusProgress } from "@/features/chat/model/media-status";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { notifyResponseCompletion } from "@/shared/lib/browser-notifications";
 import {
@@ -459,9 +460,10 @@ export function useChatMessageSubmit({
           },
           onMediaStatus: (event) => {
             const activityLabel = resolveMediaStatusLabel(event.status, event.message, t);
+            const activityProgress = resolveMediaStatusProgress(event.progress);
             setPendingExchange((prev) =>
               prev && prev.key === exchangeKey
-                ? { ...prev, assistantFileProc: true, assistantActivityLabel: activityLabel }
+                ? { ...prev, assistantFileProc: true, assistantActivityLabel: activityLabel, assistantActivityProgress: activityProgress }
                 : prev,
             );
           },
@@ -478,6 +480,7 @@ export function useChatMessageSubmit({
                     assistantStreaming: true,
                     assistantFileProc: false,
                     assistantActivityLabel: undefined,
+                    assistantActivityProgress: undefined,
                     assistantText: previewMarkdown,
                   }
                 : prev,
@@ -497,6 +500,7 @@ export function useChatMessageSubmit({
                     ...prev,
                     assistantFileProc: false,
                     assistantActivityLabel: undefined,
+                    assistantActivityProgress: undefined,
                     assistantProcessTrace: event.trace ? toPendingProcessTrace(event.trace) : prev.assistantProcessTrace,
                   }
                 : prev,
@@ -516,7 +520,7 @@ export function useChatMessageSubmit({
             // Always clear assistantFileProc so batched React updates cannot keep the file_proc spinner alive.
             setPendingExchange((prev) =>
               prev && prev.key === exchangeKey && prev.assistantFileProc
-                ? { ...prev, assistantFileProc: false, assistantActivityLabel: undefined }
+                ? { ...prev, assistantFileProc: false, assistantActivityLabel: undefined, assistantActivityProgress: undefined }
                 : prev,
             );
             enqueueStreamText(delta);
@@ -583,6 +587,7 @@ export function useChatMessageSubmit({
             assistantStreaming: false,
             assistantFileProc: false,
             assistantActivityLabel: undefined,
+            assistantActivityProgress: undefined,
             assistantServerMessageID: completed.assistantMessage.id,
             assistantCreatedAt: completed.assistantMessage.createdAt,
             assistantUpdatedAt: completed.assistantMessage.updatedAt,
@@ -666,6 +671,7 @@ export function useChatMessageSubmit({
                   assistantStreaming: false,
                   assistantFileProc: false,
                   assistantActivityLabel: undefined,
+                  assistantActivityProgress: undefined,
                   assistantInlineAlert: undefined,
                 }
               : prev,
@@ -688,6 +694,7 @@ export function useChatMessageSubmit({
                 assistantStreaming: false,
                 assistantFileProc: false,
                 assistantActivityLabel: undefined,
+                assistantActivityProgress: undefined,
                 assistantStatus: "error",
                 assistantErrorMessage: errorMessage,
                 assistantInlineAlert: {

@@ -163,6 +163,7 @@ export function mapServerMessage(
     generationInterrupted: "Generation interrupted",
   },
 ): ChatAreaMessage {
+  const runtimeItem = item as MessageDTO & { activityLabel?: string; activityProgress?: number };
   const publicID = item.publicID.trim();
   const msg: ChatAreaMessage = {
     key: `server-${publicID}`,
@@ -214,7 +215,8 @@ export function mapServerMessage(
     if (item.status === "pending") {
       msg.isPending = true;
       msg.isStreaming = true;
-      msg.activityLabel = item.contentType === "image" ? labels.imageRunning : undefined;
+      msg.activityLabel = runtimeItem.activityLabel ?? (item.contentType === "image" ? labels.imageRunning : undefined);
+      msg.activityProgress = runtimeItem.activityProgress;
     }
   }
   return msg;
