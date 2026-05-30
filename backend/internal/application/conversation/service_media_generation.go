@@ -466,6 +466,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		},
 		assistantMessage.ID,
 		repository.AssistantMessageCompletionUpdate{
+			ContentType:     "image",
 			Content:         content,
 			OutputTokens:    usage.OutputTokens,
 			ReasoningTokens: usage.ReasoningTokens,

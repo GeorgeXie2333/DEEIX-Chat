@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Archive, Download, PencilLine, Share2, Trash } from "lucide-react"
+import { Archive, PencilLine, Trash } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { Ellipsis } from "@/components/animate-ui/icons/ellipsis"
@@ -18,6 +18,7 @@ import {
 import { SidebarAnimatedItem } from "@/features/layouts/components/navigation/sidebar-animated-item"
 import { SIDEBAR_TRANSFER_TRANSITION } from "@/features/layouts/model/sidebar-motion"
 import { ConversationProjectSubmenu } from "@/shared/components/conversation-project-submenu"
+import { ConversationShareExportSubmenu } from "@/shared/components/conversation-share-export-menu"
 import type {
   SidebarConversationItem as SidebarConversationItemModel,
   SidebarConversationProjectMenu,
@@ -175,26 +176,14 @@ export function SidebarConversationItem({
                   onSelect={(projectID) => projectMenu.onSelect(item.publicID, projectID)}
                 />
               ) : null}
-              <DropdownMenuItem
-                disabled={!onShare}
-                onSelect={(event) => {
-                  event.preventDefault()
-                  onShare?.(item.publicID, item.title)
-                }}
-              >
-                <DropdownMenuItemIcon icon={Share2} />
-                {item.shareActive ? t("manageShare") : t("share")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!onExport}
-                onSelect={(event) => {
-                  event.preventDefault()
-                  void onExport?.(item.publicID, item.title)
-                }}
-              >
-                <DropdownMenuItemIcon icon={Download} />
-                {t("exportJSON")}
-              </DropdownMenuItem>
+              <ConversationShareExportSubmenu
+                label={t("shareAndExport")}
+                shareLabel={item.shareActive ? t("manageShare") : t("share")}
+                exportLabel={t("exportJSON")}
+                onShare={onShare ? () => onShare(item.publicID, item.title) : undefined}
+                onExport={onExport ? () => onExport(item.publicID, item.title) : undefined}
+                onCloseMenu={() => setIsMenuOpen(false)}
+              />
               <DropdownMenuItem
                 onSelect={(event) => {
                   event.preventDefault()

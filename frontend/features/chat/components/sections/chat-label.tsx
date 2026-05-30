@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, Download, PencilLine, Share2, Star, StarOff, Trash } from "lucide-react";
+import { ChevronDown, PencilLine, Star, StarOff, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import {
@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { SpinnerLabel } from "@/components/ui/spinner";
 import { AnimatedText } from "@/components/ui/animated-text";
 import { ConversationProjectSubmenu } from "@/shared/components/conversation-project-submenu";
+import { ConversationShareExportSubmenu } from "@/shared/components/conversation-share-export-menu";
 import { cn } from "@/lib/utils";
 
 type ChatLabelProps = {
@@ -162,34 +163,14 @@ export function ChatLabel({
               onSelect={projectMenu.onSelect}
             />
           ) : null}
-          <DropdownMenuItem
-            disabled={!onShare}
-            onSelect={(event) => {
-              event.preventDefault();
-              if (!onShare) {
-                return;
-              }
-              setMenuOpen(false);
-              onShare();
-            }}
-          >
-            <DropdownMenuItemIcon icon={Share2} />
-            {shareActive ? t("manageShare") : t("share")}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            disabled={!onExport}
-            onSelect={(event) => {
-              event.preventDefault();
-              if (!onExport) {
-                return;
-              }
-              setMenuOpen(false);
-              void onExport();
-            }}
-          >
-            <DropdownMenuItemIcon icon={Download} />
-            {t("exportJSON")}
-          </DropdownMenuItem>
+          <ConversationShareExportSubmenu
+            label={t("shareAndExport")}
+            shareLabel={shareActive ? t("manageShare") : t("share")}
+            exportLabel={t("exportJSON")}
+            onShare={onShare}
+            onExport={onExport}
+            onCloseMenu={() => setMenuOpen(false)}
+          />
           <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"

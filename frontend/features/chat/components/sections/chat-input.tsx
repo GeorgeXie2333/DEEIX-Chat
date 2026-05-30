@@ -61,7 +61,7 @@ import type { ConversationOptions } from "@/shared/api/conversation.types";
 import type { MCPToolDTO } from "@/shared/api/mcp.types";
 import { isNativeToolTypeAllowed, type ModelOptionPolicy } from "@/shared/lib/model-option-policy";
 import type { SendShortcut } from "@/features/settings/types/settings";
-import { isSendShortcutEvent, shouldUseMultilineEnterForTouchInput } from "@/shared/lib/platform-shortcuts";
+import { isSendShortcutEvent } from "@/shared/lib/platform-shortcuts";
 
 const FilePreviewDialog = dynamic(
   () => import("@/features/files/components/preview/file-preview-dialog").then((module) => module.FilePreviewDialog),
@@ -539,7 +539,7 @@ function ChatInputComponent({
           rows={1}
           style={{ fontFamily: "var(--font-chat)", fontWeight: "var(--font-chat-weight)" }}
           className={cn(
-            "rounded-3xl min-h-12 overflow-y-auto px-5 pt-4 text-[15px] leading-6 placeholder:text-[15px] placeholder:font-[inherit] placeholder:leading-6",
+            "rounded-3xl min-h-12 overflow-y-auto px-5 pt-4 text-[15px] leading-6 placeholder:text-[inherit] placeholder:font-[inherit] placeholder:leading-[inherit]",
             inputHeightClassName,
             speechInput.active ? "placeholder:font-normal placeholder:text-muted-foreground" : "",
           )}
@@ -564,9 +564,7 @@ function ChatInputComponent({
             if (event.nativeEvent.isComposing || composingRef.current || event.key === "Process" || event.keyCode === 229) {
               return;
             }
-            const shouldSend =
-              !(sendShortcut === "enter" && shouldUseMultilineEnterForTouchInput()) &&
-              isSendShortcutEvent(sendShortcut, event);
+            const shouldSend = isSendShortcutEvent(sendShortcut, event);
 
             if (shouldSend) {
               event.preventDefault();

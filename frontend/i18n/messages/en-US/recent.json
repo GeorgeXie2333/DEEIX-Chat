@@ -63,6 +63,8 @@
     "invalidImportFile": "Choose a valid conversation JSON file.",
     "signInRequired": "Sign in to use conversation backups."
   },
+  "exported": "Conversation JSON exported",
+  "exportFailed": "Failed to export conversation",
   "conversationCount": "{count}",
   "deleteConversationLabel": "\"{title}\"",
   "selectedConversationCountLabel": "{count} conversations selected",
@@ -72,6 +74,7 @@
     "unstar": "Unstar",
     "star": "Star",
     "rename": "Rename",
+    "shareAndExport": "Share & Export",
     "manageShare": "Manage share",
     "share": "Share",
     "exportJSON": "Export JSON",

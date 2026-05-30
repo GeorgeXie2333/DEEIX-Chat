@@ -69,6 +69,7 @@
     "appearance": {
       "colorMode": "カラーモード",
       "themePreset": "テーマ",
+      "fontSize": "文字サイズ",
       "chatFont": "チャットフォント",
       "chatFontWeight": "チャットフォント太さ",
       "preset": {
@@ -91,6 +92,12 @@
         "songti": "セリフ",
         "heiti": "サンセリフ",
         "mono": "等幅"
+      },
+      "fontSizeOption": {
+        "small": "小",
+        "standard": "標準",
+        "medium": "中",
+        "large": "大"
       },
       "fontWeight": {
         "regular": "標準",

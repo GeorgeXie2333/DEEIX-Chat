@@ -74,6 +74,7 @@ func (s *Service) persistSuccessfulMessageGeneration(ctx context.Context, input 
 	input.UserMessage.CacheReadTokens = input.CacheReadTokens
 	input.UserMessage.CacheWriteTokens = input.CacheWriteTokens
 	input.UserMessage.TokenUsage = input.InputTokens + input.CacheReadTokens + input.CacheWriteTokens
+
 	if len(input.AssistantAttachments) > 0 {
 		if err := s.repo.CompleteAssistantMessageWithAttachments(
 			ctx,
@@ -95,26 +96,42 @@ func (s *Service) persistSuccessfulMessageGeneration(ctx context.Context, input 
 		); err != nil {
 			return err
 		}
-	} else {
-		go func(msgID uint, inputTokens, cacheReadTokens, cacheWriteTokens int64) {
-			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			_ = s.repo.UpdateMessageUsage(bgCtx, msgID, inputTokens, 0, cacheReadTokens, cacheWriteTokens, 0)
-		}(input.UserMessage.ID, input.InputTokens, input.CacheReadTokens, input.CacheWriteTokens)
-
-		if err := s.repo.UpdateAssistantMessageCompletion(
-			ctx,
-			input.AssistantMessage.ID,
-			input.AssistantText,
-			input.OutputTokens,
-			input.ReasoningTokens,
-			input.AssistantLatency,
-			"success",
-			"",
-			"",
-		); err != nil {
-			return err
+		input.AssistantMessage.Content = input.AssistantText
+		input.AssistantMessage.TokenUsage = input.OutputTokens + input.ReasoningTokens
+		input.AssistantMessage.OutputTokens = input.OutputTokens
+		input.AssistantMessage.ReasoningTokens = input.ReasoningTokens
+		input.AssistantMessage.LatencyMS = input.AssistantLatency
+		input.AssistantMessage.Status = "success"
+		if len(input.GeneratedImageFiles) > 0 {
+			input.AssistantMessage.Attachments = marshalAttachmentSnapshots(attachmentsFromFiles(input.GeneratedImageFiles))
 		}
+		return s.finishSuccessfulMessageGeneration(ctx, input)
+	}
+
+	if completed, err := s.persistAssistantImagePayloadIfPresent(ctx, input); err != nil {
+		return err
+	} else if completed {
+		return s.finishSuccessfulMessageGeneration(ctx, input)
+	}
+
+	go func(msgID uint, inputTokens, cacheReadTokens, cacheWriteTokens int64) {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = s.repo.UpdateMessageUsage(bgCtx, msgID, inputTokens, 0, cacheReadTokens, cacheWriteTokens, 0)
+	}(input.UserMessage.ID, input.InputTokens, input.CacheReadTokens, input.CacheWriteTokens)
+
+	if err := s.repo.UpdateAssistantMessageCompletion(
+		ctx,
+		input.AssistantMessage.ID,
+		input.AssistantText,
+		input.OutputTokens,
+		input.ReasoningTokens,
+		input.AssistantLatency,
+		"success",
+		"",
+		"",
+	); err != nil {
+		return err
 	}
 	input.AssistantMessage.Content = input.AssistantText
 	input.AssistantMessage.TokenUsage = input.OutputTokens + input.ReasoningTokens
@@ -122,10 +139,66 @@ func (s *Service) persistSuccessfulMessageGeneration(ctx context.Context, input 
 	input.AssistantMessage.ReasoningTokens = input.ReasoningTokens
 	input.AssistantMessage.LatencyMS = input.AssistantLatency
 	input.AssistantMessage.Status = "success"
-	if len(input.GeneratedImageFiles) > 0 {
-		input.AssistantMessage.Attachments = string(marshalAttachmentSnapshots(attachmentsFromFiles(input.GeneratedImageFiles)))
+
+	return s.finishSuccessfulMessageGeneration(ctx, input)
+}
+
+func (s *Service) persistAssistantImagePayloadIfPresent(ctx context.Context, input persistMessageGenerationInput) (bool, error) {
+	normalized, err := s.normalizeAssistantImageContent(
+		ctx,
+		input.SendInput.UserID,
+		input.SendInput.ConversationID,
+		input.AssistantMessage.ID,
+		successfulMessageGenerationModelName(input),
+		input.AssistantText,
+	)
+	if err != nil || normalized == nil {
+		return false, err
 	}
 
+	if err := s.repo.CompleteAssistantMessageWithAttachments(
+		ctx,
+		input.UserMessage.ID,
+		repository.MessageUsageUpdate{
+			InputTokens:      input.InputTokens,
+			CacheReadTokens:  input.CacheReadTokens,
+			CacheWriteTokens: input.CacheWriteTokens,
+		},
+		input.AssistantMessage.ID,
+		repository.AssistantMessageCompletionUpdate{
+			ContentType:     "image",
+			Content:         normalized.Content,
+			OutputTokens:    input.OutputTokens,
+			ReasoningTokens: input.ReasoningTokens,
+			LatencyMS:       input.AssistantLatency,
+			Status:          "success",
+		},
+		normalized.AttachmentRows,
+	); err != nil {
+		return false, err
+	}
+
+	input.AssistantMessage.ContentType = "image"
+	input.AssistantMessage.Content = normalized.Content
+	input.AssistantMessage.TokenUsage = input.OutputTokens + input.ReasoningTokens
+	input.AssistantMessage.OutputTokens = input.OutputTokens
+	input.AssistantMessage.ReasoningTokens = input.ReasoningTokens
+	input.AssistantMessage.LatencyMS = input.AssistantLatency
+	input.AssistantMessage.Status = "success"
+	input.AssistantMessage.Attachments = marshalAttachmentSnapshots(normalized.AttachmentSnapshots)
+	return true, nil
+}
+
+func successfulMessageGenerationModelName(input persistMessageGenerationInput) string {
+	if input.Conversation != nil {
+		if value := strings.TrimSpace(input.Conversation.Model); value != "" {
+			return value
+		}
+	}
+	return strings.TrimSpace(input.SendInput.PlatformModelName)
+}
+
+func (s *Service) finishSuccessfulMessageGeneration(ctx context.Context, input persistMessageGenerationInput) error {
 	if err := s.persistMessageToolCalls(ctx, persistMessageToolCallsInput{
 		SendInput:          input.SendInput,
 		UserMessageID:      input.UserMessage.ID,

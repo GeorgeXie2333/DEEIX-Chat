@@ -63,6 +63,8 @@
     "invalidImportFile": "请选择有效的对话 JSON 文件。",
     "signInRequired": "未登录，无法操作对话备份"
   },
+  "exported": "已导出对话 JSON",
+  "exportFailed": "导出对话失败",
   "conversationCount": "{count} 个",
   "deleteConversationLabel": "「{title}」",
   "selectedConversationCountLabel": "{count} 个会话",
@@ -72,6 +74,7 @@
     "unstar": "取消星标",
     "star": "设为星标",
     "rename": "重新命名",
+    "shareAndExport": "分享 & 导出",
     "manageShare": "管理分享",
     "share": "分享",
     "exportJSON": "导出 JSON",

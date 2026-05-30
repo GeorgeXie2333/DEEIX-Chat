@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Archive, Check, Download, PencilLine, Share2, Star, Trash } from "lucide-react";
+import { Archive, Check, PencilLine, Share2, Star, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Ellipsis } from "@/components/animate-ui/icons/ellipsis";
@@ -26,6 +26,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CenteredEmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConversationProjectSubmenu } from "@/shared/components/conversation-project-submenu";
+import { ConversationShareExportSubmenu } from "@/shared/components/conversation-share-export-menu";
 import { cn } from "@/lib/utils";
 import { useAppLocale } from "@/i18n/app-i18n-provider";
 import type {
@@ -126,6 +127,7 @@ function RecentConversationRow({
 }) {
   const t = useTranslations("recent");
   const { locale } = useAppLocale();
+  const [menuOpen, setMenuOpen] = React.useState(false);
   const archived = isArchivedConversation(item);
   const shared = item.shareStatus === "active" && Boolean(item.shareID?.trim());
   const title = item.title?.trim() || t("untitled");
@@ -221,7 +223,7 @@ function RecentConversationRow({
         )}
  
 
-        <DropdownMenu modal={false}>
+        <DropdownMenu modal={false} open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild>
             <button
               id={`recent-page-item-menu-trigger-${item.publicID}`}
@@ -273,24 +275,14 @@ function RecentConversationRow({
               projects={projects}
               onSelect={(projectID) => onSetProject(item.publicID, projectID)}
             />
-            <DropdownMenuItem
-              onSelect={(event) => {
-                event.preventDefault();
-                onShare(item);
-              }}
-            >
-              <DropdownMenuItemIcon icon={Share2} />
-              {shared ? t("row.manageShare") : t("row.share")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={(event) => {
-                event.preventDefault();
-                void onExport(item);
-              }}
-            >
-              <DropdownMenuItemIcon icon={Download} />
-              {t("row.exportJSON")}
-            </DropdownMenuItem>
+            <ConversationShareExportSubmenu
+              label={t("row.shareAndExport")}
+              shareLabel={shared ? t("row.manageShare") : t("row.share")}
+              exportLabel={t("row.exportJSON")}
+              onShare={() => onShare(item)}
+              onExport={() => onExport(item)}
+              onCloseMenu={() => setMenuOpen(false)}
+            />
             <DropdownMenuItem
               onSelect={(event) => {
                 event.preventDefault();

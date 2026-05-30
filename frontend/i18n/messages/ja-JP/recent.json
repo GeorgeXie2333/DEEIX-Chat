@@ -53,6 +53,8 @@
   "loadingMore": "さらに読み込み中...",
   "retry": "再試行",
   "shareClosed": "共有を閉じました",
+  "exported": "JSON をエクスポートしました",
+  "exportFailed": "エクスポートに失敗しました",
   "archive": {
     "importJSON": "JSON をインポート",
     "importingJSON": "インポート中",
@@ -72,6 +74,7 @@
     "unstar": "スターを外す",
     "star": "スターを付ける",
     "rename": "名前を変更",
+    "shareAndExport": "共有とエクスポート",
     "manageShare": "共有を管理",
     "share": "共有",
     "exportJSON": "JSON をエクスポート",
