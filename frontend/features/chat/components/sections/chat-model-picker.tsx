@@ -17,6 +17,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { InputGroupButton } from "@/components/ui/input-group";
 import type { ChatModelOption } from "@/features/chat/types/chat-runtime";
+import {
+  keepDropdownMenuOpenAfterModelSelect,
+  stopModelMenuClickPropagation,
+} from "@/features/chat/model/chat-model-picker-events";
 import { useIsMobile } from "@/shared/hooks/use-mobile";
 import { LobeHubIcon } from "@/shared/components/lobehub-icon";
 import { cacheWritePricingLabel, cacheWritePricingNote, resolveCacheWritePricingUSD } from "@/shared/lib/billing-display";
@@ -354,7 +358,7 @@ function ChatModelMenuItem({
 }: {
   model: ChatModelOption;
   selected: boolean;
-  onSelect: () => void;
+  onSelect: (event: Event) => void;
   pricingLabels: React.ComponentProps<typeof ModelPricingTooltipContent>["labels"];
   viewPricingLabel: string;
 }) {
@@ -565,6 +569,7 @@ export function ChatModelPicker({
         sideOffset={8}
         className="p-1.5"
         style={{ width: isMobile ? mobileMenuWidth : vendorMenuWidth }}
+        onClick={stopModelMenuClickPropagation}
       >
         {isMobile ? (
           <>
@@ -593,9 +598,9 @@ export function ChatModelPicker({
                       key={item.platformModelName}
                       model={item}
                       selected={item.platformModelName === selectedPlatformModelName}
-                      onSelect={() => {
+                      onSelect={(event) => {
+                        keepDropdownMenuOpenAfterModelSelect(event);
                         onModelChange(item.platformModelName);
-                        setOpen(false);
                       }}
                       pricingLabels={pricingLabels}
                       viewPricingLabel={t("viewPricing")}
@@ -700,13 +705,13 @@ export function ChatModelPicker({
                                 key={item.platformModelName}
                                 model={item}
                                 selected={item.platformModelName === selectedPlatformModelName}
-                              onSelect={() => {
-                                onModelChange(item.platformModelName);
-                                setOpen(false);
-                              }}
-                              pricingLabels={pricingLabels}
-                              viewPricingLabel={t("viewPricing")}
-                            />
+                                onSelect={(event) => {
+                                  keepDropdownMenuOpenAfterModelSelect(event);
+                                  onModelChange(item.platformModelName);
+                                }}
+                                pricingLabels={pricingLabels}
+                                viewPricingLabel={t("viewPricing")}
+                              />
                             ))}
                           </div>
                         </ModelMenuScrollContainer>
