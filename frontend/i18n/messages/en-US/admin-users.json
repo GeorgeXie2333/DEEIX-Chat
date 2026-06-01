@@ -6,6 +6,7 @@
     "models": "Models",
     "toolSettings": "Tools",
     "billing": "Billing",
+    "openAPI": "Open API",
     "logs": "Logs",
     "loginSettings": "Sign-in & auth",
     "conversationSettings": "Conversation",

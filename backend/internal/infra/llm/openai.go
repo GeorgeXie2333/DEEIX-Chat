@@ -157,6 +157,210 @@ func (c *Client) generateStreamOpenAICompatible(
 	return result, nil
 }
 
+// GenerateRawChatCompletion forwards an OpenAI-compatible chat/completions
+// payload without model-option filtering. It only rewrites model/stream fields
+// required by local routing and keeps the upstream response JSON shape.
+func (c *Client) GenerateRawChatCompletion(ctx context.Context, route RouteConfig, body map[string]interface{}) (*RawChatCompletionOutput, error) {
+	requestURL := buildOpenAIRequestURL(route.BaseURL, EndpointChatCompletions)
+	if requestURL == "" {
+		return nil, fmt.Errorf("invalid base url")
+	}
+
+	requestBody := prepareRawChatCompletionRequestBody(body, route.UpstreamModel, false)
+	payload, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, err
+	}
+
+	requestCtx, cancel := context.WithTimeout(ctx, resolveReadTimeout(route.ReadTimeoutMS))
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(requestCtx, http.MethodPost, requestURL, bytes.NewReader(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if apiKey := strings.TrimSpace(route.APIKey); apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+	setOpenRouterAttributionHeaders(req, route)
+	setAdditionalHeaders(req, route.HeadersJSON)
+
+	resp, err := c.httpClientForRoute(route).Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close() //nolint:errcheck
+
+	raw, err := readUpstreamBody(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, parseUpstreamError(resp.StatusCode, raw, upstreamDebugSnapshot(req, payload, resp, raw))
+	}
+
+	parsed := make(map[string]interface{})
+	if err := json.Unmarshal(raw, &parsed); err != nil {
+		return nil, err
+	}
+	result := buildGenerateOutputFromParsedForAdapter(EndpointChatCompletions, route.Protocol, parsed)
+	result.RawJSON = string(raw)
+	debug := upstreamDebugSnapshot(req, payload, resp, raw)
+	result.Debug = debug
+	return &RawChatCompletionOutput{Body: parsed, Result: result, Debug: debug}, nil
+}
+
+// GenerateRawChatCompletionStream forwards a chat/completions streaming payload
+// and exposes each raw SSE data JSON object to the caller. The upstream [DONE]
+// marker is consumed rather than re-emitted so callers can append local usage
+// or billing errors before closing the downstream stream.
+func (c *Client) GenerateRawChatCompletionStream(
+	ctx context.Context,
+	route RouteConfig,
+	body map[string]interface{},
+	onEvent func(RawChatCompletionStreamEvent) error,
+) (*RawChatCompletionOutput, error) {
+	requestURL := buildOpenAIRequestURL(route.BaseURL, EndpointChatCompletions)
+	if requestURL == "" {
+		return nil, fmt.Errorf("invalid base url")
+	}
+
+	requestBody := prepareRawChatCompletionRequestBody(body, route.UpstreamModel, true)
+	payload, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, err
+	}
+
+	firstByteCtx, firstByteCancel := context.WithCancel(ctx)
+	defer firstByteCancel()
+
+	readTimeout := resolveReadTimeout(route.ReadTimeoutMS)
+	firstByteTimer := time.AfterFunc(readTimeout, func() {
+		firstByteCancel()
+	})
+
+	req, err := http.NewRequestWithContext(firstByteCtx, http.MethodPost, requestURL, bytes.NewReader(payload))
+	if err != nil {
+		firstByteTimer.Stop()
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	if apiKey := strings.TrimSpace(route.APIKey); apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+	setOpenRouterAttributionHeaders(req, route)
+	setAdditionalHeaders(req, route.HeadersJSON)
+
+	resp, err := c.httpClientForRoute(route).Do(req)
+	firstByteTimer.Stop()
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close() //nolint:errcheck
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		raw, readErr := readUpstreamBody(resp.Body)
+		if readErr != nil {
+			return nil, readErr
+		}
+		return nil, parseUpstreamError(resp.StatusCode, raw, upstreamDebugSnapshot(req, payload, resp, raw))
+	}
+
+	result := &GenerateOutput{
+		Usage:           Usage{},
+		ToolCalls:       make([]ToolCall, 0),
+		ServerToolCalls: make([]ToolCall, 0),
+	}
+	idleReader := newIdleTimeoutReader(resp.Body, resolveStreamIdleTimeout(route.StreamIdleTimeoutMS))
+	streamBody := newUpstreamBodyRecorder(idleReader)
+	err = consumeRawChatCompletionStream(route.Protocol, streamBody, result, onEvent)
+	if err != nil {
+		return nil, attachUpstreamDebug(err, upstreamDebugSnapshot(req, payload, resp, streamErrorBody(streamBody, err)))
+	}
+	return &RawChatCompletionOutput{Result: result, Debug: upstreamDebugSnapshot(req, payload, resp, nil)}, nil
+}
+
+func prepareRawChatCompletionRequestBody(body map[string]interface{}, upstreamModel string, stream bool) map[string]interface{} {
+	payload := cloneMap(body)
+	payload["model"] = strings.TrimSpace(upstreamModel)
+	payload["stream"] = stream
+	if stream {
+		streamOptions := cloneMap(asMap(payload["stream_options"]))
+		streamOptions["include_usage"] = true
+		payload["stream_options"] = streamOptions
+	}
+	return payload
+}
+
+func consumeRawChatCompletionStream(
+	adapter string,
+	reader io.Reader,
+	result *GenerateOutput,
+	onEvent func(RawChatCompletionStreamEvent) error,
+) error {
+	scanner := bufio.NewScanner(reader)
+	scanner.Buffer(make([]byte, 0, 256*1024), 64*1024*1024)
+
+	dataLines := make([]string, 0, 4)
+	dispatch := func() error {
+		payloadText := strings.Join(dataLines, "\n")
+		dataLines = dataLines[:0]
+		if strings.TrimSpace(payloadText) == "" {
+			return nil
+		}
+		if strings.TrimSpace(payloadText) == "[DONE]" {
+			return errStreamDone
+		}
+		parsed := make(map[string]interface{})
+		if err := json.Unmarshal([]byte(payloadText), &parsed); err != nil {
+			return err
+		}
+		if err := parseStreamUpstreamError(parsed, payloadText); err != nil {
+			return err
+		}
+		usage := parseChatStreamUsage(adapter, parsed)
+		reasoning := extractChatStreamReasoningDelta(parsed)
+		if err := applyChatStreamEvent(adapter, parsed, result, nil); err != nil {
+			return err
+		}
+		if onEvent != nil {
+			return onEvent(RawChatCompletionStreamEvent{
+				Body:      parsed,
+				Usage:     usage,
+				Reasoning: reasoning,
+			})
+		}
+		return nil
+	}
+
+	for scanner.Scan() {
+		line := strings.TrimRight(scanner.Text(), "\r")
+		if line == "" {
+			if err := dispatch(); err != nil {
+				if errors.Is(err, errStreamDone) {
+					return nil
+				}
+				return err
+			}
+			continue
+		}
+		if strings.HasPrefix(line, "data:") {
+			data := line[len("data:"):]
+			data = strings.TrimPrefix(data, " ")
+			dataLines = append(dataLines, data)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	if err := dispatch(); err != nil && !errors.Is(err, errStreamDone) {
+		return err
+	}
+	return nil
+}
+
 // listModelsOpenAICompatible 调用上游 models 目录接口。
 func (c *Client) listModelsOpenAICompatible(ctx context.Context, route RouteConfig) ([]ModelItem, error) {
 	requestURL := buildOpenAIModelsURL(route.BaseURL)

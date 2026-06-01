@@ -22,6 +22,7 @@ import (
 	mcphttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/mcp"
 	memoryhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/memory"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
+	openapihttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/openapi"
 	settingshttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/settings"
 	usersettingshttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/usersettings"
 	"github.com/gin-gonic/gin"
@@ -56,6 +57,7 @@ type Modules struct {
 	Admin        *adminhttp.Module
 	Settings     *settingshttp.Module
 	UserSettings *usersettingshttp.Module
+	OpenAPI      *openapihttp.Module
 }
 
 // NewEngine 创建并注册 API 路由。
@@ -95,6 +97,9 @@ func NewEngine(cfg *config.Runtime, log *zap.Logger, modules Modules, hc HealthC
 	engine.GET("/readyz", readyzHandler(hc))
 	if swaggerEnabled(snapshot.Env) {
 		engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
+	if modules.OpenAPI != nil {
+		modules.OpenAPI.RegisterCompatibleRoutes(engine.Group("/v1"))
 	}
 
 	api := engine.Group("/api/v1")
@@ -142,6 +147,9 @@ func NewEngine(cfg *config.Runtime, log *zap.Logger, modules Modules, hc HealthC
 	}
 	if modules.UserSettings != nil {
 		modules.UserSettings.RegisterRoutes(authRequired)
+	}
+	if modules.OpenAPI != nil {
+		modules.OpenAPI.RegisterRoutes(authRequired)
 	}
 	if modules.Settings != nil {
 		modules.Settings.RegisterRoutes(authRequired)
@@ -249,6 +257,8 @@ func cleanFrontendPath(rawPath string) string {
 func isBackendOnlyPath(requestPath string) bool {
 	return requestPath == "/api" ||
 		strings.HasPrefix(requestPath, "/api/") ||
+		requestPath == "/v1" ||
+		strings.HasPrefix(requestPath, "/v1/") ||
 		requestPath == "/swagger" ||
 		strings.HasPrefix(requestPath, "/swagger/") ||
 		requestPath == "/healthz" ||

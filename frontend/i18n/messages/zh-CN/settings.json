@@ -4,6 +4,7 @@
   "account": "账户",
   "chat": "对话",
   "subscription": "订阅",
+  "openapi": "API",
   "about": "关于",
   "navigation": "设置导航",
   "aboutPage": {
@@ -339,6 +340,56 @@
       "regenerateRecoveryCodesFailed": "重新生成恢复码失败",
       "providerUnavailable": "该身份源暂不可绑定",
       "bindIdentityFailed": "绑定身份源失败"
+    }
+  },
+  "openAPIPage": {
+    "title": "开放 API",
+    "empty": "未创建",
+    "never": "从未使用",
+    "copyBaseURL": "复制 Base URL",
+    "copyAPIKey": "复制 API Key",
+    "fields": {
+      "status": "状态",
+      "keyPrefix": "Key 前缀",
+      "lastUsedAt": "最近使用",
+      "baseURL": "Base URL"
+    },
+    "status": {
+      "loading": "加载中",
+      "none": "未创建",
+      "active": "已启用",
+      "revoked": "已停用"
+    },
+    "actions": {
+      "create": "创建",
+      "creating": "创建中",
+      "regenerate": "重新生成",
+      "disable": "停用",
+      "cancel": "取消",
+      "saving": "处理中"
+    },
+    "fresh": {
+      "title": "新 Key",
+      "key": "API Key"
+    },
+    "regenerateDialog": {
+      "title": "重新生成 API Key",
+      "description": "旧 Key 会立即失效。"
+    },
+    "deleteDialog": {
+      "title": "停用 API Key",
+      "description": "停用后通过该 Key 的 /v1 请求会被拒绝。"
+    },
+    "toast": {
+      "loadFailed": "API Key 加载失败",
+      "created": "API Key 已创建",
+      "createFailed": "创建 API Key 失败",
+      "regenerated": "API Key 已重新生成",
+      "regenerateFailed": "重新生成 API Key 失败",
+      "deleted": "API Key 已停用",
+      "deleteFailed": "停用 API Key 失败",
+      "copied": "{label}已复制",
+      "copyFailed": "复制失败"
     }
   },
   "chatPage": {

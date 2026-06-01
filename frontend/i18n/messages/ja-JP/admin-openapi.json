@@ -1,0 +1,28 @@
+{
+  "title": "Open API",
+  "fields": {
+    "rpm": "RPM 制限",
+    "models": "公開モデル",
+    "manual": "追加モデル名"
+  },
+  "placeholders": {
+    "manual": "1 行に 1 つのプラットフォームモデル名"
+  },
+  "actions": {
+    "save": "保存",
+    "saving": "保存中",
+    "reload": "更新"
+  },
+  "state": {
+    "loading": "読み込み中",
+    "empty": "利用可能な Chat Completions テキストモデルがありません",
+    "activeSources": "{count} 個の有効ルート"
+  },
+  "toast": {
+    "sessionExpired": "セッションの有効期限が切れました",
+    "loadFailed": "Open API 設定の読み込みに失敗しました",
+    "saved": "Open API 設定を保存しました",
+    "saveFailed": "Open API 設定の保存に失敗しました",
+    "rpmInvalid": "RPM は 0 以上の整数で入力してください"
+  }
+}

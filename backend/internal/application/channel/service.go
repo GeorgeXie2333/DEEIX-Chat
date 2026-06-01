@@ -77,6 +77,7 @@ type ResolvedRoute struct {
 type ResolveRouteInput struct {
 	PlatformModelName string
 	TaskType          string
+	PreferredProtocol string
 	UserID            uint
 	ConversationID    uint
 	RequestID         string

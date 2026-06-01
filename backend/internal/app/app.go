@@ -21,6 +21,7 @@ import (
 	appmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/mcp"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/memory"
 	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
+	appopenapi "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/openapi"
 	appprocessing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/processing"
 	apprag "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/rag"
 	appruntime "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/runtime"
@@ -43,6 +44,7 @@ import (
 	conversationrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/conversation"
 	mcprepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/mcp"
 	memoryrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/memory"
+	openapirepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/openapi"
 	settingsrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/settings"
 	systemeventrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/systemevent"
 	userrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/user"
@@ -56,6 +58,7 @@ import (
 	conversationhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/conversation"
 	mcphttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/mcp"
 	memoryhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/memory"
+	openapihttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/openapi"
 	settingshttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/settings"
 	usersettingshttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/usersettings"
 	"github.com/gin-gonic/gin"
@@ -231,6 +234,18 @@ func NewApp() (*App, error) {
 	userSettingsService := usersettings.NewService(userSettingsRepo)
 	userSettingsHandler := usersettingshttp.NewHandler(userSettingsService)
 	userSettingsModule := usersettingshttp.NewModule(userSettingsHandler)
+	openAPIRepo := openapirepo.NewRepo(db)
+	openAPIService := appopenapi.NewService(appopenapi.Dependencies{
+		KeyRepo:           openAPIRepo,
+		Settings:          settingsService,
+		Channel:           channelService,
+		Billing:           billingService,
+		ChatProvider:      appopenapi.NewLLMRawChatProvider(llmClient),
+		RateLimiter:       rateLimiter,
+		DataEncryptionKey: cfg.DataEncryptionKey,
+	})
+	openAPIHandler := openapihttp.NewHandler(openAPIService)
+	openAPIModule := openapihttp.NewModule(openAPIHandler)
 
 	hc := newHealthChecker(db, redisClient)
 	engine, err := platformhttp.NewEngine(runtimeCfg, log, platformhttp.Modules{
@@ -244,6 +259,7 @@ func NewApp() (*App, error) {
 		Admin:        adminModule,
 		Settings:     settingsModule,
 		UserSettings: userSettingsModule,
+		OpenAPI:      openAPIModule,
 	}, hc, rateLimiter)
 	if err != nil {
 		return nil, err

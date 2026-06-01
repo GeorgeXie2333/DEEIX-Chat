@@ -611,6 +611,20 @@ type ModelItem struct {
 	OwnedBy string
 }
 
+// RawChatCompletionOutput 保留 OpenAI Chat Completions 原始响应体，同时提供解析后的用量与 reasoning。
+type RawChatCompletionOutput struct {
+	Body   map[string]interface{}
+	Result *GenerateOutput
+	Debug  *UpstreamDebugSnapshot `json:"-"`
+}
+
+// RawChatCompletionStreamEvent 表示 OpenAI Chat Completions 原始 SSE 片段。
+type RawChatCompletionStreamEvent struct {
+	Body      map[string]interface{}
+	Usage     Usage
+	Reasoning *ReasoningDelta
+}
+
 // UpstreamError 是上游 HTTP 调用错误。
 type UpstreamError struct {
 	StatusCode int

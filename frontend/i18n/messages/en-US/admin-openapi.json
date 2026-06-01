@@ -1,0 +1,28 @@
+{
+  "title": "Open API",
+  "fields": {
+    "rpm": "RPM limit",
+    "models": "Allowed models",
+    "manual": "Additional model names"
+  },
+  "placeholders": {
+    "manual": "One platform model name per line"
+  },
+  "actions": {
+    "save": "Save",
+    "saving": "Saving",
+    "reload": "Refresh"
+  },
+  "state": {
+    "loading": "Loading",
+    "empty": "No Chat Completions text models are available",
+    "activeSources": "{count} active routes"
+  },
+  "toast": {
+    "sessionExpired": "Session expired",
+    "loadFailed": "Failed to load Open API settings",
+    "saved": "Open API settings saved",
+    "saveFailed": "Failed to save Open API settings",
+    "rpmInvalid": "RPM must be 0 or a positive integer"
+  }
+}

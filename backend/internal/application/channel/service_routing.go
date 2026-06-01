@@ -36,7 +36,12 @@ func (s *Service) ResolveRoute(ctx context.Context, input ResolveRouteInput) (*R
 	}
 
 	available := make([]repository.ChannelUpstreamRouteRow, 0, len(rows))
+	preferredProtocol := llm.NormalizeAdapter(input.PreferredProtocol)
+	requirePreferredProtocol := strings.TrimSpace(input.PreferredProtocol) != ""
 	for _, row := range rows {
+		if requirePreferredProtocol && llm.NormalizeAdapter(row.Protocol) != preferredProtocol {
+			continue
+		}
 		if !IsRouteAllowedForTask(input.TaskType, row.ModelKindsJSON, row.Protocol) {
 			continue
 		}

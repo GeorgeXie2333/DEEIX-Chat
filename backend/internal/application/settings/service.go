@@ -138,6 +138,7 @@ var validNamespaces = map[string]bool{
 	"extract": true,
 	"mcp":     true,
 	"circuit": true,
+	"openapi": true,
 }
 
 // IsValidNamespace 判断 namespace 是否允许被动态配置。
@@ -250,6 +251,22 @@ func validatePatchItem(item PatchItem) error {
 			}
 		}
 		return nil
+	case "openapi:model_allowlist":
+		if err := validateStringMax(value, 20000, key); err != nil {
+			return err
+		}
+		modelNames := domainbilling.ParseModelNameList(value)
+		if len(modelNames) > 500 {
+			return fmt.Errorf("%s must contain at most 500 model names", key)
+		}
+		for _, modelName := range modelNames {
+			if len(modelName) > 256 {
+				return fmt.Errorf("%s contains a model name longer than 256 characters", key)
+			}
+		}
+		return nil
+	case "openapi:rate_limit_rpm":
+		return validateIntMinMax(value, 0, 1000000, key)
 	case "billing:native_tool_pricing_json":
 		if err := validateStringMax(value, 4000, key); err != nil {
 			return err

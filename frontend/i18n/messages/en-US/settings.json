@@ -4,6 +4,7 @@
   "account": "Account",
   "chat": "Chat",
   "subscription": "Subscription",
+  "openapi": "API",
   "about": "About",
   "navigation": "Settings navigation",
   "aboutPage": {
@@ -339,6 +340,56 @@
       "regenerateRecoveryCodesFailed": "Failed to regenerate recovery codes",
       "providerUnavailable": "This identity provider is not available for binding.",
       "bindIdentityFailed": "Failed to bind identity provider"
+    }
+  },
+  "openAPIPage": {
+    "title": "Open API",
+    "empty": "Not created",
+    "never": "Never used",
+    "copyBaseURL": "Copy Base URL",
+    "copyAPIKey": "Copy API Key",
+    "fields": {
+      "status": "Status",
+      "keyPrefix": "Key prefix",
+      "lastUsedAt": "Last used",
+      "baseURL": "Base URL"
+    },
+    "status": {
+      "loading": "Loading",
+      "none": "Not created",
+      "active": "Enabled",
+      "revoked": "Disabled"
+    },
+    "actions": {
+      "create": "Create",
+      "creating": "Creating",
+      "regenerate": "Regenerate",
+      "disable": "Disable",
+      "cancel": "Cancel",
+      "saving": "Working"
+    },
+    "fresh": {
+      "title": "New key",
+      "key": "API Key"
+    },
+    "regenerateDialog": {
+      "title": "Regenerate API Key",
+      "description": "The previous key stops working immediately."
+    },
+    "deleteDialog": {
+      "title": "Disable API Key",
+      "description": "Requests to /v1 with this key will be rejected."
+    },
+    "toast": {
+      "loadFailed": "Failed to load API Key",
+      "created": "API Key created",
+      "createFailed": "Failed to create API Key",
+      "regenerated": "API Key regenerated",
+      "regenerateFailed": "Failed to regenerate API Key",
+      "deleted": "API Key disabled",
+      "deleteFailed": "Failed to disable API Key",
+      "copied": "{label} copied",
+      "copyFailed": "Copy failed"
     }
   },
   "chatPage": {

@@ -58,6 +58,10 @@ func defaultSettings() []domainsettings.SystemSetting {
 		{Namespace: "billing", Key: "epay_pid", Value: "", ValueType: "string", Description: "易支付商户 ID"},
 		{Namespace: "billing", Key: "epay_key", Value: "", ValueType: "string", Description: "易支付商户密钥"},
 
+		// 开放 API 配置
+		{Namespace: "openapi", Key: "model_allowlist", Value: "", ValueType: "string", Description: "开放 API 模型白名单，逗号或换行分隔"},
+		{Namespace: "openapi", Key: "rate_limit_rpm", Value: "60", ValueType: "int", Description: "开放 API 每个 Key 每分钟请求数，0表示不限"},
+
 		// 对话配置
 		{Namespace: "chat", Key: "max_context_messages", Value: "20", ValueType: "int", Description: "上下文消息数"},
 		{Namespace: "chat", Key: "context_max_turns", Value: "48", ValueType: "int", Description: "最大对话轮次"},

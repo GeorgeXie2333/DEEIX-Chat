@@ -4,6 +4,7 @@
   "account": "アカウント",
   "chat": "チャット",
   "subscription": "サブスクリプション",
+  "openapi": "API",
   "about": "概要",
   "navigation": "設定ナビゲーション",
   "aboutPage": {
@@ -339,6 +340,56 @@
       "regenerateRecoveryCodesFailed": "復旧コードの再生成に失敗しました",
       "providerUnavailable": "この ID プロバイダーは現在バインドできません",
       "bindIdentityFailed": "ID プロバイダーのバインドに失敗しました"
+    }
+  },
+  "openAPIPage": {
+    "title": "Open API",
+    "empty": "未作成",
+    "never": "未使用",
+    "copyBaseURL": "Base URL をコピー",
+    "copyAPIKey": "API Key をコピー",
+    "fields": {
+      "status": "状態",
+      "keyPrefix": "Key プレフィックス",
+      "lastUsedAt": "最終使用",
+      "baseURL": "Base URL"
+    },
+    "status": {
+      "loading": "読み込み中",
+      "none": "未作成",
+      "active": "有効",
+      "revoked": "無効"
+    },
+    "actions": {
+      "create": "作成",
+      "creating": "作成中",
+      "regenerate": "再生成",
+      "disable": "無効化",
+      "cancel": "キャンセル",
+      "saving": "処理中"
+    },
+    "fresh": {
+      "title": "新しい Key",
+      "key": "API Key"
+    },
+    "regenerateDialog": {
+      "title": "API Key を再生成",
+      "description": "以前の Key はすぐに使えなくなります。"
+    },
+    "deleteDialog": {
+      "title": "API Key を無効化",
+      "description": "この Key を使った /v1 リクエストは拒否されます。"
+    },
+    "toast": {
+      "loadFailed": "API Key の読み込みに失敗しました",
+      "created": "API Key を作成しました",
+      "createFailed": "API Key の作成に失敗しました",
+      "regenerated": "API Key を再生成しました",
+      "regenerateFailed": "API Key の再生成に失敗しました",
+      "deleted": "API Key を無効化しました",
+      "deleteFailed": "API Key の無効化に失敗しました",
+      "copied": "{label}をコピーしました",
+      "copyFailed": "コピーに失敗しました"
     }
   },
   "chatPage": {

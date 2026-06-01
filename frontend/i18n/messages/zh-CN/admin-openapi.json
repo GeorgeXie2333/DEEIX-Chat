@@ -1,0 +1,28 @@
+{
+  "title": "开放 API",
+  "fields": {
+    "rpm": "RPM 限流",
+    "models": "开放模型",
+    "manual": "额外模型名"
+  },
+  "placeholders": {
+    "manual": "每行一个平台模型名"
+  },
+  "actions": {
+    "save": "保存",
+    "saving": "保存中",
+    "reload": "刷新"
+  },
+  "state": {
+    "loading": "加载中",
+    "empty": "暂无可开放的 Chat Completions 文本模型",
+    "activeSources": "{count} 个可用路由"
+  },
+  "toast": {
+    "sessionExpired": "登录已过期",
+    "loadFailed": "开放 API 设置加载失败",
+    "saved": "开放 API 设置已保存",
+    "saveFailed": "开放 API 设置保存失败",
+    "rpmInvalid": "RPM 必须是 0 或正整数"
+  }
+}

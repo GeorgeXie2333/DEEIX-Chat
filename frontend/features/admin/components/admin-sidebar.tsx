@@ -40,6 +40,7 @@ export function AdminSidebar({
         models: "sections.models",
         "tool-settings": "sections.toolSettings",
         billing: "sections.billing",
+        "open-api": "sections.openAPI",
         logs: "sections.logs",
         "login-settings": "sections.loginSettings",
         "conversation-settings": "sections.conversationSettings",
