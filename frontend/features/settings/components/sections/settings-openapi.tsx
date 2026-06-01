@@ -189,7 +189,7 @@ export function SettingsOpenAPI() {
             </>
           ) : (
             <Button type="button" size="sm" disabled={loading || mutating} onClick={createKey}>
-              {mutating ? <SpinnerLabel label={t("actions.creating")} /> : <><KeyRound className="size-4" />{t("actions.create")}</>}
+              {mutating ? <SpinnerLabel>{t("actions.creating")}</SpinnerLabel> : <><KeyRound className="size-4" />{t("actions.create")}</>}
             </Button>
           )
         }
