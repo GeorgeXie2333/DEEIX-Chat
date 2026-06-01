@@ -149,6 +149,14 @@ type ModelView struct {
 	UpdatedAt         string
 }
 
+// ActiveModelRouteView 表示平台模型下可用的上游真实模型路由。
+type ActiveModelRouteView struct {
+	PlatformModelName string
+	UpstreamModelName string
+	Protocol          string
+	KindsJSON         string
+}
+
 // UpstreamModelView 上游模型路由绑定展示数据（内部传输，不携带序列化标记）。
 type UpstreamModelView struct {
 	ID                     uint

@@ -76,6 +76,7 @@ type ResolvedRoute struct {
 // ResolveRouteInput 路由解析输入。
 type ResolveRouteInput struct {
 	PlatformModelName string
+	UpstreamModelName string
 	TaskType          string
 	PreferredProtocol string
 	UserID            uint

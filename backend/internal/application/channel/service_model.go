@@ -93,6 +93,27 @@ func (s *Service) ListActiveModels(ctx context.Context) ([]ModelView, error) {
 	return cloneModelViews(views), nil
 }
 
+// ListActiveModelRoutes 返回指定平台模型下 active 的上游真实模型路由。
+func (s *Service) ListActiveModelRoutes(ctx context.Context, platformModelName string) ([]ActiveModelRouteView, error) {
+	if s == nil || s.repo == nil {
+		return []ActiveModelRouteView{}, nil
+	}
+	rows, err := s.repo.ListActiveRoutesByModel(ctx, platformModelName)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]ActiveModelRouteView, 0, len(rows))
+	for _, row := range rows {
+		results = append(results, ActiveModelRouteView{
+			PlatformModelName: strings.TrimSpace(row.PlatformModelName),
+			UpstreamModelName: strings.TrimSpace(row.UpstreamModelName),
+			Protocol:          strings.TrimSpace(row.Protocol),
+			KindsJSON:         strings.TrimSpace(row.ModelKindsJSON),
+		})
+	}
+	return results, nil
+}
+
 func (s *Service) listAllActiveModelRows(ctx context.Context) ([]repository.ChannelModelListRow, error) {
 	const batchSize = 500
 	results := make([]repository.ChannelModelListRow, 0)

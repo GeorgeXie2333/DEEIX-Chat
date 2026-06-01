@@ -240,7 +240,7 @@ func NewApp() (*App, error) {
 		Settings:          settingsService,
 		Channel:           channelService,
 		Billing:           billingService,
-		ChatProvider:      appopenapi.NewLLMRawChatProvider(llmClient),
+		ChatProvider:      appopenapi.NewLLMRawChatProviderWithImageResolver(llmClient, appopenapi.NewHTTPChatImageResolver(cfg.Env, cfg.SSRFProtectionEnabled, cfg.MaxUploadFileBytes)),
 		RateLimiter:       rateLimiter,
 		DataEncryptionKey: cfg.DataEncryptionKey,
 	})

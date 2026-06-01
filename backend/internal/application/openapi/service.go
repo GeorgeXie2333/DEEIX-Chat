@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -31,7 +30,6 @@ const (
 	openAPISettingsNamespace     = "openapi"
 	openAPISettingModelAllowlist = "model_allowlist"
 	openAPISettingRateLimitRPM   = "rate_limit_rpm"
-	publicChatProtocol           = llm.AdapterOpenAIChatCompletions
 )
 
 var (
@@ -65,6 +63,7 @@ type settingsReader interface {
 
 type channelService interface {
 	ListActiveModels(ctx context.Context) ([]appchannel.ModelView, error)
+	ListActiveModelRoutes(ctx context.Context, platformModelName string) ([]appchannel.ActiveModelRouteView, error)
 	ResolveRoute(ctx context.Context, input appchannel.ResolveRouteInput) (*appchannel.ResolvedRoute, error)
 	MarkRouteSuccess(ctx context.Context, route *appchannel.ResolvedRoute)
 	MarkRouteFailure(ctx context.Context, route *appchannel.ResolvedRoute, cause error)
@@ -173,6 +172,7 @@ type PreparedChatCompletion struct {
 	reservation       *domainbilling.UsageBalanceReservation
 	startedAt         time.Time
 	platformModelName string
+	publicModelID     string
 }
 
 // GetAPIKey 返回用户 API Key 元数据，不返回明文。
@@ -294,20 +294,49 @@ func (s *Service) ListModels(ctx context.Context) (OpenAIModelList, error) {
 	if err != nil {
 		return result, err
 	}
+	activeModels := make(map[string]appchannel.ModelView, len(models))
 	for _, item := range models {
 		name := strings.TrimSpace(item.PlatformModelName)
-		if _, ok := allowlist[name]; !ok {
+		if name == "" {
 			continue
 		}
-		if !modelSupportsPublicChatCompletions(item) {
+		activeModels[name] = item
+	}
+	seen := make(map[string]struct{})
+	for _, platformModelName := range settings.ModelAllowlist {
+		platformModelName = strings.TrimSpace(platformModelName)
+		if _, ok := allowlist[platformModelName]; !ok {
 			continue
 		}
-		result.Data = append(result.Data, OpenAIModel{
-			ID:      name,
-			Object:  "model",
-			Created: 0,
-			OwnedBy: "deeix",
-		})
+		if _, ok := activeModels[platformModelName]; !ok {
+			continue
+		}
+		routes, err := s.channel.ListActiveModelRoutes(ctx, platformModelName)
+		if err != nil {
+			return result, err
+		}
+		for _, route := range routes {
+			publicID := strings.TrimSpace(route.UpstreamModelName)
+			if publicID == "" {
+				continue
+			}
+			if _, ok := seen[publicID]; ok {
+				continue
+			}
+			if !isPublicChatProtocol(route.Protocol) {
+				continue
+			}
+			if !appchannel.IsRouteAllowedForTask(appchannel.TaskTypeChat, route.KindsJSON, llm.NormalizeAdapter(route.Protocol)) {
+				continue
+			}
+			seen[publicID] = struct{}{}
+			result.Data = append(result.Data, OpenAIModel{
+				ID:      publicID,
+				Object:  "model",
+				Created: 0,
+				OwnedBy: "deeix",
+			})
+		}
 	}
 	return result, nil
 }
@@ -326,8 +355,8 @@ func (s *Service) PrepareChatCompletion(
 	if s.channel == nil || s.chatProvider == nil {
 		return nil, ErrModelNotAllowed
 	}
-	modelName := strings.TrimSpace(stringValue(request["model"]))
-	if modelName == "" {
+	publicModelID := strings.TrimSpace(stringValue(request["model"]))
+	if publicModelID == "" {
 		return nil, fmt.Errorf("%w: model is required", ErrInvalidRequest)
 	}
 	if _, ok := request["messages"]; !ok {
@@ -337,34 +366,28 @@ func (s *Service) PrepareChatCompletion(
 	if err != nil {
 		return nil, err
 	}
-	if !domainbilling.ContainsModelName(settings.ModelAllowlist, modelName) {
-		return nil, ErrModelNotAllowed
-	}
-
-	route, err := s.channel.ResolveRoute(ctx, appchannel.ResolveRouteInput{
-		PlatformModelName: modelName,
-		TaskType:          appchannel.TaskTypeChat,
-		PreferredProtocol: publicChatProtocol,
-		UserID:            key.UserID,
-		RequestID:         strings.TrimSpace(requestID),
-	})
+	route, err := s.resolvePublicModelRoute(ctx, settings.ModelAllowlist, publicModelID, key.UserID, requestID)
 	if err != nil {
 		return nil, ErrModelNotAllowed
 	}
-	if llm.NormalizeAdapter(route.Protocol) != publicChatProtocol {
+	if !isPublicChatProtocol(route.Protocol) {
 		return nil, ErrModelNotAllowed
 	}
 
+	platformModelName := strings.TrimSpace(route.PlatformModelName)
+	if platformModelName == "" {
+		return nil, ErrModelNotAllowed
+	}
 	startedAt := s.now()
 	if s.billing != nil {
-		if err := s.billing.EnsureModelUsable(ctx, key.UserID, modelName, startedAt); err != nil {
+		if err := s.billing.EnsureModelUsable(ctx, key.UserID, platformModelName, startedAt); err != nil {
 			return nil, err
 		}
 	}
 
 	var reservation *domainbilling.UsageBalanceReservation
 	if s.billing != nil {
-		reservation, err = s.billing.ReserveUsageBalance(ctx, key.UserID, modelName, strings.TrimSpace(requestID))
+		reservation, err = s.billing.ReserveUsageBalance(ctx, key.UserID, platformModelName, strings.TrimSpace(requestID))
 		if err != nil {
 			return nil, err
 		}
@@ -379,7 +402,8 @@ func (s *Service) PrepareChatCompletion(
 		routeConfig:       routeConfigFromResolvedRoute(route),
 		reservation:       reservation,
 		startedAt:         startedAt,
-		platformModelName: modelName,
+		platformModelName: platformModelName,
+		publicModelID:     publicModelID,
 	}, nil
 }
 
@@ -398,7 +422,7 @@ func (s *Service) CompleteChatCompletion(ctx context.Context, prepared *Prepared
 
 	body := cloneMap(result.Body)
 	answerText := completionTextFromBody(body)
-	body["model"] = prepared.platformModelName
+	body["model"] = prepared.publicModelID
 	if result.ReasoningText != "" {
 		injectThinkIntoCompletionBody(body, result.ReasoningText)
 	}
@@ -427,7 +451,7 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 	thinkClosed := false
 
 	emitThink := func(content string) error {
-		chunk := makeStreamContentChunk(prepared.platformModelName, content)
+		chunk := makeStreamContentChunk(prepared.publicModelID, content)
 		return emit(chunk)
 	}
 	closeThinkIfNeeded := func() error {
@@ -454,8 +478,11 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 				return err
 			}
 		}
+		if len(event.Body) == 0 {
+			return nil
+		}
 		chunk := cloneMap(event.Body)
-		chunk["model"] = prepared.platformModelName
+		chunk["model"] = prepared.publicModelID
 		if streamChunkHasContent(chunk) {
 			if err := closeThinkIfNeeded(); err != nil {
 				return err
@@ -485,9 +512,46 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 		return err
 	}
 	if !usageSent {
-		return emit(makeStreamUsageChunk(prepared.platformModelName, usage))
+		return emit(makeStreamUsageChunk(prepared.publicModelID, usage))
 	}
 	return nil
+}
+
+func (s *Service) resolvePublicModelRoute(
+	ctx context.Context,
+	allowlist []string,
+	publicModelID string,
+	userID uint,
+	requestID string,
+) (*appchannel.ResolvedRoute, error) {
+	publicModelID = strings.TrimSpace(publicModelID)
+	if publicModelID == "" {
+		return nil, ErrModelNotAllowed
+	}
+	for _, platformModelName := range allowlist {
+		platformModelName = strings.TrimSpace(platformModelName)
+		if platformModelName == "" {
+			continue
+		}
+		route, err := s.channel.ResolveRoute(ctx, appchannel.ResolveRouteInput{
+			PlatformModelName: platformModelName,
+			UpstreamModelName: publicModelID,
+			TaskType:          appchannel.TaskTypeChat,
+			UserID:            userID,
+			RequestID:         strings.TrimSpace(requestID),
+		})
+		if err != nil {
+			continue
+		}
+		if !isPublicChatProtocol(route.Protocol) {
+			continue
+		}
+		if strings.TrimSpace(route.UpstreamModel) != publicModelID {
+			continue
+		}
+		return route, nil
+	}
+	return nil, ErrModelNotAllowed
 }
 
 func (s *Service) replaceAPIKey(ctx context.Context, userID uint) (*APIKeyView, error) {
@@ -586,25 +650,17 @@ func modelAllowlistSet(items []string) map[string]struct{} {
 	return result
 }
 
-func modelSupportsPublicChatCompletions(item appchannel.ModelView) bool {
-	protocols := parseStringArray(item.ProtocolsJSON)
-	for _, protocol := range protocols {
-		if llm.NormalizeAdapter(protocol) != publicChatProtocol {
-			continue
-		}
-		if appchannel.IsRouteAllowedForTask(appchannel.TaskTypeChat, item.KindsJSON, publicChatProtocol) {
-			return true
-		}
+func isPublicChatProtocol(protocol string) bool {
+	switch llm.NormalizeAdapter(protocol) {
+	case llm.AdapterOpenAIResponses,
+		llm.AdapterOpenAIChatCompletions,
+		llm.AdapterAnthropicMessages,
+		llm.AdapterGoogleGenerateContent,
+		llm.AdapterXAIResponses:
+		return true
+	default:
+		return false
 	}
-	return false
-}
-
-func parseStringArray(raw string) []string {
-	var values []string
-	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &values); err != nil {
-		return nil
-	}
-	return values
 }
 
 func routeConfigFromResolvedRoute(route *appchannel.ResolvedRoute) llm.RouteConfig {
@@ -619,7 +675,7 @@ func routeConfigFromResolvedRoute(route *appchannel.ResolvedRoute) llm.RouteConf
 		ConnectTimeoutMS:    route.ConnectTimeoutMS,
 		ReadTimeoutMS:       route.ReadTimeoutMS,
 		StreamIdleTimeoutMS: route.StreamIdleTimeoutMS,
-		Endpoint:            llm.EndpointChatCompletions,
+		Endpoint:            llm.DefaultEndpointForAdapter(route.Protocol),
 		UpstreamModel:       route.UpstreamModel,
 	}
 }

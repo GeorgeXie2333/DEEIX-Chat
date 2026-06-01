@@ -186,6 +186,14 @@ func modelParamIntValue(params map[string]interface{}, key string) (int, bool) {
 		return int(typed), true
 	case float64:
 		return int(typed), true
+	case json.Number:
+		if parsed, err := typed.Int64(); err == nil {
+			return int(parsed), true
+		}
+		if parsed, err := typed.Float64(); err == nil {
+			return int(parsed), true
+		}
+		return 0, false
 	default:
 		return 0, false
 	}
@@ -206,6 +214,9 @@ func modelParamFloat(params map[string]interface{}, key string) (float64, bool) 
 		return float64(typed), true
 	case float64:
 		return typed, true
+	case json.Number:
+		parsed, err := typed.Float64()
+		return parsed, err == nil
 	default:
 		return 0, false
 	}
