@@ -168,6 +168,9 @@ func migrate(db *gorm.DB, cfg config.Config) error {
 	if err := applyBillingBaselineIndexes(db); err != nil {
 		return err
 	}
+	if err := applyOpenAPIBaselineIndexes(db); err != nil {
+		return err
+	}
 	if err := applyVectorBaseline(db, vectorBaselineRequired(cfg)); err != nil {
 		return err
 	}
@@ -278,6 +281,21 @@ func applyBillingBaselineIndexes(db *gorm.DB) error {
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_billing_balance_transactions_usage_ref
 		ON "billing_balance_transactions" ("user_id", "type", "ref_no")
 		WHERE ref_no <> '' AND type IN ('usage_reserve', 'usage_refund')`,
+	}
+
+	for _, statement := range statements {
+		if err := db.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func applyOpenAPIBaselineIndexes(db *gorm.DB) error {
+	statements := []string{
+		`ALTER TABLE "openapi_keys"
+		ADD COLUMN IF NOT EXISTS "key_plaintext_encrypted" text NOT NULL DEFAULT ''`,
+		`COMMENT ON COLUMN "openapi_keys"."key_plaintext_encrypted" IS 'API Key 明文密文'`,
 	}
 
 	for _, statement := range statements {

@@ -57,6 +57,7 @@
     "twoFactorChallengeExpired": "Two-factor verification expired. Sign in again.",
     "twoFactorExpired": "Two-factor verification expired. Try again.",
     "twoFactorNotStarted": "Two-factor verification has not started.",
+    "twoFactorRequired": "Enable two-factor authentication before creating or exporting an API Key.",
     "turnstileInvalid": "Human verification failed. Please try again.",
     "turnstileNotConfigured": "Human verification is not configured.",
     "turnstileRequired": "Complete the human verification first.",

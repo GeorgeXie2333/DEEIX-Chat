@@ -42,6 +42,10 @@ func (h *Handler) CreateAPIKey(c *gin.Context) {
 		response.Error(c, http.StatusConflict, "api key already exists")
 		return
 	}
+	if errors.Is(err, appopenapi.ErrTwoFactorRequired) {
+		response.Error(c, http.StatusForbidden, "two factor authentication is required")
+		return
+	}
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "create open api key failed")
 		return
@@ -52,6 +56,10 @@ func (h *Handler) CreateAPIKey(c *gin.Context) {
 // RegenerateAPIKey 重新生成当前用户 API Key。
 func (h *Handler) RegenerateAPIKey(c *gin.Context) {
 	view, err := h.service.RegenerateAPIKey(c.Request.Context(), middleware.MustUserID(c))
+	if errors.Is(err, appopenapi.ErrTwoFactorRequired) {
+		response.Error(c, http.StatusForbidden, "two factor authentication is required")
+		return
+	}
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "regenerate open api key failed")
 		return

@@ -11,12 +11,13 @@ const (
 
 // UserAPIKey 表示用户开放 API Key 的安全存储记录。
 type UserAPIKey struct {
-	ID         uint
-	UserID     uint
-	KeyHash    string
-	KeyPrefix  string
-	Status     string
-	LastUsedAt *time.Time
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID                    uint
+	UserID                uint
+	KeyHash               string
+	KeyPrefix             string
+	KeyPlaintextEncrypted string
+	Status                string
+	LastUsedAt            *time.Time
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }

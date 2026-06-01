@@ -20,6 +20,7 @@ import (
 	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	domainopenapi "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/openapi"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/llm"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/secretbox"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 )
 
@@ -37,6 +38,8 @@ var (
 	ErrInvalidAPIKey = errors.New("invalid api key")
 	// ErrAPIKeyAlreadyExists 表示用户已有可用 API Key。
 	ErrAPIKeyAlreadyExists = errors.New("api key already exists")
+	// ErrTwoFactorRequired 表示用户必须先开启 2FA 才能创建、重新生成或导出 API Key。
+	ErrTwoFactorRequired = errors.New("two factor authentication is required")
 	// ErrModelNotAllowed 表示模型未在开放 API 白名单中。
 	ErrModelNotAllowed = errors.New("model is not available for open api")
 	// ErrInvalidRequest 表示请求体不符合 Chat Completions 基本要求。
@@ -53,6 +56,7 @@ type Dependencies struct {
 	Billing           billingService
 	ChatProvider      rawChatProvider
 	RateLimiter       rateLimiter
+	TwoFactor         twoFactorChecker
 	DataEncryptionKey string
 	Now               func() time.Time
 }
@@ -86,6 +90,10 @@ type rateLimiter interface {
 	AllowSlidingWindow(ctx context.Context, key string, limit int, window time.Duration, ttl time.Duration) (bool, error)
 }
 
+type twoFactorChecker interface {
+	IsTwoFactorEnabled(ctx context.Context, userID uint) (bool, error)
+}
+
 // Service 封装 API Key、白名单、限流、兼容推理和计费流程。
 type Service struct {
 	keyRepo           repository.OpenAPIKeyRepository
@@ -94,6 +102,7 @@ type Service struct {
 	billing           billingService
 	chatProvider      rawChatProvider
 	rateLimiter       rateLimiter
+	twoFactor         twoFactorChecker
 	dataEncryptionKey string
 	now               func() time.Time
 }
@@ -111,6 +120,7 @@ func NewService(deps Dependencies) *Service {
 		billing:           deps.Billing,
 		chatProvider:      deps.ChatProvider,
 		rateLimiter:       deps.RateLimiter,
+		twoFactor:         deps.TwoFactor,
 		dataEncryptionKey: strings.TrimSpace(deps.DataEncryptionKey),
 		now:               now,
 	}
@@ -123,13 +133,15 @@ func (s *Service) SetChatProvider(provider rawChatProvider) {
 
 // APIKeyView 是前端展示用的 API Key 元数据。
 type APIKeyView struct {
-	Exists     bool       `json:"exists"`
-	APIKey     string     `json:"apiKey,omitempty"`
-	KeyPrefix  string     `json:"keyPrefix"`
-	Status     string     `json:"status"`
-	LastUsedAt *time.Time `json:"lastUsedAt,omitempty"`
-	CreatedAt  time.Time  `json:"createdAt,omitempty"`
-	UpdatedAt  time.Time  `json:"updatedAt,omitempty"`
+	Exists            bool       `json:"exists"`
+	APIKey            string     `json:"apiKey,omitempty"`
+	KeyPrefix         string     `json:"keyPrefix"`
+	Status            string     `json:"status"`
+	LastUsedAt        *time.Time `json:"lastUsedAt,omitempty"`
+	CreatedAt         time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt         time.Time  `json:"updatedAt,omitempty"`
+	TwoFactorRequired bool       `json:"twoFactorRequired,omitempty"`
+	Exportable        bool       `json:"exportable,omitempty"`
 }
 
 // OpenAIModelList 是 /v1/models 的兼容响应。
@@ -175,25 +187,39 @@ type PreparedChatCompletion struct {
 	publicModelID     string
 }
 
-// GetAPIKey 返回用户 API Key 元数据，不返回明文。
+// GetAPIKey 返回用户 API Key 元数据；仅在用户已开启 2FA 时返回完整明文。
 func (s *Service) GetAPIKey(ctx context.Context, userID uint) (*APIKeyView, error) {
 	if s == nil || s.keyRepo == nil || userID == 0 {
 		return &APIKeyView{Exists: false}, nil
 	}
+	twoFactorEnabled, err := s.isTwoFactorEnabled(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
 	item, err := s.keyRepo.GetByUserID(ctx, userID)
 	if errors.Is(err, repository.ErrNotFound) {
-		return &APIKeyView{Exists: false}, nil
+		return &APIKeyView{Exists: false, TwoFactorRequired: !twoFactorEnabled}, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return toAPIKeyView(item, ""), nil
+	if item.Status != domainopenapi.APIKeyStatusActive || !twoFactorEnabled {
+		return toAPIKeyView(item, "", !twoFactorEnabled, false), nil
+	}
+	plaintext, err := s.decryptAPIKeyPlaintext(item.KeyPlaintextEncrypted)
+	if err != nil {
+		return nil, err
+	}
+	return toAPIKeyView(item, plaintext, false, plaintext != ""), nil
 }
 
-// CreateAPIKey 创建用户唯一 API Key；已有 active key 时不会再次返回明文。
+// CreateAPIKey 创建用户唯一 API Key。
 func (s *Service) CreateAPIKey(ctx context.Context, userID uint) (*APIKeyView, error) {
 	if s == nil || s.keyRepo == nil || userID == 0 {
 		return nil, ErrInvalidRequest
+	}
+	if err := s.requireTwoFactor(ctx, userID); err != nil {
+		return nil, err
 	}
 	if current, err := s.keyRepo.GetByUserID(ctx, userID); err == nil && current.Status == domainopenapi.APIKeyStatusActive {
 		return nil, ErrAPIKeyAlreadyExists
@@ -207,6 +233,9 @@ func (s *Service) CreateAPIKey(ctx context.Context, userID uint) (*APIKeyView, e
 func (s *Service) RegenerateAPIKey(ctx context.Context, userID uint) (*APIKeyView, error) {
 	if s == nil || s.keyRepo == nil || userID == 0 {
 		return nil, ErrInvalidRequest
+	}
+	if err := s.requireTwoFactor(ctx, userID); err != nil {
+		return nil, err
 	}
 	return s.replaceAPIKey(ctx, userID)
 }
@@ -223,7 +252,7 @@ func (s *Service) RevokeAPIKey(ctx context.Context, userID uint) (*APIKeyView, e
 	if err != nil {
 		return nil, err
 	}
-	return toAPIKeyView(item, ""), nil
+	return toAPIKeyView(item, "", false, false), nil
 }
 
 // AuthenticateAPIKey 校验开放 API Key，并更新最后使用时间。
@@ -559,20 +588,59 @@ func (s *Service) replaceAPIKey(ctx context.Context, userID uint) (*APIKeyView, 
 	if err != nil {
 		return nil, err
 	}
+	encrypted, err := s.encryptAPIKeyPlaintext(plaintext)
+	if err != nil {
+		return nil, err
+	}
 	now := s.now()
 	item := &domainopenapi.UserAPIKey{
-		UserID:    userID,
-		KeyHash:   s.hashAPIKey(plaintext),
-		KeyPrefix: displayKeyPrefix(plaintext),
-		Status:    domainopenapi.APIKeyStatusActive,
-		CreatedAt: now,
-		UpdatedAt: now,
+		UserID:                userID,
+		KeyHash:               s.hashAPIKey(plaintext),
+		KeyPrefix:             displayKeyPrefix(plaintext),
+		KeyPlaintextEncrypted: encrypted,
+		Status:                domainopenapi.APIKeyStatusActive,
+		CreatedAt:             now,
+		UpdatedAt:             now,
 	}
 	stored, err := s.keyRepo.ReplaceForUser(ctx, item)
 	if err != nil {
 		return nil, err
 	}
-	return toAPIKeyView(stored, plaintext), nil
+	return toAPIKeyView(stored, plaintext, false, true), nil
+}
+
+func (s *Service) requireTwoFactor(ctx context.Context, userID uint) error {
+	enabled, err := s.isTwoFactorEnabled(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if !enabled {
+		return ErrTwoFactorRequired
+	}
+	return nil
+}
+
+func (s *Service) isTwoFactorEnabled(ctx context.Context, userID uint) (bool, error) {
+	if s == nil || s.twoFactor == nil || userID == 0 {
+		return false, nil
+	}
+	return s.twoFactor.IsTwoFactorEnabled(ctx, userID)
+}
+
+func (s *Service) encryptAPIKeyPlaintext(plaintext string) (string, error) {
+	secret := strings.TrimSpace(s.dataEncryptionKey)
+	if secret == "" {
+		secret = "deeix-openapi-key"
+	}
+	return secretbox.EncryptString(secret, plaintext)
+}
+
+func (s *Service) decryptAPIKeyPlaintext(encrypted string) (string, error) {
+	secret := strings.TrimSpace(s.dataEncryptionKey)
+	if secret == "" {
+		secret = "deeix-openapi-key"
+	}
+	return secretbox.DecryptString(secret, encrypted)
 }
 
 func (s *Service) hashAPIKey(plaintext string) string {
@@ -601,18 +669,20 @@ func displayKeyPrefix(plaintext string) string {
 	return value[:16]
 }
 
-func toAPIKeyView(item *domainopenapi.UserAPIKey, plaintext string) *APIKeyView {
+func toAPIKeyView(item *domainopenapi.UserAPIKey, plaintext string, twoFactorRequired bool, exportable bool) *APIKeyView {
 	if item == nil {
 		return &APIKeyView{Exists: false}
 	}
 	return &APIKeyView{
-		Exists:     true,
-		APIKey:     plaintext,
-		KeyPrefix:  item.KeyPrefix,
-		Status:     item.Status,
-		LastUsedAt: item.LastUsedAt,
-		CreatedAt:  item.CreatedAt,
-		UpdatedAt:  item.UpdatedAt,
+		Exists:            true,
+		APIKey:            plaintext,
+		KeyPrefix:         item.KeyPrefix,
+		Status:            item.Status,
+		LastUsedAt:        item.LastUsedAt,
+		CreatedAt:         item.CreatedAt,
+		UpdatedAt:         item.UpdatedAt,
+		TwoFactorRequired: twoFactorRequired,
+		Exportable:        exportable,
 	}
 }
 

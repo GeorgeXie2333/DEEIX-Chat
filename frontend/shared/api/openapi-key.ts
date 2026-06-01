@@ -8,6 +8,8 @@ export type OpenAPIKeyDTO = {
   lastUsedAt?: string;
   createdAt?: string;
   updatedAt?: string;
+  twoFactorRequired?: boolean;
+  exportable?: boolean;
 };
 
 export async function getOpenAPIKey(accessToken: string): Promise<OpenAPIKeyDTO> {

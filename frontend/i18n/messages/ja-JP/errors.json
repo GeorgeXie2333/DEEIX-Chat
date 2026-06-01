@@ -57,6 +57,7 @@
     "twoFactorChallengeExpired": "二段階認証の有効期限が切れました。もう一度サインインしてください。",
     "twoFactorExpired": "二段階認証の有効期限が切れました。もう一度お試しください。",
     "twoFactorNotStarted": "二段階認証は開始されていません。",
+    "twoFactorRequired": "API Key を作成またはエクスポートするには、二段階認証を有効にしてください。",
     "turnstileInvalid": "人間確認に失敗しました。もう一度お試しください。",
     "turnstileNotConfigured": "人間確認が設定されていません。",
     "turnstileRequired": "先に人間確認を完了してください。",

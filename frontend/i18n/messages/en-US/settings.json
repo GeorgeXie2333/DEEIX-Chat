@@ -348,6 +348,7 @@
     "never": "Never used",
     "copyBaseURL": "Copy Base URL",
     "copyAPIKey": "Copy API Key",
+    "formatHint": "Format: OpenAI Compatible Chat Completions API",
     "fields": {
       "status": "Status",
       "keyPrefix": "Key prefix",
@@ -365,8 +366,19 @@
       "creating": "Creating",
       "regenerate": "Regenerate",
       "disable": "Disable",
+      "export": "Export",
       "cancel": "Cancel",
       "saving": "Working"
+    },
+    "twoFactor": {
+      "title": "Two-factor authentication required",
+      "description": "Enable two-factor authentication in account security before creating, regenerating, copying, or exporting a full API Key."
+    },
+    "key": {
+      "title": "API Key",
+      "key": "API Key",
+      "hidden": "Enable two-factor authentication to view the full key",
+      "exportRequiresTwoFactor": "Enable two-factor authentication to copy or export the full API Key."
     },
     "fresh": {
       "title": "New key",
@@ -388,6 +400,9 @@
       "regenerateFailed": "Failed to regenerate API Key",
       "deleted": "API Key disabled",
       "deleteFailed": "Failed to disable API Key",
+      "exported": "API Key exported",
+      "exportUnavailable": "Enable two-factor authentication to export the API Key",
+      "twoFactorRequired": "Enable two-factor authentication first",
       "copied": "{label} copied",
       "copyFailed": "Copy failed"
     }

@@ -28,6 +28,7 @@ func TestInferErrorCode(t *testing.T) {
 		{name: "email registration", status: http.StatusBadRequest, msg: "email registration is disabled", want: "auth.email_registration_disabled"},
 		{name: "provider email conflict", status: http.StatusBadRequest, msg: "email already exists; bind the provider before login", want: "auth.provider_email_conflict"},
 		{name: "two factor already enabled", status: http.StatusBadRequest, msg: "two factor authentication is already enabled", want: "auth.two_factor_already_enabled"},
+		{name: "two factor required", status: http.StatusForbidden, msg: "two factor authentication is required", want: "auth.two_factor_required"},
 		{name: "provider redirect uri", status: http.StatusBadRequest, msg: "invalid redirect uri", want: "auth.invalid_redirect_uri"},
 		{name: "user setting value", status: http.StatusBadRequest, msg: "invalid value for chat.file_mode: must be one of 'auto', 'rag'", want: "user_settings.invalid_value"},
 		{name: "payment mismatch", status: http.StatusBadRequest, msg: "provider mismatch", want: "payment.notification_mismatch"},

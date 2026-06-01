@@ -63,6 +63,7 @@ var exactErrorSpecs = map[string]errorSpec{
 	"two factor setup not started":                               {Code: CodeAuthTwoFactorNotStarted, Message: "two factor setup not started"},
 	"two factor setup was not persisted":                         {Code: CodeInternal, Message: "internal server error"},
 	"two factor authentication is already enabled":               {Code: "auth.two_factor_already_enabled", Message: "two factor authentication is already enabled"},
+	"two factor authentication is required":                      {Code: "auth.two_factor_required", Message: "two factor authentication is required"},
 	"password reset required":                                    {Code: "auth.password_reset_required", Message: "password reset required"},
 	"username change required":                                   {Code: "auth.username_change_required", Message: "username change required"},
 	"password length must be between 6 and 128":                  {Code: "auth.invalid_password", Message: "password length must be between 6 and 128"},

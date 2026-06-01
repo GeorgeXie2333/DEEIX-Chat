@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Copy, KeyRound, RefreshCw, Trash2 } from "lucide-react";
+import { Copy, Download, KeyRound, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,10 +33,12 @@ import {
   regenerateOpenAPIKey,
   type OpenAPIKeyDTO,
 } from "@/shared/api/openapi-key";
+import { getCurrentTwoFactorStatus } from "@/shared/api/auth";
 import { resolveApiBaseURL } from "@/shared/api/http-client";
 import { useAuthSession } from "@/shared/auth/auth-session-context";
 import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import { cn } from "@/lib/utils";
+import { buildOpenAPIKeyExportText } from "@/features/settings/model/openapi-key-export";
 
 function ValueBox({
   value,
@@ -82,7 +85,7 @@ export function SettingsOpenAPI() {
   const translateError = useLocalizedErrorMessage();
   const { accessToken } = useAuthSession();
   const [keyView, setKeyView] = React.useState<OpenAPIKeyDTO | null>(null);
-  const [freshKey, setFreshKey] = React.useState("");
+  const [twoFactorEnabled, setTwoFactorEnabled] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [mutating, setMutating] = React.useState(false);
   const [regenerateOpen, setRegenerateOpen] = React.useState(false);
@@ -92,10 +95,11 @@ export function SettingsOpenAPI() {
   React.useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    void getOpenAPIKey(accessToken)
-      .then((view) => {
+    void Promise.all([getOpenAPIKey(accessToken), getCurrentTwoFactorStatus(accessToken)])
+      .then(([view, twoFactorStatus]) => {
         if (!cancelled) {
           setKeyView(view);
+          setTwoFactorEnabled(Boolean(twoFactorStatus.totpEnabled));
         }
       })
       .catch((error) => {
@@ -125,26 +129,50 @@ export function SettingsOpenAPI() {
     [t],
   );
 
+  const exportKey = React.useCallback(() => {
+    const apiKey = keyView?.apiKey?.trim();
+    if (!apiKey) {
+      toast.error(t("toast.exportUnavailable"));
+      return;
+    }
+    const blob = new Blob([buildOpenAPIKeyExportText(apiKey, baseURL)], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "deeix-openapi-key.txt";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast.success(t("toast.exported"));
+  }, [baseURL, keyView?.apiKey, t]);
+
   const createKey = React.useCallback(async () => {
+    if (!twoFactorEnabled) {
+      toast.error(t("toast.twoFactorRequired"));
+      return;
+    }
     setMutating(true);
     try {
       const view = await createOpenAPIKey(accessToken);
       setKeyView(view);
-      setFreshKey(view.apiKey ?? "");
       toast.success(t("toast.created"));
     } catch (error) {
       toast.error(t("toast.createFailed"), { description: translateError(error) });
     } finally {
       setMutating(false);
     }
-  }, [accessToken, t, translateError]);
+  }, [accessToken, t, translateError, twoFactorEnabled]);
 
   const regenerateKey = React.useCallback(async () => {
+    if (!twoFactorEnabled) {
+      toast.error(t("toast.twoFactorRequired"));
+      return;
+    }
     setMutating(true);
     try {
       const view = await regenerateOpenAPIKey(accessToken);
       setKeyView(view);
-      setFreshKey(view.apiKey ?? "");
       setRegenerateOpen(false);
       toast.success(t("toast.regenerated"));
     } catch (error) {
@@ -152,14 +180,13 @@ export function SettingsOpenAPI() {
     } finally {
       setMutating(false);
     }
-  }, [accessToken, t, translateError]);
+  }, [accessToken, t, translateError, twoFactorEnabled]);
 
   const deleteKey = React.useCallback(async () => {
     setMutating(true);
     try {
       const view = await deleteOpenAPIKey(accessToken);
       setKeyView(view);
-      setFreshKey("");
       setDeleteOpen(false);
       toast.success(t("toast.deleted"));
     } catch (error) {
@@ -170,6 +197,10 @@ export function SettingsOpenAPI() {
   }, [accessToken, t, translateError]);
 
   const active = keyView?.exists && keyView.status === "active";
+  const apiKey = active ? (keyView?.apiKey ?? "") : "";
+  const canExport = Boolean(active && keyView?.exportable && apiKey);
+  const createDisabled = loading || mutating || !twoFactorEnabled;
+  const regenerateDisabled = loading || mutating || !twoFactorEnabled;
 
   return (
     <SettingsPage>
@@ -178,7 +209,7 @@ export function SettingsOpenAPI() {
         actions={
           active ? (
             <>
-              <Button type="button" variant="outline" size="sm" disabled={loading || mutating} onClick={() => setRegenerateOpen(true)}>
+              <Button type="button" variant="outline" size="sm" disabled={regenerateDisabled} onClick={() => setRegenerateOpen(true)}>
                 <RefreshCw className="size-4" />
                 {t("actions.regenerate")}
               </Button>
@@ -188,7 +219,7 @@ export function SettingsOpenAPI() {
               </Button>
             </>
           ) : (
-            <Button type="button" size="sm" disabled={loading || mutating} onClick={createKey}>
+            <Button type="button" size="sm" disabled={createDisabled} onClick={createKey}>
               {mutating ? <SpinnerLabel>{t("actions.creating")}</SpinnerLabel> : <><KeyRound className="size-4" />{t("actions.create")}</>}
             </Button>
           )
@@ -224,29 +255,51 @@ export function SettingsOpenAPI() {
             />
           </SettingsFieldRow>
         </SettingsFieldList>
+        <p className="mt-3 text-xs text-muted-foreground">{t("formatHint")}</p>
+        {!loading && !twoFactorEnabled ? (
+          <Alert className="mt-4">
+            <ShieldCheck className="size-4" />
+            <AlertTitle>{t("twoFactor.title")}</AlertTitle>
+            <AlertDescription>{t("twoFactor.description")}</AlertDescription>
+          </Alert>
+        ) : null}
       </SettingsSection>
 
-      {freshKey ? (
+      {active ? (
         <>
           <SettingsSectionSeparator />
-          <SettingsSection title={t("fresh.title")}>
-            <SettingsFieldRow title={t("fresh.key")} controlClassName="md:w-[34rem]">
+          <SettingsSection
+            title={t("key.title")}
+            actions={
+              canExport ? (
+                <Button type="button" variant="outline" size="sm" disabled={loading || mutating} onClick={exportKey}>
+                  <Download className="size-4" />
+                  {t("actions.export")}
+                </Button>
+              ) : null
+            }
+          >
+            <SettingsFieldRow title={t("key.key")} controlClassName="md:w-[34rem]">
               <ValueBox
-                value={freshKey}
+                value={apiKey || t("key.hidden")}
+                muted={!apiKey}
                 action={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-7"
-                    aria-label={t("copyAPIKey")}
-                    onClick={() => copyText(freshKey, t("fresh.key"))}
-                  >
-                    <Copy className="size-3.5" />
-                  </Button>
+                  apiKey ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7"
+                      aria-label={t("copyAPIKey")}
+                      onClick={() => copyText(apiKey, t("key.key"))}
+                    >
+                      <Copy className="size-3.5" />
+                    </Button>
+                  ) : null
                 }
               />
             </SettingsFieldRow>
+            {!canExport ? <p className="mt-3 text-xs text-muted-foreground">{t("key.exportRequiresTwoFactor")}</p> : null}
           </SettingsSection>
         </>
       ) : null}

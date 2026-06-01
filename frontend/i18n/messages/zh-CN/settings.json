@@ -348,6 +348,7 @@
     "never": "从未使用",
     "copyBaseURL": "复制 Base URL",
     "copyAPIKey": "复制 API Key",
+    "formatHint": "格式：OpenAI Compatible Chat Completions API",
     "fields": {
       "status": "状态",
       "keyPrefix": "Key 前缀",
@@ -365,8 +366,19 @@
       "creating": "创建中",
       "regenerate": "重新生成",
       "disable": "停用",
+      "export": "导出",
       "cancel": "取消",
       "saving": "处理中"
+    },
+    "twoFactor": {
+      "title": "需要开启两步验证",
+      "description": "创建、重新生成、复制或导出完整 API Key 前，请先在账号安全中开启两步验证。"
+    },
+    "key": {
+      "title": "API Key",
+      "key": "API Key",
+      "hidden": "开启两步验证后可查看完整 Key",
+      "exportRequiresTwoFactor": "开启两步验证后可复制或导出完整 API Key。"
     },
     "fresh": {
       "title": "新 Key",
@@ -388,6 +400,9 @@
       "regenerateFailed": "重新生成 API Key 失败",
       "deleted": "API Key 已停用",
       "deleteFailed": "停用 API Key 失败",
+      "exported": "API Key 已导出",
+      "exportUnavailable": "开启两步验证后才能导出 API Key",
+      "twoFactorRequired": "请先开启两步验证",
       "copied": "{label}已复制",
       "copyFailed": "复制失败"
     }

@@ -245,6 +245,14 @@ func (s *Service) GetCurrentTwoFactorStatus(ctx context.Context, userID uint) (*
 	}, nil
 }
 
+func (s *Service) IsTwoFactorEnabled(ctx context.Context, userID uint) (bool, error) {
+	status, err := s.GetCurrentTwoFactorStatus(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	return status != nil && status.TOTPEnabled, nil
+}
+
 func (s *Service) ResetUserTwoFactorByAdmin(ctx context.Context, userID uint) error {
 	if err := s.repo.DeleteUserTwoFactor(ctx, userID); err != nil && !errors.Is(err, repository.ErrNotFound) {
 		return err

@@ -64,6 +64,7 @@ func (r *Repo) ReplaceForUser(ctx context.Context, item *domainopenapi.UserAPIKe
 			DoUpdates: clause.AssignmentColumns([]string{
 				"key_hash",
 				"key_prefix",
+				"key_plaintext_encrypted",
 				"status",
 				"last_used_at",
 				"updated_at",
@@ -117,14 +118,15 @@ func (r *Repo) TouchLastUsedAt(ctx context.Context, id uint, at time.Time) error
 
 func toDomain(item model.OpenAPIKey) *domainopenapi.UserAPIKey {
 	return &domainopenapi.UserAPIKey{
-		ID:         item.ID,
-		UserID:     item.UserID,
-		KeyHash:    item.KeyHash,
-		KeyPrefix:  item.KeyPrefix,
-		Status:     item.Status,
-		LastUsedAt: item.LastUsedAt,
-		CreatedAt:  item.CreatedAt,
-		UpdatedAt:  item.UpdatedAt,
+		ID:                    item.ID,
+		UserID:                item.UserID,
+		KeyHash:               item.KeyHash,
+		KeyPrefix:             item.KeyPrefix,
+		KeyPlaintextEncrypted: item.KeyPlaintextEncrypted,
+		Status:                item.Status,
+		LastUsedAt:            item.LastUsedAt,
+		CreatedAt:             item.CreatedAt,
+		UpdatedAt:             item.UpdatedAt,
 	}
 }
 
@@ -138,10 +140,11 @@ func toModel(item *domainopenapi.UserAPIKey) model.OpenAPIKey {
 			CreatedAt: item.CreatedAt,
 			UpdatedAt: item.UpdatedAt,
 		},
-		UserID:     item.UserID,
-		KeyHash:    item.KeyHash,
-		KeyPrefix:  item.KeyPrefix,
-		Status:     item.Status,
-		LastUsedAt: item.LastUsedAt,
+		UserID:                item.UserID,
+		KeyHash:               item.KeyHash,
+		KeyPrefix:             item.KeyPrefix,
+		KeyPlaintextEncrypted: item.KeyPlaintextEncrypted,
+		Status:                item.Status,
+		LastUsedAt:            item.LastUsedAt,
 	}
 }

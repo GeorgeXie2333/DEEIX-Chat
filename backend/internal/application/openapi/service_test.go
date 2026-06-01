@@ -21,6 +21,7 @@ func TestCreateAPIKeyStoresOnlyHashAndAuthenticatesPlaintext(t *testing.T) {
 	repo := newKeyRepoStub()
 	service := NewService(Dependencies{
 		KeyRepo:           repo,
+		TwoFactor:         twoFactorStub{enabled: true},
 		DataEncryptionKey: "test-secret",
 		Now:               fixedNow,
 	})
@@ -39,6 +40,9 @@ func TestCreateAPIKeyStoresOnlyHashAndAuthenticatesPlaintext(t *testing.T) {
 	if stored.KeyHash == "" || stored.KeyHash == created.APIKey {
 		t.Fatalf("expected only a hash in storage, got %q", stored.KeyHash)
 	}
+	if stored.KeyPlaintextEncrypted == "" || strings.Contains(stored.KeyPlaintextEncrypted, created.APIKey) {
+		t.Fatalf("expected encrypted plaintext in storage, got %q", stored.KeyPlaintextEncrypted)
+	}
 	if stored.KeyPrefix == "" || !strings.HasPrefix(created.APIKey, stored.KeyPrefix) {
 		t.Fatalf("expected stored display prefix to match plaintext, got prefix=%q key=%q", stored.KeyPrefix, created.APIKey)
 	}
@@ -47,8 +51,8 @@ func TestCreateAPIKeyStoresOnlyHashAndAuthenticatesPlaintext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetAPIKey returned error: %v", err)
 	}
-	if view.APIKey != "" {
-		t.Fatalf("expected GET to never return plaintext, got %q", view.APIKey)
+	if view.APIKey != created.APIKey {
+		t.Fatalf("expected GET to return decryptable plaintext, got %q want %q", view.APIKey, created.APIKey)
 	}
 	if !view.Exists || view.KeyPrefix != stored.KeyPrefix {
 		t.Fatalf("unexpected key view: %#v", view)
@@ -67,6 +71,7 @@ func TestRegenerateAPIKeyReplacesPreviousHash(t *testing.T) {
 	repo := newKeyRepoStub()
 	service := NewService(Dependencies{
 		KeyRepo:           repo,
+		TwoFactor:         twoFactorStub{enabled: true},
 		DataEncryptionKey: "test-secret",
 		Now:               fixedNow,
 	})
@@ -91,6 +96,56 @@ func TestRegenerateAPIKeyReplacesPreviousHash(t *testing.T) {
 	}
 	if _, err := service.AuthenticateAPIKey(context.Background(), second.APIKey); err != nil {
 		t.Fatalf("expected regenerated key to authenticate: %v", err)
+	}
+}
+
+func TestCreateAndRegenerateAPIKeyRequireTwoFactor(t *testing.T) {
+	service := NewService(Dependencies{
+		KeyRepo:           newKeyRepoStub(),
+		TwoFactor:         twoFactorStub{enabled: false},
+		DataEncryptionKey: "test-secret",
+		Now:               fixedNow,
+	})
+
+	if _, err := service.CreateAPIKey(context.Background(), 42); !errors.Is(err, ErrTwoFactorRequired) {
+		t.Fatalf("expected create to require two factor, got %v", err)
+	}
+	if _, err := service.RegenerateAPIKey(context.Background(), 42); !errors.Is(err, ErrTwoFactorRequired) {
+		t.Fatalf("expected regenerate to require two factor, got %v", err)
+	}
+}
+
+func TestGetAPIKeyHidesPlaintextWhenTwoFactorDisabled(t *testing.T) {
+	repo := newKeyRepoStub()
+	enabledService := NewService(Dependencies{
+		KeyRepo:           repo,
+		TwoFactor:         twoFactorStub{enabled: true},
+		DataEncryptionKey: "test-secret",
+		Now:               fixedNow,
+	})
+	created, err := enabledService.CreateAPIKey(context.Background(), 42)
+	if err != nil {
+		t.Fatalf("CreateAPIKey returned error: %v", err)
+	}
+
+	disabledService := NewService(Dependencies{
+		KeyRepo:           repo,
+		TwoFactor:         twoFactorStub{enabled: false},
+		DataEncryptionKey: "test-secret",
+		Now:               fixedNow,
+	})
+	view, err := disabledService.GetAPIKey(context.Background(), 42)
+	if err != nil {
+		t.Fatalf("GetAPIKey returned error: %v", err)
+	}
+	if view.APIKey != "" {
+		t.Fatalf("expected API key plaintext to be hidden without two factor, got %q", view.APIKey)
+	}
+	if !view.TwoFactorRequired || view.Exportable {
+		t.Fatalf("expected two-factor-required non-exportable view, got %#v", view)
+	}
+	if _, err := disabledService.AuthenticateAPIKey(context.Background(), created.APIKey); err != nil {
+		t.Fatalf("/v1 authentication should not depend on current 2FA state: %v", err)
 	}
 }
 
@@ -397,6 +452,14 @@ func (r *keyRepoStub) TouchLastUsedAt(_ context.Context, id uint, at time.Time) 
 		}
 	}
 	return repository.ErrNotFound
+}
+
+type twoFactorStub struct {
+	enabled bool
+}
+
+func (s twoFactorStub) IsTwoFactorEnabled(context.Context, uint) (bool, error) {
+	return s.enabled, nil
 }
 
 type settingsStub map[string]string

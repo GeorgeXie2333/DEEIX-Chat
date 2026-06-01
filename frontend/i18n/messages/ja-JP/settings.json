@@ -348,6 +348,7 @@
     "never": "未使用",
     "copyBaseURL": "Base URL をコピー",
     "copyAPIKey": "API Key をコピー",
+    "formatHint": "形式：OpenAI Compatible Chat Completions API",
     "fields": {
       "status": "状態",
       "keyPrefix": "Key プレフィックス",
@@ -365,8 +366,19 @@
       "creating": "作成中",
       "regenerate": "再生成",
       "disable": "無効化",
+      "export": "エクスポート",
       "cancel": "キャンセル",
       "saving": "処理中"
+    },
+    "twoFactor": {
+      "title": "二段階認証が必要です",
+      "description": "完全な API Key の作成、再生成、コピー、エクスポートを行う前に、アカウントセキュリティで二段階認証を有効にしてください。"
+    },
+    "key": {
+      "title": "API Key",
+      "key": "API Key",
+      "hidden": "二段階認証を有効にすると完全な Key を表示できます",
+      "exportRequiresTwoFactor": "完全な API Key をコピーまたはエクスポートするには、二段階認証を有効にしてください。"
     },
     "fresh": {
       "title": "新しい Key",
@@ -388,6 +400,9 @@
       "regenerateFailed": "API Key の再生成に失敗しました",
       "deleted": "API Key を無効化しました",
       "deleteFailed": "API Key の無効化に失敗しました",
+      "exported": "API Key をエクスポートしました",
+      "exportUnavailable": "API Key をエクスポートするには二段階認証を有効にしてください",
+      "twoFactorRequired": "先に二段階認証を有効にしてください",
       "copied": "{label}をコピーしました",
       "copyFailed": "コピーに失敗しました"
     }

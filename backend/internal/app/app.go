@@ -242,6 +242,7 @@ func NewApp() (*App, error) {
 		Billing:           billingService,
 		ChatProvider:      appopenapi.NewLLMRawChatProviderWithImageResolver(llmClient, appopenapi.NewHTTPChatImageResolver(cfg.Env, cfg.SSRFProtectionEnabled, cfg.MaxUploadFileBytes)),
 		RateLimiter:       rateLimiter,
+		TwoFactor:         authService,
 		DataEncryptionKey: cfg.DataEncryptionKey,
 	})
 	openAPIHandler := openapihttp.NewHandler(openAPIService)
