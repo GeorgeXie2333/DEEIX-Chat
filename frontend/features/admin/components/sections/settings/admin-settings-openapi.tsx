@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { listAdminLLMModels, listAdminSettingsByNamespace, patchAdminSettings } from "@/features/admin/api";
 import type { AdminLLMModelDTO } from "@/features/admin/api/llm.types";
+import { isOpenAPITextModel } from "@/features/admin/model/openapi-model-filter";
 import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import { cn } from "@/lib/utils";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
@@ -22,8 +23,6 @@ import {
   SettingsSectionSeparator,
 } from "@/shared/components/settings-layout";
 import type { PatchSettingItem, SettingItem } from "@/shared/api/settings.types";
-
-const OPENAI_CHAT_COMPLETIONS = "openai_chat_completions";
 
 function settingValue(items: SettingItem[], key: string, fallback = ""): string {
   return items.find((item) => item.key === key)?.value ?? fallback;
@@ -39,24 +38,6 @@ function parseModelNames(value: string): string[] {
     result.push(name);
   }
   return result;
-}
-
-function hasJSONValue(raw: string, value: string): boolean {
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) && parsed.some((item) => String(item).trim() === value);
-  } catch {
-    return false;
-  }
-}
-
-function isTextChatCompletionModel(model: AdminLLMModelDTO): boolean {
-  return (
-    model.status === "active" &&
-    model.activeSourceCount > 0 &&
-    hasJSONValue(model.kindsJSON, "chat") &&
-    hasJSONValue(model.protocolsJSON, OPENAI_CHAT_COMPLETIONS)
-  );
 }
 
 function selectedModelNames(models: AdminLLMModelDTO[], selected: Set<string>, manualText: string): string[] {
@@ -90,11 +71,10 @@ export function AdminOpenAPISettingsPage() {
           page: 1,
           pageSize: 500,
           onlyActive: true,
-          protocol: OPENAI_CHAT_COMPLETIONS,
           sort: "sortOrder_asc",
         }),
       ]);
-      const availableModels = modelPage.results.filter(isTextChatCompletionModel);
+      const availableModels = modelPage.results.filter(isOpenAPITextModel);
       const allowlist = parseModelNames(settingValue(settings, "model_allowlist"));
       const availableNames = new Set(availableModels.map((model) => model.platformModelName));
       setModels(availableModels);
