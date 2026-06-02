@@ -3,7 +3,11 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 
-import type { ChatModelOption } from "@/features/chat/types/chat-runtime";
+import type {
+  ChatModelOption,
+  ModelOptionControl,
+  ModelOptionControlType,
+} from "@/features/chat/types/chat-runtime";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { parseProtocolsJSON } from "@/features/chat/model/chat-adapter-options";
 import { sanitizeConversationOptions } from "@/features/chat/model/conversation-options";
@@ -45,6 +49,91 @@ function resolveDefaultOptions(raw: string): ConversationOptions {
     return {};
   }
   return sanitizeConversationOptions(defaults as ConversationOptions);
+}
+
+const MODEL_OPTION_CONTROL_TYPES = new Set<ModelOptionControlType>(["boolean", "number", "select", "text"]);
+
+function normalizeOptionControlPath(value: unknown): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value
+    .split(".")
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .join(".");
+}
+
+function normalizeOptionControlType(value: unknown): ModelOptionControlType | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const normalized = value.trim();
+  if (!MODEL_OPTION_CONTROL_TYPES.has(normalized as ModelOptionControlType)) {
+    return undefined;
+  }
+  return normalized as ModelOptionControlType;
+}
+
+function normalizeOptionControlString(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const normalized = value.trim();
+  return normalized || undefined;
+}
+
+function normalizeOptionControlOptions(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  const options = Array.from(
+    new Set(
+      value
+        .map((item) => (typeof item === "string" ? item.trim() : ""))
+        .filter(Boolean),
+    ),
+  );
+  return options.length > 0 ? options : undefined;
+}
+
+function resolveOptionControls(raw: string): ModelOptionControl[] {
+  const parsed = parseJSONObject(raw);
+  const rawControls = parsed?.optionControls;
+  if (!Array.isArray(rawControls)) {
+    return [];
+  }
+
+  const controls = rawControls.flatMap((item): ModelOptionControl[] => {
+    if (item === null || Array.isArray(item) || typeof item !== "object") {
+      return [];
+    }
+    const source = item as Record<string, unknown>;
+    const path = normalizeOptionControlPath(source.path);
+    if (!path) {
+      return [];
+    }
+    const control: ModelOptionControl = { path };
+    const type = normalizeOptionControlType(source.type);
+    const label = normalizeOptionControlString(source.label);
+    const placeholder = normalizeOptionControlString(source.placeholder);
+    const options = normalizeOptionControlOptions(source.options);
+    if (type) {
+      control.type = type;
+    }
+    if (label) {
+      control.label = label;
+    }
+    if (placeholder) {
+      control.placeholder = placeholder;
+    }
+    if (options) {
+      control.options = options;
+    }
+    return [control];
+  });
+
+  return controls.filter((item, index) => controls.findIndex((candidate) => candidate.path === item.path) === index);
 }
 
 function resolveMCPMaxSelectedTools(value: unknown): number {
@@ -221,6 +310,7 @@ export function useChatModelOptions({
           kinds: parseKindsJSON(item.kindsJSON),
           protocols: parseProtocolsJSON(item.protocolsJSON),
           defaultOptions: resolveDefaultOptions(item.capabilitiesJSON),
+          optionControls: resolveOptionControls(item.capabilitiesJSON),
           pricing: item.pricing,
         };
       }),

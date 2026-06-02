@@ -1,0 +1,19 @@
+{
+  "title": "お知らせ",
+  "types": {
+    "critical": "緊急",
+    "warning": "警告",
+    "info": "情報",
+    "normal": "通常",
+    "general": "一般"
+  },
+  "sort": {
+    "default": "既定",
+    "type": "種類",
+    "time": "時間"
+  },
+  "dismissAllToday": "今日は表示しない",
+  "dismissFailed": "お知らせの状態を保存できませんでした",
+  "closeFailed": "お知らせの閉じる状態を保存できませんでした",
+  "close": "閉じる"
+}

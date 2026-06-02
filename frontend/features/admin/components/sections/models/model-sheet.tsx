@@ -74,6 +74,11 @@ import {
   stringifyKinds,
 } from "@/shared/model/llm-schema";
 import { JsonCodeEditor } from "@/shared/components/json-code-editor";
+import {
+  MODEL_CAPABILITIES_PLACEHOLDER,
+  ModelCapabilitiesGuideButton,
+  ModelCapabilitiesQuickConfig,
+} from "@/features/admin/components/sections/models/model-capabilities-config";
 
 // ---------------------------------------------------------------------------
 // Form state
@@ -539,13 +544,30 @@ export function ModelSheet({ open, mode, target, onClose, onSuccess }: ModelShee
                   {t("sheet.capabilitiesJSON")}
                 </AccordionTrigger>
                 <AccordionContent className="pt-3">
+                  <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
+                    <p className="min-w-0 text-xs text-muted-foreground">
+                      {t("sheet.capabilitiesDescription")}
+                    </p>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <ModelCapabilitiesGuideButton t={t} />
+                    </div>
+                  </div>
                   <JsonCodeEditor
                     id="model-capabilities-json"
                     value={form.capabilitiesJSON}
-                    placeholder={'{"contextWindow":1000000,"maxOutputTokens":32000,"supportsSystemPrompt":false,"defaultOptions":{"reasoning":{"effort":"high"}}}'}
+                    placeholder={MODEL_CAPABILITIES_PLACEHOLDER}
                     height={220}
                     onChange={(nextValue) => setField("capabilitiesJSON", nextValue)}
                     disabled={pending}
+                    actions={(
+                      <ModelCapabilitiesQuickConfig
+                        value={form.capabilitiesJSON}
+                        disabled={pending}
+                        t={t}
+                        commonT={commonT}
+                        onApply={(nextValue) => setField("capabilitiesJSON", nextValue)}
+                      />
+                    )}
                   />
                 </AccordionContent>
               </AccordionItem>

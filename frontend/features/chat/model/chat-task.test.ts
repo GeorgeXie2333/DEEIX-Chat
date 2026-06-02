@@ -11,6 +11,7 @@ const videoModel: ChatModelOption = {
   kinds: ["video_gen"],
   protocols: ["openai_video_generations"],
   defaultOptions: {},
+  optionControls: [],
   pricing: null,
 };
 

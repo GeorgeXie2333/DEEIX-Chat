@@ -716,9 +716,11 @@ function ChatInputComponent({
                 disabled={sending || loading || uploading || modelLoading}
                 options={options}
                 defaultOptions={defaultOptions}
+                optionControls={selectedModel?.optionControls ?? []}
                 modelOptionPolicy={modelOptionPolicy}
                 selectedProtocol={selectedProtocol}
                 selectedModelName={selectedPlatformModelName}
+                isMediaMode={isMediaMode}
                 onOptionsChange={onOptionsChange}
                 onOptionsReset={onOptionsReset}
               />

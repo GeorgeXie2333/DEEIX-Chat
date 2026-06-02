@@ -1,3 +1,4 @@
+import zhAdminAnnouncements from "@/i18n/messages/zh-CN/admin-announcements.json";
 import zhAdminBilling from "@/i18n/messages/zh-CN/admin-billing.json";
 import zhAdminChannels from "@/i18n/messages/zh-CN/admin-channels.json";
 import zhAdminConversation from "@/i18n/messages/zh-CN/admin-conversation.json";
@@ -8,6 +9,7 @@ import zhAdminModels from "@/i18n/messages/zh-CN/admin-models.json";
 import zhAdminOpenAPI from "@/i18n/messages/zh-CN/admin-openapi.json";
 import zhAdminTools from "@/i18n/messages/zh-CN/admin-tools.json";
 import zhAdminUsers from "@/i18n/messages/zh-CN/admin-users.json";
+import zhAnnouncements from "@/i18n/messages/zh-CN/announcements.json";
 import zhChat from "@/i18n/messages/zh-CN/chat.json";
 import zhCommon from "@/i18n/messages/zh-CN/common.json";
 import zhErrors from "@/i18n/messages/zh-CN/errors.json";
@@ -27,6 +29,7 @@ export const DEFAULT_MESSAGES = {
   login: zhLogin,
   guide: zhGuide,
   chat: zhChat,
+  announcements: zhAnnouncements,
   recent: zhRecent,
   share: zhShare,
   files: zhFiles,
@@ -39,6 +42,7 @@ export const DEFAULT_MESSAGES = {
   adminModels: zhAdminModels,
   adminOpenAPI: zhAdminOpenAPI,
   adminBilling: zhAdminBilling,
+  adminAnnouncements: zhAdminAnnouncements,
   adminLogs: zhAdminLogs,
   adminTools: zhAdminTools,
 };
@@ -49,6 +53,7 @@ type LocaleMessageImports = [
   { default: AppMessages["login"] },
   { default: AppMessages["guide"] },
   { default: AppMessages["chat"] },
+  { default: AppMessages["announcements"] },
   { default: AppMessages["recent"] },
   { default: AppMessages["share"] },
   { default: AppMessages["files"] },
@@ -61,6 +66,7 @@ type LocaleMessageImports = [
   { default: AppMessages["adminModels"] },
   { default: AppMessages["adminOpenAPI"] },
   { default: AppMessages["adminBilling"] },
+  { default: AppMessages["adminAnnouncements"] },
   { default: AppMessages["adminLogs"] },
   { default: AppMessages["adminTools"] },
 ];
@@ -71,6 +77,7 @@ function toAppMessages([
   login,
   guide,
   chat,
+  announcements,
   recent,
   share,
   files,
@@ -83,6 +90,7 @@ function toAppMessages([
   adminModels,
   adminOpenAPI,
   adminBilling,
+  adminAnnouncements,
   adminLogs,
   adminTools,
 ]: LocaleMessageImports): AppMessages {
@@ -92,6 +100,7 @@ function toAppMessages([
     login: login.default,
     guide: guide.default,
     chat: chat.default,
+    announcements: announcements.default,
     recent: recent.default,
     share: share.default,
     files: files.default,
@@ -104,6 +113,7 @@ function toAppMessages([
     adminModels: adminModels.default,
     adminOpenAPI: adminOpenAPI.default,
     adminBilling: adminBilling.default,
+    adminAnnouncements: adminAnnouncements.default,
     adminLogs: adminLogs.default,
     adminTools: adminTools.default,
   };
@@ -121,6 +131,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
       import("@/i18n/messages/ja-JP/login.json"),
       import("@/i18n/messages/ja-JP/guide.json"),
       import("@/i18n/messages/ja-JP/chat.json"),
+      import("@/i18n/messages/ja-JP/announcements.json"),
       import("@/i18n/messages/ja-JP/recent.json"),
       import("@/i18n/messages/ja-JP/share.json"),
       import("@/i18n/messages/ja-JP/files.json"),
@@ -133,6 +144,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
       import("@/i18n/messages/ja-JP/admin-models.json"),
       import("@/i18n/messages/ja-JP/admin-openapi.json"),
       import("@/i18n/messages/ja-JP/admin-billing.json"),
+      import("@/i18n/messages/ja-JP/admin-announcements.json"),
       import("@/i18n/messages/ja-JP/admin-logs.json"),
       import("@/i18n/messages/ja-JP/admin-tools.json"),
     ]));
@@ -144,6 +156,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
     import("@/i18n/messages/en-US/login.json"),
     import("@/i18n/messages/en-US/guide.json"),
     import("@/i18n/messages/en-US/chat.json"),
+    import("@/i18n/messages/en-US/announcements.json"),
     import("@/i18n/messages/en-US/recent.json"),
     import("@/i18n/messages/en-US/share.json"),
     import("@/i18n/messages/en-US/files.json"),
@@ -156,6 +169,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
     import("@/i18n/messages/en-US/admin-models.json"),
     import("@/i18n/messages/en-US/admin-openapi.json"),
     import("@/i18n/messages/en-US/admin-billing.json"),
+    import("@/i18n/messages/en-US/admin-announcements.json"),
     import("@/i18n/messages/en-US/admin-logs.json"),
     import("@/i18n/messages/en-US/admin-tools.json"),
   ]));

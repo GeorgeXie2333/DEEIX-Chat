@@ -230,6 +230,26 @@ func (s *Service) sendMessageInternal(
 			}
 		}
 		runState.finalize(ctx, retErr)
+		if retErr != nil && result == nil && userMessage != nil && assistantMessage != nil {
+			latencyMS := time.Since(startedAt).Milliseconds()
+			if latencyMS < 0 {
+				latencyMS = 0
+			}
+			result = &SendMessageResult{
+				UserMessage:      *userMessage,
+				AssistantMessage: *assistantMessage,
+				Billable:         false,
+				LatencyMS:        latencyMS,
+			}
+			if resolvedRoute != nil {
+				result.UpstreamID = resolvedRoute.UpstreamID
+				result.UpstreamName = resolvedRoute.UpstreamName
+				result.PlatformModelName = resolvedRoute.PlatformModelName
+				result.RoutedBindingCode = resolvedRoute.BindingCode
+				result.UpstreamModelName = resolvedRoute.UpstreamModel
+				result.UpstreamProtocol = resolvedRoute.Protocol
+			}
+		}
 	}()
 
 	resolvedAttachments, err := s.resolveAttachments(ctx, input.UserID, input.FileIDs)
@@ -440,7 +460,7 @@ func (s *Service) sendMessageInternal(
 
 	// ContextAssembler 只承载真正的系统级行为指令；资料型上下文稍后进入用户 XML。
 	assembler := NewContextAssembler(int64(cfg.ContextMaxInputTokens))
-	systemPrompt := resolveMessageSystemPromptInjection(cfg, route, input.HTMLVisualPromptEnabled)
+	systemPrompt := resolveMessageSystemPromptInjection(cfg, route, conversation.ProjectSystemPrompt, input.HTMLVisualPromptEnabled)
 	if systemPrompt.Content != "" {
 		if systemPrompt.InlineToUser {
 			historyMsgs = inlineSystemPromptIntoLatestUserMessage(historyMsgs, systemPrompt.Content)
@@ -1319,6 +1339,7 @@ func (s *Service) sendMessageInternal(
 	return &SendMessageResult{
 		UserMessage:         *userMessage,
 		AssistantMessage:    *assistantMessage,
+		Billable:            true,
 		UpstreamID:          run.UpstreamID,
 		UpstreamName:        run.UpstreamName,
 		PlatformModelName:   route.PlatformModelName,

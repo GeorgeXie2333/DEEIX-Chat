@@ -1,0 +1,72 @@
+{
+  "title": "お知らせ",
+  "description": "サインイン後に表示する通知、モデル変更、運用メッセージを管理します。",
+  "create": "作成",
+  "edit": "編集",
+  "delete": "削除",
+  "enable": "有効化",
+  "disable": "無効化",
+  "deleting": "削除中",
+  "searchPlaceholder": "タイトルまたは内容を検索",
+  "statusFilter": "状態",
+  "allStatuses": "すべて",
+  "typeFilter": "種類",
+  "allTypes": "すべて",
+  "pinnedFilter": "固定",
+  "allPinned": "すべて",
+  "createTitle": "お知らせを作成",
+  "editTitle": "お知らせを編集",
+  "dialogDescription": "Markdown でお知らせ内容を作成します。更新した内容は新しいバージョンとして再表示されます。",
+  "deleteTitle": "お知らせを削除",
+  "deleteDescription": "削除したお知らせは表示されなくなり、他のユーザーデータには影響しません。",
+  "empty": "お知らせはありません",
+  "previewEmpty": "プレビュー",
+  "status": {
+    "active": "有効",
+    "inactive": "無効"
+  },
+  "pinned": {
+    "yes": "固定済み",
+    "no": "未固定"
+  },
+  "types": {
+    "critical": "緊急",
+    "warning": "警告",
+    "info": "情報",
+    "normal": "通常",
+    "general": "一般"
+  },
+  "columns": {
+    "title": "お知らせ",
+    "type": "種類",
+    "pinned": "固定",
+    "status": "状態",
+    "priority": "優先度",
+    "window": "表示期間"
+  },
+  "fields": {
+    "title": "タイトル",
+    "priority": "優先度",
+    "type": "種類",
+    "pinned": "固定",
+    "status": "状態",
+    "timeRange": "表示期間",
+    "alwaysActive": "常に有効",
+    "startsAt": "開始日時",
+    "expiresAt": "終了日時",
+    "contentMarkdown": "内容",
+    "preview": "プレビュー"
+  },
+  "toast": {
+    "loadFailed": "お知らせを読み込めませんでした",
+    "invalid": "タイトルと内容を入力してください。",
+    "created": "お知らせを作成しました",
+    "createFailed": "お知らせの作成に失敗しました",
+    "updated": "お知らせを更新しました",
+    "updateFailed": "お知らせの更新に失敗しました",
+    "priorityInvalid": "優先度は数値で入力してください",
+    "statusFailed": "状態を更新できませんでした",
+    "deleted": "お知らせを削除しました",
+    "deleteFailed": "お知らせの削除に失敗しました"
+  }
+}

@@ -135,11 +135,15 @@ func migrate(db *gorm.DB, cfg config.Config) error {
 		"billing_payment_orders":         "支付订单表",
 		"billing_accounts":               "按量计费余额账户表",
 		"billing_balance_transactions":   "按量计费余额流水表",
+		"billing_redemption_codes":       "计费兑换码定义表",
+		"billing_redemptions":            "计费兑换记录表",
 		"billing_model_prices":           "平台模型按量单价配置表",
 		"billing_usage_ledgers":          "按量用量账本表",
 		"openapi_keys":                   "用户开放 API Key 表",
 		"audit_logs":                     "可追溯审计日志表",
 		"system_events":                  "后台系统事件表",
+		"system_announcements":           "站点公告表",
+		"announcement_user_states":       "用户公告展示状态表",
 		"system_settings":                "系统动态配置表",
 		"user_settings":                  "用户个人偏好配置表",
 		"file_chunks":                    "RAG文件分片表",
@@ -169,6 +173,9 @@ func migrate(db *gorm.DB, cfg config.Config) error {
 		return err
 	}
 	if err := applyOpenAPIBaselineIndexes(db); err != nil {
+		return err
+	}
+	if err := applyAnnouncementBaseline(db); err != nil {
 		return err
 	}
 	if err := applyVectorBaseline(db, vectorBaselineRequired(cfg)); err != nil {
@@ -216,11 +223,15 @@ func applySchemaBaseline(db *gorm.DB) error {
 		&model.PaymentOrder{},
 		&model.BillingAccount{},
 		&model.BalanceTransaction{},
+		&model.RedemptionCode{},
+		&model.Redemption{},
 		&model.ModelPricing{},
 		&model.UsageLedger{},
 		&model.OpenAPIKey{},
 		&model.AuditLog{},
 		&model.SystemEvent{},
+		&model.Announcement{},
+		&model.AnnouncementUserState{},
 		&model.SystemSetting{},
 		&model.UserSetting{},
 		&model.FileChunk{},
@@ -281,6 +292,47 @@ func applyBillingBaselineIndexes(db *gorm.DB) error {
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_billing_balance_transactions_usage_ref
 		ON "billing_balance_transactions" ("user_id", "type", "ref_no")
 		WHERE ref_no <> '' AND type IN ('usage_reserve', 'usage_refund')`,
+		`ALTER TABLE "billing_redemption_codes"
+		ADD COLUMN IF NOT EXISTS "code_encrypted" text NOT NULL DEFAULT ''`,
+		`COMMENT ON COLUMN "billing_redemption_codes"."code_encrypted" IS 'AES-GCM加密后的兑换码明文'`,
+		`UPDATE "billing_redemption_codes"
+		SET "code_hint" = replace("code_hint", '...', '***')
+		WHERE "code_hint" LIKE '%...%'`,
+		`CREATE INDEX IF NOT EXISTS idx_billing_redemption_codes_status_mode
+		ON "billing_redemption_codes" ("status", "mode", "id")`,
+		`CREATE INDEX IF NOT EXISTS idx_billing_redemptions_code_user_created
+		ON "billing_redemptions" ("code_id", "user_id", "created_at")`,
+	}
+
+	for _, statement := range statements {
+		if err := db.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func applyAnnouncementBaseline(db *gorm.DB) error {
+	statements := []string{
+		`ALTER TABLE "system_announcements"
+		ADD COLUMN IF NOT EXISTS "type" varchar(32) NOT NULL DEFAULT 'general'`,
+		`COMMENT ON COLUMN "system_announcements"."type" IS '公告类型(critical/warning/info/normal/general)'`,
+		`ALTER TABLE "system_announcements"
+		ADD COLUMN IF NOT EXISTS "pinned" boolean NOT NULL DEFAULT false`,
+		`COMMENT ON COLUMN "system_announcements"."pinned" IS '是否置顶'`,
+		`CREATE INDEX IF NOT EXISTS idx_system_announcements_sort
+		ON "system_announcements" ("pinned", "priority", "updated_at", "id")`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_announcement_user_states_version
+		ON "announcement_user_states" ("announcement_id", "user_id", "announcement_updated_at")`,
+		`ALTER TABLE "announcement_user_states"
+		ADD COLUMN IF NOT EXISTS "closed_at" timestamptz`,
+		`COMMENT ON COLUMN "announcement_user_states"."closed_at" IS '关闭时间'`,
+		`CREATE INDEX IF NOT EXISTS idx_announcement_user_states_user_dismissed
+		ON "announcement_user_states" ("user_id", "dismissed_until")
+		WHERE "dismissed_until" IS NOT NULL`,
+		`CREATE INDEX IF NOT EXISTS idx_announcement_user_states_user_closed
+		ON "announcement_user_states" ("user_id", "closed_at")
+		WHERE "closed_at" IS NOT NULL`,
 	}
 
 	for _, statement := range statements {
@@ -341,6 +393,9 @@ func applyConversationBaselineIndexes(db *gorm.DB) error {
 		`ALTER TABLE "chat_conversations"
 		ADD COLUMN IF NOT EXISTS "project_id" bigint`,
 		`COMMENT ON COLUMN "chat_conversations"."project_id" IS '项目分组ID'`,
+		`ALTER TABLE "chat_conversation_projects"
+		ADD COLUMN IF NOT EXISTS "system_prompt" text NOT NULL DEFAULT ''`,
+		`COMMENT ON COLUMN "chat_conversation_projects"."system_prompt" IS '项目级系统提示词'`,
 		`CREATE INDEX IF NOT EXISTS idx_chat_conversations_user_status_starred_updated_at
 		ON "chat_conversations" ("user_id", "status", "is_starred", "updated_at" DESC, "id" DESC)`,
 		`CREATE INDEX IF NOT EXISTS idx_chat_conversations_user_status_starred_starred_at
@@ -364,6 +419,15 @@ func applyConversationBaselineIndexes(db *gorm.DB) error {
 		`COMMENT ON COLUMN "chat_runs"."task_type" IS '任务类型'`,
 		`CREATE INDEX IF NOT EXISTS idx_chat_runs_task_type
 		ON "chat_runs" ("task_type")`,
+		`ALTER TABLE "chat_run_events"
+		ALTER COLUMN "event_id" TYPE varchar(255),
+		ALTER COLUMN "parent_event_id" TYPE varchar(255),
+		ALTER COLUMN "title" TYPE varchar(255),
+		ALTER COLUMN "tool_call_id" TYPE varchar(255)`,
+		`COMMENT ON COLUMN "chat_run_events"."event_id" IS '事件ID'`,
+		`COMMENT ON COLUMN "chat_run_events"."parent_event_id" IS '父事件ID'`,
+		`COMMENT ON COLUMN "chat_run_events"."title" IS '轨迹标题'`,
+		`COMMENT ON COLUMN "chat_run_events"."tool_call_id" IS '工具调用ID'`,
 		`CREATE UNIQUE INDEX IF NOT EXISTS uk_file_objects_active_user_content
 		ON "file_objects" ("user_id", "sha256", "size_bytes")
 		WHERE status = 'active' AND deleted_at IS NULL AND sha256 <> ''`,

@@ -18,7 +18,18 @@ export type ChatModelOption = {
   kinds: string[];
   protocols: string[];
   defaultOptions: ConversationOptions;
+  optionControls: ModelOptionControl[];
   pricing: PublicModelPricingDTO | null;
+};
+
+export type ModelOptionControlType = "boolean" | "number" | "select" | "text";
+
+export type ModelOptionControl = {
+  path: string;
+  label?: string;
+  type?: ModelOptionControlType;
+  options?: string[];
+  placeholder?: string;
 };
 
 export type PendingAttachment = {

@@ -50,11 +50,6 @@ type MarkdownLinkProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
   href?: string;
 };
 
-type MarkdownStrongProps = React.HTMLAttributes<HTMLElement> & {
-  children?: React.ReactNode;
-  node?: unknown;
-};
-
 type MarkdownImageProps = React.ImgHTMLAttributes<HTMLImageElement> & {
   alt?: string;
   src?: string;
@@ -74,6 +69,11 @@ export type MarkdownArtifactActions = {
 };
 
 type MarkdownParagraphProps = React.HTMLAttributes<HTMLParagraphElement> & {
+  children?: React.ReactNode;
+  node?: unknown;
+};
+
+type MarkdownStrongProps = React.HTMLAttributes<HTMLElement> & {
   children?: React.ReactNode;
   node?: unknown;
 };
@@ -196,6 +196,42 @@ const SAFE_HTML_STYLE_PROPERTIES: ReadonlySet<string> = new Set([
   "whiteSpace",
   "width",
 ]);
+const KATEX_SPAN_CLASS_NAMES = [
+  "katex",
+  "katex-html",
+  "katex-mathml",
+  "base",
+  "strut",
+  "mord",
+  "mop",
+  "mbin",
+  "mrel",
+  "mopen",
+  "mclose",
+  "mpunct",
+  "minner",
+  "msupsub",
+  "vlist",
+  "vlist-t",
+  "vlist-r",
+  "vlist-s",
+  "pstrut",
+  "sizing",
+  "mtight",
+  "mspace",
+  "mfrac",
+  "mathrm",
+  "mathnormal",
+  "mathit",
+  "mathbf",
+  "textbf",
+  "textrm",
+  "mainrm",
+] as const;
+const KATEX_SAFE_HTML_STYLE_PROPERTIES: ReadonlySet<string> = new Set([
+  ...SAFE_HTML_STYLE_PROPERTIES,
+  "top",
+]);
 const UNSAFE_STYLE_VALUE_RE = /(?:url\s*\(|expression\s*\(|javascript:|@import|[<>{}])/i;
 
 function isSafeHTMLStyleValue(value: string | number): boolean {
@@ -206,14 +242,17 @@ function isSafeHTMLStyleValue(value: string | number): boolean {
   return Boolean(normalizedValue) && normalizedValue.length <= 120 && !UNSAFE_STYLE_VALUE_RE.test(normalizedValue);
 }
 
-function sanitizeHTMLStyle(style: React.CSSProperties | undefined): React.CSSProperties | undefined {
+function sanitizeHTMLStyle(
+  style: React.CSSProperties | undefined,
+  safeProperties: ReadonlySet<string> = SAFE_HTML_STYLE_PROPERTIES,
+): React.CSSProperties | undefined {
   if (!style) {
     return undefined;
   }
 
   const safeStyle: Record<string, string | number> = {};
   for (const [property, value] of Object.entries(style)) {
-    if (!SAFE_HTML_STYLE_PROPERTIES.has(property)) {
+    if (!safeProperties.has(property)) {
       continue;
     }
     if (typeof value !== "string" && typeof value !== "number") {
@@ -226,6 +265,18 @@ function sanitizeHTMLStyle(style: React.CSSProperties | undefined): React.CSSPro
   }
 
   return Object.keys(safeStyle).length > 0 ? safeStyle : undefined;
+}
+
+function isKatexSpan(className: string | undefined, style: React.CSSProperties | undefined): boolean {
+  if (typeof style?.top !== "undefined") {
+    return true;
+  }
+  const classNames = className?.trim().split(/\s+/) ?? [];
+  return classNames.some((item) => (
+    KATEX_SPAN_CLASS_NAMES.includes(item as (typeof KATEX_SPAN_CLASS_NAMES)[number]) ||
+    /^reset-size\d+$/.test(item) ||
+    /^size\d+$/.test(item)
+  ));
 }
 
 function resolveLinkKind(href: string): ResolvedLinkKind {
@@ -743,14 +794,6 @@ export function MarkdownLink({ children, className, href, onClick, ...props }: M
   );
 }
 
-export function MarkdownStrong({ children, className, node: _node, ...props }: MarkdownStrongProps) {
-  return (
-    <strong {...props} className={cn("font-semibold", className)} data-streamdown="strong">
-      {children}
-    </strong>
-  );
-}
-
 export function MarkdownImage({ alt, className, onError, onLoad, src, ...props }: MarkdownImageProps) {
   const t = useTranslations("chat.markdown");
   const insideLink = React.useContext(StreamdownLinkContext);
@@ -960,6 +1003,21 @@ export function MarkdownParagraph({ children, className, node: _node, style, ...
   );
 }
 
+export function MarkdownStrong({ children, className, node: _node, style, ...props }: MarkdownStrongProps) {
+  return (
+    <strong
+      {...props}
+      className={cn("font-bold text-foreground", className)}
+      style={{
+        ...sanitizeHTMLStyle(style),
+        fontWeight: "var(--font-chat-strong-weight)",
+      }}
+    >
+      {children}
+    </strong>
+  );
+}
+
 export function MarkdownHTMLDiv({ children, className, node: _node, style }: MarkdownHTMLBlockProps) {
   return (
     <div className={cn("min-w-0 max-w-full", className)} style={sanitizeHTMLStyle(style)}>
@@ -1017,6 +1075,14 @@ export function MarkdownHTMLSummary({ children, className, node: _node, style }:
 }
 
 export function MarkdownHTMLSpan({ children, className, node: _node, style }: MarkdownHTMLInlineProps) {
+  if (isKatexSpan(className, style)) {
+    return (
+      <span className={className} style={sanitizeHTMLStyle(style, KATEX_SAFE_HTML_STYLE_PROPERTIES)}>
+        {children}
+      </span>
+    );
+  }
+
   return (
     <span className={cn("min-w-0 max-w-full", className)} style={sanitizeHTMLStyle(style)}>
       {children}

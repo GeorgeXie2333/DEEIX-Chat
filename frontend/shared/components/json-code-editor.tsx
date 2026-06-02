@@ -1,12 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 import type * as Monaco from "monaco-editor";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/shared/components/theme-provider";
 
 type JsonCodeEditorProps = {
   id?: string;
@@ -30,6 +30,23 @@ type JsonDiagnosticsDefaults = {
 
 let monacoLoadPromise: Promise<MonacoModule> | null = null;
 const BASE_EDITOR_FONT_SIZE = 12;
+
+function isMonacoCanceledError(error: unknown): boolean {
+  return error instanceof Error && (error.name === "Canceled" || error.message === "Canceled");
+}
+
+function disposeMonacoResource(resource: { dispose: () => void } | null | undefined) {
+  if (!resource) {
+    return;
+  }
+  try {
+    resource.dispose();
+  } catch (error) {
+    if (!isMonacoCanceledError(error)) {
+      throw error;
+    }
+  }
+}
 
 function readUIFontScale() {
   if (typeof window === "undefined") {
@@ -191,9 +208,9 @@ export function JsonCodeEditor({
 
     return () => {
       disposed = true;
-      contentSubscription?.dispose();
-      markerSubscription?.dispose();
-      editorRef.current?.dispose();
+      disposeMonacoResource(contentSubscription);
+      disposeMonacoResource(markerSubscription);
+      disposeMonacoResource(editorRef.current);
       editorRef.current = null;
       monacoRef.current = null;
     };

@@ -380,9 +380,9 @@ export function SettingsFieldEditor({
 
   if (field.type === "textarea") {
     return (
-      <motion.div layout transition={layoutTransition}>
+      <motion.div layout transition={layoutTransition} className="min-w-0">
         <Field>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <div>
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex items-center gap-2">
@@ -410,9 +410,9 @@ export function SettingsFieldEditor({
   }
 
   return (
-    <motion.div layout transition={layoutTransition}>
+    <motion.div layout transition={layoutTransition} className="min-w-0">
       <Field>
-        <div className="flex flex-col gap-2 md:flex-row md:items-start md:gap-4 xl:gap-6">
+        <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4 xl:gap-6">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <FieldLabel htmlFor={field.id}>{field.label}</FieldLabel>
@@ -570,9 +570,9 @@ export function ServiceRuntimePanel({
   ) : null;
 
   return (
-    <motion.div layout transition={layoutTransition}>
+    <motion.div layout transition={layoutTransition} className="min-w-0">
       <Field>
-        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between md:gap-4 xl:gap-6">
+        <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-start md:justify-between md:gap-4 xl:gap-6">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <FieldLabel className="items-center leading-none">{label}</FieldLabel>
@@ -588,7 +588,7 @@ export function ServiceRuntimePanel({
               )}
               {loading ? <Spinner className="relative -top-px size-3.5 text-muted-foreground" /> : null}
             </div>
-            {message ? <p className={cn("text-[11px]", messageToneClassName)}>{message}</p> : null}
+            {message ? <p className={cn("break-words text-[11px]", messageToneClassName)}>{message}</p> : null}
           </div>
 
           <div className="w-full min-w-0 md:w-44 md:shrink-0 xl:w-52">

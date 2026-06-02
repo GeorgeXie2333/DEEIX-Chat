@@ -31,14 +31,15 @@ func (Conversation) TableName() string {
 // ConversationProject 存储用户会话项目分组。
 type ConversationProject struct {
 	BaseModel
-	UserID      uint   `gorm:"not null;index:idx_chat_conversation_projects_user_id;comment:用户ID"`
-	PublicID    string `gorm:"size:32;not null;default:'';uniqueIndex:idx_chat_conversation_projects_public_id;comment:公开项目ID"`
-	Name        string `gorm:"size:80;not null;default:'';comment:项目名称"`
-	Description string `gorm:"size:255;not null;default:'';comment:项目描述"`
-	Color       string `gorm:"size:32;not null;default:'';comment:项目颜色"`
-	Icon        string `gorm:"size:32;not null;default:'';comment:项目图标"`
-	SortOrder   int    `gorm:"not null;default:0;index:idx_chat_conversation_projects_sort_order;comment:展示顺序"`
-	Status      string `gorm:"size:32;not null;default:'active';index:idx_chat_conversation_projects_status;comment:项目状态(active/archived)"`
+	UserID       uint   `gorm:"not null;index:idx_chat_conversation_projects_user_id;comment:用户ID"`
+	PublicID     string `gorm:"size:32;not null;default:'';uniqueIndex:idx_chat_conversation_projects_public_id;comment:公开项目ID"`
+	Name         string `gorm:"size:80;not null;default:'';comment:项目名称"`
+	Description  string `gorm:"size:255;not null;default:'';comment:项目描述"`
+	SystemPrompt string `gorm:"type:text;not null;default:'';comment:项目级系统提示词"`
+	Color        string `gorm:"size:32;not null;default:'';comment:项目颜色"`
+	Icon         string `gorm:"size:32;not null;default:'';comment:项目图标"`
+	SortOrder    int    `gorm:"not null;default:0;index:idx_chat_conversation_projects_sort_order;comment:展示顺序"`
+	Status       string `gorm:"size:32;not null;default:'active';index:idx_chat_conversation_projects_status;comment:项目状态(active/archived)"`
 }
 
 // TableName 指定表名。
@@ -273,19 +274,19 @@ type ChatRunEvent struct {
 	UserID          uint       `gorm:"not null;default:0;index:idx_chat_run_events_user_id;comment:用户ID"`
 	RunID           string     `gorm:"size:64;not null;default:'';index:idx_chat_run_events_run_id;uniqueIndex:uk_chat_run_events_run_scope_event,priority:1;comment:运行ID"`
 	EventScope      string     `gorm:"size:32;not null;default:'';index:idx_chat_run_events_scope;uniqueIndex:uk_chat_run_events_run_scope_event,priority:2;comment:事件范围(trace_block/trace_event/tool_call)"`
-	EventID         string     `gorm:"size:96;not null;default:'';uniqueIndex:uk_chat_run_events_run_scope_event,priority:3;comment:事件ID"`
+	EventID         string     `gorm:"size:255;not null;default:'';uniqueIndex:uk_chat_run_events_run_scope_event,priority:3;comment:事件ID"`
 	EventType       string     `gorm:"size:32;not null;default:'';index:idx_chat_run_events_type;comment:事件类型"`
 	Phase           string     `gorm:"size:32;not null;default:'';index:idx_chat_run_events_phase;comment:阶段(process/tools/upstream_think)"`
 	Stage           string     `gorm:"size:32;not null;default:'';index:idx_chat_run_events_stage;comment:链路阶段(process/think/tool/answer)"`
 	RoundID         string     `gorm:"size:64;not null;default:'';index:idx_chat_run_events_round_id;comment:链路轮次ID"`
-	ParentEventID   string     `gorm:"size:96;not null;default:'';index:idx_chat_run_events_parent_event_id;comment:父事件ID"`
+	ParentEventID   string     `gorm:"size:255;not null;default:'';index:idx_chat_run_events_parent_event_id;comment:父事件ID"`
 	Status          string     `gorm:"size:32;not null;default:'';index:idx_chat_run_events_status;comment:事件状态(streaming/completed/error)"`
-	Title           string     `gorm:"size:64;not null;default:'';comment:轨迹标题"`
+	Title           string     `gorm:"size:255;not null;default:'';comment:轨迹标题"`
 	Summary         string     `gorm:"size:255;not null;default:'';comment:轨迹摘要"`
 	ContentMarkdown string     `gorm:"type:text;not null;default:'';comment:轨迹Markdown内容"`
 	PayloadJSON     string     `gorm:"type:text;not null;default:'';comment:轨迹负载JSON"`
 	Seq             int        `gorm:"not null;default:0;index:idx_chat_run_events_seq;comment:事件顺序"`
-	ToolCallID      string     `gorm:"size:64;not null;default:'';index:idx_chat_run_events_tool_call_id;comment:工具调用ID"`
+	ToolCallID      string     `gorm:"size:255;not null;default:'';index:idx_chat_run_events_tool_call_id;comment:工具调用ID"`
 	ToolName        string     `gorm:"size:128;not null;default:'';index:idx_chat_run_events_tool_name;comment:工具名称"`
 	LatencyMS       int64      `gorm:"not null;default:0;comment:调用时长毫秒"`
 	InputJSON       string     `gorm:"type:text;not null;default:'';comment:输入JSON"`

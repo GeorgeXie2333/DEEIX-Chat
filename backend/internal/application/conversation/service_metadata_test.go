@@ -57,3 +57,41 @@ func TestParseGeneratedConversationTitleRejectsDirtyOutput(t *testing.T) {
 		}
 	}
 }
+
+func TestConversationTitleFromFirstUserMessage(t *testing.T) {
+	cases := map[string]string{
+		"  这是一条很长的第一条用户消息，用来测试标题截断  ":        "这是一条很长的第一条用户消息，用来测试标",
+		"\n\nhello   world   from   DEEIX\n": "hello world from DEE",
+		"\"简短标题\"":                           "简短标题",
+		"   ":                                "",
+	}
+	for input, want := range cases {
+		if got := conversationTitleFromFirstUserMessage(input); got != want {
+			t.Fatalf("unexpected first-message title for %q: got %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestShouldGenerateConversationMetadataAfterFailedFirstTurn(t *testing.T) {
+	conversation := model.Conversation{
+		Title:        "新会话",
+		LabelsJSON:   "[]",
+		MessageCount: 2,
+	}
+
+	if !shouldGenerateConversationMetadata(conversation) {
+		t.Fatal("expected placeholder metadata to be generated even when failed messages already exist")
+	}
+}
+
+func TestConversationLabelsEmpty(t *testing.T) {
+	emptyCases := []string{"", "null", "[]", "  []  "}
+	for _, value := range emptyCases {
+		if !conversationLabelsEmpty(value) {
+			t.Fatalf("expected labels %q to be empty", value)
+		}
+	}
+	if conversationLabelsEmpty(`["技术"]`) {
+		t.Fatal("expected non-empty labels to be preserved")
+	}
+}

@@ -412,7 +412,9 @@
       "sectionTitle": "既定モデル",
       "title": "新規会話の既定モデル",
       "description": "新しい会話を開くときに事前選択されるモデルです。空欄の場合はシステム推奨の最初の利用可能モデルを使用します。",
-      "systemRecommended": "システム既定"
+      "systemRecommended": "システム既定",
+      "autoTitle": "タイトルを自動生成",
+      "autoTitleDescription": "無効にすると、新しい会話は最初のメッセージの先頭20文字をタイトルとして使用します。"
     },
     "input": {
       "sectionTitle": "入力と送信",
@@ -428,7 +430,9 @@
       "restoreDraftTitle": "下書きを自動復元",
       "restoreDraftDescription": "送信失敗時に今回送信したテキストと添付を自動復元するかを制御します。",
       "preserveDraftTitle": "会話下書きを保持",
-      "preserveDraftDescription": "会話を切り替えた後、現在の会話の未送信内容を保持して復元するかを制御します。"
+      "preserveDraftDescription": "会話を切り替えた後、現在の会話の未送信内容を保持して復元するかを制御します。",
+      "deleteFilesDefaultTitle": "会話削除時に既定でファイルも削除",
+      "deleteFilesDefaultDescription": "有効にすると、会話削除の確認でファイル削除が既定で選択されます。他の会話から参照されているファイルは保持されます。"
     },
     "display": {
       "sectionTitle": "表示とレンダリング",
@@ -516,6 +520,14 @@
       "currentPeriod": "現在の請求期間",
       "used": "使用済み {value}",
       "total": "総枠 {value}"
+    },
+    "entitlements": {
+      "title": "サブスクリプション権限",
+      "count": "{count} 件",
+      "current": "現在",
+      "upcoming": "予定",
+      "range": "{start} - {end}",
+      "credit": "{credit} クレジット"
     },
     "usageBilling": {
       "title": "従量課金",
@@ -608,8 +620,11 @@
       "actions": {
         "current": "現在のプラン",
         "unavailable": "利用不可",
+        "renew": "更新",
         "subscribe": "契約",
-        "switch": "切り替え"
+        "switch": "切り替え",
+        "upgrade": "アップグレード",
+        "freeBlocked": "基本プラン"
       },
       "features": {
         "monthlyCredit": "{credit} 月額枠",
@@ -618,7 +633,12 @@
     },
     "payment": {
       "title": "支払い方法を選択",
+      "renewTitle": "サブスクリプションを更新",
+      "upgradeTitle": "サブスクリプションをアップグレード",
       "description": "支払い方法を確認して続行します。",
+      "renewDescription": "更新すると現在のプランに利用期間が追加されます。",
+      "renewAfterHigherDescription": "選択したプランで更新します。現在の上位プラン権限とクレジットは維持され、新しいプランは上位権限の終了後に開始します。",
+      "upgradeDescription": "上位プランはすぐに開始され、未使用の権限は後続期間として保持されます。",
       "method": "支払い方法",
       "card": "銀行カード",
       "disabled": "未有効",
@@ -637,6 +657,13 @@
       "amountAria": "チャージする米ドル金額",
       "confirm": "チャージ"
     },
+    "redemption": {
+      "open": "引き換え",
+      "title": "引き換えコード",
+      "description": "管理者から提供された引き換えコードを入力してください。",
+      "code": "引き換えコード",
+      "confirm": "引き換える"
+    },
     "toasts": {
       "retryLater": "しばらくしてからもう一度お試しください。",
       "subscriptionLoadFailed": "サブスクリプション情報の読み込みに失敗しました",
@@ -651,8 +678,13 @@
       "planUnavailableDescription": "現在のプランには利用可能な価格がありません。管理者に課金設定の確認を依頼してください。",
       "paymentDisabled": "支払いチャネルが有効ではありません",
       "paymentDisabledDescription": "有料プランを契約するには、先に管理画面で支払い設定を完了する必要があります。",
+      "freeSwitchBlocked": "有効なサブスクリプション権限があります",
+      "freeSwitchBlockedDescription": "有料権限の期限が切れるまでは Free に切り替えられません。更新するか、別の有料プランを選択してください。",
       "noPlanSelected": "プランが選択されていません",
-      "noPlanSelectedDescription": "先に契約するプランを選択してください。"
+      "noPlanSelectedDescription": "先に契約するプランを選択してください。",
+      "invalidRedemptionCode": "引き換えコードを入力してください。",
+      "redemptionSucceeded": "引き換えを適用しました",
+      "redemptionFailed": "引き換えに失敗しました"
     }
   }
 }

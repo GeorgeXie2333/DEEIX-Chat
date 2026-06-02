@@ -3,6 +3,8 @@
   "untitledConversation": "新しい会話",
   "modelListLoadFailed": "モデル一覧の読み込みに失敗しました",
   "placeholder": "Comi AI にメッセージを送信",
+  "projectMode": "プロジェクトモード",
+  "projectModeTooltip": "このモードでは、新しいチャットは現在のプロジェクト内に作成されます。プロジェクト指示はチャットモデルへのリクエストにのみ適用され、画像生成、画像編集、その他の非チャット機能には適用されません。",
   "send": "送信",
   "stop": "停止",
   "shareConversation": "この会話を共有",

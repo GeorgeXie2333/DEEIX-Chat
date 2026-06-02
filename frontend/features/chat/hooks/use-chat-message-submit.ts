@@ -24,7 +24,12 @@ import {
   resolveErrorSummary,
   toConversationPatch,
 } from "@/features/chat/utils/chat-runtime";
-import { buildChildrenIndex, toBranchKey } from "@/features/chat/model/chat-thread";
+import {
+  applyBranchSelectionPath,
+  buildChildrenIndex,
+  resolveBranchSelectionPath,
+  toBranchKey,
+} from "@/features/chat/model/chat-thread";
 import { sanitizeConversationOptions } from "@/features/chat/model/conversation-options";
 import { buildMediaImagePreviewMarkdown } from "@/features/chat/model/media-image-preview";
 import { resolveMediaStatusProgress } from "@/features/chat/model/media-status";
@@ -132,8 +137,13 @@ function normalizeLabelsJSON(value: string | null | undefined): string {
   return normalized && normalized !== "null" ? normalized : "[]";
 }
 
-function shouldRefreshGeneratedConversationMetadata(item: ConversationDTO | null): boolean {
-  return item !== null && item.messageCount === 0;
+function isPlaceholderConversationTitle(title: string): boolean {
+  const value = title.trim().toLowerCase();
+  return ["", "new conversation", "untitled", "新会话", "新对话", "新的对话"].includes(value);
+}
+
+function shouldRefreshGeneratedConversationMetadata(item: ConversationDTO | null, visibleMessageCount: number): boolean {
+  return visibleMessageCount === 0 || item?.messageCount === 0;
 }
 
 function hasGeneratedConversationMetadataChanged(
@@ -142,7 +152,7 @@ function hasGeneratedConversationMetadataChanged(
 ): boolean {
   const previousTitle = previous?.title?.trim() ?? "";
   const nextTitle = next.title.trim();
-  if (nextTitle && nextTitle !== previousTitle) {
+  if (nextTitle && nextTitle !== previousTitle && !isPlaceholderConversationTitle(nextTitle)) {
     return true;
   }
   return normalizeLabelsJSON(next.labelsJSON) !== normalizeLabelsJSON(previous?.labelsJSON);
@@ -279,11 +289,49 @@ export function useChatMessageSubmit({
     }
     const userPublicID = pendingExchange.userPublicID || pendingExchange.tempUserPublicID;
     const assistantPublicID = pendingExchange.assistantPublicID || pendingExchange.tempAssistantPublicID;
-    if (!serverMessagePublicIDs.has(userPublicID) || !serverMessagePublicIDs.has(assistantPublicID)) {
+    if (serverMessagePublicIDs.has(userPublicID) && serverMessagePublicIDs.has(assistantPublicID)) {
+      const serverPath = resolveBranchSelectionPath(combinedMessages, assistantPublicID);
+      if (serverPath.length > 0) {
+        setBranchSelections((prev) =>
+          applyBranchSelectionPath(
+            prev,
+            serverPath,
+            [pendingExchange.tempUserPublicID, pendingExchange.tempAssistantPublicID],
+          ),
+        );
+      }
+      setPendingExchange(null);
       return;
     }
-    setPendingExchange(null);
-  }, [pendingExchange, serverMessagePublicIDs, setPendingExchange]);
+
+    const pendingRunID = pendingExchange.runID?.trim();
+    if (!pendingRunID || pendingExchange.assistantPending) {
+      return;
+    }
+    const serverAssistant = combinedMessages.find(
+      (item) =>
+        item.role === "assistant" &&
+        item.runID === pendingRunID &&
+        serverMessagePublicIDs.has(item.publicID) &&
+        resolvePersistedPublicID(item.publicID) &&
+        !item.isPending &&
+        !item.isStreaming &&
+        item.status !== "pending",
+    );
+    if (serverAssistant) {
+      const serverPath = resolveBranchSelectionPath(combinedMessages, serverAssistant.publicID);
+      if (serverPath.length > 0) {
+        setBranchSelections((prev) =>
+          applyBranchSelectionPath(
+            prev,
+            serverPath,
+            [pendingExchange.tempUserPublicID, pendingExchange.tempAssistantPublicID],
+          ),
+        );
+      }
+      setPendingExchange(null);
+    }
+  }, [combinedMessages, pendingExchange, serverMessagePublicIDs, setBranchSelections, setPendingExchange]);
 
   const submitMessage = React.useCallback(
     async ({
@@ -427,7 +475,7 @@ export function useChatMessageSubmit({
           window.history.replaceState(null, "", `/chat?conversation_id=${created.publicID}`);
           onConversationCreated?.(created.publicID);
         }
-        const shouldRefreshConversationMetadata = shouldRefreshGeneratedConversationMetadata(targetConversation);
+        const shouldRefreshConversationMetadata = shouldRefreshGeneratedConversationMetadata(targetConversation, visibleMessageCount);
 
         const commonStreamPayload = {
           model: requestPlatformModelName,
@@ -628,13 +676,22 @@ export function useChatMessageSubmit({
                 : completed.assistantMessage.content,
           };
         });
-        setBranchSelections((prev) => {
-          const next = { ...prev };
-          next[toBranchKey(resolvedParentPublicID)] = completed.userMessage.publicID;
-          delete next[tempUserPublicID];
-          next[completed.userMessage.publicID] = completed.assistantMessage.publicID;
-          return next;
-        });
+        setBranchSelections((prev) =>
+          applyBranchSelectionPath(
+            prev,
+            [
+              {
+                parentPublicID: completed.userMessage.parentPublicID || resolvedParentPublicID,
+                publicID: completed.userMessage.publicID,
+              },
+              {
+                parentPublicID: completed.userMessage.publicID,
+                publicID: completed.assistantMessage.publicID,
+              },
+            ],
+            [tempUserPublicID, tempAssistantPublicID],
+          ),
+        );
         touchByPublicID(
           targetConversationID,
           toConversationPatch(targetConversation, requestPlatformModelName),
@@ -659,6 +716,7 @@ export function useChatMessageSubmit({
         }
         reload();
       } catch (error) {
+        flushStreamTextNow();
         resetStreamBuffer();
         if (streamAbortController.signal.aborted) {
           shouldKeepConversationLayout = true;
@@ -768,28 +826,36 @@ export function useChatMessageSubmit({
 
   const onSendMessage = React.useCallback(async () => {
     const content = draft.trim();
-    const parentMessage = resolveDefaultSubmissionParentMessage(visibleMessages);
+    const parentMessagePublicID =
+      resolvePersistedPublicID(currentLeafMessage?.publicID) ??
+      resolveDefaultSubmissionParentMessage(visibleMessages)?.publicID ??
+      null;
     await submitMessage({
       content,
       currentAttachments: attachments,
       resetComposer: true,
-      parentMessagePublicID: parentMessage?.publicID ?? currentLeafMessage?.publicID ?? null,
+      parentMessagePublicID,
       branchReason: "default",
     });
   }, [attachments, currentLeafMessage?.publicID, draft, submitMessage, visibleMessages]);
 
   const onRetryUserMessage = React.useCallback(
     async (message: ChatAreaMessage) => {
+      const sourceMessagePublicID = resolvePersistedPublicID(message.publicID);
+      if (!sourceMessagePublicID) {
+        toast.error(t("retryReplyFailed"), { description: t("continueReplyUnavailable") });
+        return;
+      }
       await submitMessage({
         content: message.content.trim(),
         currentAttachments: toPendingAttachments(message),
         resetComposer: false,
         parentMessagePublicID: message.parentPublicID,
-        sourceMessagePublicID: message.publicID,
+        sourceMessagePublicID,
         branchReason: "retry",
       });
     },
-    [submitMessage],
+    [submitMessage, t],
   );
 
   const onRetryAssistantMessage = React.useCallback(
@@ -799,12 +865,17 @@ export function useChatMessageSubmit({
         toast.error(t("retryReplyFailed"), { description: t("retryReplyMissingUser") });
         return;
       }
+      const sourceMessagePublicID = resolvePersistedPublicID(parentUser.publicID);
+      if (!sourceMessagePublicID) {
+        toast.error(t("retryReplyFailed"), { description: t("continueReplyUnavailable") });
+        return;
+      }
       await submitMessage({
         content: parentUser.content.trim(),
         currentAttachments: toPendingAttachments(parentUser),
         resetComposer: false,
         parentMessagePublicID: parentUser.parentPublicID,
-        sourceMessagePublicID: parentUser.publicID,
+        sourceMessagePublicID,
         branchReason: "retry",
       });
     },
@@ -832,17 +903,22 @@ export function useChatMessageSubmit({
 
   const onEditUserMessage = React.useCallback(
     async (message: ChatAreaMessage, content: string) => {
+      const sourceMessagePublicID = resolvePersistedPublicID(message.publicID);
+      if (!sourceMessagePublicID) {
+        toast.error(t("retryReplyFailed"), { description: t("continueReplyUnavailable") });
+        return false;
+      }
       const ok = await submitMessage({
         content: content.trim(),
         currentAttachments: toPendingAttachments(message),
         resetComposer: false,
         parentMessagePublicID: message.parentPublicID,
-        sourceMessagePublicID: message.publicID,
+        sourceMessagePublicID,
         branchReason: "edit",
       });
       return ok;
     },
-    [submitMessage],
+    [submitMessage, t],
   );
 
   const onCycleMessageBranch = React.useCallback(
