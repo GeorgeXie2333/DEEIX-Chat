@@ -1,6 +1,9 @@
 package llm
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 func TestBuildOpenAIChatCompletionsMinimalStreamRequestIncludesUsage(t *testing.T) {
 	payload := mustBuildRequestBody(t, AdapterOpenAIChatCompletions, "gpt-5", EndpointChatCompletions, GenerateInput{
@@ -874,6 +877,27 @@ func TestBuildAnthropicRequestBodyStructuredOutputThinkingAndToolChoice(t *testi
 	}
 }
 
+func TestBuildAnthropicRequestBodyMapsOpenAIToolChoiceObject(t *testing.T) {
+	payload := mustBuildAnthropicRequestBody(t, "claude-sonnet-4-5", GenerateInput{
+		Messages: []Message{{Role: "user", Content: "weather"}},
+		Options: map[string]interface{}{
+			"parallel_tool_calls": false,
+			"tool_choice": map[string]interface{}{
+				"type":     "function",
+				"function": map[string]interface{}{"name": "get_weather"},
+			},
+		},
+	}, false)
+
+	toolChoice, ok := payload["tool_choice"].(map[string]interface{})
+	if !ok || toolChoice["type"] != "tool" || toolChoice["name"] != "get_weather" || toolChoice["disable_parallel_tool_use"] != true {
+		t.Fatalf("expected Anthropic named tool_choice, got %#v", payload["tool_choice"])
+	}
+	if _, ok := payload["parallel_tool_calls"]; ok {
+		t.Fatalf("expected OpenAI parallel_tool_calls not to leak to Anthropic payload")
+	}
+}
+
 func TestBuildGeminiRequestBodyWebSearch(t *testing.T) {
 	payload := mustBuildGeminiRequestBody(t, GenerateInput{
 		Messages: []Message{{Role: "user", Content: "hello"}},
@@ -1061,6 +1085,43 @@ func TestBuildGeminiRequestBodyRootAliasesAndThinkingConfig(t *testing.T) {
 	}
 	if thinkingConfig["includeThoughts"] != true || thinkingConfig["thinkingBudget"] != 512 || thinkingConfig["thinkingLevel"] != "low" {
 		t.Fatalf("expected normalized thinkingConfig, got %#v", thinkingConfig)
+	}
+}
+
+func TestBuildGeminiRequestBodyMapsOpenAIToolChoice(t *testing.T) {
+	payload := mustBuildGeminiRequestBody(t, GenerateInput{
+		Messages: []Message{{Role: "user", Content: "weather"}},
+		Tools: []ToolDefinition{{
+			Name:        "get_weather",
+			Description: "Get weather",
+			InputSchema: json.RawMessage(`{"type":"object"}`),
+		}},
+		Options: map[string]interface{}{
+			"parallel_tool_calls": false,
+			"tool_choice": map[string]interface{}{
+				"type":     "function",
+				"function": map[string]interface{}{"name": "get_weather"},
+			},
+		},
+	})
+
+	if _, ok := payload["tool_choice"]; ok {
+		t.Fatalf("expected OpenAI tool_choice not to leak to Gemini payload, got %#v", payload["tool_choice"])
+	}
+	if _, ok := payload["parallel_tool_calls"]; ok {
+		t.Fatalf("expected OpenAI parallel_tool_calls not to leak to Gemini payload")
+	}
+	toolConfig, ok := payload["toolConfig"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected Gemini toolConfig, got %#v", payload["toolConfig"])
+	}
+	functionCallingConfig := toolConfig["functionCallingConfig"].(map[string]interface{})
+	if functionCallingConfig["mode"] != "ANY" {
+		t.Fatalf("expected mode ANY, got %#v", functionCallingConfig)
+	}
+	allowed, ok := functionCallingConfig["allowedFunctionNames"].([]string)
+	if !ok || len(allowed) != 1 || allowed[0] != "get_weather" {
+		t.Fatalf("expected allowed function names, got %#v", functionCallingConfig["allowedFunctionNames"])
 	}
 }
 

@@ -2,6 +2,7 @@ package openapi
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"reflect"
 	"sort"
@@ -275,6 +276,137 @@ func TestBuildGenerateInputFromChatCompletionDownloadsHTTPSImage(t *testing.T) {
 	}
 	if got := input.Messages[0].Parts[0]; got.Kind != llm.ContentPartImage || got.MimeType != "image/jpeg" || string(got.Data) != "remote" {
 		t.Fatalf("unexpected remote image part: %#v", got)
+	}
+}
+
+func TestBuildGenerateInputFromChatCompletionParsesToolsAndToolMessages(t *testing.T) {
+	input, err := buildGenerateInputFromChatCompletion(context.Background(), map[string]interface{}{
+		"model":               "tool-chat",
+		"tool_choice":         map[string]interface{}{"type": "function", "function": map[string]interface{}{"name": "get_weather"}},
+		"parallel_tool_calls": false,
+		"tools": []interface{}{
+			map[string]interface{}{
+				"type": "function",
+				"function": map[string]interface{}{
+					"name":        "get_weather",
+					"description": "Get weather",
+					"parameters": map[string]interface{}{
+						"type":       "object",
+						"properties": map[string]interface{}{"city": map[string]interface{}{"type": "string"}},
+						"required":   []interface{}{"city"},
+					},
+				},
+			},
+		},
+		"messages": []interface{}{
+			map[string]interface{}{"role": "user", "content": "weather?"},
+			map[string]interface{}{
+				"role":    "assistant",
+				"content": nil,
+				"tool_calls": []interface{}{
+					map[string]interface{}{
+						"id":   "call_1",
+						"type": "function",
+						"function": map[string]interface{}{
+							"name":      "get_weather",
+							"arguments": `{"city":"Paris"}`,
+						},
+					},
+				},
+			},
+			map[string]interface{}{
+				"role":         "tool",
+				"tool_call_id": "call_1",
+				"content":      `{"temperature":20}`,
+			},
+		},
+	}, nil)
+	if err != nil {
+		t.Fatalf("buildGenerateInputFromChatCompletion returned error: %v", err)
+	}
+	if len(input.Tools) != 1 || input.Tools[0].Name != "get_weather" || input.Tools[0].Description != "Get weather" {
+		t.Fatalf("expected function tool definition, got %#v", input.Tools)
+	}
+	var schema map[string]interface{}
+	if err := json.Unmarshal(input.Tools[0].InputSchema, &schema); err != nil {
+		t.Fatalf("tool schema should be JSON: %v", err)
+	}
+	if schema["type"] != "object" {
+		t.Fatalf("expected object schema, got %#v", schema)
+	}
+	if _, ok := input.Options["tools"]; ok {
+		t.Fatalf("expected public function tools to be removed from transparent options, got %#v", input.Options["tools"])
+	}
+	if got, ok := input.Options["parallel_tool_calls"].(bool); !ok || got {
+		t.Fatalf("expected parallel_tool_calls=false to be preserved, got %#v", input.Options["parallel_tool_calls"])
+	}
+	assistant := input.Messages[1]
+	if len(assistant.ToolCalls) != 1 || assistant.ToolCalls[0].ToolCallID != "call_1" || assistant.ToolCalls[0].ToolName != "get_weather" {
+		t.Fatalf("expected assistant tool call, got %#v", assistant.ToolCalls)
+	}
+	toolResult := input.Messages[2]
+	if len(toolResult.ToolResults) != 1 || toolResult.ToolResults[0].ToolCallID != "call_1" || toolResult.ToolResults[0].ToolName != "get_weather" {
+		t.Fatalf("expected tool result linked to prior call, got %#v", toolResult.ToolResults)
+	}
+	if toolResult.ToolResults[0].OutputJSON != `{"temperature":20}` {
+		t.Fatalf("unexpected tool result output: %#v", toolResult.ToolResults[0])
+	}
+}
+
+func TestBuildGenerateInputFromChatCompletionNormalizesLegacyFunctions(t *testing.T) {
+	input, err := buildGenerateInputFromChatCompletion(context.Background(), map[string]interface{}{
+		"model": "legacy-tool-chat",
+		"functions": []interface{}{
+			map[string]interface{}{
+				"name":        "legacy_lookup",
+				"description": "Legacy lookup",
+				"parameters":  map[string]interface{}{"type": "object"},
+			},
+		},
+		"function_call": map[string]interface{}{"name": "legacy_lookup"},
+		"messages": []interface{}{
+			map[string]interface{}{"role": "user", "content": "lookup"},
+			map[string]interface{}{
+				"role":    "assistant",
+				"content": nil,
+				"function_call": map[string]interface{}{
+					"name":      "legacy_lookup",
+					"arguments": `{"id":"42"}`,
+				},
+			},
+			map[string]interface{}{
+				"role":    "function",
+				"name":    "legacy_lookup",
+				"content": `{"value":"ok"}`,
+			},
+		},
+	}, nil)
+	if err != nil {
+		t.Fatalf("buildGenerateInputFromChatCompletion returned error: %v", err)
+	}
+	if len(input.Tools) != 1 || input.Tools[0].Name != "legacy_lookup" {
+		t.Fatalf("expected legacy function to become tool definition, got %#v", input.Tools)
+	}
+	if _, ok := input.Options["functions"]; ok {
+		t.Fatalf("expected legacy functions to be removed from transparent options")
+	}
+	toolChoice := asMap(input.Options["tool_choice"])
+	if toolChoice["type"] != "function" || getStringFromNestedMap(toolChoice, "function", "name") != "legacy_lookup" {
+		t.Fatalf("expected legacy function_call to become tool_choice, got %#v", input.Options["tool_choice"])
+	}
+	if len(input.Messages[1].ToolCalls) != 1 {
+		t.Fatalf("expected legacy assistant function_call to become tool call, got %#v", input.Messages[1])
+	}
+	call := input.Messages[1].ToolCalls[0]
+	if call.ToolCallID == "" || call.ToolName != "legacy_lookup" || call.ArgumentsJSON != `{"id":"42"}` {
+		t.Fatalf("unexpected legacy tool call: %#v", call)
+	}
+	if len(input.Messages[2].ToolResults) != 1 {
+		t.Fatalf("expected legacy function result to become tool result, got %#v", input.Messages[2])
+	}
+	result := input.Messages[2].ToolResults[0]
+	if result.ToolCallID != call.ToolCallID || result.ToolName != "legacy_lookup" || result.OutputJSON != `{"value":"ok"}` {
+		t.Fatalf("unexpected legacy tool result: call=%#v result=%#v", call, result)
 	}
 }
 
@@ -622,4 +754,10 @@ type jsonNumber string
 
 func (n jsonNumber) String() string {
 	return string(n)
+}
+
+func getStringFromNestedMap(payload map[string]interface{}, parent string, child string) string {
+	nested, _ := payload[parent].(map[string]interface{})
+	value, _ := nested[child].(string)
+	return value
 }

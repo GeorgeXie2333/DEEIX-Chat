@@ -2,6 +2,7 @@ package openapi
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -38,7 +39,7 @@ func (p *LLMRawChatProvider) CompleteChat(ctx context.Context, route llm.RouteCo
 		if err != nil {
 			return RawChatCompletionResult{}, err
 		}
-		return chatResultFromGenerateOutput(output, route.UpstreamModel), nil
+		return chatResultFromGenerateOutput(output, route.UpstreamModel, requestUsesLegacyFunctionCalling(body)), nil
 	}
 	output, err := p.client.GenerateRawChatCompletion(ctx, route, body)
 	if err != nil {
@@ -62,9 +63,17 @@ func (p *LLMRawChatProvider) StreamChat(
 		if err != nil {
 			return RawChatCompletionResult{}, err
 		}
+		toolEmitter := newStreamToolCallEmitter(route.UpstreamModel)
 		output, err := p.client.GenerateStream(ctx, route, input, func(event llm.GenerateStreamEvent) error {
 			if onEvent == nil {
 				return nil
+			}
+			if event.ServerToolCall != nil && isClientFunctionToolCall(*event.ServerToolCall) {
+				for _, chunk := range toolEmitter.chunks(event.ResponseID, *event.ServerToolCall) {
+					if err := onEvent(RawChatStreamEvent{Body: chunk}); err != nil {
+						return err
+					}
+				}
 			}
 			if event.Reasoning != nil {
 				if err := onEvent(RawChatStreamEvent{Reasoning: event.Reasoning}); err != nil {
@@ -89,7 +98,7 @@ func (p *LLMRawChatProvider) StreamChat(
 		if err != nil {
 			return RawChatCompletionResult{}, err
 		}
-		return chatResultFromGenerateOutput(output, route.UpstreamModel), nil
+		return chatResultFromGenerateOutput(output, route.UpstreamModel, requestUsesLegacyFunctionCalling(body)), nil
 	}
 	output, err := p.client.GenerateRawChatCompletionStream(ctx, route, body, func(event llm.RawChatCompletionStreamEvent) error {
 		if onEvent == nil {
@@ -107,15 +116,17 @@ func (p *LLMRawChatProvider) StreamChat(
 	return rawResultFromLLMOutput(output), nil
 }
 
-func chatResultFromGenerateOutput(output *llm.GenerateOutput, model string) RawChatCompletionResult {
+func chatResultFromGenerateOutput(output *llm.GenerateOutput, model string, legacyFunctionCall bool) RawChatCompletionResult {
 	if output == nil {
-		return RawChatCompletionResult{Body: chatCompletionBody("", model, "", llm.Usage{})}
+		return RawChatCompletionResult{Body: chatCompletionBody("", model, "", nil, llm.Usage{}, legacyFunctionCall)}
 	}
-	body := chatCompletionBody(output.ResponseID, model, output.Text, output.Usage)
+	toolCalls := normalizeOpenAIOutputToolCalls(output.ToolCalls)
+	body := chatCompletionBody(output.ResponseID, model, output.Text, toolCalls, output.Usage, legacyFunctionCall)
 	result := RawChatCompletionResult{
 		Body:       body,
 		Usage:      output.Usage,
 		ResponseID: output.ResponseID,
+		ToolCalls:  toolCalls,
 	}
 	if output.Reasoning != nil {
 		result.ReasoningText = firstNonEmpty(output.Reasoning.Summary, output.Reasoning.Text)
@@ -123,7 +134,20 @@ func chatResultFromGenerateOutput(output *llm.GenerateOutput, model string) RawC
 	return result
 }
 
-func chatCompletionBody(responseID string, model string, content string, usage llm.Usage) map[string]interface{} {
+func chatCompletionBody(responseID string, model string, content string, toolCalls []llm.ToolCall, usage llm.Usage, legacyFunctionCall bool) map[string]interface{} {
+	message := map[string]interface{}{
+		"role":    "assistant",
+		"content": content,
+	}
+	finishReason := "stop"
+	if len(toolCalls) > 0 {
+		finishReason = "tool_calls"
+		message["content"] = nil
+		message["tool_calls"] = chatToolCallsPayload(toolCalls)
+		if legacyFunctionCall && len(toolCalls) == 1 {
+			message["function_call"] = legacyFunctionCallPayload(toolCalls[0])
+		}
+	}
 	body := map[string]interface{}{
 		"id":      chatCompletionID(responseID),
 		"object":  "chat.completion",
@@ -131,12 +155,9 @@ func chatCompletionBody(responseID string, model string, content string, usage l
 		"model":   strings.TrimSpace(model),
 		"choices": []interface{}{
 			map[string]interface{}{
-				"index": 0,
-				"message": map[string]interface{}{
-					"role":    "assistant",
-					"content": content,
-				},
-				"finish_reason": "stop",
+				"index":         0,
+				"message":       message,
+				"finish_reason": finishReason,
 			},
 		},
 	}
@@ -163,6 +184,56 @@ func chatStreamContentChunk(model string, responseID string, delta string) map[s
 	}
 }
 
+func chatStreamToolCallChunk(model string, responseID string, index int, item llm.ToolCall, argumentsDelta string, includeIdentity bool) map[string]interface{} {
+	function := map[string]interface{}{}
+	if includeIdentity {
+		function["name"] = strings.TrimSpace(item.ToolName)
+	}
+	if argumentsDelta != "" {
+		function["arguments"] = argumentsDelta
+	}
+	toolCall := map[string]interface{}{
+		"index": index,
+	}
+	if includeIdentity {
+		toolCall["id"] = strings.TrimSpace(item.ToolCallID)
+		toolCall["type"] = "function"
+	}
+	if len(function) > 0 {
+		toolCall["function"] = function
+	}
+	return map[string]interface{}{
+		"id":      chatCompletionID(responseID),
+		"object":  "chat.completion.chunk",
+		"created": time.Now().Unix(),
+		"model":   strings.TrimSpace(model),
+		"choices": []interface{}{
+			map[string]interface{}{
+				"index": 0,
+				"delta": map[string]interface{}{
+					"tool_calls": []interface{}{toolCall},
+				},
+			},
+		},
+	}
+}
+
+func chatStreamToolFinishChunk(model string, responseID string) map[string]interface{} {
+	return map[string]interface{}{
+		"id":      chatCompletionID(responseID),
+		"object":  "chat.completion.chunk",
+		"created": time.Now().Unix(),
+		"model":   strings.TrimSpace(model),
+		"choices": []interface{}{
+			map[string]interface{}{
+				"index":         0,
+				"delta":         map[string]interface{}{},
+				"finish_reason": "tool_calls",
+			},
+		},
+	}
+}
+
 func chatCompletionID(responseID string) string {
 	value := strings.TrimSpace(responseID)
 	if value == "" {
@@ -182,6 +253,7 @@ func rawResultFromLLMOutput(output *llm.RawChatCompletionOutput) RawChatCompleti
 	if output.Result != nil {
 		result.Usage = output.Result.Usage
 		result.ResponseID = output.Result.ResponseID
+		result.ToolCalls = normalizeOpenAIOutputToolCalls(output.Result.ToolCalls)
 		if output.Result.Reasoning != nil {
 			result.ReasoningText = firstNonEmpty(
 				output.Result.Reasoning.Summary,
@@ -190,6 +262,125 @@ func rawResultFromLLMOutput(output *llm.RawChatCompletionOutput) RawChatCompleti
 		}
 	}
 	return result
+}
+
+func normalizeOpenAIOutputToolCalls(toolCalls []llm.ToolCall) []llm.ToolCall {
+	if len(toolCalls) == 0 {
+		return nil
+	}
+	result := make([]llm.ToolCall, 0, len(toolCalls))
+	for index, item := range toolCalls {
+		name := strings.TrimSpace(item.ToolName)
+		if name == "" {
+			continue
+		}
+		item.ToolName = name
+		if strings.TrimSpace(item.ToolType) == "" {
+			item.ToolType = "function"
+		}
+		if strings.TrimSpace(item.ToolCallID) == "" {
+			item.ToolCallID = fmt.Sprintf("call_%d", index)
+		}
+		if strings.TrimSpace(item.ArgumentsJSON) == "" {
+			item.ArgumentsJSON = "{}"
+		}
+		result = append(result, item)
+	}
+	return result
+}
+
+func chatToolCallsPayload(toolCalls []llm.ToolCall) []interface{} {
+	items := make([]interface{}, 0, len(toolCalls))
+	for _, item := range toolCalls {
+		items = append(items, map[string]interface{}{
+			"id":   strings.TrimSpace(item.ToolCallID),
+			"type": "function",
+			"function": map[string]interface{}{
+				"name":      strings.TrimSpace(item.ToolName),
+				"arguments": firstNonEmpty(strings.TrimSpace(item.ArgumentsJSON), "{}"),
+			},
+		})
+	}
+	return items
+}
+
+func legacyFunctionCallPayload(item llm.ToolCall) map[string]interface{} {
+	return map[string]interface{}{
+		"name":      strings.TrimSpace(item.ToolName),
+		"arguments": firstNonEmpty(strings.TrimSpace(item.ArgumentsJSON), "{}"),
+	}
+}
+
+func requestUsesLegacyFunctionCalling(body map[string]interface{}) bool {
+	if body == nil {
+		return false
+	}
+	if _, ok := body["functions"]; ok {
+		return true
+	}
+	if _, ok := body["function_call"]; ok {
+		return true
+	}
+	return false
+}
+
+func isClientFunctionToolCall(item llm.ToolCall) bool {
+	toolType := strings.TrimSpace(item.ToolType)
+	return toolType == "" || toolType == "function"
+}
+
+type streamToolCallEmitter struct {
+	model string
+	slots map[string]streamToolCallSlot
+	next  int
+}
+
+type streamToolCallSlot struct {
+	index     int
+	toolID    string
+	arguments string
+	emitted   bool
+}
+
+func newStreamToolCallEmitter(model string) *streamToolCallEmitter {
+	return &streamToolCallEmitter{
+		model: strings.TrimSpace(model),
+		slots: make(map[string]streamToolCallSlot),
+	}
+}
+
+func (e *streamToolCallEmitter) chunks(responseID string, item llm.ToolCall) []map[string]interface{} {
+	if e == nil || !isClientFunctionToolCall(item) || strings.TrimSpace(item.ToolName) == "" {
+		return nil
+	}
+	item = normalizeOpenAIOutputToolCalls([]llm.ToolCall{item})[0]
+	key := strings.TrimSpace(item.ToolCallID)
+	if key == "" {
+		key = strings.TrimSpace(item.ToolName)
+	}
+	slot, ok := e.slots[key]
+	if !ok {
+		slot = streamToolCallSlot{
+			index:  e.next,
+			toolID: strings.TrimSpace(item.ToolCallID),
+		}
+		e.next++
+	}
+	args := strings.TrimSpace(item.ArgumentsJSON)
+	delta := args
+	if slot.arguments != "" && strings.HasPrefix(args, slot.arguments) {
+		delta = strings.TrimPrefix(args, slot.arguments)
+	}
+	includeIdentity := !slot.emitted
+	slot.arguments = args
+	slot.emitted = true
+	e.slots[key] = slot
+	if delta == "" && !includeIdentity {
+		return nil
+	}
+	return []map[string]interface{}{
+		chatStreamToolCallChunk(e.model, responseID, slot.index, item, delta, includeIdentity),
+	}
 }
 
 func firstNonEmpty(values ...string) string {

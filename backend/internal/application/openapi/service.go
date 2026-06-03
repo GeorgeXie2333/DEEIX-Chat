@@ -164,6 +164,7 @@ type RawChatCompletionResult struct {
 	Usage         llm.Usage
 	ReasoningText string
 	ResponseID    string
+	ToolCalls     []llm.ToolCall
 }
 
 // RawChatStreamEvent 表示原始 Chat Completions 流式片段。
@@ -529,6 +530,11 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 	if err := closeThinkIfNeeded(); err != nil {
 		return err
 	}
+	if llm.NormalizeAdapter(prepared.routeConfig.Protocol) != llm.AdapterOpenAIChatCompletions && len(result.ToolCalls) > 0 {
+		if err := emit(chatStreamToolFinishChunk(prepared.publicModelID, result.ResponseID)); err != nil {
+			return err
+		}
+	}
 
 	if usage == (llm.Usage{}) {
 		usage = result.Usage
@@ -829,6 +835,9 @@ func injectThinkIntoCompletionBody(body map[string]interface{}, reasoning string
 		if !ok {
 			continue
 		}
+		if len(asSlice(message["tool_calls"])) > 0 {
+			continue
+		}
 		content := stringValue(message["content"])
 		message["content"] = prefix + content
 	}
@@ -957,6 +966,13 @@ func asMap(raw interface{}) map[string]interface{} {
 		return payload
 	}
 	return map[string]interface{}{}
+}
+
+func asSlice(raw interface{}) []interface{} {
+	if items, ok := raw.([]interface{}); ok {
+		return items
+	}
+	return nil
 }
 
 func stringValue(raw interface{}) string {

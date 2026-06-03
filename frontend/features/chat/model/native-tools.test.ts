@@ -19,10 +19,7 @@ test("resolveNativeToolGroup maps supported protocols and hides tools in media m
     resolveNativeToolGroup("xai_responses", false)?.options.map((tool) => tool.type),
     ["web_search", "x_search", "code_interpreter"],
   );
-  assert.deepEqual(
-    resolveNativeToolGroup("openai_chat_completions", false)?.options.map((tool) => tool.type),
-    ["web_search", "web_search_preview"],
-  );
+  assert.equal(resolveNativeToolGroup("openai_chat_completions", false), null);
   assert.deepEqual(
     resolveNativeToolGroup("openai_responses", false)?.options.map((tool) => tool.type),
     ["web_search", "shell", "image_generation", "code_interpreter"],

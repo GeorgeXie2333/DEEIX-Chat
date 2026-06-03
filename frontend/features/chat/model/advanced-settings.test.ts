@@ -37,8 +37,6 @@ test("resolveAdvancedSettings maps settings to protocol-specific option paths", 
     }).map((item) => [item.kind, item.key, item.value]),
     [
       ["temperature", "temperature", 0.4],
-      ["reasoningEffort", "reasoning_effort", "high"],
-      ["verbosity", "verbosity", "low"],
     ],
   );
 

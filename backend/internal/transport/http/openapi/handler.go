@@ -96,6 +96,19 @@ func (h *Handler) ListModels(c *gin.Context) {
 }
 
 // ChatCompletions 处理 POST /v1/chat/completions。
+// @Summary OpenAI-compatible Chat Completions
+// @Description 面向用户 API Key 的 OpenAI-compatible chat completions。支持客户端函数调用协议：tools/tool_choice/tool_calls、role=tool 结果消息，以及旧版 functions/function_call；平台只做协议转换，不代 API 用户执行函数。
+// @Tags openapi-compatible
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param body body ChatCompletionRequestDoc true "OpenAI-compatible chat completion request"
+// @Success 200 {object} ChatCompletionResponseDoc
+// @Failure 400 {object} openAIErrorResponse
+// @Failure 401 {object} openAIErrorResponse
+// @Failure 429 {object} openAIErrorResponse
+// @Failure 500 {object} openAIErrorResponse
+// @Router /v1/chat/completions [post]
 func (h *Handler) ChatCompletions(c *gin.Context) {
 	key, ok := h.authenticateCompatible(c)
 	if !ok {

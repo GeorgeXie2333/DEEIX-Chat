@@ -67,21 +67,6 @@ const OPENAI_RESPONSES_NATIVE_TOOL_OPTIONS: NativeToolOption[] = [
   },
 ];
 
-const OPENAI_CHAT_NATIVE_TOOL_OPTIONS: NativeToolOption[] = [
-  {
-    type: "web_search",
-    labelKey: "webSearch",
-    descriptionKey: "openaiWebSearch",
-    payload: { type: "web_search" },
-  },
-  {
-    type: "web_search_preview",
-    labelKey: "webSearchPreview",
-    descriptionKey: "openaiWebSearchPreview",
-    payload: { type: "web_search_preview" },
-  },
-];
-
 const ANTHROPIC_NATIVE_TOOL_OPTIONS: NativeToolOption[] = [
   {
     type: "web_search_20260209",
@@ -142,7 +127,6 @@ const NATIVE_TOOL_TYPES = new Set(
   [
     ...XAI_NATIVE_TOOL_OPTIONS,
     ...OPENAI_RESPONSES_NATIVE_TOOL_OPTIONS,
-    ...OPENAI_CHAT_NATIVE_TOOL_OPTIONS,
     ...ANTHROPIC_NATIVE_TOOL_OPTIONS,
     ...GEMINI_NATIVE_TOOL_OPTIONS,
   ].map((item) => item.type),
@@ -152,7 +136,6 @@ const NATIVE_TOOL_OPTIONS_BY_TYPE = new Map(
   [
     ...XAI_NATIVE_TOOL_OPTIONS,
     ...OPENAI_RESPONSES_NATIVE_TOOL_OPTIONS,
-    ...OPENAI_CHAT_NATIVE_TOOL_OPTIONS,
     ...ANTHROPIC_NATIVE_TOOL_OPTIONS,
     ...GEMINI_NATIVE_TOOL_OPTIONS,
   ].map((item) => [item.type, item]),
@@ -171,11 +154,6 @@ export function resolveNativeToolGroup(protocol: string, isMediaMode: boolean, m
       return {
         key: "grok",
         options: XAI_NATIVE_TOOL_OPTIONS,
-      };
-    case "openai_chat_completions":
-      return {
-        key: "openai",
-        options: OPENAI_CHAT_NATIVE_TOOL_OPTIONS,
       };
     case "openai_responses":
       return {

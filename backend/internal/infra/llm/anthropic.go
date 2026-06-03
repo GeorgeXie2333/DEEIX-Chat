@@ -159,7 +159,7 @@ func buildAnthropicRequestBody(model string, input GenerateInput, stream bool) (
 		}
 	}
 	applyProviderOptions(payload, input.Options,
-		"anthropic-beta", "anthropic_beta", "betas", "cache_control", "contents", "input", "instructions", "max_output_tokens", "max_tokens", "messages", "model", "output_config", "output_format", "prompt", "prompt_cache", "response_format", "speed", "stream", "stream_options", "system", "systemInstruction", "thinking", "tool_choice", "tools",
+		"anthropic-beta", "anthropic_beta", "betas", "cache_control", "contents", "input", "instructions", "max_output_tokens", "max_tokens", "messages", "model", "output_config", "output_format", "parallel_tool_calls", "prompt", "prompt_cache", "response_format", "speed", "stream", "stream_options", "system", "systemInstruction", "thinking", "tool_choice", "tools",
 		"enable_cache", "cache_timeout", "enable_thinking", "thinking_display", "effort",
 	)
 	normalizeAnthropicNativeTools(payload)
@@ -310,10 +310,33 @@ func anthropicBaseThinkingFromOptions(options map[string]interface{}, maxTokens 
 func anthropicToolChoiceFromOptions(options map[string]interface{}) map[string]interface{} {
 	raw, ok := options["tool_choice"]
 	if !ok || raw == nil {
+		if anthropicDisableParallelToolUse(options) {
+			return map[string]interface{}{"type": "auto", "disable_parallel_tool_use": true}
+		}
 		return nil
 	}
 	if payload := asMap(raw); len(payload) > 0 {
-		return payload
+		choiceType := strings.TrimSpace(getString(payload["type"]))
+		name := firstNonEmptyString(
+			strings.TrimSpace(getStringFromPath(payload, "function", "name")),
+			strings.TrimSpace(getString(payload["name"])),
+		)
+		switch choiceType {
+		case "function":
+			if name == "" {
+				return nil
+			}
+			return withAnthropicParallelToolUseOption(map[string]interface{}{"type": "tool", "name": name}, options)
+		case "required":
+			return withAnthropicParallelToolUseOption(map[string]interface{}{"type": "any"}, options)
+		case "auto", "any", "none":
+			return withAnthropicParallelToolUseOption(map[string]interface{}{"type": choiceType}, options)
+		default:
+			if name != "" {
+				return withAnthropicParallelToolUseOption(map[string]interface{}{"type": "tool", "name": name}, options)
+			}
+			return withAnthropicParallelToolUseOption(payload, options)
+		}
 	}
 	value := strings.TrimSpace(getString(raw))
 	if value == "" {
@@ -321,10 +344,27 @@ func anthropicToolChoiceFromOptions(options map[string]interface{}) map[string]i
 	}
 	switch value {
 	case "auto", "any", "none":
-		return map[string]interface{}{"type": value}
+		return withAnthropicParallelToolUseOption(map[string]interface{}{"type": value}, options)
+	case "required":
+		return withAnthropicParallelToolUseOption(map[string]interface{}{"type": "any"}, options)
 	default:
-		return map[string]interface{}{"type": "tool", "name": value}
+		return withAnthropicParallelToolUseOption(map[string]interface{}{"type": "tool", "name": value}, options)
 	}
+}
+
+func withAnthropicParallelToolUseOption(toolChoice map[string]interface{}, options map[string]interface{}) map[string]interface{} {
+	if len(toolChoice) == 0 {
+		return toolChoice
+	}
+	if anthropicDisableParallelToolUse(options) {
+		toolChoice["disable_parallel_tool_use"] = true
+	}
+	return toolChoice
+}
+
+func anthropicDisableParallelToolUse(options map[string]interface{}) bool {
+	value, ok := modelParamBoolValue(options, "parallel_tool_calls")
+	return ok && !value
 }
 
 func anthropicOutputConfigFromOptions(options map[string]interface{}) map[string]interface{} {

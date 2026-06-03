@@ -147,6 +147,7 @@ func buildGeminiRequestBody(input GenerateInput) (map[string]interface{}, error)
 	if len(generationConfig) > 0 {
 		payload["generationConfig"] = generationConfig
 	}
+	applyGeminiToolChoice(payload, input.Options)
 	webSearchTools := []map[string]interface{}{}
 	if toolsEnabled && modelParamBool(input.Options, "web_search") {
 		webSearchTools = append(webSearchTools, map[string]interface{}{"google_search": map[string]interface{}{}})
@@ -267,6 +268,7 @@ func geminiProtectedProviderOptionKeys() []string {
 		"messages",
 		"model",
 		"output_schema",
+		"parallel_tool_calls",
 		"presencePenalty",
 		"presence_penalty",
 		"prompt",
@@ -298,6 +300,7 @@ func geminiProtectedProviderOptionKeys() []string {
 		"thinkingLevel",
 		"thinking_budget",
 		"thinking_level",
+		"tool_choice",
 		"tool_config",
 		"toolConfig",
 		"tools",
@@ -317,6 +320,69 @@ func applyGeminiRootOptions(payload map[string]interface{}, options map[string]i
 	copyGeminiOption(payload, options, "cachedContent", "cachedContent", "cached_content")
 	copyGeminiOption(payload, options, "serviceTier", "serviceTier", "service_tier")
 	copyGeminiOption(payload, options, "store", "store")
+}
+
+func applyGeminiToolChoice(payload map[string]interface{}, options map[string]interface{}) {
+	config := geminiFunctionCallingConfigFromToolChoice(options)
+	if len(config) == 0 {
+		return
+	}
+	toolConfig, _ := payload["toolConfig"].(map[string]interface{})
+	if toolConfig == nil {
+		toolConfig = map[string]interface{}{}
+		payload["toolConfig"] = toolConfig
+	}
+	toolConfig["functionCallingConfig"] = config
+}
+
+func geminiFunctionCallingConfigFromToolChoice(options map[string]interface{}) map[string]interface{} {
+	if len(options) == 0 {
+		return nil
+	}
+	raw, ok := options["tool_choice"]
+	if !ok || raw == nil {
+		return nil
+	}
+	if value := strings.TrimSpace(getString(raw)); value != "" {
+		return geminiFunctionCallingConfigFromToolChoiceValue(value, "")
+	}
+	payload := asMap(raw)
+	if len(payload) == 0 {
+		return nil
+	}
+	choiceType := strings.TrimSpace(getString(payload["type"]))
+	name := firstNonEmptyString(
+		strings.TrimSpace(getStringFromPath(payload, "function", "name")),
+		strings.TrimSpace(getString(payload["name"])),
+	)
+	return geminiFunctionCallingConfigFromToolChoiceValue(choiceType, name)
+}
+
+func geminiFunctionCallingConfigFromToolChoiceValue(choiceType string, name string) map[string]interface{} {
+	switch strings.TrimSpace(choiceType) {
+	case "auto":
+		return map[string]interface{}{"mode": "AUTO"}
+	case "none":
+		return map[string]interface{}{"mode": "NONE"}
+	case "required", "any":
+		return map[string]interface{}{"mode": "ANY"}
+	case "function":
+		if strings.TrimSpace(name) == "" {
+			return nil
+		}
+		return map[string]interface{}{
+			"mode":                 "ANY",
+			"allowedFunctionNames": []string{strings.TrimSpace(name)},
+		}
+	default:
+		if text := strings.TrimSpace(choiceType); text != "" {
+			return map[string]interface{}{
+				"mode":                 "ANY",
+				"allowedFunctionNames": []string{text},
+			}
+		}
+	}
+	return nil
 }
 
 func applyGeminiGenerationOptions(generationConfig map[string]interface{}, options map[string]interface{}) {
@@ -1064,12 +1130,21 @@ func applyGeminiStreamChunk(
 		if arguments == "" {
 			arguments = "{}"
 		}
-		result.ToolCalls = append(result.ToolCalls, ToolCall{
+		toolCall := ToolCall{
 			ToolType:      "function",
 			ToolName:      strings.TrimSpace(getString(fc["name"])),
 			ArgumentsJSON: arguments,
 			Status:        "requested",
-		})
+		}
+		result.ToolCalls = append(result.ToolCalls, toolCall)
+		if onEvent != nil {
+			if err := onEvent(GenerateStreamEvent{
+				ServerToolCall: &toolCall,
+				ResponseID:     result.ResponseID,
+			}); err != nil {
+				return err
+			}
+		}
 	}
 
 	// usageMetadata（最后一帧携带完整统计）

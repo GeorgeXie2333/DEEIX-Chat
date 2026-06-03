@@ -39,14 +39,6 @@ const TEMPERATURE_SETTING: AdvancedSettingDefinition = {
   step: 0.1,
 };
 
-const CHAT_REASONING_EFFORT: AdvancedSettingDefinition = {
-  kind: "reasoningEffort",
-  path: ["reasoning_effort"],
-  valueType: "select",
-  fallbackValue: "medium",
-  values: ["minimal", "low", "medium", "high", "xhigh"],
-};
-
 const RESPONSES_REASONING_EFFORT: AdvancedSettingDefinition = {
   kind: "reasoningEffort",
   path: ["reasoning", "effort"],
@@ -77,14 +69,6 @@ const GEMINI_THINKING_LEVEL: AdvancedSettingDefinition = {
   valueType: "select",
   fallbackValue: "medium",
   values: ["minimal", "low", "medium", "high"],
-};
-
-const CHAT_VERBOSITY: AdvancedSettingDefinition = {
-  kind: "verbosity",
-  path: ["verbosity"],
-  valueType: "select",
-  fallbackValue: "medium",
-  values: ["low", "medium", "high"],
 };
 
 const RESPONSES_VERBOSITY: AdvancedSettingDefinition = {
@@ -307,7 +291,7 @@ function valueForDefinition(
 export function resolveAdvancedSettingDefinitions(protocol: string, modelName = ""): AdvancedSettingDefinition[] {
   switch (protocol.trim()) {
     case "openai_chat_completions":
-      return [TEMPERATURE_SETTING, CHAT_REASONING_EFFORT, CHAT_VERBOSITY];
+      return [TEMPERATURE_SETTING];
     case "openai_responses":
       return [TEMPERATURE_SETTING, RESPONSES_REASONING_EFFORT, RESPONSES_VERBOSITY];
     case "xai_responses":
