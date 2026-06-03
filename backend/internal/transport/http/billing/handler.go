@@ -12,6 +12,7 @@ import (
 	appsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/settings"
 	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
@@ -123,12 +124,16 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 	if err != nil {
 		return BillingConfigResponse{}, err
 	}
+	nativeToolPricingJSON, err = appbilling.MarshalNativeToolPricingOverridesJSON(nativeToolPricingOverrides)
+	if err != nil {
+		return BillingConfigResponse{}, err
+	}
 	return BillingConfigResponse{
 		Mode:                           mode,
 		PrepaidAmountUSD:               prepaidAmountUSD,
 		PrepaidAmountNanousd:           usdToNanousd(prepaidAmountUSD),
 		NativeToolBillingEnabled:       nativeToolBillingEnabled,
-		NativeToolPricing:              toNativeToolPricingResponses(appbilling.ListNativeToolPricing(nativeToolPricingOverrides)),
+		NativeToolPricing:              toNativeToolPricingResponses(appbilling.ListNativeToolPricing(nativeToolPricingJSON)),
 		FreeModelRateLimitRPM:          freeModelRateLimitRPM,
 		FreeModelDailyLimit:            freeModelDailyLimit,
 		FreeModelRateLimitExemptModels: freeModelRateLimitExemptModels,
@@ -247,7 +252,7 @@ func (h *Handler) PatchBillingConfig(c *gin.Context) {
 	response.Success(c, BillingConfigDataResponse{Config: config})
 }
 
-func nativeToolPricingOverridesFromRequest(items []NativeToolPricingRequest) (map[string]int64, error) {
+func nativeToolPricingOverridesFromRequest(items []NativeToolPricingRequest) (map[string]nativetool.PricingOverride, error) {
 	inputs := make([]appbilling.NativeToolPricingInput, 0, len(items))
 	for _, item := range items {
 		inputs = append(inputs, appbilling.NativeToolPricingInput{

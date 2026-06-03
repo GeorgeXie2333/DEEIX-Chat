@@ -20,7 +20,8 @@ export type ModelOptionPolicy = {
   mode: ModelOptionPolicyMode;
   allowedPathsJSON: string;
   deniedPathsJSON: string;
-  nativeToolAllowedTypesJSON: string;
+  nativeTools?: NativeToolDefinition[];
+  nativeToolAllowedTypesJSON?: string;
 };
 
 export type ModelOptionRuleMap = Partial<Record<ModelOptionPolicyProtocol | string, string[]>>;
@@ -60,6 +61,23 @@ export const DEFAULT_NATIVE_TOOL_ALLOWED_TYPES = `{
 }`;
 
 const DEFAULT_NATIVE_TOOL_ALLOWED_TYPES_MAP = parseModelOptionRuleMap(DEFAULT_NATIVE_TOOL_ALLOWED_TYPES).value;
+
+export type NativeToolDefinition = {
+  protocol: string;
+  provider: string;
+  type: string;
+  toolKey: string;
+  label: string;
+  description: string;
+  payload: Record<string, unknown>;
+  defaultEnabled: boolean;
+  billable: boolean;
+  billingUnit: string;
+  priceNanousd: number;
+  priceLabel: string;
+  riskLevel: string;
+  usageAliases: string[];
+};
 
 export const MODEL_OPTION_POLICY_PROTOCOL_LABELS: Record<ModelOptionPolicyProtocol, string> = {
   default: "Default",
@@ -218,25 +236,38 @@ export function effectiveModelOptionPaths(rules: ModelOptionRuleMap, protocol: s
   return uniqueModelOptionPaths([...(rules.default ?? []), ...(rules[protocol] ?? [])]);
 }
 
-export function isNativeToolTypeAllowed(policy: ModelOptionPolicy | null, protocol: string, toolType: string): boolean {
-  if ((policy?.mode?.trim() || "allowlist") === "disabled") {
-    return false;
-  }
+export function isNativeToolTypeAllowed(
+  policy: ModelOptionPolicy,
+  protocol: string,
+  toolType: string,
+  nativeToolKeys: string[] = [],
+): boolean {
   const policyProtocol = resolveModelOptionPolicyProtocol(protocol);
-  const defaults = uniqueModelOptionPaths(DEFAULT_NATIVE_TOOL_ALLOWED_TYPES_MAP[policyProtocol] ?? []);
-  if (defaults.length === 0 || !defaults.includes(toolType)) {
+  const normalizedToolType = toolType.trim();
+  if (!normalizedToolType) {
     return false;
   }
-  const raw = policy?.nativeToolAllowedTypesJSON?.trim();
-  if (!raw) {
-    return true;
+
+  const catalogTools = policy.nativeTools ?? [];
+  if (catalogTools.length > 0) {
+    const matchingTools = catalogTools.filter((tool) => (
+      tool.protocol.trim() === policyProtocol && tool.type.trim() === normalizedToolType
+    ));
+    if (matchingTools.length > 0) {
+      const keySet = new Set(nativeToolKeys.map((key) => key.trim()).filter(Boolean));
+      if (keySet.size > 0) {
+        return matchingTools.some((tool) => keySet.has(tool.toolKey.trim()));
+      }
+      return matchingTools.some((tool) => tool.defaultEnabled);
+    }
   }
-  const configured = parseModelOptionRuleMap(raw).value;
-  const configuredTypes = configured[policyProtocol];
-  if (!configuredTypes) {
-    return true;
-  }
-  return uniqueModelOptionPaths(configuredTypes).includes(toolType);
+
+  const configuredRules = parseModelOptionRuleMap(policy.nativeToolAllowedTypesJSON ?? "").value;
+  const configuredTypes = configuredRules[policyProtocol];
+  const allowedTypes = configuredTypes && configuredTypes.length > 0
+    ? configuredTypes
+    : DEFAULT_NATIVE_TOOL_ALLOWED_TYPES_MAP[policyProtocol] ?? [];
+  return allowedTypes.includes(normalizedToolType);
 }
 
 function pathSegments(path: string): string[] {

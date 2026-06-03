@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Check, ChevronDownIcon, CircleHelp } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Combobox,
   ComboboxContent,
@@ -47,6 +48,7 @@ import {
 import { SpinnerLabel } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
+import { getModelOptionPolicy } from "@/shared/api/settings";
 import {
   createAdminLLMModel,
   listAdminLLMModelUpstreamSources,
@@ -56,6 +58,7 @@ import { LobeHubIcon } from "@/shared/components/lobehub-icon";
 import { KNOWN_VENDOR_OPTIONS, resolveLobeHubIconURL, resolveModelIdentity } from "@/shared/lib/model-identity";
 import type {
   AdminLLMModelDTO,
+  AdminLLMModelAccessScope,
   AdminLLMModelUpstreamSourceDTO,
   AdminLLMModelVendor,
   AdminLLMStatus,
@@ -73,12 +76,16 @@ import {
   parseKindsJSON,
   stringifyKinds,
 } from "@/shared/model/llm-schema";
+import { parseProtocolsJSON } from "@/features/chat/model/chat-adapter-options";
 import { JsonCodeEditor } from "@/shared/components/json-code-editor";
 import {
+  imageStreamEnabledFromCapabilities,
   MODEL_CAPABILITIES_PLACEHOLDER,
   ModelCapabilitiesGuideButton,
   ModelCapabilitiesQuickConfig,
+  setImageStreamEnabledInCapabilities,
 } from "@/features/admin/components/sections/models/model-capabilities-config";
+import type { NativeToolDefinition } from "@/shared/lib/model-option-policy";
 
 // ---------------------------------------------------------------------------
 // Form state
@@ -91,6 +98,7 @@ type FormState = {
   icon: string;
   capabilitiesJSON: string;
   systemPrompt: string;
+  accessScope: AdminLLMModelAccessScope;
   status: AdminLLMStatus;
   description: string;
 };
@@ -115,6 +123,14 @@ const MODEL_SHEET_VENDOR_OPTIONS: VendorOption[] = [
   }),
 ];
 
+const IMAGE_MEDIA_PROTOCOLS = new Set([
+  "openai_image_generations",
+  "openai_image_edits",
+  "google_image_generation",
+  "xai_image",
+  "xai_image_edits",
+]);
+
 function buildInitialState(target: AdminLLMModelDTO | null): FormState {
   if (!target) {
     return {
@@ -124,6 +140,7 @@ function buildInitialState(target: AdminLLMModelDTO | null): FormState {
       icon: "",
       capabilitiesJSON: "",
       systemPrompt: "",
+      accessScope: "public",
       status: "active",
       description: "",
     };
@@ -137,6 +154,7 @@ function buildInitialState(target: AdminLLMModelDTO | null): FormState {
     icon: target.icon ?? "",
     capabilitiesJSON: normalizeCapabilitiesJSON(target.capabilitiesJSON),
     systemPrompt: target.systemPrompt ?? "",
+    accessScope: target.accessScope === "internal" ? "internal" : "public",
     status: target.status,
     description: target.description ?? "",
   };
@@ -209,6 +227,7 @@ export function ModelSheet({ open, mode, target, onClose, onSuccess }: ModelShee
   const [pending, setPending] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const sheetContentRef = useRef<HTMLDivElement | null>(null);
+  const [nativeTools, setNativeTools] = useState<NativeToolDefinition[]>([]);
   // Upstream sources for accordion
   const [sources, setSources] = useState<AdminLLMModelUpstreamSourceDTO[]>([]);
   const [sourcesLoading, setSourcesLoading] = useState(false);
@@ -237,6 +256,24 @@ export function ModelSheet({ open, mode, target, onClose, onSuccess }: ModelShee
     ...item,
     label: item.value === UNKNOWN_VENDOR ? t("sheet.unknownVendor") : item.label,
   }));
+  const routeProtocols = useMemo(
+    () => Array.from(new Set([
+      ...parseProtocolsJSON(target?.protocolsJSON ?? ""),
+      ...sources.map((source) => source.protocol.trim()).filter(Boolean),
+    ])),
+    [sources, target?.protocolsJSON],
+  );
+  const imageStreamEnabled = imageStreamEnabledFromCapabilities(form.capabilitiesJSON);
+  const showImageStreamControl = routeProtocols.some((protocol) => IMAGE_MEDIA_PROTOCOLS.has(protocol.trim()));
+
+  function updateImageStreamEnabled(enabled: boolean) {
+    const nextValue = setImageStreamEnabledInCapabilities(form.capabilitiesJSON, enabled);
+    if (nextValue === null) {
+      toast.error(t("sheet.capabilitiesQuick.invalidJSON"));
+      return;
+    }
+    setField("capabilitiesJSON", nextValue);
+  }
 
   function handleClose() {
     onClose();
@@ -245,6 +282,33 @@ export function ModelSheet({ open, mode, target, onClose, onSuccess }: ModelShee
   // -------------------------------------------------------------------------
   // Load when sheet opens
   // -------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!open) {
+      setNativeTools([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const token = await resolveAccessToken();
+        if (!token) {
+          return;
+        }
+        const policy = await getModelOptionPolicy(token);
+        if (!cancelled) {
+          setNativeTools(policy.nativeTools);
+        }
+      } catch {
+        if (!cancelled) {
+          setNativeTools([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open || !target) {
@@ -294,6 +358,7 @@ export function ModelSheet({ open, mode, target, onClose, onSuccess }: ModelShee
           icon: form.icon.trim() || undefined,
           capabilitiesJSON: normalizeCapabilitiesJSON(form.capabilitiesJSON) || undefined,
           systemPrompt: form.systemPrompt.trim() || undefined,
+          accessScope: form.accessScope,
           status: form.status,
           description: form.description.trim() || undefined,
         });
@@ -312,6 +377,7 @@ export function ModelSheet({ open, mode, target, onClose, onSuccess }: ModelShee
         icon: form.icon.trim() || undefined,
         capabilitiesJSON: normalizeCapabilitiesJSON(form.capabilitiesJSON) || undefined,
         systemPrompt: form.systemPrompt.trim(),
+        accessScope: form.accessScope,
         status: form.status,
         description: form.description.trim() || undefined,
       };
@@ -445,6 +511,23 @@ export function ModelSheet({ open, mode, target, onClose, onSuccess }: ModelShee
             </div>
 
             <div>
+              <Label>{t("sheet.accessScope")}</Label>
+              <Select
+                value={form.accessScope}
+                onValueChange={(v) => setField("accessScope", v as AdminLLMModelAccessScope)}
+                disabled={pending}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="public">{t("accessScope.public")}</SelectItem>
+                  <SelectItem value="internal">{t("accessScope.internal")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label>{t("sheet.kind")}</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -552,6 +635,22 @@ export function ModelSheet({ open, mode, target, onClose, onSuccess }: ModelShee
                       <ModelCapabilitiesGuideButton t={t} />
                     </div>
                   </div>
+                  {showImageStreamControl ? (
+                    <label
+                      htmlFor="model-image-stream-enabled"
+                      className="mb-2 flex min-w-0 items-center gap-2 px-1 py-1"
+                    >
+                      <Checkbox
+                        id="model-image-stream-enabled"
+                        checked={imageStreamEnabled}
+                        disabled={pending}
+                        onCheckedChange={(checked) => updateImageStreamEnabled(checked === true)}
+                      />
+                      <span className="min-w-0 truncate text-xs font-medium text-foreground">
+                        {t("sheet.imageStreamEnabled")}
+                      </span>
+                    </label>
+                  ) : null}
                   <JsonCodeEditor
                     id="model-capabilities-json"
                     value={form.capabilitiesJSON}
@@ -563,6 +662,8 @@ export function ModelSheet({ open, mode, target, onClose, onSuccess }: ModelShee
                       <ModelCapabilitiesQuickConfig
                         value={form.capabilitiesJSON}
                         disabled={pending}
+                        nativeTools={nativeTools}
+                        routeProtocols={routeProtocols}
                         t={t}
                         commonT={commonT}
                         onApply={(nextValue) => setField("capabilitiesJSON", nextValue)}

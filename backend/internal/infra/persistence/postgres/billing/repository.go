@@ -1217,7 +1217,7 @@ func (r *Repo) GetNativeToolBillingEnabled(ctx context.Context) (bool, error) {
 	return enabled, nil
 }
 
-// GetNativeToolPricingJSON 查询模型原生工具价格覆盖 JSON。
+// GetNativeToolPricingJSON 查询模型原生工具计费覆盖配置。
 func (r *Repo) GetNativeToolPricingJSON(ctx context.Context) (string, error) {
 	var item model.SystemSetting
 	if err := r.db.WithContext(ctx).

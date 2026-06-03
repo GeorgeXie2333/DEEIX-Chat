@@ -296,8 +296,6 @@ func validatePatchItem(item PatchItem) error {
 		}
 	case "chat:model_option_allowed_paths", "chat:model_option_denied_paths":
 		return validateModelOptionPathsJSON(value, key)
-	case "chat:model_option_native_tool_types":
-		return validateNativeToolAllowedTypesJSON(value, key)
 	case "auth:login_default_next_path":
 		if value == "" {
 			return fmt.Errorf("%s cannot be empty", key)

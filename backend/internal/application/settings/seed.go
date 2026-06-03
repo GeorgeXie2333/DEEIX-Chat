@@ -3,6 +3,7 @@ package settings
 import (
 	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
 )
 
 const (
@@ -43,8 +44,8 @@ func defaultSettings() []domainsettings.SystemSetting {
 		// 计费配置
 		{Namespace: "billing", Key: "mode", Value: "self", ValueType: "string", Description: "计费方式：self=自用模式，period=周期计费，usage=按量计费"},
 		{Namespace: "billing", Key: "prepaid_amount_usd", Value: "0", ValueType: "string", Description: "按量调用前要求账户保留的最低预付余额(美元)"},
-		{Namespace: "billing", Key: "native_tool_billing_enabled", Value: "true", ValueType: "bool", Description: "是否按管理员配置价格计费模型原生工具调用"},
-		{Namespace: "billing", Key: "native_tool_pricing_json", Value: "{}", ValueType: "json", Description: "模型原生工具价格覆盖 JSON，key 为工具标识，value 为纳美元单价"},
+		{Namespace: "billing", Key: "native_tool_billing_enabled", Value: "true", ValueType: "bool", Description: "是否按官方默认价格计费模型原生工具调用"},
+		{Namespace: "billing", Key: "native_tool_pricing_json", Value: nativetool.DefaultPricingJSON(), ValueType: "json", Description: "官方原生工具计费覆盖 JSON，按 toolKey 配置 priceNanousd、unit、priceLabel、billable"},
 		{Namespace: "billing", Key: "free_model_rate_limit_rpm", Value: "0", ValueType: "int", Description: "免费模型每用户每分钟请求数，0表示不限"},
 		{Namespace: "billing", Key: "free_model_daily_limit", Value: "0", ValueType: "int", Description: "免费模型每用户每日请求数，0表示不限"},
 		{Namespace: "billing", Key: "free_model_rate_limit_exempt_models", Value: "", ValueType: "string", Description: "免费模型限流豁免平台模型名，逗号或换行分隔"},
@@ -76,7 +77,6 @@ func defaultSettings() []domainsettings.SystemSetting {
 		{Namespace: "chat", Key: "model_option_policy_mode", Value: "allowlist", ValueType: "string", Description: "模型 options 透传策略：allowlist=仅白名单，denylist=黑名单拦截，disabled=禁止透传"},
 		{Namespace: "chat", Key: "model_option_allowed_paths", Value: config.DefaultModelOptionAllowedPathsJSON(), ValueType: "json", Description: "模型 options 白名单路径 JSON，default 对所有协议生效"},
 		{Namespace: "chat", Key: "model_option_denied_paths", Value: config.DefaultModelOptionDeniedPathsJSON(), ValueType: "json", Description: "模型 options 黑名单路径 JSON，default 对所有协议生效"},
-		{Namespace: "chat", Key: "model_option_native_tool_types", Value: config.DefaultNativeToolAllowedTypesJSON(), ValueType: "json", Description: "官方原生工具控制 JSON，协议项列出允许的工具 type；空数组表示禁用该协议官方工具"},
 
 		// 存储配置
 		{Namespace: "storage", Key: "user_storage_quota_bytes", Value: "104857600", ValueType: "int", Description: "用户配额(字节)"},

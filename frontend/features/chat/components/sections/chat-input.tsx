@@ -366,9 +366,11 @@ function ChatInputComponent({
     if (!nativeToolGroup) {
       return null;
     }
-    const options = nativeToolGroup.options.filter((tool) => isNativeToolTypeAllowed(modelOptionPolicy, selectedProtocol, tool.type));
+    const options = nativeToolGroup.options.filter((tool) => (
+      isNativeToolTypeAllowed(modelOptionPolicy, selectedProtocol, tool.type, selectedModel?.nativeToolKeys ?? [])
+    ));
     return options.length > 0 ? { ...nativeToolGroup, options } : null;
-  }, [modelOptionPolicy, nativeToolGroup, selectedProtocol]);
+  }, [modelOptionPolicy, nativeToolGroup, selectedModel?.nativeToolKeys, selectedProtocol]);
   const selectedNativeToolCount = React.useMemo(
     () => countProviderTools(options, visibleNativeToolGroup),
     [options, visibleNativeToolGroup],
@@ -539,7 +541,7 @@ function ChatInputComponent({
           rows={1}
           style={{ fontFamily: "var(--font-chat)", fontWeight: "var(--font-chat-weight)" }}
           className={cn(
-            "rounded-3xl min-h-12 overflow-y-auto px-5 pt-4 text-[15px] leading-6 placeholder:text-[inherit] placeholder:font-[inherit] placeholder:leading-[inherit]",
+            "rounded-3xl min-h-12 overflow-y-auto px-5 pt-4 text-[15px] leading-6 placeholder:text-muted-foreground placeholder:font-[inherit] placeholder:leading-[inherit]",
             inputHeightClassName,
             speechInput.active ? "placeholder:font-normal placeholder:text-muted-foreground" : "",
           )}

@@ -12,6 +12,7 @@ const videoModel: ChatModelOption = {
   protocols: ["openai_video_generations"],
   defaultOptions: {},
   optionControls: [],
+  nativeToolKeys: [],
   pricing: null,
 };
 

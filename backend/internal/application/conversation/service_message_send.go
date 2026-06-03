@@ -342,12 +342,13 @@ func (s *Service) sendMessageInternal(
 	route, err := s.routeResolver.ResolveRoute(ctx, channel.ResolveRouteInput{
 		PlatformModelName: conversation.Model,
 		TaskType:          channel.TaskTypeChat,
+		Scope:             channel.RouteScopeUser,
 		UserID:            input.UserID,
 		ConversationID:    input.ConversationID,
 		RequestID:         strings.TrimSpace(input.RequestID),
 	})
 	if err != nil {
-		if errors.Is(err, channel.ErrRouteNotFound) || errors.Is(err, channel.ErrModelNotFound) {
+		if errors.Is(err, channel.ErrRouteNotFound) || errors.Is(err, channel.ErrModelNotFound) || errors.Is(err, channel.ErrModelAccessDenied) {
 			retErr = ErrModelRouteNotConfigured
 			return nil, retErr
 		}
@@ -663,10 +664,10 @@ func (s *Service) sendMessageInternal(
 		AttributionTitle:    attributionTitle,
 	}
 	filteredOptions = filterModelOptions(input.Options, route.Protocol, modelOptionPolicyConfig{
-		Mode:                       cfg.ModelOptionPolicyMode,
-		AllowedPathsJSON:           cfg.ModelOptionAllowedPaths,
-		DeniedPathsJSON:            cfg.ModelOptionDeniedPaths,
-		NativeToolAllowedTypesJSON: cfg.NativeToolAllowedTypes,
+		Mode:                  cfg.ModelOptionPolicyMode,
+		AllowedPathsJSON:      cfg.ModelOptionAllowedPaths,
+		DeniedPathsJSON:       cfg.ModelOptionDeniedPaths,
+		ModelCapabilitiesJSON: route.ModelCapabilitiesJSON,
 	})
 	generateInput := llm.GenerateInput{
 		RequestID:      strings.TrimSpace(input.RequestID),

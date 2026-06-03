@@ -95,18 +95,9 @@ func DefaultModelOptionAllowedPathsJSON() string {
     "size"
   ],
   "google_image_generation": [
-    "aspect_ratio",
-    "aspectRatio",
-    "image_size",
-    "imageSize",
-    "imageConfig.aspectRatio",
-    "imageConfig.imageSize",
-    "responseFormat.image.aspectRatio",
-    "responseFormat.image.imageSize",
+    "generationConfig.responseModalities",
     "generationConfig.imageConfig.aspectRatio",
-    "generationConfig.imageConfig.imageSize",
-    "generationConfig.responseFormat.image.aspectRatio",
-    "generationConfig.responseFormat.image.imageSize"
+    "generationConfig.imageConfig.imageSize"
   ],
   "anthropic_messages": [
     "output_config.effort",
@@ -486,7 +477,6 @@ type Config struct {
 	ModelOptionPolicyMode    string
 	ModelOptionAllowedPaths  string
 	ModelOptionDeniedPaths   string
-	NativeToolAllowedTypes   string
 	// 存储配置
 	UserStorageQuotaBytes int64
 	MaxUploadFileBytes    int64
@@ -689,7 +679,6 @@ func Load() Config {
 		ModelOptionPolicyMode:             "allowlist",
 		ModelOptionAllowedPaths:           DefaultModelOptionAllowedPathsJSON(),
 		ModelOptionDeniedPaths:            DefaultModelOptionDeniedPathsJSON(),
-		NativeToolAllowedTypes:            DefaultNativeToolAllowedTypesJSON(),
 		UserStorageQuotaBytes:             104857600,
 		MaxUploadFileBytes:                20971520,
 		MaxMessageFiles:                   10,

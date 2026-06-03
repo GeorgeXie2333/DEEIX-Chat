@@ -6,6 +6,7 @@ import (
 
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/llm"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
 )
 
 const (
@@ -35,6 +36,7 @@ type modelOptionPolicyConfig struct {
 	Mode                       string
 	AllowedPathsJSON           string
 	DeniedPathsJSON            string
+	ModelCapabilitiesJSON      string
 	NativeToolAllowedTypesJSON string
 }
 
@@ -52,7 +54,7 @@ func filterModelOptions(options map[string]interface{}, protocol string, cfg mod
 	}
 
 	protocolKey := modelOptionPolicyProtocolKey(protocol)
-	nativeTools := nativeProviderToolsFromOption(protocolKey, options["tools"], cfg.NativeToolAllowedTypesJSON)
+	nativeTools := nativeProviderToolsFromOption(protocolKey, options["tools"], cfg.ModelCapabilitiesJSON, cfg.NativeToolAllowedTypesJSON)
 	policyOptions := cloneModelOptionMap(options)
 	delete(policyOptions, "tools")
 	denied := append([][]string{}, hardDeniedModelOptionPaths...)
@@ -87,88 +89,129 @@ func filterModelOptions(options map[string]interface{}, protocol string, cfg mod
 
 // nativeProviderToolsFromOption 将用户 options.tools 收敛为当前协议允许的官方原生工具。
 // 普通参数白名单不处理 tools，避免用户通过自由 JSON 绕过官方工具控制。
-func nativeProviderToolsFromOption(protocolKey string, raw interface{}, allowedTypesJSON string) []map[string]interface{} {
+func nativeProviderToolsFromOption(protocolKey string, raw interface{}, capabilitiesJSON string, allowedTypesJSON string) []map[string]interface{} {
 	rawTools := providerToolOptionPayloads(raw)
 	if len(rawTools) == 0 {
 		return nil
 	}
-	allowedTypes := nativeToolAllowedTypesForProtocol(protocolKey, allowedTypesJSON)
-	if len(allowedTypes) == 0 {
+	allowedKeys, declared := nativeToolKeysFromCapabilities(capabilitiesJSON)
+	if !declared {
+		allowedKeys = nativeToolKeysFromAllowedTypesJSON(protocolKey, allowedTypesJSON)
+	}
+	if len(allowedKeys) == 0 {
 		return nil
 	}
 	seen := make(map[string]struct{}, len(rawTools))
 	tools := make([]map[string]interface{}, 0, len(rawTools))
 	for _, rawTool := range rawTools {
-		tool, toolType, ok := sanitizeNativeProviderTool(protocolKey, rawTool)
+		tool, definition, ok := nativeProviderToolPayload(protocolKey, rawTool, allowedKeys)
 		if !ok {
 			continue
 		}
-		if _, allowed := allowedTypes[toolType]; !allowed {
+		if _, exists := seen[definition.Key]; exists {
 			continue
 		}
-		if _, exists := seen[toolType]; exists {
-			continue
-		}
-		seen[toolType] = struct{}{}
+		seen[definition.Key] = struct{}{}
 		tools = append(tools, tool)
 	}
 	return tools
 }
 
-// nativeToolAllowedTypesForProtocol 解析后台配置的官方工具允许列表。
-// 配置缺失或格式错误时回退默认值，运行时保存入口会负责严格校验。
-func nativeToolAllowedTypesForProtocol(protocolKey string, raw string) map[string]struct{} {
-	defaults := defaultNativeToolAllowedTypes(protocolKey)
+func nativeProviderToolPayload(protocolKey string, rawTool map[string]interface{}, allowedKeys map[string]struct{}) (map[string]interface{}, nativetool.Definition, bool) {
+	tool, ok := nativetool.CanonicalPayload(protocolKey, rawTool)
+	if ok {
+		toolType := stringModelOptionValue(tool["type"])
+		definition, found := nativetool.Find(protocolKey, toolType)
+		if found {
+			if _, allowed := allowedKeys[definition.Key]; allowed {
+				return tool, definition, true
+			}
+		}
+	}
+	for _, candidate := range nativetool.Definitions() {
+		if _, allowed := allowedKeys[candidate.Key]; !allowed {
+			continue
+		}
+		tool, ok := nativetool.CanonicalPayloadByKey(candidate.Key, rawTool)
+		if !ok {
+			continue
+		}
+		return tool, candidate, true
+	}
+	return nil, nativetool.Definition{}, false
+}
+
+// nativeToolKeysFromCapabilities 解析模型能力 JSON 中显式声明支持的官方原生工具。
+func nativeToolKeysFromCapabilities(raw string) (map[string]struct{}, bool) {
 	value := strings.TrimSpace(raw)
 	if value == "" {
-		return defaults
+		return nil, false
 	}
-	var config map[string][]string
+	var envelope map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(value), &envelope); err != nil {
+		return nil, false
+	}
+	rawKeys, declared := envelope["nativeToolKeys"]
+	if !declared {
+		return nil, false
+	}
+	var config struct {
+		NativeToolKeys []string `json:"nativeToolKeys"`
+	}
 	if err := json.Unmarshal([]byte(value), &config); err != nil {
-		return defaults
+		var keys []string
+		if listErr := json.Unmarshal(rawKeys, &keys); listErr != nil {
+			return map[string]struct{}{}, true
+		}
+		config.NativeToolKeys = keys
 	}
-	types, ok := config[protocolKey]
-	if !ok {
-		return defaults
+	known := make(map[string]struct{})
+	for _, definition := range nativetool.Definitions() {
+		known[definition.Key] = struct{}{}
 	}
-	allowed := make(map[string]struct{}, len(types))
-	for _, toolType := range types {
+	allowed := make(map[string]struct{}, len(config.NativeToolKeys))
+	for _, key := range config.NativeToolKeys {
+		key = strings.TrimSpace(key)
+		if _, ok := known[key]; ok {
+			allowed[key] = struct{}{}
+		}
+	}
+	return allowed, true
+}
+
+// nativeToolKeysFromAllowedTypesJSON 保留旧模型/旧设置的协议类型白名单兼容语义。
+func nativeToolKeysFromAllowedTypesJSON(protocolKey string, raw string) map[string]struct{} {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return defaultNativeToolKeys(protocolKey)
+	}
+	var parsed map[string][]string
+	if err := json.Unmarshal([]byte(value), &parsed); err != nil {
+		return defaultNativeToolKeys(protocolKey)
+	}
+	allowedTypes := parsed[protocolKey]
+	if len(allowedTypes) == 0 {
+		return nil
+	}
+	allowed := make(map[string]struct{}, len(allowedTypes))
+	for _, toolType := range allowedTypes {
 		toolType = strings.TrimSpace(toolType)
-		if _, ok := defaults[toolType]; ok {
-			allowed[toolType] = struct{}{}
+		for _, definition := range nativetool.DefinitionsByProtocol(protocolKey) {
+			if definition.Type == toolType {
+				allowed[definition.Key] = struct{}{}
+			}
 		}
 	}
 	return allowed
 }
 
-// defaultNativeToolAllowedTypes 返回当前后端已显式适配的官方工具类型。
-func defaultNativeToolAllowedTypes(protocolKey string) map[string]struct{} {
-	types := []string{}
-	switch protocolKey {
-	case "openai_responses":
-		types = []string{"web_search", "web_search_preview", "shell", "image_generation", "code_interpreter"}
-	case "openai_chat_completions":
-		types = []string{"web_search", "web_search_preview"}
-	case "xai_responses":
-		types = []string{"web_search", "x_search", "code_interpreter"}
-	case "anthropic_messages":
-		types = []string{
-			"web_search_20250305",
-			"web_search_20260209",
-			"web_fetch_20250910",
-			"web_fetch_20260209",
-			"code_execution_20250825",
-			"code_execution_20260120",
-			"advisor_20260301",
-			"tool_search_tool_regex_20251119",
-			"tool_search_tool_bm25_20251119",
+func defaultNativeToolKeys(protocolKey string) map[string]struct{} {
+	definitions := nativetool.DefinitionsByProtocol(protocolKey)
+	allowed := make(map[string]struct{}, len(definitions))
+	for _, definition := range definitions {
+		if definition.DefaultEnabled {
+			allowed[definition.Key] = struct{}{}
 		}
-	case "gemini_generate_content":
-		types = []string{"google_search", "code_execution"}
-	}
-	allowed := make(map[string]struct{}, len(types))
-	for _, toolType := range types {
-		allowed[toolType] = struct{}{}
 	}
 	return allowed
 }
@@ -189,95 +232,6 @@ func providerToolOptionPayloads(raw interface{}) []map[string]interface{} {
 	default:
 		return nil
 	}
-}
-
-// sanitizeNativeProviderTool 按协议选择官方工具清洗规则，未知协议和未知类型一律丢弃。
-func sanitizeNativeProviderTool(protocolKey string, tool map[string]interface{}) (map[string]interface{}, string, bool) {
-	if protocolKey == "gemini_generate_content" {
-		return sanitizeGeminiNativeProviderTool(tool)
-	}
-	toolType := strings.TrimSpace(stringModelOptionValue(tool["type"]))
-	if toolType == "" {
-		return nil, "", false
-	}
-	switch protocolKey {
-	case "openai_chat_completions", "openai_responses":
-		payload, ok := sanitizeOpenAINativeProviderTool(toolType)
-		return payload, toolType, ok
-	case "xai_responses":
-		payload, ok := sanitizeXAINativeProviderTool(toolType)
-		return payload, toolType, ok
-	case "anthropic_messages":
-		payload, ok := sanitizeAnthropicNativeProviderTool(toolType, tool)
-		return payload, toolType, ok
-	default:
-		return nil, "", false
-	}
-}
-
-// sanitizeOpenAINativeProviderTool 只保留 OpenAI 官方工具允许透传的固定字段。
-func sanitizeOpenAINativeProviderTool(toolType string) (map[string]interface{}, bool) {
-	switch toolType {
-	case "web_search", "web_search_preview":
-		return map[string]interface{}{"type": toolType}, true
-	case "shell":
-		return map[string]interface{}{"type": "shell", "environment": map[string]interface{}{"type": "container_auto"}}, true
-	case "image_generation":
-		return map[string]interface{}{"type": "image_generation"}, true
-	case "code_interpreter":
-		return map[string]interface{}{"type": "code_interpreter", "container": map[string]interface{}{"type": "auto"}}, true
-	default:
-		return nil, false
-	}
-}
-
-// sanitizeXAINativeProviderTool 只保留 xAI 官方工具允许透传的固定字段。
-func sanitizeXAINativeProviderTool(toolType string) (map[string]interface{}, bool) {
-	switch toolType {
-	case "web_search", "x_search", "code_interpreter":
-		return map[string]interface{}{"type": toolType}, true
-	default:
-		return nil, false
-	}
-}
-
-// sanitizeAnthropicNativeProviderTool 只保留 Anthropic 官方工具允许透传的固定字段。
-func sanitizeAnthropicNativeProviderTool(toolType string, raw map[string]interface{}) (map[string]interface{}, bool) {
-	switch toolType {
-	case "web_search_20250305":
-		return map[string]interface{}{"type": toolType, "name": "web_search"}, true
-	case "web_search_20260209":
-		return map[string]interface{}{"type": toolType, "name": "web_search", "allowed_callers": []string{"direct"}}, true
-	case "web_fetch_20250910":
-		return map[string]interface{}{"type": toolType, "name": "web_fetch"}, true
-	case "web_fetch_20260209":
-		return map[string]interface{}{"type": toolType, "name": "web_fetch", "allowed_callers": []string{"direct"}}, true
-	case "code_execution_20250825", "code_execution_20260120":
-		return map[string]interface{}{"type": toolType, "name": "code_execution"}, true
-	case "advisor_20260301":
-		tool := map[string]interface{}{"type": toolType, "name": "advisor"}
-		if model := strings.TrimSpace(stringModelOptionValue(raw["model"])); model != "" {
-			tool["model"] = model
-		}
-		return tool, true
-	case "tool_search_tool_regex_20251119":
-		return map[string]interface{}{"type": toolType, "name": "tool_search_tool_regex"}, true
-	case "tool_search_tool_bm25_20251119":
-		return map[string]interface{}{"type": toolType, "name": "tool_search_tool_bm25"}, true
-	default:
-		return nil, false
-	}
-}
-
-// sanitizeGeminiNativeProviderTool 保留 Gemini REST API 官方内置工具对象。
-func sanitizeGeminiNativeProviderTool(raw map[string]interface{}) (map[string]interface{}, string, bool) {
-	if _, ok := raw["google_search"]; ok {
-		return map[string]interface{}{"google_search": map[string]interface{}{}}, "google_search", true
-	}
-	if _, ok := raw["code_execution"]; ok {
-		return map[string]interface{}{"code_execution": map[string]interface{}{}}, "code_execution", true
-	}
-	return nil, "", false
 }
 
 // stringModelOptionValue 从自由 JSON 值中安全读取字符串。

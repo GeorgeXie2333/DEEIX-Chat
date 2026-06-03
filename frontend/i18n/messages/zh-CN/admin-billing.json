@@ -209,14 +209,14 @@
   "toolPricing": {
     "title": "工具定价",
     "nativeToolBilling": "原生工具计费",
-    "nativeToolBillingDescription": "开启后，OpenAI、Anthropic 和 xAI 原生工具会按管理员设置的价格计入账单；自用模式仍只记录用量。",
-    "defaultPriceDescription": "留空覆盖时使用默认价；工具返回内容产生的模型 token 仍按模型定价计算。",
+    "nativeToolBillingDescription": "开启后，管理员启用的官方原生工具会按这里设置的价格计入账单；自用模式仍只记录用量。",
+    "defaultPriceDescription": "未覆盖的行使用默认按次价格；填 0 表示不单独计费。工具返回内容产生的模型 token 仍按模型定价计算。",
     "provider": "厂商",
     "tool": "工具",
     "defaultPrice": "默认价格",
     "price": "计费价格",
     "restoreDefault": "恢复默认价格",
-    "note": "价格为每次上游返回的 server-side tool usage 计费单价；填 0 表示不单独计费。",
+    "note": "价格按上游返回的 server-side tool usage 次数计费；未被上游返回调用次数的工具不会生成单独工具账单项。",
     "prices": {
       "included": "不单独计费",
       "notMetered": "仅记录"
@@ -240,7 +240,8 @@
       "xaiXSearch": "X Search",
       "xaiCodeExecution": "Code Execution",
       "xaiAttachmentSearch": "File Attachments Search",
-      "xaiCollectionsSearch": "Collections Search / RAG"
+      "xaiCollectionsSearch": "Collections Search / RAG",
+      "googleGoogleSearch": "Google Search"
     }
   },
   "pricingModes": {

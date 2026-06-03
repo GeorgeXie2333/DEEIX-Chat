@@ -240,7 +240,8 @@
       "xaiXSearch": "X Search",
       "xaiCodeExecution": "Code Execution",
       "xaiAttachmentSearch": "File Attachments Search",
-      "xaiCollectionsSearch": "Collections Search / RAG"
+      "xaiCollectionsSearch": "Collections Search / RAG",
+      "googleGoogleSearch": "Google Search"
     }
   },
   "pricingModes": {

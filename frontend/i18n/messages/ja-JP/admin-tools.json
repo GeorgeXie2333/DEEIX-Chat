@@ -1,6 +1,7 @@
 {
   "title": "MCP ツール",
   "sections": {
+    "mcpTools": "MCP ツール",
     "servers": "MCP サービス",
     "tools": "MCP ツール"
   },

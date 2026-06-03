@@ -488,6 +488,43 @@ func TestBuildUsageLedgerBillsNativeToolDefaultsWhenEnabled(t *testing.T) {
 	}
 }
 
+func TestBuildUsageLedgerUsesNativeToolPricingOverrides(t *testing.T) {
+	repo := &billingRepositoryStub{
+		mode:                     "usage",
+		nativeToolBillingEnabled: true,
+		nativeToolPricingJSON:    `{"xaiWebSearch":{"priceNanousd":123000000,"unit":"call","priceLabel":"","billable":true}}`,
+		pricing: &domainbilling.ModelPricing{
+			PlatformModelName: "grok-4.3",
+			Currency:          "USD",
+			PricingMode:       domainbilling.PricingModeToken,
+		},
+	}
+	service := NewService(repo)
+
+	ledger, err := service.BuildUsageLedger(context.Background(), UsagePricingInput{
+		UserID:            1,
+		PlatformModelName: "grok-4.3",
+		ProviderProtocol:  "xai_responses",
+		ServerSideToolUsage: map[string]int64{
+			"web_search": 2,
+		},
+	})
+	if err != nil {
+		t.Fatalf("build usage ledger: %v", err)
+	}
+	if ledger.BilledNanousd != 246_000_000 {
+		t.Fatalf("expected native tool override billing total, got %d", ledger.BilledNanousd)
+	}
+
+	var snapshot map[string]interface{}
+	if err := json.Unmarshal([]byte(ledger.PricingSnapshotJSON), &snapshot); err != nil {
+		t.Fatalf("unmarshal pricing snapshot: %v", err)
+	}
+	if snapshot["native_tool_pricing_source"] != "admin_configured" {
+		t.Fatalf("expected admin native tool pricing source, got %#v", snapshot["native_tool_pricing_source"])
+	}
+}
+
 func TestBuildUsageLedgerBillsOpenAIWebSearchPreviewByModelFamily(t *testing.T) {
 	cases := []struct {
 		name              string

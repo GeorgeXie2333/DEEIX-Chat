@@ -375,7 +375,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UpdateBillingAccountBalanceRequest"
+                            "$ref": "#/definitions/billing.UpdateBillingAccountBalanceRequest"
                         }
                     }
                 ],
@@ -383,19 +383,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingAccountResponseDoc"
+                            "$ref": "#/definitions/billing.BillingAccountResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -423,13 +423,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingConfigResponseDoc"
+                            "$ref": "#/definitions/billing.BillingConfigResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -458,7 +458,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingConfigRequest"
+                            "$ref": "#/definitions/billing.BillingConfigRequest"
                         }
                     }
                 ],
@@ -466,19 +466,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingConfigResponseDoc"
+                            "$ref": "#/definitions/billing.BillingConfigResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -526,13 +526,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ModelPricingListResponseDoc"
+                            "$ref": "#/definitions/billing.ModelPricingListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -561,7 +561,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UpsertModelPricingRequest"
+                            "$ref": "#/definitions/billing.UpsertModelPricingRequest"
                         }
                     }
                 ],
@@ -569,19 +569,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ModelPricingDataResponse"
+                            "$ref": "#/definitions/billing.ModelPricingDataResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -619,7 +619,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UpdateBillingPlanRequest"
+                            "$ref": "#/definitions/billing.UpdateBillingPlanRequest"
                         }
                     }
                 ],
@@ -627,19 +627,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingPlanResponseDoc"
+                            "$ref": "#/definitions/billing.BillingPlanResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -705,13 +705,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeListResponseDoc"
+                            "$ref": "#/definitions/billing.RedemptionCodeListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -740,7 +740,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.CreateRedemptionCodeRequest"
+                            "$ref": "#/definitions/billing.CreateRedemptionCodeRequest"
                         }
                     }
                 ],
@@ -748,19 +748,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeCreateResponseDoc"
+                            "$ref": "#/definitions/billing.RedemptionCodeCreateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -791,7 +791,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BatchDeleteRedemptionCodeRequest"
+                            "$ref": "#/definitions/billing.BatchDeleteRedemptionCodeRequest"
                         }
                     }
                 ],
@@ -799,13 +799,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BatchDeleteRedemptionCodeResponseDoc"
+                            "$ref": "#/definitions/billing.BatchDeleteRedemptionCodeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -842,25 +842,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeDeleteResponseDoc"
+                            "$ref": "#/definitions/billing.RedemptionCodeDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -896,7 +896,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.PatchRedemptionCodeRequestDoc"
+                            "$ref": "#/definitions/billing.PatchRedemptionCodeRequestDoc"
                         }
                     }
                 ],
@@ -904,19 +904,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeResponseDoc"
+                            "$ref": "#/definitions/billing.RedemptionCodeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -953,25 +953,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeResponseDoc"
+                            "$ref": "#/definitions/billing.RedemptionCodeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -1145,13 +1145,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelListResponseDoc"
+                            "$ref": "#/definitions/channel.ModelListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1180,7 +1180,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.CreateModelRequest"
+                            "$ref": "#/definitions/channel.CreateModelRequest"
                         }
                     }
                 ],
@@ -1188,25 +1188,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.CreateModelResponseDoc"
+                            "$ref": "#/definitions/channel.CreateModelResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1237,7 +1237,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteRequest"
+                            "$ref": "#/definitions/channel.BatchDeleteRequest"
                         }
                     }
                 ],
@@ -1245,13 +1245,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteResponseDoc"
+                            "$ref": "#/definitions/channel.BatchDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1282,7 +1282,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ReorderModelsRequest"
+                            "$ref": "#/definitions/channel.ReorderModelsRequest"
                         }
                     }
                 ],
@@ -1296,19 +1296,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1351,19 +1351,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1399,7 +1399,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateModelRequest"
+                            "$ref": "#/definitions/channel.UpdateModelRequest"
                         }
                     }
                 ],
@@ -1407,25 +1407,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateModelResponseDoc"
+                            "$ref": "#/definitions/channel.UpdateModelResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1474,25 +1474,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelUpstreamSourceListResponseDoc"
+                            "$ref": "#/definitions/channel.ModelUpstreamSourceListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1537,7 +1537,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateModelUpstreamSourceRequest"
+                            "$ref": "#/definitions/channel.UpdateModelUpstreamSourceRequest"
                         }
                     }
                 ],
@@ -1545,25 +1545,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateModelUpstreamSourceResponseDoc"
+                            "$ref": "#/definitions/channel.UpdateModelUpstreamSourceResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1600,7 +1600,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeRequest"
+                            "$ref": "#/definitions/channel.ModelProbeRequest"
                         }
                     }
                 ],
@@ -1608,25 +1608,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeResponseDoc"
+                            "$ref": "#/definitions/channel.ModelProbeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1663,7 +1663,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeRequest"
+                            "$ref": "#/definitions/channel.ModelProbeRequest"
                         }
                     }
                 ],
@@ -1671,25 +1671,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeBatchResponseDoc"
+                            "$ref": "#/definitions/channel.ModelProbeBatchResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1723,7 +1723,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1778,19 +1778,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1856,13 +1856,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpstreamListResponseDoc"
+                            "$ref": "#/definitions/channel.UpstreamListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1891,7 +1891,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.CreateUpstreamRequest"
+                            "$ref": "#/definitions/channel.CreateUpstreamRequest"
                         }
                     }
                 ],
@@ -1899,25 +1899,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.CreateUpstreamResponseDoc"
+                            "$ref": "#/definitions/channel.CreateUpstreamResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -1948,7 +1948,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteRequest"
+                            "$ref": "#/definitions/channel.BatchDeleteRequest"
                         }
                     }
                 ],
@@ -1956,13 +1956,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteResponseDoc"
+                            "$ref": "#/definitions/channel.BatchDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2005,19 +2005,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2053,7 +2053,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateUpstreamRequest"
+                            "$ref": "#/definitions/channel.UpdateUpstreamRequest"
                         }
                     }
                 ],
@@ -2061,25 +2061,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateUpstreamResponseDoc"
+                            "$ref": "#/definitions/channel.UpdateUpstreamResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2122,19 +2122,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2171,25 +2171,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ResetUpstreamCircuitResponseDoc"
+                            "$ref": "#/definitions/channel.ResetUpstreamCircuitResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2268,25 +2268,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpstreamModelListResponseDoc"
+                            "$ref": "#/definitions/channel.UpstreamModelListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2322,7 +2322,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpsertUpstreamModelRequest"
+                            "$ref": "#/definitions/channel.UpsertUpstreamModelRequest"
                         }
                     }
                 ],
@@ -2330,31 +2330,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpsertUpstreamModelResponseDoc"
+                            "$ref": "#/definitions/channel.UpsertUpstreamModelResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2392,7 +2392,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteRequest"
+                            "$ref": "#/definitions/channel.BatchDeleteRequest"
                         }
                     }
                 ],
@@ -2400,13 +2400,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteResponseDoc"
+                            "$ref": "#/definitions/channel.BatchDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2444,7 +2444,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ImportUpstreamModelsRequest"
+                            "$ref": "#/definitions/channel.ImportUpstreamModelsRequest"
                         }
                     }
                 ],
@@ -2452,31 +2452,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ImportUpstreamModelsResponseDoc"
+                            "$ref": "#/definitions/channel.ImportUpstreamModelsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "502": {
                         "description": "Bad Gateway",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2513,31 +2513,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpstreamRemoteModelsResponseDoc"
+                            "$ref": "#/definitions/channel.UpstreamRemoteModelsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "502": {
                         "description": "Bad Gateway",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2574,31 +2574,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.SyncUpstreamModelsResponseDoc"
+                            "$ref": "#/definitions/channel.SyncUpstreamModelsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "502": {
                         "description": "Bad Gateway",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2648,19 +2648,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2710,19 +2710,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2766,25 +2766,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ResetUpstreamCircuitResponseDoc"
+                            "$ref": "#/definitions/channel.ResetUpstreamCircuitResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2831,19 +2831,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2890,19 +2890,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -2946,7 +2946,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeRequest"
+                            "$ref": "#/definitions/channel.ModelProbeRequest"
                         }
                     }
                 ],
@@ -2954,25 +2954,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeResponseDoc"
+                            "$ref": "#/definitions/channel.ModelProbeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -3026,7 +3026,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_settings.PatchSettingsRequest"
+                            "$ref": "#/definitions/settings.PatchSettingsRequest"
                         }
                     }
                 ],
@@ -4611,13 +4611,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingAccountResponseDoc"
+                            "$ref": "#/definitions/billing.BillingAccountResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -4645,13 +4645,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingOverviewResponseDoc"
+                            "$ref": "#/definitions/billing.BillingOverviewResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -4682,7 +4682,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.CreateCheckoutRequest"
+                            "$ref": "#/definitions/billing.CreateCheckoutRequest"
                         }
                     }
                 ],
@@ -4690,19 +4690,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.CheckoutResponseDoc"
+                            "$ref": "#/definitions/billing.CheckoutResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -4771,13 +4771,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.PlanListResponseDoc"
+                            "$ref": "#/definitions/billing.PlanListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -4808,7 +4808,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedeemCodeRequest"
+                            "$ref": "#/definitions/billing.RedeemCodeRequest"
                         }
                     }
                 ],
@@ -4816,19 +4816,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionApplyResponseDoc"
+                            "$ref": "#/definitions/billing.RedemptionApplyResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -4859,7 +4859,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.SubscribeRequest"
+                            "$ref": "#/definitions/billing.SubscribeRequest"
                         }
                     }
                 ],
@@ -4867,19 +4867,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.SubscribeResponseDoc"
+                            "$ref": "#/definitions/billing.SubscribeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -4939,13 +4939,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UsageLedgerListResponseDoc"
+                            "$ref": "#/definitions/billing.UsageLedgerListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -4981,13 +4981,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UsageDailyListResponseDoc"
+                            "$ref": "#/definitions/billing.UsageDailyListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -5023,13 +5023,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UsageMonthlyListResponseDoc"
+                            "$ref": "#/definitions/billing.UsageMonthlyListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/billing.ErrorDoc"
                         }
                     }
                 }
@@ -5066,25 +5066,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ContextArtifactResponseDoc"
+                            "$ref": "#/definitions/conversation.ContextArtifactResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5120,13 +5120,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectListResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationProjectListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5155,7 +5155,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.CreateConversationProjectRequest"
+                            "$ref": "#/definitions/conversation.CreateConversationProjectRequest"
                         }
                     }
                 ],
@@ -5163,19 +5163,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationProjectResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5206,7 +5206,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ReorderConversationProjectsRequest"
+                            "$ref": "#/definitions/conversation.ReorderConversationProjectsRequest"
                         }
                     }
                 ],
@@ -5214,25 +5214,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectListResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationProjectListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5281,25 +5281,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationDeleteResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5335,7 +5335,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.UpdateConversationProjectRequest"
+                            "$ref": "#/definitions/conversation.UpdateConversationProjectRequest"
                         }
                     }
                 ],
@@ -5343,25 +5343,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationProjectResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5401,7 +5401,7 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5447,7 +5447,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5513,13 +5513,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationListResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5548,7 +5548,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.CreateConversationRequest"
+                            "$ref": "#/definitions/conversation.CreateConversationRequest"
                         }
                     }
                 ],
@@ -5556,19 +5556,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationCreateResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationCreateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5599,7 +5599,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveRequest"
+                            "$ref": "#/definitions/conversation.ConversationArchiveRequest"
                         }
                     }
                 ],
@@ -5607,25 +5607,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "413": {
                         "description": "Request Entity Too Large",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5656,7 +5656,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.BatchSetConversationProjectRequest"
+                            "$ref": "#/definitions/conversation.BatchSetConversationProjectRequest"
                         }
                     }
                 ],
@@ -5664,25 +5664,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.BatchSetConversationProjectResponseDoc"
+                            "$ref": "#/definitions/conversation.BatchSetConversationProjectResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5713,7 +5713,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.RevokeConversationSharesRequest"
+                            "$ref": "#/definitions/conversation.RevokeConversationSharesRequest"
                         }
                     }
                 ],
@@ -5721,25 +5721,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.RevokeConversationSharesResponseDoc"
+                            "$ref": "#/definitions/conversation.RevokeConversationSharesResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5776,25 +5776,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5835,25 +5835,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationDeleteResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5891,7 +5891,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SetConversationArchiveRequest"
+                            "$ref": "#/definitions/conversation.SetConversationArchiveRequest"
                         }
                     }
                 ],
@@ -5899,25 +5899,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -5954,25 +5954,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationArchiveResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6021,25 +6021,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.MessageListResponseDoc"
+                            "$ref": "#/definitions/conversation.MessageListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6075,7 +6075,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SendMessageRequest"
+                            "$ref": "#/definitions/conversation.SendMessageRequest"
                         }
                     }
                 ],
@@ -6083,25 +6083,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SendMessageResponseDoc"
+                            "$ref": "#/definitions/conversation.SendMessageResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6139,7 +6139,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SendMessageRequest"
+                            "$ref": "#/definitions/conversation.SendMessageRequest"
                         }
                     }
                 ],
@@ -6153,19 +6153,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6203,7 +6203,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SetConversationProjectRequest"
+                            "$ref": "#/definitions/conversation.SetConversationProjectRequest"
                         }
                     }
                 ],
@@ -6211,25 +6211,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6278,25 +6278,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationRunListResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationRunListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6333,25 +6333,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationShareResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationShareResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6386,7 +6386,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.CreateConversationShareRequest"
+                            "$ref": "#/definitions/conversation.CreateConversationShareRequest"
                         }
                     }
                 ],
@@ -6394,25 +6394,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationShareResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationShareResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6447,25 +6447,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationShareResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationShareResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6502,7 +6502,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.CreateConversationShareRequest"
+                            "$ref": "#/definitions/conversation.CreateConversationShareRequest"
                         }
                     }
                 ],
@@ -6510,25 +6510,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationShareResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationShareResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6566,7 +6566,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SetConversationStarRequest"
+                            "$ref": "#/definitions/conversation.SetConversationStarRequest"
                         }
                     }
                 ],
@@ -6574,25 +6574,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6630,7 +6630,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.RenameConversationRequest"
+                            "$ref": "#/definitions/conversation.RenameConversationRequest"
                         }
                     }
                 ],
@@ -6638,25 +6638,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6716,13 +6716,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.FileListResponseDoc"
+                            "$ref": "#/definitions/conversation.FileListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6763,31 +6763,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.UploadFileResponseDoc"
+                            "$ref": "#/definitions/conversation.UploadFileResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "413": {
                         "description": "Request Entity Too Large",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6824,25 +6824,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.DeleteFileResponseDoc"
+                            "$ref": "#/definitions/conversation.DeleteFileResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6878,7 +6878,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.UpdateFileRequest"
+                            "$ref": "#/definitions/conversation.UpdateFileRequest"
                         }
                     }
                 ],
@@ -6886,25 +6886,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.FileUpdateResponseDoc"
+                            "$ref": "#/definitions/conversation.FileUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -6944,19 +6944,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -7441,7 +7441,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SetMessageFeedbackRequest"
+                            "$ref": "#/definitions/conversation.SetMessageFeedbackRequest"
                         }
                     }
                 ],
@@ -7449,25 +7449,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.MessageFeedbackResponseDoc"
+                            "$ref": "#/definitions/conversation.MessageFeedbackResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -7495,13 +7495,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.PublicModelListResponseDoc"
+                            "$ref": "#/definitions/channel.PublicModelListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/channel.ErrorDoc"
                         }
                     }
                 }
@@ -7600,25 +7600,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.PublicSharedConversationResponseDoc"
+                            "$ref": "#/definitions/conversation.PublicSharedConversationResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -7655,31 +7655,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/conversation.ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -7721,19 +7721,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/conversation.ErrorDoc"
                         }
                     }
                 }
@@ -7818,36 +7818,3126 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/v1/chat/completions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "面向用户 API Key 的 OpenAI-compatible chat completions。支持客户端函数调用协议：tools/tool_choice/tool_calls、role=tool 结果消息，以及旧版 functions/function_call；平台只做协议转换，不代 API 用户执行函数。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openapi-compatible"
+                ],
+                "summary": "OpenAI-compatible Chat Completions",
+                "parameters": [
+                    {
+                        "description": "OpenAI-compatible chat completion request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_openapi.ChatCompletionRequestDoc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_openapi.ChatCompletionResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchive": {
+        "billing.BatchDeleteRedemptionCodeDataResponse": {
             "type": "object",
             "properties": {
-                "conversation": {
-                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMetadata"
+                "failedCount": {
+                    "type": "integer"
                 },
-                "exportedAt": {
-                    "type": "string"
+                "notFoundCount": {
+                    "type": "integer"
                 },
-                "messages": {
+                "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMessage"
+                        "$ref": "#/definitions/billing.BatchDeleteRedemptionCodeResultResponse"
                     }
                 },
-                "runs": {
+                "successCount": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "billing.BatchDeleteRedemptionCodeRequest": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
                     "type": "array",
+                    "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveRun"
+                        "type": "integer"
                     }
+                }
+            }
+        },
+        "billing.BatchDeleteRedemptionCodeResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.BatchDeleteRedemptionCodeDataResponse"
                 },
-                "schema": {
+                "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveAttachment": {
+        "billing.BatchDeleteRedemptionCodeResultResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.BillingAccountDataResponse": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "$ref": "#/definitions/billing.BillingAccountResponse"
+                }
+            }
+        },
+        "billing.BillingAccountResponse": {
+            "type": "object",
+            "properties": {
+                "balanceNanousd": {
+                    "type": "integer"
+                },
+                "balanceUSD": {
+                    "type": "number"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "billing.BillingAccountResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.BillingAccountDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.BillingConfigDataResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/billing.BillingConfigResponse"
+                }
+            }
+        },
+        "billing.BillingConfigRequest": {
+            "type": "object",
+            "required": [
+                "mode"
+            ],
+            "properties": {
+                "freeModelDailyLimit": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "freeModelRateLimitExemptModels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "freeModelRateLimitRPM": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "self",
+                        "period",
+                        "usage"
+                    ]
+                },
+                "nativeToolBillingEnabled": {
+                    "type": "boolean"
+                },
+                "nativeToolPricing": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/billing.NativeToolPricingRequest"
+                    }
+                },
+                "prepaidAmountUSD": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
+        "billing.BillingConfigResponse": {
+            "type": "object",
+            "properties": {
+                "epayTypes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/billing.PaymentTypeResponse"
+                    }
+                },
+                "freeModelDailyLimit": {
+                    "type": "integer"
+                },
+                "freeModelRateLimitExemptModels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "freeModelRateLimitRPM": {
+                    "type": "integer"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "nativeToolBillingEnabled": {
+                    "type": "boolean"
+                },
+                "nativeToolPricing": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/billing.NativeToolPricingResponse"
+                    }
+                },
+                "paymentProviders": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "prepaidAmountNanousd": {
+                    "type": "integer"
+                },
+                "prepaidAmountUSD": {
+                    "type": "number"
+                },
+                "usdToCNYRate": {
+                    "type": "number"
+                }
+            }
+        },
+        "billing.BillingConfigResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.BillingConfigDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.BillingOverviewDataResponse": {
+            "type": "object",
+            "properties": {
+                "overview": {
+                    "$ref": "#/definitions/billing.BillingOverviewResponse"
+                }
+            }
+        },
+        "billing.BillingOverviewResponse": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "$ref": "#/definitions/billing.BillingAccountResponse"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "periodCreditNanousd": {
+                    "type": "integer"
+                },
+                "periodCreditUSD": {
+                    "type": "number"
+                },
+                "periodEndAt": {
+                    "type": "string"
+                },
+                "periodRemainingNanousd": {
+                    "type": "integer"
+                },
+                "periodRemainingUSD": {
+                    "type": "number"
+                },
+                "periodStartAt": {
+                    "type": "string"
+                },
+                "periodUsedNanousd": {
+                    "type": "integer"
+                },
+                "periodUsedUSD": {
+                    "type": "number"
+                },
+                "plan": {
+                    "$ref": "#/definitions/billing.BillingPlanResponse"
+                },
+                "subscriptionEntitlements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/billing.SubscriptionEntitlementResponse"
+                    }
+                }
+            }
+        },
+        "billing.BillingOverviewResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.BillingOverviewDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.BillingPlanDataResponse": {
+            "type": "object",
+            "properties": {
+                "plan": {
+                    "$ref": "#/definitions/billing.BillingPlanResponse"
+                }
+            }
+        },
+        "billing.BillingPlanResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "discountPercent": {
+                    "type": "integer"
+                },
+                "featureJSON": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "periodCreditNanousd": {
+                    "type": "integer"
+                },
+                "periodCreditUSD": {
+                    "type": "number"
+                },
+                "prices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/billing.BillingPriceResponse"
+                    }
+                },
+                "sortOrder": {
+                    "type": "integer"
+                }
+            }
+        },
+        "billing.BillingPlanResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.BillingPlanDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.BillingPriceResponse": {
+            "type": "object",
+            "properties": {
+                "amountCents": {
+                    "type": "integer"
+                },
+                "billingInterval": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isDefault": {
+                    "type": "boolean"
+                },
+                "planID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "billing.CheckoutDataResponse": {
+            "type": "object",
+            "properties": {
+                "checkout": {
+                    "$ref": "#/definitions/billing.CheckoutResponse"
+                }
+            }
+        },
+        "billing.CheckoutResponse": {
+            "type": "object",
+            "properties": {
+                "baseAmountCents": {
+                    "type": "integer"
+                },
+                "baseCurrency": {
+                    "type": "string"
+                },
+                "checkoutURL": {
+                    "type": "string"
+                },
+                "creditNanousd": {
+                    "type": "integer"
+                },
+                "creditUSD": {
+                    "type": "number"
+                },
+                "expiredAt": {
+                    "type": "string"
+                },
+                "externalCheckoutID": {
+                    "type": "string"
+                },
+                "fxRate": {
+                    "type": "string"
+                },
+                "orderNo": {
+                    "type": "string"
+                },
+                "orderType": {
+                    "type": "string"
+                },
+                "payAmountCents": {
+                    "type": "integer"
+                },
+                "payCurrency": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.CheckoutResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.CheckoutDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.CreateCheckoutRequest": {
+            "type": "object",
+            "properties": {
+                "amountUSD": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cancelURL": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "cycles": {
+                    "type": "integer",
+                    "maximum": 120,
+                    "minimum": 1
+                },
+                "epayType": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "orderType": {
+                    "type": "string",
+                    "enum": [
+                        "subscription",
+                        "topup"
+                    ]
+                },
+                "paymentProvider": {
+                    "type": "string",
+                    "enum": [
+                        "stripe",
+                        "epay"
+                    ]
+                },
+                "priceID": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "successURL": {
+                    "type": "string",
+                    "maxLength": 512
+                }
+            }
+        },
+        "billing.CreateRedemptionCodeRequest": {
+            "type": "object",
+            "required": [
+                "mode"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 3
+                },
+                "creditUSD": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "durationDays": {
+                    "type": "integer",
+                    "maximum": 3660,
+                    "minimum": 0
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "maxRedemptions": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "usage",
+                        "period"
+                    ]
+                },
+                "perUserLimit": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                },
+                "planID": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "quantity": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                }
+            }
+        },
+        "billing.ErrorDoc": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "details": {},
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.ModelPricingDataResponse": {
+            "type": "object",
+            "properties": {
+                "modelPricing": {
+                    "$ref": "#/definitions/billing.ModelPricingResponse"
+                }
+            }
+        },
+        "billing.ModelPricingListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/billing.ModelPricingResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.ModelPricingResponse": {
+            "type": "object",
+            "properties": {
+                "cacheReadNanousdPerMTokens": {
+                    "type": "integer"
+                },
+                "cacheReadUSDPerMTokens": {
+                    "type": "number"
+                },
+                "cacheWriteNanousdPerMTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteUSDPerMTokens": {
+                    "type": "number"
+                },
+                "callNanousdPerCall": {
+                    "type": "integer"
+                },
+                "callUSDPerCall": {
+                    "type": "number"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "durationNanousdPerSecond": {
+                    "type": "integer"
+                },
+                "durationUSDPerSecond": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inputNanousdPerMTokens": {
+                    "type": "integer"
+                },
+                "inputUSDPerMTokens": {
+                    "type": "number"
+                },
+                "isFree": {
+                    "type": "boolean"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "outputNanousdPerMTokens": {
+                    "type": "integer"
+                },
+                "outputUSDPerMTokens": {
+                    "type": "number"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "pricingMode": {
+                    "type": "string"
+                },
+                "tieredPricingJSON": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.NativeToolPricingRequest": {
+            "type": "object",
+            "required": [
+                "toolKey"
+            ],
+            "properties": {
+                "priceUSD": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "toolKey": {
+                    "type": "string",
+                    "maxLength": 128
+                }
+            }
+        },
+        "billing.NativeToolPricingResponse": {
+            "type": "object",
+            "properties": {
+                "billable": {
+                    "type": "boolean"
+                },
+                "customized": {
+                    "type": "boolean"
+                },
+                "defaultPriceNanousd": {
+                    "type": "integer"
+                },
+                "defaultPriceUSD": {
+                    "type": "number"
+                },
+                "priceLabel": {
+                    "type": "string"
+                },
+                "priceNanousd": {
+                    "type": "integer"
+                },
+                "priceUSD": {
+                    "type": "number"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "toolKey": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.PatchRedemptionCodeRequestDoc": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "maxRedemptions": {
+                    "type": "integer"
+                },
+                "perUserLimit": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                }
+            }
+        },
+        "billing.PaymentTypeResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.PlanListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/billing.BillingPlanResponse"
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.RedeemCodeRequest": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 3
+                }
+            }
+        },
+        "billing.RedemptionApplyDataResponse": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "$ref": "#/definitions/billing.BillingAccountResponse"
+                },
+                "overview": {
+                    "$ref": "#/definitions/billing.BillingOverviewResponse"
+                },
+                "redemption": {
+                    "$ref": "#/definitions/billing.RedemptionResponse"
+                },
+                "subscription": {
+                    "$ref": "#/definitions/billing.SubscriptionResponse"
+                }
+            }
+        },
+        "billing.RedemptionApplyResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.RedemptionApplyDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.RedemptionCodeCreateDataResponse": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/billing.RedemptionCodeResponse"
+                    }
+                }
+            }
+        },
+        "billing.RedemptionCodeCreateResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.RedemptionCodeCreateDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.RedemptionCodeDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "$ref": "#/definitions/billing.RedemptionCodeResponse"
+                }
+            }
+        },
+        "billing.RedemptionCodeDeleteDataResponse": {
+            "type": "object",
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "billing.RedemptionCodeDeleteResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.RedemptionCodeDeleteDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.RedemptionCodeListDataResponse": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/billing.RedemptionCodeResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "billing.RedemptionCodeListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.RedemptionCodeListDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.RedemptionCodeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "codeHint": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdByUserID": {
+                    "type": "integer"
+                },
+                "creditNanousd": {
+                    "type": "integer"
+                },
+                "creditUSD": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "durationDays": {
+                    "type": "integer"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "maxRedemptions": {
+                    "type": "integer"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "perUserLimit": {
+                    "type": "integer"
+                },
+                "planID": {
+                    "type": "integer"
+                },
+                "redeemedCount": {
+                    "type": "integer"
+                },
+                "remainingRedemptions": {
+                    "type": "integer"
+                },
+                "rewardType": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.RedemptionCodeResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.RedemptionCodeDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.RedemptionResponse": {
+            "type": "object",
+            "properties": {
+                "balanceTransactionID": {
+                    "type": "integer"
+                },
+                "codeID": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "creditNanousd": {
+                    "type": "integer"
+                },
+                "creditUSD": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "planID": {
+                    "type": "integer"
+                },
+                "rewardType": {
+                    "type": "string"
+                },
+                "subscriptionID": {
+                    "type": "integer"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "billing.SubscribeRequest": {
+            "type": "object",
+            "required": [
+                "priceID"
+            ],
+            "properties": {
+                "cycles": {
+                    "type": "integer",
+                    "maximum": 120,
+                    "minimum": 1
+                },
+                "priceID": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "billing.SubscribeResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/billing.SubscriptionDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.SubscriptionDataResponse": {
+            "type": "object",
+            "properties": {
+                "subscription": {
+                    "$ref": "#/definitions/billing.SubscriptionResponse"
+                }
+            }
+        },
+        "billing.SubscriptionEntitlementResponse": {
+            "type": "object",
+            "properties": {
+                "autoRenew": {
+                    "type": "boolean"
+                },
+                "cancelAtPeriodEnd": {
+                    "type": "boolean"
+                },
+                "currentPeriodEndAt": {
+                    "type": "string"
+                },
+                "currentPeriodStartAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isCurrent": {
+                    "type": "boolean"
+                },
+                "plan": {
+                    "$ref": "#/definitions/billing.BillingPlanResponse"
+                },
+                "planID": {
+                    "type": "integer"
+                },
+                "priceID": {
+                    "type": "integer"
+                },
+                "startAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "billing.SubscriptionResponse": {
+            "type": "object",
+            "properties": {
+                "autoRenew": {
+                    "type": "boolean"
+                },
+                "cancelAtPeriodEnd": {
+                    "type": "boolean"
+                },
+                "currentPeriodEndAt": {
+                    "type": "string"
+                },
+                "currentPeriodStartAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "planID": {
+                    "type": "integer"
+                },
+                "priceID": {
+                    "type": "integer"
+                },
+                "startAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "billing.UpdateBillingAccountBalanceRequest": {
+            "type": "object",
+            "properties": {
+                "balanceUSD": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "billing.UpdateBillingPlanRequest": {
+            "type": "object",
+            "required": [
+                "billingInterval",
+                "name"
+            ],
+            "properties": {
+                "amountUSD": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "billingInterval": {
+                    "type": "string",
+                    "enum": [
+                        "month",
+                        "year",
+                        "lifetime"
+                    ]
+                },
+                "currency": {
+                    "type": "string",
+                    "maxLength": 16
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "discountPercent": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "periodCreditUSD": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
+        "billing.UpsertModelPricingRequest": {
+            "type": "object",
+            "required": [
+                "platformModelName"
+            ],
+            "properties": {
+                "cacheReadUSDPerMTokens": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cacheWriteUSDPerMTokens": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "callUSDPerCall": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "currency": {
+                    "type": "string",
+                    "maxLength": 16
+                },
+                "durationUSDPerSecond": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "inputUSDPerMTokens": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "isFree": {
+                    "type": "boolean"
+                },
+                "outputUSDPerMTokens": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "platformModelName": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "pricingMode": {
+                    "type": "string",
+                    "enum": [
+                        "token",
+                        "call",
+                        "duration",
+                        "tiered"
+                    ]
+                },
+                "tieredPricingJSON": {
+                    "type": "string",
+                    "maxLength": 20000
+                }
+            }
+        },
+        "billing.UsageDailyListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/billing.UsageDailyResponse"
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.UsageDailyModelResponse": {
+            "type": "object",
+            "properties": {
+                "avgLatencyMS": {
+                    "type": "integer"
+                },
+                "billedNanousd": {
+                    "type": "integer"
+                },
+                "billedUSD": {
+                    "type": "number"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "callCount": {
+                    "type": "integer"
+                },
+                "durationSeconds": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "recordCount": {
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "type": "integer"
+                }
+            }
+        },
+        "billing.UsageDailyResponse": {
+            "type": "object",
+            "properties": {
+                "avgLatencyMS": {
+                    "type": "integer"
+                },
+                "billedNanousd": {
+                    "type": "integer"
+                },
+                "billedUSD": {
+                    "type": "number"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "callCount": {
+                    "type": "integer"
+                },
+                "durationSeconds": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "models": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/billing.UsageDailyModelResponse"
+                    }
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "recordCount": {
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "type": "integer"
+                },
+                "usageDate": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.UsageLedgerListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/billing.UsageLedgerResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.UsageLedgerResponse": {
+            "type": "object",
+            "properties": {
+                "billedCurrency": {
+                    "type": "string"
+                },
+                "billedNanousd": {
+                    "type": "integer"
+                },
+                "billedUSD": {
+                    "type": "number"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWrite1hTokens": {
+                    "type": "integer"
+                },
+                "cacheWrite5mTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "callCount": {
+                    "type": "integer"
+                },
+                "conversationID": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "durationSeconds": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "isFreeModel": {
+                    "type": "boolean"
+                },
+                "latencyMS": {
+                    "type": "integer"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "pricingSnapshotJSON": {
+                    "type": "string"
+                },
+                "providerProtocol": {
+                    "type": "string"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "routedBindingCode": {
+                    "type": "string"
+                },
+                "serviceTier": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                },
+                "usageDate": {
+                    "type": "string"
+                },
+                "usageSpeed": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "billing.UsageMonthlyListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/billing.UsageMonthlyResponse"
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "billing.UsageMonthlyResponse": {
+            "type": "object",
+            "properties": {
+                "avgLatencyMS": {
+                    "type": "integer"
+                },
+                "billedNanousd": {
+                    "type": "integer"
+                },
+                "billedUSD": {
+                    "type": "number"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "callCount": {
+                    "type": "integer"
+                },
+                "durationSeconds": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "monthStartAt": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "recordCount": {
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.BatchDeleteRequest": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "channel.BatchDeleteResponse": {
+            "type": "object",
+            "properties": {
+                "failedCount": {
+                    "type": "integer"
+                },
+                "notFoundCount": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/channel.BatchDeleteResultResponse"
+                    }
+                },
+                "successCount": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.BatchDeleteResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.BatchDeleteResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.BatchDeleteResultResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.CircuitResetResponse": {
+            "type": "object",
+            "properties": {
+                "reset": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "channel.CreateModelRequest": {
+            "type": "object",
+            "required": [
+                "platformModelName"
+            ],
+            "properties": {
+                "accessScope": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "internal"
+                    ]
+                },
+                "capabilitiesJSON": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "icon": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "kindsJSON": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "platformModelName": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 2
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                },
+                "systemPrompt": {
+                    "type": "string",
+                    "maxLength": 20000
+                },
+                "vendor": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "channel.CreateModelResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.ModelDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.CreateUpstreamRequest": {
+            "type": "object",
+            "required": [
+                "apiKeys",
+                "baseURL",
+                "name"
+            ],
+            "properties": {
+                "apiKeys": {
+                    "type": "string",
+                    "maxLength": 10000,
+                    "minLength": 2
+                },
+                "baseURL": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "cbDurationMin": {
+                    "type": "integer"
+                },
+                "cbFailureThreshold": {
+                    "type": "integer"
+                },
+                "cbModelThreshold": {
+                    "type": "integer"
+                },
+                "cbThresholdLogic": {
+                    "type": "string",
+                    "enum": [
+                        "or",
+                        "and"
+                    ]
+                },
+                "cbWindowMin": {
+                    "type": "integer"
+                },
+                "compatible": {
+                    "type": "string",
+                    "enum": [
+                        "openai",
+                        "anthropic",
+                        "google",
+                        "xai",
+                        "openrouter",
+                        "custom"
+                    ]
+                },
+                "connectTimeoutMS": {
+                    "type": "integer"
+                },
+                "headersJSON": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 2
+                },
+                "protocolDefaultsJSON": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "readTimeoutMS": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                },
+                "streamIdleTimeoutMS": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.CreateUpstreamResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.UpstreamDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.ErrorDoc": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "details": {},
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.ImportUpstreamModelItemRequest": {
+            "type": "object",
+            "required": [
+                "platformModelName",
+                "upstreamModelName"
+            ],
+            "properties": {
+                "kindsJSON": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "platformModelName": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 2
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "protocols": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                },
+                "upstreamModelName": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1
+                }
+            }
+        },
+        "channel.ImportUpstreamModelResultResponse": {
+            "type": "object",
+            "properties": {
+                "bindingCode": {
+                    "type": "string"
+                },
+                "createdPlatform": {
+                    "type": "boolean"
+                },
+                "createdRoute": {
+                    "type": "boolean"
+                },
+                "createdRoutes": {
+                    "type": "integer"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "existingRoutes": {
+                    "type": "integer"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "protocols": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.ImportUpstreamModelsRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/channel.ImportUpstreamModelItemRequest"
+                    }
+                }
+            }
+        },
+        "channel.ImportUpstreamModelsResponse": {
+            "type": "object",
+            "properties": {
+                "createdPlatform": {
+                    "type": "integer"
+                },
+                "createdRoutes": {
+                    "type": "integer"
+                },
+                "existingRoutes": {
+                    "type": "integer"
+                },
+                "failedCount": {
+                    "type": "integer"
+                },
+                "importedCount": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/channel.ImportUpstreamModelResultResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.ImportUpstreamModelsResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.ImportUpstreamModelsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.ModelDataResponse": {
+            "type": "object",
+            "properties": {
+                "model": {
+                    "$ref": "#/definitions/channel.ModelResponse"
+                }
+            }
+        },
+        "channel.ModelListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/channel.ModelResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.ModelProbeBatchResponse": {
+            "type": "object",
+            "properties": {
+                "failedCount": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/channel.ModelProbeResponse"
+                    }
+                },
+                "successCount": {
+                    "type": "integer"
+                },
+                "totalCount": {
+                    "type": "integer"
+                },
+                "unsupportedCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.ModelProbeBatchResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.ModelProbeBatchResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.ModelProbeDebugRequestResponse": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "method": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.ModelProbeDebugResponse": {
+            "type": "object",
+            "properties": {
+                "request": {
+                    "$ref": "#/definitions/channel.ModelProbeDebugRequestResponse"
+                },
+                "response": {
+                    "$ref": "#/definitions/channel.ModelProbeDebugResponseResponse"
+                }
+            }
+        },
+        "channel.ModelProbeDebugResponseResponse": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "statusCode": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.ModelProbeRequest": {
+            "type": "object",
+            "properties": {
+                "taskType": {
+                    "type": "string",
+                    "enum": [
+                        "chat",
+                        "image_generation",
+                        "image_edit"
+                    ]
+                }
+            }
+        },
+        "channel.ModelProbeResponse": {
+            "type": "object",
+            "properties": {
+                "bindingCode": {
+                    "type": "string"
+                },
+                "debug": {
+                    "$ref": "#/definitions/channel.ModelProbeDebugResponse"
+                },
+                "endpoint": {
+                    "type": "string"
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "latencyMS": {
+                    "type": "integer"
+                },
+                "platformModelID": {
+                    "type": "integer"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "routeID": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "upstreamID": {
+                    "type": "integer"
+                },
+                "upstreamModelID": {
+                    "type": "integer"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                },
+                "upstreamName": {
+                    "type": "string"
+                },
+                "upstreamStatusCode": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.ModelProbeResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.ModelProbeResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.ModelResponse": {
+            "type": "object",
+            "properties": {
+                "accessScope": {
+                    "type": "string"
+                },
+                "activeSourceCount": {
+                    "type": "integer"
+                },
+                "capabilitiesJSON": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kindsJSON": {
+                    "type": "string"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "protocolsJSON": {
+                    "type": "string"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "sourceCount": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systemPrompt": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "vendor": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.ModelUpstreamSourceDataResponse": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "$ref": "#/definitions/channel.ModelUpstreamSourceResponse"
+                }
+            }
+        },
+        "channel.ModelUpstreamSourceListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/channel.ModelUpstreamSourceResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.ModelUpstreamSourceResponse": {
+            "type": "object",
+            "properties": {
+                "baseURL": {
+                    "type": "string"
+                },
+                "bindingCode": {
+                    "type": "string"
+                },
+                "circuitOpen": {
+                    "type": "boolean"
+                },
+                "circuitUntil": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "headersJSON": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "suggestedProtocol": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamID": {
+                    "type": "integer"
+                },
+                "upstreamModelIcon": {
+                    "type": "string"
+                },
+                "upstreamModelKindsJSON": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                },
+                "upstreamModelStatus": {
+                    "type": "string"
+                },
+                "upstreamModelVendor": {
+                    "type": "string"
+                },
+                "upstreamName": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.PublicModelListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/channel.PublicModelResponse"
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.PublicModelPricingResponse": {
+            "type": "object",
+            "properties": {
+                "cacheReadUSDPerMTokens": {
+                    "type": "number"
+                },
+                "cacheWriteUSDPerMTokens": {
+                    "type": "number"
+                },
+                "callUSDPerCall": {
+                    "type": "number"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "durationUSDPerSecond": {
+                    "type": "number"
+                },
+                "inputUSDPerMTokens": {
+                    "type": "number"
+                },
+                "isFree": {
+                    "type": "boolean"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "outputUSDPerMTokens": {
+                    "type": "number"
+                },
+                "tiers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/channel.PublicModelPricingTierResponse"
+                    }
+                }
+            }
+        },
+        "channel.PublicModelPricingTierResponse": {
+            "type": "object",
+            "properties": {
+                "cacheReadUSDPerMTokens": {
+                    "type": "number"
+                },
+                "cacheWriteUSDPerMTokens": {
+                    "type": "number"
+                },
+                "fromTokens": {
+                    "type": "integer"
+                },
+                "inputUSDPerMTokens": {
+                    "type": "number"
+                },
+                "outputUSDPerMTokens": {
+                    "type": "number"
+                },
+                "upToTokens": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.PublicModelResponse": {
+            "type": "object",
+            "properties": {
+                "capabilitiesJSON": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "kindsJSON": {
+                    "type": "string"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "pricing": {
+                    "$ref": "#/definitions/channel.PublicModelPricingResponse"
+                },
+                "protocolsJSON": {
+                    "type": "string"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "vendor": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.ReorderModelsRequest": {
+            "type": "object",
+            "required": [
+                "modelIDs"
+            ],
+            "properties": {
+                "modelIDs": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "channel.ResetUpstreamCircuitResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.CircuitResetResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.SyncUpstreamModelsResponse": {
+            "type": "object",
+            "properties": {
+                "createdUpstreamModels": {
+                    "type": "integer"
+                },
+                "existingUpstreamModels": {
+                    "type": "integer"
+                },
+                "inactivatedModels": {
+                    "type": "integer"
+                },
+                "skippedUpstreamModels": {
+                    "type": "integer"
+                },
+                "syncedModels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/channel.UpstreamSyncModelResponse"
+                    }
+                },
+                "totalUpstream": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.SyncUpstreamModelsResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.SyncUpstreamModelsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.UpdateModelRequest": {
+            "type": "object",
+            "properties": {
+                "accessScope": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "internal"
+                    ]
+                },
+                "capabilitiesJSON": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "icon": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "kindsJSON": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "platformModelName": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 2
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                },
+                "systemPrompt": {
+                    "type": "string",
+                    "maxLength": 20000
+                },
+                "vendor": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "channel.UpdateModelResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.ModelDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.UpdateModelUpstreamSourceRequest": {
+            "type": "object",
+            "properties": {
+                "priority": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                },
+                "weight": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.UpdateModelUpstreamSourceResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.ModelUpstreamSourceDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.UpdateUpstreamRequest": {
+            "type": "object",
+            "properties": {
+                "addAPIKeys": {
+                    "type": "string",
+                    "maxLength": 10000,
+                    "minLength": 2
+                },
+                "apiKeys": {
+                    "type": "string",
+                    "maxLength": 10000,
+                    "minLength": 2
+                },
+                "baseURL": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "cbDurationMin": {
+                    "type": "integer"
+                },
+                "cbFailureThreshold": {
+                    "type": "integer"
+                },
+                "cbModelThreshold": {
+                    "type": "integer"
+                },
+                "cbThresholdLogic": {
+                    "type": "string",
+                    "enum": [
+                        "or",
+                        "and"
+                    ]
+                },
+                "cbWindowMin": {
+                    "type": "integer"
+                },
+                "compatible": {
+                    "type": "string",
+                    "enum": [
+                        "openai",
+                        "anthropic",
+                        "google",
+                        "xai",
+                        "openrouter",
+                        "custom"
+                    ]
+                },
+                "connectTimeoutMS": {
+                    "type": "integer"
+                },
+                "deleteAPIKeyIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "headersJSON": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 2
+                },
+                "protocolDefaultsJSON": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "readTimeoutMS": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                },
+                "streamIdleTimeoutMS": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.UpdateUpstreamResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.UpstreamDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.UpsertUpstreamModelRequest": {
+            "type": "object",
+            "required": [
+                "platformModelName",
+                "upstreamModelName"
+            ],
+            "properties": {
+                "cbDurationMin": {
+                    "type": "integer"
+                },
+                "cbFailureThreshold": {
+                    "type": "integer"
+                },
+                "cbWindowMin": {
+                    "type": "integer"
+                },
+                "headersJSON": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "kindsJSON": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "platformModelName": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 2
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "routeID": {
+                    "type": "integer"
+                },
+                "source": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                },
+                "upstreamModelName": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1
+                },
+                "weight": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.UpsertUpstreamModelResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.UpstreamModelDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.UpstreamAPIKeyResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "keyMasked": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.UpstreamDataResponse": {
+            "type": "object",
+            "properties": {
+                "upstream": {
+                    "$ref": "#/definitions/channel.UpstreamResponse"
+                }
+            }
+        },
+        "channel.UpstreamListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/channel.UpstreamResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.UpstreamModelDataResponse": {
+            "type": "object",
+            "properties": {
+                "binding": {
+                    "$ref": "#/definitions/channel.UpstreamModelResponse"
+                }
+            }
+        },
+        "channel.UpstreamModelListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/channel.UpstreamModelResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.UpstreamModelResponse": {
+            "type": "object",
+            "properties": {
+                "bindingCode": {
+                    "type": "string"
+                },
+                "cbDurationMin": {
+                    "type": "integer"
+                },
+                "cbFailureThreshold": {
+                    "type": "integer"
+                },
+                "cbWindowMin": {
+                    "type": "integer"
+                },
+                "circuitOpen": {
+                    "type": "boolean"
+                },
+                "circuitUntil": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "headersJSON": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelKindsJSON": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "platformModelID": {
+                    "type": "integer"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "routeID": {
+                    "type": "integer"
+                },
+                "routeStatus": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "suggestedProtocol": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamID": {
+                    "type": "integer"
+                },
+                "upstreamModelIcon": {
+                    "type": "string"
+                },
+                "upstreamModelKindsJSON": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                },
+                "upstreamModelStatus": {
+                    "type": "string"
+                },
+                "upstreamModelVendor": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.UpstreamRemoteModelResponse": {
+            "type": "object",
+            "properties": {
+                "alreadyBound": {
+                    "type": "boolean"
+                },
+                "alreadySynced": {
+                    "type": "boolean"
+                },
+                "bindingCode": {
+                    "type": "string"
+                },
+                "boundPlatformModels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "suggestedKindsJSON": {
+                    "type": "string"
+                },
+                "suggestedPlatformModelName": {
+                    "type": "string"
+                },
+                "suggestedProtocol": {
+                    "type": "string"
+                },
+                "suggestedProtocols": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                },
+                "upstreamModelStatus": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.UpstreamRemoteModelsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/channel.UpstreamRemoteModelResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "channel.UpstreamRemoteModelsResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/channel.UpstreamRemoteModelsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.UpstreamResponse": {
+            "type": "object",
+            "properties": {
+                "activeModelsCount": {
+                    "type": "integer"
+                },
+                "apiKeyItems": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/channel.UpstreamAPIKeyResponse"
+                    }
+                },
+                "apiKeysMasked": {
+                    "type": "string"
+                },
+                "baseURL": {
+                    "type": "string"
+                },
+                "cbDurationMin": {
+                    "type": "integer"
+                },
+                "cbFailureThreshold": {
+                    "type": "integer"
+                },
+                "cbModelThreshold": {
+                    "type": "integer"
+                },
+                "cbThresholdLogic": {
+                    "type": "string"
+                },
+                "cbWindowMin": {
+                    "type": "integer"
+                },
+                "circuitOpen": {
+                    "type": "boolean"
+                },
+                "circuitUntil": {
+                    "type": "string"
+                },
+                "compatible": {
+                    "type": "string"
+                },
+                "connectTimeoutMS": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "headersJSON": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "modelsCount": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "protocolDefaultsJSON": {
+                    "type": "string"
+                },
+                "readTimeoutMS": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "streamIdleTimeoutMS": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "channel.UpstreamSyncModelResponse": {
+            "type": "object",
+            "properties": {
+                "bindingCode": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "boolean"
+                },
+                "kindsJSON": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "suggestedProtocol": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.BatchSetConversationProjectRequest": {
+            "type": "object",
+            "required": [
+                "conversationPublicIDs"
+            ],
+            "properties": {
+                "conversationPublicIDs": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "projectID": {
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "conversation.BatchSetConversationProjectResponse": {
+            "type": "object",
+            "properties": {
+                "updated": {
+                    "type": "integer"
+                }
+            }
+        },
+        "conversation.BatchSetConversationProjectResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.BatchSetConversationProjectResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ContextArtifactResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "messageID": {
+                    "type": "integer"
+                },
+                "metadataJSON": {
+                    "type": "string"
+                },
+                "runID": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "sourceID": {
+                    "type": "string"
+                },
+                "sourceTitle": {
+                    "type": "string"
+                },
+                "sourceType": {
+                    "type": "string"
+                },
+                "tokenEstimate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "conversation.ContextArtifactResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.ContextArtifactResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationArchiveAttachmentDoc": {
             "type": "object",
             "properties": {
                 "detectedMIME": {
@@ -7882,13 +10972,39 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMessage": {
+        "conversation.ConversationArchiveDoc": {
+            "type": "object",
+            "properties": {
+                "conversation": {
+                    "$ref": "#/definitions/conversation.ConversationArchiveMetadataDoc"
+                },
+                "exportedAt": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/conversation.ConversationArchiveMessageDoc"
+                    }
+                },
+                "runs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/conversation.ConversationArchiveRunDoc"
+                    }
+                },
+                "schema": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationArchiveMessageDoc": {
             "type": "object",
             "properties": {
                 "attachments": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveAttachment"
+                        "$ref": "#/definitions/conversation.ConversationArchiveAttachmentDoc"
                     }
                 },
                 "branchReason": {
@@ -7931,7 +11047,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "processTrace": {
-                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveProcessTrace"
+                    "$ref": "#/definitions/conversation.ConversationArchiveProcessTraceDoc"
                 },
                 "reasoningTokens": {
                     "type": "integer"
@@ -7956,7 +11072,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMetadata": {
+        "conversation.ConversationArchiveMetadataDoc": {
             "type": "object",
             "properties": {
                 "contextPolicyJSON": {
@@ -7997,7 +11113,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveProcessTrace": {
+        "conversation.ConversationArchiveProcessTraceDoc": {
             "type": "object",
             "properties": {
                 "enabled": {
@@ -8006,27 +11122,27 @@ const docTemplate = `{
                 "events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceEvent"
+                        "$ref": "#/definitions/conversation.ConversationArchiveTraceEventDoc"
                     }
                 },
                 "process": {
-                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceBlock"
+                    "$ref": "#/definitions/conversation.ConversationArchiveTraceBlockDoc"
                 },
                 "promptTrace": {
-                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptTrace"
+                    "$ref": "#/definitions/conversation.ConversationArchivePromptTraceDoc"
                 },
                 "status": {
                     "type": "string"
                 },
                 "tools": {
-                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceBlock"
+                    "$ref": "#/definitions/conversation.ConversationArchiveTraceBlockDoc"
                 },
                 "upstreamThink": {
-                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceBlock"
+                    "$ref": "#/definitions/conversation.ConversationArchiveTraceBlockDoc"
                 }
             }
         },
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptBlock": {
+        "conversation.ConversationArchivePromptBlockDoc": {
             "type": "object",
             "properties": {
                 "cacheable": {
@@ -8041,7 +11157,7 @@ const docTemplate = `{
                 "sourceRefs": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptSourceRef"
+                        "$ref": "#/definitions/conversation.ConversationArchivePromptSourceRefDoc"
                     }
                 },
                 "title": {
@@ -8052,7 +11168,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptSourceRef": {
+        "conversation.ConversationArchivePromptSourceRefDoc": {
             "type": "object",
             "properties": {
                 "sourceID": {
@@ -8066,13 +11182,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptTrace": {
+        "conversation.ConversationArchivePromptTraceDoc": {
             "type": "object",
             "properties": {
                 "blocks": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchivePromptBlock"
+                        "$ref": "#/definitions/conversation.ConversationArchivePromptBlockDoc"
                     }
                 },
                 "fullMessageCount": {
@@ -8107,7 +11223,44 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveRun": {
+        "conversation.ConversationArchiveRequest": {
+            "type": "object",
+            "properties": {
+                "conversation": {
+                    "$ref": "#/definitions/conversation.ConversationArchiveMetadataDoc"
+                },
+                "exportedAt": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/conversation.ConversationArchiveMessageDoc"
+                    }
+                },
+                "runs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/conversation.ConversationArchiveRunDoc"
+                    }
+                },
+                "schema": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationArchiveResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.ConversationArchiveDoc"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationArchiveRunDoc": {
             "type": "object",
             "properties": {
                 "cacheReadTokens": {
@@ -8187,7 +11340,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceBlock": {
+        "conversation.ConversationArchiveTraceBlockDoc": {
             "type": "object",
             "properties": {
                 "contentMarkdown": {
@@ -8219,7 +11372,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveTraceEvent": {
+        "conversation.ConversationArchiveTraceEventDoc": {
             "type": "object",
             "properties": {
                 "contentMarkdown": {
@@ -8265,6 +11418,1357 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationCreateResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.ConversationResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationDeleteResponse": {
+            "type": "object",
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                },
+                "deletedFileCount": {
+                    "type": "integer"
+                },
+                "quota": {
+                    "$ref": "#/definitions/conversation.StorageQuotaResponse"
+                }
+            }
+        },
+        "conversation.ConversationDeleteResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.ConversationDeleteResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/conversation.ConversationResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationProjectListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/conversation.ConversationProjectResponse"
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationProjectResponse": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "publicID": {
+                    "type": "string"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systemPrompt": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationProjectResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.ConversationProjectResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationResponse": {
+            "type": "object",
+            "properties": {
+                "contextPolicyJSON": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "isStarred": {
+                    "type": "boolean"
+                },
+                "labelsJSON": {
+                    "type": "string"
+                },
+                "lastCompactedAt": {
+                    "type": "string"
+                },
+                "lastResponseID": {
+                    "type": "string"
+                },
+                "lastShareAccessedAt": {
+                    "type": "string"
+                },
+                "messageCount": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "projectID": {
+                    "type": "string"
+                },
+                "projectName": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "publicID": {
+                    "type": "string"
+                },
+                "sessionKey": {
+                    "type": "string"
+                },
+                "shareID": {
+                    "type": "string"
+                },
+                "shareStatus": {
+                    "type": "string"
+                },
+                "sharedAt": {
+                    "type": "string"
+                },
+                "starredAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "conversation.ConversationRunListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/conversation.RunResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationShareResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "lastAccessedAt": {
+                    "type": "string"
+                },
+                "messageCount": {
+                    "type": "integer"
+                },
+                "modelSnapshot": {
+                    "type": "string"
+                },
+                "revokedAt": {
+                    "type": "string"
+                },
+                "shareID": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "titleSnapshot": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationShareResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.ConversationShareResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ConversationUpdateResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.ConversationResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.CreateConversationProjectRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "color": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "icon": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 80
+                },
+                "systemPrompt": {
+                    "type": "string",
+                    "maxLength": 12000
+                }
+            }
+        },
+        "conversation.CreateConversationRequest": {
+            "type": "object",
+            "properties": {
+                "model": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "projectID": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "conversation.CreateConversationShareRequest": {
+            "type": "object",
+            "properties": {
+                "defaultMessagePublicIDs": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "conversation.DeleteFileResponse": {
+            "type": "object",
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                },
+                "fileID": {
+                    "type": "string"
+                },
+                "quota": {
+                    "$ref": "#/definitions/conversation.StorageQuotaResponse"
+                }
+            }
+        },
+        "conversation.DeleteFileResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.DeleteFileResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.ErrorDoc": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "details": {},
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.FileListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/conversation.FileObjectResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.FileObjectResponse": {
+            "type": "object",
+            "properties": {
+                "chunkCount": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "detectedMIME": {
+                    "type": "string"
+                },
+                "embedError": {
+                    "type": "string"
+                },
+                "embedStatus": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "extractStatus": {
+                    "type": "string"
+                },
+                "fileCategory": {
+                    "type": "string"
+                },
+                "fileID": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "lastAccessedAt": {
+                    "type": "string"
+                },
+                "mimeType": {
+                    "type": "string"
+                },
+                "processingErrorCode": {
+                    "type": "string"
+                },
+                "processingErrorMessage": {
+                    "type": "string"
+                },
+                "processingReady": {
+                    "type": "boolean"
+                },
+                "processingStatus": {
+                    "type": "string"
+                },
+                "purpose": {
+                    "type": "string"
+                },
+                "ragOptOut": {
+                    "type": "boolean"
+                },
+                "sha256": {
+                    "type": "string"
+                },
+                "sizeBytes": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.FileUpdateResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.FileObjectResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.FileUploadResponse": {
+            "type": "object",
+            "properties": {
+                "file": {
+                    "$ref": "#/definitions/conversation.FileObjectResponse"
+                },
+                "quota": {
+                    "$ref": "#/definitions/conversation.StorageQuotaResponse"
+                },
+                "reused": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "conversation.MessageBillingCostResponse": {
+            "type": "object",
+            "properties": {
+                "billedCurrency": {
+                    "type": "string"
+                },
+                "billedNanousd": {
+                    "type": "integer"
+                },
+                "billedUSD": {
+                    "type": "number"
+                },
+                "billingMode": {
+                    "type": "string"
+                },
+                "pricingSnapshotJSON": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.MessageFeedbackResponse": {
+            "type": "object",
+            "properties": {
+                "messageID": {
+                    "type": "integer"
+                },
+                "messagePublicID": {
+                    "type": "string"
+                },
+                "myFeedback": {
+                    "type": "string"
+                },
+                "thumbsDownCount": {
+                    "type": "integer"
+                },
+                "thumbsUpCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "conversation.MessageFeedbackResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.MessageFeedbackResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.MessageListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/conversation.MessageResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.MessageProcessTraceResponse": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/conversation.MessageTraceEventResponse"
+                    }
+                },
+                "process": {
+                    "$ref": "#/definitions/conversation.MessageTraceBlockResponse"
+                },
+                "promptTrace": {
+                    "$ref": "#/definitions/conversation.MessagePromptTraceResponse"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tools": {
+                    "$ref": "#/definitions/conversation.MessageTraceBlockResponse"
+                },
+                "upstreamThink": {
+                    "$ref": "#/definitions/conversation.MessageTraceBlockResponse"
+                }
+            }
+        },
+        "conversation.MessagePromptTraceBlockResponse": {
+            "type": "object",
+            "properties": {
+                "cacheable": {
+                    "type": "boolean"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "sourceCount": {
+                    "type": "integer"
+                },
+                "sourceRefs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/conversation.MessagePromptTraceSourceResponse"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tokenEstimate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "conversation.MessagePromptTraceResponse": {
+            "type": "object",
+            "properties": {
+                "blocks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/conversation.MessagePromptTraceBlockResponse"
+                    }
+                },
+                "fullMessageCount": {
+                    "type": "integer"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "promptFingerprint": {
+                    "type": "string"
+                },
+                "sentMessageCount": {
+                    "type": "integer"
+                },
+                "sentTokenEstimate": {
+                    "type": "integer"
+                },
+                "statefulDisabledReason": {
+                    "type": "string"
+                },
+                "statefulSavedMessages": {
+                    "type": "integer"
+                },
+                "statefulSavedTokens": {
+                    "type": "integer"
+                },
+                "statefulUsed": {
+                    "type": "boolean"
+                },
+                "totalTokenEstimate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "conversation.MessagePromptTraceSourceResponse": {
+            "type": "object",
+            "properties": {
+                "artifactID": {
+                    "type": "integer"
+                },
+                "sourceID": {
+                    "type": "string"
+                },
+                "sourceType": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "attachments": {
+                    "type": "string"
+                },
+                "billingCost": {
+                    "$ref": "#/definitions/conversation.MessageBillingCostResponse"
+                },
+                "branchReason": {
+                    "type": "string"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "conversationID": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "latencyMS": {
+                    "type": "integer"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "myFeedback": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "parentMessageID": {
+                    "type": "integer"
+                },
+                "parentPublicID": {
+                    "type": "string"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "processTrace": {
+                    "$ref": "#/definitions/conversation.MessageProcessTraceResponse"
+                },
+                "publicID": {
+                    "type": "string"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "runID": {
+                    "type": "string"
+                },
+                "sourceMessageID": {
+                    "type": "integer"
+                },
+                "sourcePublicID": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "thumbsDownCount": {
+                    "type": "integer"
+                },
+                "thumbsUpCount": {
+                    "type": "integer"
+                },
+                "tokenUsage": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "conversation.MessageTraceBlockResponse": {
+            "type": "object",
+            "properties": {
+                "contentMarkdown": {
+                    "type": "string"
+                },
+                "parentEventID": {
+                    "type": "string"
+                },
+                "payloadJSON": {
+                    "type": "string"
+                },
+                "roundID": {
+                    "type": "string"
+                },
+                "stage": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.MessageTraceEventResponse": {
+            "type": "object",
+            "properties": {
+                "contentMarkdown": {
+                    "type": "string"
+                },
+                "endedAt": {
+                    "type": "string"
+                },
+                "eventID": {
+                    "type": "string"
+                },
+                "eventType": {
+                    "type": "string"
+                },
+                "parentEventID": {
+                    "type": "string"
+                },
+                "payloadJSON": {
+                    "type": "string"
+                },
+                "phase": {
+                    "type": "string"
+                },
+                "roundID": {
+                    "type": "string"
+                },
+                "seq": {
+                    "type": "integer"
+                },
+                "stage": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.PublicSharedConversationResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "defaultMessagePublicIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "lastAccessedAt": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/conversation.PublicSharedMessageResponse"
+                    }
+                },
+                "model": {
+                    "type": "string"
+                },
+                "shareID": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.PublicSharedConversationResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.PublicSharedConversationResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.PublicSharedMessageResponse": {
+            "type": "object",
+            "properties": {
+                "attachments": {
+                    "type": "string"
+                },
+                "branchReason": {
+                    "type": "string"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "latencyMS": {
+                    "type": "integer"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "parentPublicID": {
+                    "type": "string"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "processTrace": {
+                    "$ref": "#/definitions/conversation.MessageProcessTraceResponse"
+                },
+                "publicID": {
+                    "type": "string"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "runID": {
+                    "type": "string"
+                },
+                "sourcePublicID": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tokenUsage": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.RenameConversationRequest": {
+            "type": "object",
+            "required": [
+                "title"
+            ],
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "conversation.ReorderConversationProjectsRequest": {
+            "type": "object",
+            "required": [
+                "projectIDs"
+            ],
+            "properties": {
+                "projectIDs": {
+                    "type": "array",
+                    "maxItems": 200,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "conversation.RevokeConversationSharesRequest": {
+            "type": "object",
+            "properties": {
+                "conversationPublicIDs": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "conversation.RevokeConversationSharesResponse": {
+            "type": "object",
+            "properties": {
+                "revoked": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "conversation.RevokeConversationSharesResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.RevokeConversationSharesResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.RunResponse": {
+            "type": "object",
+            "properties": {
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "conversationID": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "endedAt": {
+                    "type": "string"
+                },
+                "endpoint": {
+                    "type": "string"
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "firstTokenLatencyMS": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "providerProtocol": {
+                    "type": "string"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "requestID": {
+                    "type": "string"
+                },
+                "requestedModelName": {
+                    "type": "string"
+                },
+                "routedBindingCode": {
+                    "type": "string"
+                },
+                "runID": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "taskType": {
+                    "type": "string"
+                },
+                "toolCallsCount": {
+                    "type": "integer"
+                },
+                "totalLatencyMS": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamID": {
+                    "type": "integer"
+                },
+                "upstreamModelID": {
+                    "type": "integer"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "conversation.SendMessageRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "contentType"
+            ],
+            "properties": {
+                "branchReason": {
+                    "type": "string",
+                    "enum": [
+                        "default",
+                        "retry",
+                        "edit"
+                    ]
+                },
+                "clientRunID": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "content": {
+                    "type": "string",
+                    "maxLength": 20000
+                },
+                "contentType": {
+                    "type": "string",
+                    "enum": [
+                        "text",
+                        "markdown",
+                        "image",
+                        "file",
+                        "mixed"
+                    ]
+                },
+                "fileIDs": {
+                    "type": "array",
+                    "maxItems": 20,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "htmlVisualPrompt": {
+                    "type": "boolean"
+                },
+                "model": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "options": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "parentMessagePublicID": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "selectedToolIDs": {
+                    "type": "array",
+                    "maxItems": 128,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "sourceMessagePublicID": {
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "conversation.SendMessageResponse": {
+            "type": "object",
+            "properties": {
+                "assistantMessage": {
+                    "$ref": "#/definitions/conversation.MessageResponse"
+                },
+                "userMessage": {
+                    "$ref": "#/definitions/conversation.MessageResponse"
+                }
+            }
+        },
+        "conversation.SendMessageResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.SendMessageResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "conversation.SetConversationArchiveRequest": {
+            "type": "object",
+            "properties": {
+                "archived": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "conversation.SetConversationProjectRequest": {
+            "type": "object",
+            "properties": {
+                "projectID": {
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "conversation.SetConversationStarRequest": {
+            "type": "object",
+            "properties": {
+                "starred": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "conversation.SetMessageFeedbackRequest": {
+            "type": "object",
+            "properties": {
+                "feedback": {
+                    "type": "string",
+                    "enum": [
+                        "up",
+                        "down"
+                    ]
+                }
+            }
+        },
+        "conversation.StorageQuotaResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "quotaBytes": {
+                    "type": "integer"
+                },
+                "reservedBytes": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "usedBytes": {
+                    "type": "integer"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "conversation.UpdateConversationProjectRequest": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "icon": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 80
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "archived"
+                    ]
+                },
+                "systemPrompt": {
+                    "type": "string",
+                    "maxLength": 12000
+                }
+            }
+        },
+        "conversation.UpdateFileRequest": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "ragOptOut": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "conversation.UploadFileResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/conversation.FileUploadResponse"
+                },
+                "errorMsg": {
                     "type": "string"
                 }
             }
@@ -9969,4430 +14473,6 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_billing.BatchDeleteRedemptionCodeDataResponse": {
-            "type": "object",
-            "properties": {
-                "failedCount": {
-                    "type": "integer"
-                },
-                "notFoundCount": {
-                    "type": "integer"
-                },
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.BatchDeleteRedemptionCodeResultResponse"
-                    }
-                },
-                "successCount": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.BatchDeleteRedemptionCodeRequest": {
-            "type": "object",
-            "required": [
-                "ids"
-            ],
-            "properties": {
-                "ids": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_billing.BatchDeleteRedemptionCodeResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BatchDeleteRedemptionCodeDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.BatchDeleteRedemptionCodeResultResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingAccountDataResponse": {
-            "type": "object",
-            "properties": {
-                "account": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingAccountResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingAccountResponse": {
-            "type": "object",
-            "properties": {
-                "balanceNanousd": {
-                    "type": "integer"
-                },
-                "balanceUSD": {
-                    "type": "number"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingAccountResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingAccountDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingConfigDataResponse": {
-            "type": "object",
-            "properties": {
-                "config": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingConfigResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingConfigRequest": {
-            "type": "object",
-            "required": [
-                "mode"
-            ],
-            "properties": {
-                "freeModelDailyLimit": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "freeModelRateLimitExemptModels": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "freeModelRateLimitRPM": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "mode": {
-                    "type": "string",
-                    "enum": [
-                        "self",
-                        "period",
-                        "usage"
-                    ]
-                },
-                "nativeToolBillingEnabled": {
-                    "type": "boolean"
-                },
-                "nativeToolPricing": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.NativeToolPricingRequest"
-                    }
-                },
-                "prepaidAmountUSD": {
-                    "type": "number",
-                    "minimum": 0
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingConfigResponse": {
-            "type": "object",
-            "properties": {
-                "epayTypes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.PaymentTypeResponse"
-                    }
-                },
-                "freeModelDailyLimit": {
-                    "type": "integer"
-                },
-                "freeModelRateLimitExemptModels": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "freeModelRateLimitRPM": {
-                    "type": "integer"
-                },
-                "mode": {
-                    "type": "string"
-                },
-                "nativeToolBillingEnabled": {
-                    "type": "boolean"
-                },
-                "nativeToolPricing": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.NativeToolPricingResponse"
-                    }
-                },
-                "paymentProviders": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "prepaidAmountNanousd": {
-                    "type": "integer"
-                },
-                "prepaidAmountUSD": {
-                    "type": "number"
-                },
-                "usdToCNYRate": {
-                    "type": "number"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingConfigResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingConfigDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingOverviewDataResponse": {
-            "type": "object",
-            "properties": {
-                "overview": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingOverviewResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingOverviewResponse": {
-            "type": "object",
-            "properties": {
-                "account": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingAccountResponse"
-                },
-                "mode": {
-                    "type": "string"
-                },
-                "periodCreditNanousd": {
-                    "type": "integer"
-                },
-                "periodCreditUSD": {
-                    "type": "number"
-                },
-                "periodEndAt": {
-                    "type": "string"
-                },
-                "periodRemainingNanousd": {
-                    "type": "integer"
-                },
-                "periodRemainingUSD": {
-                    "type": "number"
-                },
-                "periodStartAt": {
-                    "type": "string"
-                },
-                "periodUsedNanousd": {
-                    "type": "integer"
-                },
-                "periodUsedUSD": {
-                    "type": "number"
-                },
-                "plan": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingPlanResponse"
-                },
-                "subscriptionEntitlements": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.SubscriptionEntitlementResponse"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingOverviewResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingOverviewDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingPlanDataResponse": {
-            "type": "object",
-            "properties": {
-                "plan": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingPlanResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingPlanResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "discountPercent": {
-                    "type": "integer"
-                },
-                "featureJSON": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "isActive": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "periodCreditNanousd": {
-                    "type": "integer"
-                },
-                "periodCreditUSD": {
-                    "type": "number"
-                },
-                "prices": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.BillingPriceResponse"
-                    }
-                },
-                "sortOrder": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingPlanResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingPlanDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.BillingPriceResponse": {
-            "type": "object",
-            "properties": {
-                "amountCents": {
-                    "type": "integer"
-                },
-                "billingInterval": {
-                    "type": "string"
-                },
-                "code": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "isDefault": {
-                    "type": "boolean"
-                },
-                "planID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.CheckoutDataResponse": {
-            "type": "object",
-            "properties": {
-                "checkout": {
-                    "$ref": "#/definitions/internal_transport_http_billing.CheckoutResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.CheckoutResponse": {
-            "type": "object",
-            "properties": {
-                "baseAmountCents": {
-                    "type": "integer"
-                },
-                "baseCurrency": {
-                    "type": "string"
-                },
-                "checkoutURL": {
-                    "type": "string"
-                },
-                "creditNanousd": {
-                    "type": "integer"
-                },
-                "creditUSD": {
-                    "type": "number"
-                },
-                "expiredAt": {
-                    "type": "string"
-                },
-                "externalCheckoutID": {
-                    "type": "string"
-                },
-                "fxRate": {
-                    "type": "string"
-                },
-                "orderNo": {
-                    "type": "string"
-                },
-                "orderType": {
-                    "type": "string"
-                },
-                "payAmountCents": {
-                    "type": "integer"
-                },
-                "payCurrency": {
-                    "type": "string"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.CheckoutResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.CheckoutDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.CreateCheckoutRequest": {
-            "type": "object",
-            "properties": {
-                "amountUSD": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "cancelURL": {
-                    "type": "string",
-                    "maxLength": 512
-                },
-                "cycles": {
-                    "type": "integer",
-                    "maximum": 120,
-                    "minimum": 1
-                },
-                "epayType": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "orderType": {
-                    "type": "string",
-                    "enum": [
-                        "subscription",
-                        "topup"
-                    ]
-                },
-                "paymentProvider": {
-                    "type": "string",
-                    "enum": [
-                        "stripe",
-                        "epay"
-                    ]
-                },
-                "priceID": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "successURL": {
-                    "type": "string",
-                    "maxLength": 512
-                }
-            }
-        },
-        "internal_transport_http_billing.CreateRedemptionCodeRequest": {
-            "type": "object",
-            "required": [
-                "mode"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 3
-                },
-                "creditUSD": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "durationDays": {
-                    "type": "integer",
-                    "maximum": 3660,
-                    "minimum": 0
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "maxRedemptions": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "mode": {
-                    "type": "string",
-                    "enum": [
-                        "usage",
-                        "period"
-                    ]
-                },
-                "perUserLimit": {
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 1
-                },
-                "planID": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "quantity": {
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 1
-                }
-            }
-        },
-        "internal_transport_http_billing.ErrorDoc": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "details": {},
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMsg": {
-                    "type": "string"
-                },
-                "requestId": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.ModelPricingDataResponse": {
-            "type": "object",
-            "properties": {
-                "modelPricing": {
-                    "$ref": "#/definitions/internal_transport_http_billing.ModelPricingResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.ModelPricingListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_billing.ModelPricingResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.ModelPricingResponse": {
-            "type": "object",
-            "properties": {
-                "cacheReadNanousdPerMTokens": {
-                    "type": "integer"
-                },
-                "cacheReadUSDPerMTokens": {
-                    "type": "number"
-                },
-                "cacheWriteNanousdPerMTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteUSDPerMTokens": {
-                    "type": "number"
-                },
-                "callNanousdPerCall": {
-                    "type": "integer"
-                },
-                "callUSDPerCall": {
-                    "type": "number"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "durationNanousdPerSecond": {
-                    "type": "integer"
-                },
-                "durationUSDPerSecond": {
-                    "type": "number"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "inputNanousdPerMTokens": {
-                    "type": "integer"
-                },
-                "inputUSDPerMTokens": {
-                    "type": "number"
-                },
-                "isFree": {
-                    "type": "boolean"
-                },
-                "modelIcon": {
-                    "type": "string"
-                },
-                "modelVendor": {
-                    "type": "string"
-                },
-                "outputNanousdPerMTokens": {
-                    "type": "integer"
-                },
-                "outputUSDPerMTokens": {
-                    "type": "number"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "pricingMode": {
-                    "type": "string"
-                },
-                "tieredPricingJSON": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.NativeToolPricingRequest": {
-            "type": "object",
-            "required": [
-                "toolKey"
-            ],
-            "properties": {
-                "priceUSD": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "toolKey": {
-                    "type": "string",
-                    "maxLength": 128
-                }
-            }
-        },
-        "internal_transport_http_billing.NativeToolPricingResponse": {
-            "type": "object",
-            "properties": {
-                "billable": {
-                    "type": "boolean"
-                },
-                "customized": {
-                    "type": "boolean"
-                },
-                "defaultPriceNanousd": {
-                    "type": "integer"
-                },
-                "defaultPriceUSD": {
-                    "type": "number"
-                },
-                "priceLabel": {
-                    "type": "string"
-                },
-                "priceNanousd": {
-                    "type": "integer"
-                },
-                "priceUSD": {
-                    "type": "number"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "toolKey": {
-                    "type": "string"
-                },
-                "unit": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.PatchRedemptionCodeRequestDoc": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "maxRedemptions": {
-                    "type": "integer"
-                },
-                "perUserLimit": {
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 1
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                }
-            }
-        },
-        "internal_transport_http_billing.PaymentTypeResponse": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.PlanListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.BillingPlanResponse"
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedeemCodeRequest": {
-            "type": "object",
-            "required": [
-                "code"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 3
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionApplyDataResponse": {
-            "type": "object",
-            "properties": {
-                "account": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingAccountResponse"
-                },
-                "overview": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingOverviewResponse"
-                },
-                "redemption": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionResponse"
-                },
-                "subscription": {
-                    "$ref": "#/definitions/internal_transport_http_billing.SubscriptionResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionApplyResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionApplyDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeCreateDataResponse": {
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeResponse"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeCreateResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeCreateDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeDataResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeDeleteDataResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeDeleteResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeDeleteDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeListDataResponse": {
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeResponse"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeListDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "codeHint": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "createdByUserID": {
-                    "type": "integer"
-                },
-                "creditNanousd": {
-                    "type": "integer"
-                },
-                "creditUSD": {
-                    "type": "number"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "durationDays": {
-                    "type": "integer"
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "maxRedemptions": {
-                    "type": "integer"
-                },
-                "mode": {
-                    "type": "string"
-                },
-                "perUserLimit": {
-                    "type": "integer"
-                },
-                "planID": {
-                    "type": "integer"
-                },
-                "redeemedCount": {
-                    "type": "integer"
-                },
-                "remainingRedemptions": {
-                    "type": "integer"
-                },
-                "rewardType": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionResponse": {
-            "type": "object",
-            "properties": {
-                "balanceTransactionID": {
-                    "type": "integer"
-                },
-                "codeID": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "creditNanousd": {
-                    "type": "integer"
-                },
-                "creditUSD": {
-                    "type": "number"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "mode": {
-                    "type": "string"
-                },
-                "planID": {
-                    "type": "integer"
-                },
-                "rewardType": {
-                    "type": "string"
-                },
-                "subscriptionID": {
-                    "type": "integer"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.SubscribeRequest": {
-            "type": "object",
-            "required": [
-                "priceID"
-            ],
-            "properties": {
-                "cycles": {
-                    "type": "integer",
-                    "maximum": 120,
-                    "minimum": 1
-                },
-                "priceID": {
-                    "type": "integer",
-                    "minimum": 1
-                }
-            }
-        },
-        "internal_transport_http_billing.SubscribeResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.SubscriptionDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.SubscriptionDataResponse": {
-            "type": "object",
-            "properties": {
-                "subscription": {
-                    "$ref": "#/definitions/internal_transport_http_billing.SubscriptionResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.SubscriptionEntitlementResponse": {
-            "type": "object",
-            "properties": {
-                "autoRenew": {
-                    "type": "boolean"
-                },
-                "cancelAtPeriodEnd": {
-                    "type": "boolean"
-                },
-                "currentPeriodEndAt": {
-                    "type": "string"
-                },
-                "currentPeriodStartAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "isCurrent": {
-                    "type": "boolean"
-                },
-                "plan": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingPlanResponse"
-                },
-                "planID": {
-                    "type": "integer"
-                },
-                "priceID": {
-                    "type": "integer"
-                },
-                "startAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.SubscriptionResponse": {
-            "type": "object",
-            "properties": {
-                "autoRenew": {
-                    "type": "boolean"
-                },
-                "cancelAtPeriodEnd": {
-                    "type": "boolean"
-                },
-                "currentPeriodEndAt": {
-                    "type": "string"
-                },
-                "currentPeriodStartAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "planID": {
-                    "type": "integer"
-                },
-                "priceID": {
-                    "type": "integer"
-                },
-                "startAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.UpdateBillingAccountBalanceRequest": {
-            "type": "object",
-            "properties": {
-                "balanceUSD": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 255
-                }
-            }
-        },
-        "internal_transport_http_billing.UpdateBillingPlanRequest": {
-            "type": "object",
-            "required": [
-                "billingInterval",
-                "name"
-            ],
-            "properties": {
-                "amountUSD": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "billingInterval": {
-                    "type": "string",
-                    "enum": [
-                        "month",
-                        "year",
-                        "lifetime"
-                    ]
-                },
-                "currency": {
-                    "type": "string",
-                    "maxLength": 16
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "discountPercent": {
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 0
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 1
-                },
-                "periodCreditUSD": {
-                    "type": "number",
-                    "minimum": 0
-                }
-            }
-        },
-        "internal_transport_http_billing.UpsertModelPricingRequest": {
-            "type": "object",
-            "required": [
-                "platformModelName"
-            ],
-            "properties": {
-                "cacheReadUSDPerMTokens": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "cacheWriteUSDPerMTokens": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "callUSDPerCall": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "currency": {
-                    "type": "string",
-                    "maxLength": 16
-                },
-                "durationUSDPerSecond": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "inputUSDPerMTokens": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "isFree": {
-                    "type": "boolean"
-                },
-                "outputUSDPerMTokens": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "platformModelName": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "pricingMode": {
-                    "type": "string",
-                    "enum": [
-                        "token",
-                        "call",
-                        "duration",
-                        "tiered"
-                    ]
-                },
-                "tieredPricingJSON": {
-                    "type": "string",
-                    "maxLength": 20000
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageDailyListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.UsageDailyResponse"
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageDailyModelResponse": {
-            "type": "object",
-            "properties": {
-                "avgLatencyMS": {
-                    "type": "integer"
-                },
-                "billedNanousd": {
-                    "type": "integer"
-                },
-                "billedUSD": {
-                    "type": "number"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "callCount": {
-                    "type": "integer"
-                },
-                "durationSeconds": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "recordCount": {
-                    "type": "integer"
-                },
-                "totalTokens": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageDailyResponse": {
-            "type": "object",
-            "properties": {
-                "avgLatencyMS": {
-                    "type": "integer"
-                },
-                "billedNanousd": {
-                    "type": "integer"
-                },
-                "billedUSD": {
-                    "type": "number"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "callCount": {
-                    "type": "integer"
-                },
-                "durationSeconds": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "models": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.UsageDailyModelResponse"
-                    }
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "recordCount": {
-                    "type": "integer"
-                },
-                "totalTokens": {
-                    "type": "integer"
-                },
-                "usageDate": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageLedgerListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_billing.UsageLedgerResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageLedgerResponse": {
-            "type": "object",
-            "properties": {
-                "billedCurrency": {
-                    "type": "string"
-                },
-                "billedNanousd": {
-                    "type": "integer"
-                },
-                "billedUSD": {
-                    "type": "number"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWrite1hTokens": {
-                    "type": "integer"
-                },
-                "cacheWrite5mTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "callCount": {
-                    "type": "integer"
-                },
-                "conversationID": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "durationSeconds": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "isFreeModel": {
-                    "type": "boolean"
-                },
-                "latencyMS": {
-                    "type": "integer"
-                },
-                "modelIcon": {
-                    "type": "string"
-                },
-                "modelVendor": {
-                    "type": "string"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "pricingSnapshotJSON": {
-                    "type": "string"
-                },
-                "providerProtocol": {
-                    "type": "string"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "routedBindingCode": {
-                    "type": "string"
-                },
-                "serviceTier": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                },
-                "usageDate": {
-                    "type": "string"
-                },
-                "usageSpeed": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageMonthlyListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.UsageMonthlyResponse"
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageMonthlyResponse": {
-            "type": "object",
-            "properties": {
-                "avgLatencyMS": {
-                    "type": "integer"
-                },
-                "billedNanousd": {
-                    "type": "integer"
-                },
-                "billedUSD": {
-                    "type": "number"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "callCount": {
-                    "type": "integer"
-                },
-                "durationSeconds": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "monthStartAt": {
-                    "type": "string"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "recordCount": {
-                    "type": "integer"
-                },
-                "totalTokens": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.BatchDeleteRequest": {
-            "type": "object",
-            "required": [
-                "ids"
-            ],
-            "properties": {
-                "ids": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_channel.BatchDeleteResponse": {
-            "type": "object",
-            "properties": {
-                "failedCount": {
-                    "type": "integer"
-                },
-                "notFoundCount": {
-                    "type": "integer"
-                },
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteResultResponse"
-                    }
-                },
-                "successCount": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.BatchDeleteResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.BatchDeleteResultResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.CircuitResetResponse": {
-            "type": "object",
-            "properties": {
-                "reset": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_channel.CreateModelRequest": {
-            "type": "object",
-            "required": [
-                "platformModelName"
-            ],
-            "properties": {
-                "capabilitiesJSON": {
-                    "type": "string",
-                    "maxLength": 10000
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 10000
-                },
-                "icon": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "kindsJSON": {
-                    "type": "string",
-                    "maxLength": 1000
-                },
-                "platformModelName": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 2
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                },
-                "systemPrompt": {
-                    "type": "string",
-                    "maxLength": 20000
-                },
-                "vendor": {
-                    "type": "string",
-                    "maxLength": 64
-                }
-            }
-        },
-        "internal_transport_http_channel.CreateModelResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.CreateUpstreamRequest": {
-            "type": "object",
-            "required": [
-                "apiKeys",
-                "baseURL",
-                "name"
-            ],
-            "properties": {
-                "apiKeys": {
-                    "type": "string",
-                    "maxLength": 10000,
-                    "minLength": 2
-                },
-                "baseURL": {
-                    "type": "string",
-                    "maxLength": 512
-                },
-                "cbDurationMin": {
-                    "type": "integer"
-                },
-                "cbFailureThreshold": {
-                    "type": "integer"
-                },
-                "cbModelThreshold": {
-                    "type": "integer"
-                },
-                "cbThresholdLogic": {
-                    "type": "string",
-                    "enum": [
-                        "or",
-                        "and"
-                    ]
-                },
-                "cbWindowMin": {
-                    "type": "integer"
-                },
-                "compatible": {
-                    "type": "string",
-                    "enum": [
-                        "openai",
-                        "anthropic",
-                        "google",
-                        "xai",
-                        "openrouter",
-                        "custom"
-                    ]
-                },
-                "connectTimeoutMS": {
-                    "type": "integer"
-                },
-                "headersJSON": {
-                    "type": "string",
-                    "maxLength": 10000
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 2
-                },
-                "protocolDefaultsJSON": {
-                    "type": "string",
-                    "maxLength": 10000
-                },
-                "readTimeoutMS": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                },
-                "streamIdleTimeoutMS": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.CreateUpstreamResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.ErrorDoc": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "details": {},
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMsg": {
-                    "type": "string"
-                },
-                "requestId": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.ImportUpstreamModelItemRequest": {
-            "type": "object",
-            "required": [
-                "platformModelName",
-                "upstreamModelName"
-            ],
-            "properties": {
-                "kindsJSON": {
-                    "type": "string",
-                    "maxLength": 1000
-                },
-                "platformModelName": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 2
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "protocol": {
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "protocols": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                },
-                "upstreamModelName": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 1
-                }
-            }
-        },
-        "internal_transport_http_channel.ImportUpstreamModelResultResponse": {
-            "type": "object",
-            "properties": {
-                "bindingCode": {
-                    "type": "string"
-                },
-                "createdPlatform": {
-                    "type": "boolean"
-                },
-                "createdRoute": {
-                    "type": "boolean"
-                },
-                "createdRoutes": {
-                    "type": "integer"
-                },
-                "error": {
-                    "type": "string"
-                },
-                "existingRoutes": {
-                    "type": "integer"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "protocols": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "status": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.ImportUpstreamModelsRequest": {
-            "type": "object",
-            "required": [
-                "items"
-            ],
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.ImportUpstreamModelItemRequest"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_channel.ImportUpstreamModelsResponse": {
-            "type": "object",
-            "properties": {
-                "createdPlatform": {
-                    "type": "integer"
-                },
-                "createdRoutes": {
-                    "type": "integer"
-                },
-                "existingRoutes": {
-                    "type": "integer"
-                },
-                "failedCount": {
-                    "type": "integer"
-                },
-                "importedCount": {
-                    "type": "integer"
-                },
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.ImportUpstreamModelResultResponse"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.ImportUpstreamModelsResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ImportUpstreamModelsResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelDataResponse": {
-            "type": "object",
-            "properties": {
-                "model": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelResponse"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_channel.ModelResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelProbeBatchResponse": {
-            "type": "object",
-            "properties": {
-                "failedCount": {
-                    "type": "integer"
-                },
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.ModelProbeResponse"
-                    }
-                },
-                "successCount": {
-                    "type": "integer"
-                },
-                "totalCount": {
-                    "type": "integer"
-                },
-                "unsupportedCount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelProbeBatchResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelProbeBatchResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelProbeDebugRequestResponse": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "type": "string"
-                },
-                "headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "method": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelProbeDebugResponse": {
-            "type": "object",
-            "properties": {
-                "request": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelProbeDebugRequestResponse"
-                },
-                "response": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelProbeDebugResponseResponse"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelProbeDebugResponseResponse": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "type": "string"
-                },
-                "headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "statusCode": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelProbeRequest": {
-            "type": "object",
-            "properties": {
-                "taskType": {
-                    "type": "string",
-                    "enum": [
-                        "chat",
-                        "image_generation",
-                        "image_edit"
-                    ]
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelProbeResponse": {
-            "type": "object",
-            "properties": {
-                "bindingCode": {
-                    "type": "string"
-                },
-                "debug": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelProbeDebugResponse"
-                },
-                "endpoint": {
-                    "type": "string"
-                },
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMessage": {
-                    "type": "string"
-                },
-                "latencyMS": {
-                    "type": "integer"
-                },
-                "platformModelID": {
-                    "type": "integer"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "protocol": {
-                    "type": "string"
-                },
-                "routeID": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                },
-                "upstreamID": {
-                    "type": "integer"
-                },
-                "upstreamModelID": {
-                    "type": "integer"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                },
-                "upstreamName": {
-                    "type": "string"
-                },
-                "upstreamStatusCode": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelProbeResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelProbeResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelResponse": {
-            "type": "object",
-            "properties": {
-                "activeSourceCount": {
-                    "type": "integer"
-                },
-                "capabilitiesJSON": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "icon": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "kindsJSON": {
-                    "type": "string"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "protocolsJSON": {
-                    "type": "string"
-                },
-                "sortOrder": {
-                    "type": "integer"
-                },
-                "sourceCount": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "systemPrompt": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "vendor": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelUpstreamSourceDataResponse": {
-            "type": "object",
-            "properties": {
-                "source": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelUpstreamSourceResponse"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelUpstreamSourceListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_channel.ModelUpstreamSourceResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.ModelUpstreamSourceResponse": {
-            "type": "object",
-            "properties": {
-                "baseURL": {
-                    "type": "string"
-                },
-                "bindingCode": {
-                    "type": "string"
-                },
-                "circuitOpen": {
-                    "type": "boolean"
-                },
-                "circuitUntil": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "headersJSON": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "protocol": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "suggestedProtocol": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "upstreamID": {
-                    "type": "integer"
-                },
-                "upstreamModelIcon": {
-                    "type": "string"
-                },
-                "upstreamModelKindsJSON": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                },
-                "upstreamModelStatus": {
-                    "type": "string"
-                },
-                "upstreamModelVendor": {
-                    "type": "string"
-                },
-                "upstreamName": {
-                    "type": "string"
-                },
-                "weight": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.PublicModelListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.PublicModelResponse"
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.PublicModelPricingResponse": {
-            "type": "object",
-            "properties": {
-                "cacheReadUSDPerMTokens": {
-                    "type": "number"
-                },
-                "cacheWriteUSDPerMTokens": {
-                    "type": "number"
-                },
-                "callUSDPerCall": {
-                    "type": "number"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "durationUSDPerSecond": {
-                    "type": "number"
-                },
-                "inputUSDPerMTokens": {
-                    "type": "number"
-                },
-                "isFree": {
-                    "type": "boolean"
-                },
-                "mode": {
-                    "type": "string"
-                },
-                "outputUSDPerMTokens": {
-                    "type": "number"
-                },
-                "tiers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.PublicModelPricingTierResponse"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_channel.PublicModelPricingTierResponse": {
-            "type": "object",
-            "properties": {
-                "cacheReadUSDPerMTokens": {
-                    "type": "number"
-                },
-                "cacheWriteUSDPerMTokens": {
-                    "type": "number"
-                },
-                "fromTokens": {
-                    "type": "integer"
-                },
-                "inputUSDPerMTokens": {
-                    "type": "number"
-                },
-                "outputUSDPerMTokens": {
-                    "type": "number"
-                },
-                "upToTokens": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.PublicModelResponse": {
-            "type": "object",
-            "properties": {
-                "capabilitiesJSON": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "icon": {
-                    "type": "string"
-                },
-                "kindsJSON": {
-                    "type": "string"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "pricing": {
-                    "$ref": "#/definitions/internal_transport_http_channel.PublicModelPricingResponse"
-                },
-                "protocolsJSON": {
-                    "type": "string"
-                },
-                "sortOrder": {
-                    "type": "integer"
-                },
-                "vendor": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.ReorderModelsRequest": {
-            "type": "object",
-            "required": [
-                "modelIDs"
-            ],
-            "properties": {
-                "modelIDs": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_channel.ResetUpstreamCircuitResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.CircuitResetResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.SyncUpstreamModelsResponse": {
-            "type": "object",
-            "properties": {
-                "createdUpstreamModels": {
-                    "type": "integer"
-                },
-                "existingUpstreamModels": {
-                    "type": "integer"
-                },
-                "inactivatedModels": {
-                    "type": "integer"
-                },
-                "skippedUpstreamModels": {
-                    "type": "integer"
-                },
-                "syncedModels": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.UpstreamSyncModelResponse"
-                    }
-                },
-                "totalUpstream": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.SyncUpstreamModelsResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.SyncUpstreamModelsResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpdateModelRequest": {
-            "type": "object",
-            "properties": {
-                "capabilitiesJSON": {
-                    "type": "string",
-                    "maxLength": 10000
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 10000
-                },
-                "icon": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "kindsJSON": {
-                    "type": "string",
-                    "maxLength": 1000
-                },
-                "platformModelName": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 2
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                },
-                "systemPrompt": {
-                    "type": "string",
-                    "maxLength": 20000
-                },
-                "vendor": {
-                    "type": "string",
-                    "maxLength": 64
-                }
-            }
-        },
-        "internal_transport_http_channel.UpdateModelResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpdateModelUpstreamSourceRequest": {
-            "type": "object",
-            "properties": {
-                "priority": {
-                    "type": "integer"
-                },
-                "protocol": {
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                },
-                "weight": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpdateModelUpstreamSourceResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelUpstreamSourceDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpdateUpstreamRequest": {
-            "type": "object",
-            "properties": {
-                "addAPIKeys": {
-                    "type": "string",
-                    "maxLength": 10000,
-                    "minLength": 2
-                },
-                "apiKeys": {
-                    "type": "string",
-                    "maxLength": 10000,
-                    "minLength": 2
-                },
-                "baseURL": {
-                    "type": "string",
-                    "maxLength": 512
-                },
-                "cbDurationMin": {
-                    "type": "integer"
-                },
-                "cbFailureThreshold": {
-                    "type": "integer"
-                },
-                "cbModelThreshold": {
-                    "type": "integer"
-                },
-                "cbThresholdLogic": {
-                    "type": "string",
-                    "enum": [
-                        "or",
-                        "and"
-                    ]
-                },
-                "cbWindowMin": {
-                    "type": "integer"
-                },
-                "compatible": {
-                    "type": "string",
-                    "enum": [
-                        "openai",
-                        "anthropic",
-                        "google",
-                        "xai",
-                        "openrouter",
-                        "custom"
-                    ]
-                },
-                "connectTimeoutMS": {
-                    "type": "integer"
-                },
-                "deleteAPIKeyIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "headersJSON": {
-                    "type": "string",
-                    "maxLength": 10000
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 2
-                },
-                "protocolDefaultsJSON": {
-                    "type": "string",
-                    "maxLength": 10000
-                },
-                "readTimeoutMS": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                },
-                "streamIdleTimeoutMS": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpdateUpstreamResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpsertUpstreamModelRequest": {
-            "type": "object",
-            "required": [
-                "platformModelName",
-                "upstreamModelName"
-            ],
-            "properties": {
-                "cbDurationMin": {
-                    "type": "integer"
-                },
-                "cbFailureThreshold": {
-                    "type": "integer"
-                },
-                "cbWindowMin": {
-                    "type": "integer"
-                },
-                "headersJSON": {
-                    "type": "string",
-                    "maxLength": 10000
-                },
-                "kindsJSON": {
-                    "type": "string",
-                    "maxLength": 1000
-                },
-                "platformModelName": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 2
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "protocol": {
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "routeID": {
-                    "type": "integer"
-                },
-                "source": {
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                },
-                "upstreamModelName": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 1
-                },
-                "weight": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpsertUpstreamModelResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamModelDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpstreamAPIKeyResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "index": {
-                    "type": "integer"
-                },
-                "keyMasked": {
-                    "type": "string"
-                },
-                "note": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpstreamDataResponse": {
-            "type": "object",
-            "properties": {
-                "upstream": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamResponse"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpstreamListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_channel.UpstreamResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpstreamModelDataResponse": {
-            "type": "object",
-            "properties": {
-                "binding": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamModelResponse"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpstreamModelListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_channel.UpstreamModelResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpstreamModelResponse": {
-            "type": "object",
-            "properties": {
-                "bindingCode": {
-                    "type": "string"
-                },
-                "cbDurationMin": {
-                    "type": "integer"
-                },
-                "cbFailureThreshold": {
-                    "type": "integer"
-                },
-                "cbWindowMin": {
-                    "type": "integer"
-                },
-                "circuitOpen": {
-                    "type": "boolean"
-                },
-                "circuitUntil": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "headersJSON": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "modelIcon": {
-                    "type": "string"
-                },
-                "modelKindsJSON": {
-                    "type": "string"
-                },
-                "modelVendor": {
-                    "type": "string"
-                },
-                "platformModelID": {
-                    "type": "integer"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "protocol": {
-                    "type": "string"
-                },
-                "routeID": {
-                    "type": "integer"
-                },
-                "routeStatus": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "suggestedProtocol": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "upstreamID": {
-                    "type": "integer"
-                },
-                "upstreamModelIcon": {
-                    "type": "string"
-                },
-                "upstreamModelKindsJSON": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                },
-                "upstreamModelStatus": {
-                    "type": "string"
-                },
-                "upstreamModelVendor": {
-                    "type": "string"
-                },
-                "weight": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpstreamRemoteModelResponse": {
-            "type": "object",
-            "properties": {
-                "alreadyBound": {
-                    "type": "boolean"
-                },
-                "alreadySynced": {
-                    "type": "boolean"
-                },
-                "bindingCode": {
-                    "type": "string"
-                },
-                "boundPlatformModels": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "suggestedKindsJSON": {
-                    "type": "string"
-                },
-                "suggestedPlatformModelName": {
-                    "type": "string"
-                },
-                "suggestedProtocol": {
-                    "type": "string"
-                },
-                "suggestedProtocols": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                },
-                "upstreamModelStatus": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpstreamRemoteModelsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.UpstreamRemoteModelResponse"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpstreamRemoteModelsResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamRemoteModelsResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpstreamResponse": {
-            "type": "object",
-            "properties": {
-                "activeModelsCount": {
-                    "type": "integer"
-                },
-                "apiKeyItems": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.UpstreamAPIKeyResponse"
-                    }
-                },
-                "apiKeysMasked": {
-                    "type": "string"
-                },
-                "baseURL": {
-                    "type": "string"
-                },
-                "cbDurationMin": {
-                    "type": "integer"
-                },
-                "cbFailureThreshold": {
-                    "type": "integer"
-                },
-                "cbModelThreshold": {
-                    "type": "integer"
-                },
-                "cbThresholdLogic": {
-                    "type": "string"
-                },
-                "cbWindowMin": {
-                    "type": "integer"
-                },
-                "circuitOpen": {
-                    "type": "boolean"
-                },
-                "circuitUntil": {
-                    "type": "string"
-                },
-                "compatible": {
-                    "type": "string"
-                },
-                "connectTimeoutMS": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "headersJSON": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "modelsCount": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "protocolDefaultsJSON": {
-                    "type": "string"
-                },
-                "readTimeoutMS": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "streamIdleTimeoutMS": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.UpstreamSyncModelResponse": {
-            "type": "object",
-            "properties": {
-                "bindingCode": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "boolean"
-                },
-                "kindsJSON": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "suggestedProtocol": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.BatchSetConversationProjectRequest": {
-            "type": "object",
-            "required": [
-                "conversationPublicIDs"
-            ],
-            "properties": {
-                "conversationPublicIDs": {
-                    "type": "array",
-                    "maxItems": 1000,
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "projectID": {
-                    "type": "string",
-                    "maxLength": 32
-                }
-            }
-        },
-        "internal_transport_http_conversation.BatchSetConversationProjectResponse": {
-            "type": "object",
-            "properties": {
-                "updated": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.BatchSetConversationProjectResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.BatchSetConversationProjectResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ContextArtifactResponse": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "messageID": {
-                    "type": "integer"
-                },
-                "metadataJSON": {
-                    "type": "string"
-                },
-                "runID": {
-                    "type": "string"
-                },
-                "score": {
-                    "type": "number"
-                },
-                "sourceID": {
-                    "type": "string"
-                },
-                "sourceTitle": {
-                    "type": "string"
-                },
-                "sourceType": {
-                    "type": "string"
-                },
-                "tokenEstimate": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ContextArtifactResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ContextArtifactResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveRequest": {
-            "type": "object",
-            "properties": {
-                "conversation": {
-                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMetadata"
-                },
-                "exportedAt": {
-                    "type": "string"
-                },
-                "messages": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveMessage"
-                    }
-                },
-                "runs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchiveRun"
-                    }
-                },
-                "schema": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_application_conversation.ConversationArchive"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationCreateResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationDeleteResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
-                },
-                "deletedFileCount": {
-                    "type": "integer"
-                },
-                "quota": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.StorageQuotaResponse"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationDeleteResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationDeleteResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_conversation.ConversationResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationProjectListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectResponse"
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationProjectResponse": {
-            "type": "object",
-            "properties": {
-                "color": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "icon": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "publicID": {
-                    "type": "string"
-                },
-                "sortOrder": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "systemPrompt": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationProjectResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationResponse": {
-            "type": "object",
-            "properties": {
-                "contextPolicyJSON": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "isStarred": {
-                    "type": "boolean"
-                },
-                "labelsJSON": {
-                    "type": "string"
-                },
-                "lastCompactedAt": {
-                    "type": "string"
-                },
-                "lastResponseID": {
-                    "type": "string"
-                },
-                "lastShareAccessedAt": {
-                    "type": "string"
-                },
-                "messageCount": {
-                    "type": "integer"
-                },
-                "model": {
-                    "type": "string"
-                },
-                "projectID": {
-                    "type": "string"
-                },
-                "projectName": {
-                    "type": "string"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "publicID": {
-                    "type": "string"
-                },
-                "sessionKey": {
-                    "type": "string"
-                },
-                "shareID": {
-                    "type": "string"
-                },
-                "shareStatus": {
-                    "type": "string"
-                },
-                "sharedAt": {
-                    "type": "string"
-                },
-                "starredAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationRunListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_conversation.RunResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationShareResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "lastAccessedAt": {
-                    "type": "string"
-                },
-                "messageCount": {
-                    "type": "integer"
-                },
-                "modelSnapshot": {
-                    "type": "string"
-                },
-                "revokedAt": {
-                    "type": "string"
-                },
-                "shareID": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "titleSnapshot": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationShareResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationShareResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationUpdateResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.CreateConversationProjectRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "color": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "icon": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 80
-                },
-                "systemPrompt": {
-                    "type": "string",
-                    "maxLength": 12000
-                }
-            }
-        },
-        "internal_transport_http_conversation.CreateConversationRequest": {
-            "type": "object",
-            "properties": {
-                "model": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "projectID": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 255
-                }
-            }
-        },
-        "internal_transport_http_conversation.CreateConversationShareRequest": {
-            "type": "object",
-            "properties": {
-                "defaultMessagePublicIDs": {
-                    "type": "array",
-                    "maxItems": 1000,
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_conversation.DeleteFileResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
-                },
-                "fileID": {
-                    "type": "string"
-                },
-                "quota": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.StorageQuotaResponse"
-                }
-            }
-        },
-        "internal_transport_http_conversation.DeleteFileResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.DeleteFileResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ErrorDoc": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "details": {},
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMsg": {
-                    "type": "string"
-                },
-                "requestId": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.FileListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_conversation.FileObjectResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.FileObjectResponse": {
-            "type": "object",
-            "properties": {
-                "chunkCount": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "detectedMIME": {
-                    "type": "string"
-                },
-                "embedError": {
-                    "type": "string"
-                },
-                "embedStatus": {
-                    "type": "string"
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "extractStatus": {
-                    "type": "string"
-                },
-                "fileCategory": {
-                    "type": "string"
-                },
-                "fileID": {
-                    "type": "string"
-                },
-                "fileName": {
-                    "type": "string"
-                },
-                "lastAccessedAt": {
-                    "type": "string"
-                },
-                "mimeType": {
-                    "type": "string"
-                },
-                "processingErrorCode": {
-                    "type": "string"
-                },
-                "processingErrorMessage": {
-                    "type": "string"
-                },
-                "processingReady": {
-                    "type": "boolean"
-                },
-                "processingStatus": {
-                    "type": "string"
-                },
-                "purpose": {
-                    "type": "string"
-                },
-                "ragOptOut": {
-                    "type": "boolean"
-                },
-                "sha256": {
-                    "type": "string"
-                },
-                "sizeBytes": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.FileUpdateResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.FileObjectResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.FileUploadResponse": {
-            "type": "object",
-            "properties": {
-                "file": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.FileObjectResponse"
-                },
-                "quota": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.StorageQuotaResponse"
-                },
-                "reused": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageBillingCostResponse": {
-            "type": "object",
-            "properties": {
-                "billedCurrency": {
-                    "type": "string"
-                },
-                "billedNanousd": {
-                    "type": "integer"
-                },
-                "billedUSD": {
-                    "type": "number"
-                },
-                "billingMode": {
-                    "type": "string"
-                },
-                "pricingSnapshotJSON": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageFeedbackResponse": {
-            "type": "object",
-            "properties": {
-                "messageID": {
-                    "type": "integer"
-                },
-                "messagePublicID": {
-                    "type": "string"
-                },
-                "myFeedback": {
-                    "type": "string"
-                },
-                "thumbsDownCount": {
-                    "type": "integer"
-                },
-                "thumbsUpCount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageFeedbackResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageFeedbackResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_conversation.MessageResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageProcessTraceResponse": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.MessageTraceEventResponse"
-                    }
-                },
-                "process": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageTraceBlockResponse"
-                },
-                "promptTrace": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessagePromptTraceResponse"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tools": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageTraceBlockResponse"
-                },
-                "upstreamThink": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageTraceBlockResponse"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessagePromptTraceBlockResponse": {
-            "type": "object",
-            "properties": {
-                "cacheable": {
-                    "type": "boolean"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "sourceCount": {
-                    "type": "integer"
-                },
-                "sourceRefs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.MessagePromptTraceSourceResponse"
-                    }
-                },
-                "title": {
-                    "type": "string"
-                },
-                "tokenEstimate": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessagePromptTraceResponse": {
-            "type": "object",
-            "properties": {
-                "blocks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.MessagePromptTraceBlockResponse"
-                    }
-                },
-                "fullMessageCount": {
-                    "type": "integer"
-                },
-                "mode": {
-                    "type": "string"
-                },
-                "promptFingerprint": {
-                    "type": "string"
-                },
-                "sentMessageCount": {
-                    "type": "integer"
-                },
-                "sentTokenEstimate": {
-                    "type": "integer"
-                },
-                "statefulDisabledReason": {
-                    "type": "string"
-                },
-                "statefulSavedMessages": {
-                    "type": "integer"
-                },
-                "statefulSavedTokens": {
-                    "type": "integer"
-                },
-                "statefulUsed": {
-                    "type": "boolean"
-                },
-                "totalTokenEstimate": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessagePromptTraceSourceResponse": {
-            "type": "object",
-            "properties": {
-                "artifactID": {
-                    "type": "integer"
-                },
-                "sourceID": {
-                    "type": "string"
-                },
-                "sourceType": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageResponse": {
-            "type": "object",
-            "properties": {
-                "attachments": {
-                    "type": "string"
-                },
-                "billingCost": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageBillingCostResponse"
-                },
-                "branchReason": {
-                    "type": "string"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "content": {
-                    "type": "string"
-                },
-                "contentType": {
-                    "type": "string"
-                },
-                "conversationID": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMessage": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "latencyMS": {
-                    "type": "integer"
-                },
-                "modelIcon": {
-                    "type": "string"
-                },
-                "modelVendor": {
-                    "type": "string"
-                },
-                "myFeedback": {
-                    "type": "string"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "parentMessageID": {
-                    "type": "integer"
-                },
-                "parentPublicID": {
-                    "type": "string"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "processTrace": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageProcessTraceResponse"
-                },
-                "publicID": {
-                    "type": "string"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "runID": {
-                    "type": "string"
-                },
-                "sourceMessageID": {
-                    "type": "integer"
-                },
-                "sourcePublicID": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "thumbsDownCount": {
-                    "type": "integer"
-                },
-                "thumbsUpCount": {
-                    "type": "integer"
-                },
-                "tokenUsage": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageTraceBlockResponse": {
-            "type": "object",
-            "properties": {
-                "contentMarkdown": {
-                    "type": "string"
-                },
-                "parentEventID": {
-                    "type": "string"
-                },
-                "payloadJSON": {
-                    "type": "string"
-                },
-                "roundID": {
-                    "type": "string"
-                },
-                "stage": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageTraceEventResponse": {
-            "type": "object",
-            "properties": {
-                "contentMarkdown": {
-                    "type": "string"
-                },
-                "endedAt": {
-                    "type": "string"
-                },
-                "eventID": {
-                    "type": "string"
-                },
-                "eventType": {
-                    "type": "string"
-                },
-                "parentEventID": {
-                    "type": "string"
-                },
-                "payloadJSON": {
-                    "type": "string"
-                },
-                "phase": {
-                    "type": "string"
-                },
-                "roundID": {
-                    "type": "string"
-                },
-                "seq": {
-                    "type": "integer"
-                },
-                "stage": {
-                    "type": "string"
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.PublicSharedConversationResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "defaultMessagePublicIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "lastAccessedAt": {
-                    "type": "string"
-                },
-                "messages": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.PublicSharedMessageResponse"
-                    }
-                },
-                "model": {
-                    "type": "string"
-                },
-                "shareID": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.PublicSharedConversationResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.PublicSharedConversationResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.PublicSharedMessageResponse": {
-            "type": "object",
-            "properties": {
-                "attachments": {
-                    "type": "string"
-                },
-                "branchReason": {
-                    "type": "string"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "content": {
-                    "type": "string"
-                },
-                "contentType": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMessage": {
-                    "type": "string"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "latencyMS": {
-                    "type": "integer"
-                },
-                "modelIcon": {
-                    "type": "string"
-                },
-                "modelVendor": {
-                    "type": "string"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "parentPublicID": {
-                    "type": "string"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "processTrace": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageProcessTraceResponse"
-                },
-                "publicID": {
-                    "type": "string"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "runID": {
-                    "type": "string"
-                },
-                "sourcePublicID": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tokenUsage": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.RenameConversationRequest": {
-            "type": "object",
-            "required": [
-                "title"
-            ],
-            "properties": {
-                "title": {
-                    "type": "string",
-                    "maxLength": 255
-                }
-            }
-        },
-        "internal_transport_http_conversation.ReorderConversationProjectsRequest": {
-            "type": "object",
-            "required": [
-                "projectIDs"
-            ],
-            "properties": {
-                "projectIDs": {
-                    "type": "array",
-                    "maxItems": 200,
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_conversation.RevokeConversationSharesRequest": {
-            "type": "object",
-            "properties": {
-                "conversationPublicIDs": {
-                    "type": "array",
-                    "maxItems": 1000,
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_conversation.RevokeConversationSharesResponse": {
-            "type": "object",
-            "properties": {
-                "revoked": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_conversation.RevokeConversationSharesResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.RevokeConversationSharesResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.RunResponse": {
-            "type": "object",
-            "properties": {
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "conversationID": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "endedAt": {
-                    "type": "string"
-                },
-                "endpoint": {
-                    "type": "string"
-                },
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMessage": {
-                    "type": "string"
-                },
-                "firstTokenLatencyMS": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "modelIcon": {
-                    "type": "string"
-                },
-                "modelVendor": {
-                    "type": "string"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "providerProtocol": {
-                    "type": "string"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "requestID": {
-                    "type": "string"
-                },
-                "requestedModelName": {
-                    "type": "string"
-                },
-                "routedBindingCode": {
-                    "type": "string"
-                },
-                "runID": {
-                    "type": "string"
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "taskType": {
-                    "type": "string"
-                },
-                "toolCallsCount": {
-                    "type": "integer"
-                },
-                "totalLatencyMS": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "upstreamID": {
-                    "type": "integer"
-                },
-                "upstreamModelID": {
-                    "type": "integer"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.SendMessageRequest": {
-            "type": "object",
-            "required": [
-                "content",
-                "contentType"
-            ],
-            "properties": {
-                "branchReason": {
-                    "type": "string",
-                    "enum": [
-                        "default",
-                        "retry",
-                        "edit"
-                    ]
-                },
-                "clientRunID": {
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "content": {
-                    "type": "string",
-                    "maxLength": 20000
-                },
-                "contentType": {
-                    "type": "string",
-                    "enum": [
-                        "text",
-                        "markdown",
-                        "image",
-                        "file",
-                        "mixed"
-                    ]
-                },
-                "fileIDs": {
-                    "type": "array",
-                    "maxItems": 20,
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "htmlVisualPrompt": {
-                    "type": "boolean"
-                },
-                "model": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "options": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "parentMessagePublicID": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "selectedToolIDs": {
-                    "type": "array",
-                    "maxItems": 128,
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "sourceMessagePublicID": {
-                    "type": "string",
-                    "maxLength": 32
-                }
-            }
-        },
-        "internal_transport_http_conversation.SendMessageResponse": {
-            "type": "object",
-            "properties": {
-                "assistantMessage": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageResponse"
-                },
-                "userMessage": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageResponse"
-                }
-            }
-        },
-        "internal_transport_http_conversation.SendMessageResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.SendMessageResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.SetConversationArchiveRequest": {
-            "type": "object",
-            "properties": {
-                "archived": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_conversation.SetConversationProjectRequest": {
-            "type": "object",
-            "properties": {
-                "projectID": {
-                    "type": "string",
-                    "maxLength": 32
-                }
-            }
-        },
-        "internal_transport_http_conversation.SetConversationStarRequest": {
-            "type": "object",
-            "properties": {
-                "starred": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_conversation.SetMessageFeedbackRequest": {
-            "type": "object",
-            "properties": {
-                "feedback": {
-                    "type": "string",
-                    "enum": [
-                        "up",
-                        "down"
-                    ]
-                }
-            }
-        },
-        "internal_transport_http_conversation.StorageQuotaResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "quotaBytes": {
-                    "type": "integer"
-                },
-                "reservedBytes": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "usedBytes": {
-                    "type": "integer"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.UpdateConversationProjectRequest": {
-            "type": "object",
-            "properties": {
-                "color": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "icon": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 80
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "archived"
-                    ]
-                },
-                "systemPrompt": {
-                    "type": "string",
-                    "maxLength": 12000
-                }
-            }
-        },
-        "internal_transport_http_conversation.UpdateFileRequest": {
-            "type": "object",
-            "properties": {
-                "fileName": {
-                    "type": "string"
-                },
-                "ragOptOut": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_conversation.UploadFileResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.FileUploadResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
         "internal_transport_http_memory.ErrorDoc": {
             "type": "object",
             "properties": {
@@ -14497,6 +14577,201 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_transport_http_openapi.ChatCompletionChoiceDoc": {
+            "type": "object",
+            "properties": {
+                "finish_reason": {
+                    "type": "string",
+                    "example": "tool_calls"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "message": {
+                    "$ref": "#/definitions/internal_transport_http_openapi.ChatMessageDoc"
+                }
+            }
+        },
+        "internal_transport_http_openapi.ChatCompletionRequestDoc": {
+            "type": "object",
+            "properties": {
+                "function_call": {
+                    "type": "object"
+                },
+                "functions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_openapi.LegacyFunctionDoc"
+                    }
+                },
+                "max_tokens": {
+                    "type": "integer"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_openapi.ChatMessageDoc"
+                    }
+                },
+                "model": {
+                    "type": "string",
+                    "example": "gpt-5"
+                },
+                "parallel_tool_calls": {
+                    "type": "boolean"
+                },
+                "stream": {
+                    "type": "boolean"
+                },
+                "temperature": {
+                    "type": "number"
+                },
+                "tool_choice": {
+                    "type": "object"
+                },
+                "tools": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_openapi.ChatToolDoc"
+                    }
+                }
+            }
+        },
+        "internal_transport_http_openapi.ChatCompletionResponseDoc": {
+            "type": "object",
+            "properties": {
+                "choices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_openapi.ChatCompletionChoiceDoc"
+                    }
+                },
+                "created": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "chatcmpl-openapi"
+                },
+                "model": {
+                    "type": "string",
+                    "example": "gpt-5"
+                },
+                "object": {
+                    "type": "string",
+                    "example": "chat.completion"
+                },
+                "usage": {
+                    "type": "object"
+                }
+            }
+        },
+        "internal_transport_http_openapi.ChatMessageDoc": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "object"
+                },
+                "function_call": {
+                    "$ref": "#/definitions/internal_transport_http_openapi.LegacyFunctionCallDoc"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "user"
+                },
+                "tool_call_id": {
+                    "type": "string"
+                },
+                "tool_calls": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_openapi.ChatToolCallDoc"
+                    }
+                }
+            }
+        },
+        "internal_transport_http_openapi.ChatToolCallDoc": {
+            "type": "object",
+            "properties": {
+                "function": {
+                    "$ref": "#/definitions/internal_transport_http_openapi.LegacyFunctionCallDoc"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "call_1"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "function"
+                }
+            }
+        },
+        "internal_transport_http_openapi.ChatToolDoc": {
+            "type": "object",
+            "properties": {
+                "function": {
+                    "$ref": "#/definitions/internal_transport_http_openapi.LegacyFunctionDoc"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "function"
+                }
+            }
+        },
+        "internal_transport_http_openapi.LegacyFunctionCallDoc": {
+            "type": "object",
+            "properties": {
+                "arguments": {
+                    "type": "string",
+                    "example": "{\"city\":\"Paris\"}"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "get_weather"
+                }
+            }
+        },
+        "internal_transport_http_openapi.LegacyFunctionDoc": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Get weather for a city"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "get_weather"
+                },
+                "parameters": {
+                    "type": "object"
+                }
+            }
+        },
+        "internal_transport_http_openapi.openAIError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_openapi.openAIErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/internal_transport_http_openapi.openAIError"
+                }
+            }
+        },
         "internal_transport_http_settings.PatchItem": {
             "type": "object",
             "required": [
@@ -14515,21 +14790,6 @@ const docTemplate = `{
                 },
                 "value": {
                     "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_settings.PatchSettingsRequest": {
-            "type": "object",
-            "required": [
-                "items"
-            ],
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_settings.PatchItem"
-                    }
                 }
             }
         },
@@ -14566,6 +14826,21 @@ const docTemplate = `{
                 },
                 "errorMsg": {
                     "type": "string"
+                }
+            }
+        },
+        "settings.PatchSettingsRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_settings.PatchItem"
+                    }
                 }
             }
         }
