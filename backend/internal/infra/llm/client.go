@@ -522,13 +522,14 @@ func nonCachedInputTokens(totalInputTokens int64, cacheReadTokens int64) int64 {
 
 // ToolCall 记录上游返回的工具调用请求。
 type ToolCall struct {
-	ToolCallID    string
-	ToolType      string
-	ToolName      string
-	ArgumentsJSON string
-	Status        string
-	OutputJSON    string
-	ErrorJSON     string
+	ToolCallID       string
+	ToolType         string
+	ToolName         string
+	ArgumentsJSON    string
+	ThoughtSignature string
+	Status           string
+	OutputJSON       string
+	ErrorJSON        string
 }
 
 // ToolResult 记录工具执行结果，由各 adapter 序列化为对应 SDK/API 所需格式。
@@ -1241,6 +1242,9 @@ func mergeToolCall(existing ToolCall, incoming ToolCall) ToolCall {
 	}
 	if value := strings.TrimSpace(incoming.ArgumentsJSON); value != "" {
 		merged.ArgumentsJSON = value
+	}
+	if value := strings.TrimSpace(incoming.ThoughtSignature); value != "" {
+		merged.ThoughtSignature = value
 	}
 	if value := strings.TrimSpace(incoming.OutputJSON); value != "" {
 		merged.OutputJSON = value

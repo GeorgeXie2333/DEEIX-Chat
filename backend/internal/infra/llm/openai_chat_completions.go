@@ -198,26 +198,44 @@ func buildChatCompletionsToolCalls(toolCalls []ToolCall) []map[string]interface{
 			args = "{}"
 		}
 		if toolType == "custom" {
-			items = append(items, map[string]interface{}{
+			payload := map[string]interface{}{
 				"id":   strings.TrimSpace(item.ToolCallID),
 				"type": toolType,
 				"custom": map[string]interface{}{
 					"name":  strings.TrimSpace(item.ToolName),
 					"input": args,
 				},
-			})
+			}
+			addChatCompletionsToolCallThoughtSignature(payload, nil, item.ThoughtSignature)
+			items = append(items, payload)
 			continue
 		}
-		items = append(items, map[string]interface{}{
+		function := map[string]interface{}{
+			"name":      strings.TrimSpace(item.ToolName),
+			"arguments": args,
+		}
+		payload := map[string]interface{}{
 			"id":   strings.TrimSpace(item.ToolCallID),
 			"type": toolType,
-			"function": map[string]interface{}{
-				"name":      strings.TrimSpace(item.ToolName),
-				"arguments": args,
-			},
-		})
+		}
+		addChatCompletionsToolCallThoughtSignature(payload, function, item.ThoughtSignature)
+		payload["function"] = function
+		items = append(items, payload)
 	}
 	return items
+}
+
+func addChatCompletionsToolCallThoughtSignature(payload map[string]interface{}, function map[string]interface{}, signature string) {
+	value := strings.TrimSpace(signature)
+	if value == "" {
+		return
+	}
+	payload["thought_signature"] = value
+	payload["thoughtSignature"] = value
+	if function != nil {
+		function["thought_signature"] = value
+		function["thoughtSignature"] = value
+	}
 }
 
 // buildChatCompletionsContent 将消息内容序列化为 Chat Completions API 格式。
@@ -348,12 +366,18 @@ func mergeChatStreamToolCalls(parsed map[string]interface{}, result *GenerateOut
 		if argumentsDelta := getString(function["arguments"]); argumentsDelta != "" {
 			current.ArgumentsJSON += argumentsDelta
 		}
+		if signature := chatCompletionsToolCallThoughtSignature(payload, function); signature != "" {
+			current.ThoughtSignature = signature
+		}
 		custom := asMap(payload["custom"])
 		if name := strings.TrimSpace(getString(custom["name"])); name != "" {
 			current.ToolName = name
 		}
 		if inputDelta := getString(custom["input"]); inputDelta != "" {
 			current.ArgumentsJSON += inputDelta
+		}
+		if signature := chatCompletionsToolCallThoughtSignature(payload, custom); signature != "" {
+			current.ThoughtSignature = signature
 		}
 		result.ToolCalls[index] = current
 	}
@@ -585,21 +609,33 @@ func parseChatToolCalls(raw interface{}) []ToolCall {
 		}
 		toolName := strings.TrimSpace(getString(function["name"]))
 		arguments := normalizeJSONString(function["arguments"])
+		details := function
 		if toolType == "custom" {
 			custom := asMap(payload["custom"])
 			toolName = strings.TrimSpace(getString(custom["name"]))
 			arguments = normalizeJSONString(custom["input"])
+			details = custom
 		}
 		if arguments == "" {
 			arguments = "{}"
 		}
 		result = append(result, ToolCall{
-			ToolCallID:    strings.TrimSpace(getString(payload["id"])),
-			ToolType:      toolType,
-			ToolName:      toolName,
-			ArgumentsJSON: arguments,
-			Status:        "requested",
+			ToolCallID:       strings.TrimSpace(getString(payload["id"])),
+			ToolType:         toolType,
+			ToolName:         toolName,
+			ArgumentsJSON:    arguments,
+			ThoughtSignature: chatCompletionsToolCallThoughtSignature(payload, details),
+			Status:           "requested",
 		})
 	}
 	return result
+}
+
+func chatCompletionsToolCallThoughtSignature(payload map[string]interface{}, details map[string]interface{}) string {
+	return firstNonEmptyString(
+		getString(payload["thought_signature"]),
+		getString(payload["thoughtSignature"]),
+		getString(details["thought_signature"]),
+		getString(details["thoughtSignature"]),
+	)
 }

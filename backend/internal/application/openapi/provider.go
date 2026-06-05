@@ -2,6 +2,7 @@ package openapi
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -197,6 +198,10 @@ func chatStreamToolCallChunk(model string, responseID string, index int, item ll
 	function := map[string]interface{}{}
 	if includeIdentity {
 		function["name"] = strings.TrimSpace(item.ToolName)
+		if signature := strings.TrimSpace(item.ThoughtSignature); signature != "" {
+			function["thought_signature"] = signature
+			function["thoughtSignature"] = signature
+		}
 	}
 	if argumentsDelta != "" {
 		function["arguments"] = argumentsDelta
@@ -205,8 +210,12 @@ func chatStreamToolCallChunk(model string, responseID string, index int, item ll
 		"index": index,
 	}
 	if includeIdentity {
-		toolCall["id"] = strings.TrimSpace(item.ToolCallID)
+		toolCall["id"] = openAPIToolCallID(item)
 		toolCall["type"] = "function"
+		if signature := strings.TrimSpace(item.ThoughtSignature); signature != "" {
+			toolCall["thought_signature"] = signature
+			toolCall["thoughtSignature"] = signature
+		}
 	}
 	if len(function) > 0 {
 		toolCall["function"] = function
@@ -301,16 +310,50 @@ func normalizeOpenAIOutputToolCalls(toolCalls []llm.ToolCall) []llm.ToolCall {
 func chatToolCallsPayload(toolCalls []llm.ToolCall) []interface{} {
 	items := make([]interface{}, 0, len(toolCalls))
 	for _, item := range toolCalls {
-		items = append(items, map[string]interface{}{
-			"id":   strings.TrimSpace(item.ToolCallID),
+		function := map[string]interface{}{
+			"name":      strings.TrimSpace(item.ToolName),
+			"arguments": firstNonEmpty(strings.TrimSpace(item.ArgumentsJSON), "{}"),
+		}
+		payload := map[string]interface{}{
+			"id":   openAPIToolCallID(item),
 			"type": "function",
-			"function": map[string]interface{}{
-				"name":      strings.TrimSpace(item.ToolName),
-				"arguments": firstNonEmpty(strings.TrimSpace(item.ArgumentsJSON), "{}"),
-			},
-		})
+		}
+		if signature := strings.TrimSpace(item.ThoughtSignature); signature != "" {
+			payload["thought_signature"] = signature
+			payload["thoughtSignature"] = signature
+			function["thought_signature"] = signature
+			function["thoughtSignature"] = signature
+		}
+		payload["function"] = function
+		items = append(items, payload)
 	}
 	return items
+}
+
+const openAPIToolCallThoughtSignatureMarker = "__gts_"
+
+func openAPIToolCallID(item llm.ToolCall) string {
+	id := strings.TrimSpace(item.ToolCallID)
+	signature := strings.TrimSpace(item.ThoughtSignature)
+	if id == "" || signature == "" || openAPIToolCallThoughtSignatureFromID(id) != "" {
+		return id
+	}
+	encoded := base64.RawURLEncoding.EncodeToString([]byte(signature))
+	return id + openAPIToolCallThoughtSignatureMarker + encoded
+}
+
+func openAPIToolCallThoughtSignatureFromID(id string) string {
+	value := strings.TrimSpace(id)
+	index := strings.LastIndex(value, openAPIToolCallThoughtSignatureMarker)
+	if index < 0 {
+		return ""
+	}
+	encoded := value[index+len(openAPIToolCallThoughtSignatureMarker):]
+	decoded, err := base64.RawURLEncoding.DecodeString(encoded)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(decoded))
 }
 
 func legacyFunctionCallPayload(item llm.ToolCall) map[string]interface{} {

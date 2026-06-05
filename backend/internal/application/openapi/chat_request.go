@@ -277,11 +277,12 @@ func parseAssistantToolCalls(item map[string]interface{}, messageIndex int) ([]l
 		args = "{}"
 	}
 	return []llm.ToolCall{{
-		ToolCallID:    stableChatToolCallID(messageIndex, 0),
-		ToolType:      "function",
-		ToolName:      name,
-		ArgumentsJSON: args,
-		Status:        "requested",
+		ToolCallID:       stableChatToolCallID(messageIndex, 0),
+		ToolType:         "function",
+		ToolName:         name,
+		ArgumentsJSON:    args,
+		ThoughtSignature: chatToolCallThoughtSignature(legacy, nil, stableChatToolCallID(messageIndex, 0)),
+		Status:           "requested",
 	}}, nil
 }
 
@@ -320,14 +321,25 @@ func parseModernAssistantToolCalls(raw interface{}, messageIndex int) ([]llm.Too
 			id = stableChatToolCallID(messageIndex, index)
 		}
 		toolCalls = append(toolCalls, llm.ToolCall{
-			ToolCallID:    id,
-			ToolType:      toolType,
-			ToolName:      name,
-			ArgumentsJSON: args,
-			Status:        "requested",
+			ToolCallID:       id,
+			ToolType:         toolType,
+			ToolName:         name,
+			ArgumentsJSON:    args,
+			ThoughtSignature: chatToolCallThoughtSignature(payload, function, id),
+			Status:           "requested",
 		})
 	}
 	return toolCalls, nil
+}
+
+func chatToolCallThoughtSignature(payload map[string]interface{}, function map[string]interface{}, toolCallID string) string {
+	return firstNonEmpty(
+		strings.TrimSpace(stringValue(payload["thought_signature"])),
+		strings.TrimSpace(stringValue(payload["thoughtSignature"])),
+		strings.TrimSpace(stringValue(function["thought_signature"])),
+		strings.TrimSpace(stringValue(function["thoughtSignature"])),
+		openAPIToolCallThoughtSignatureFromID(toolCallID),
+	)
 }
 
 func stableChatToolCallID(messageIndex int, callIndex int) string {

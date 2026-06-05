@@ -762,12 +762,16 @@ func buildGeminiParts(msg Message) []map[string]interface{} {
 		if err := json.Unmarshal([]byte(args), &arguments); err != nil {
 			arguments = map[string]interface{}{"arguments": args}
 		}
-		parts = append(parts, map[string]interface{}{
+		functionPart := map[string]interface{}{
 			"functionCall": map[string]interface{}{
 				"name": strings.TrimSpace(item.ToolName),
 				"args": arguments,
 			},
-		})
+		}
+		if signature := strings.TrimSpace(item.ThoughtSignature); signature != "" {
+			functionPart["thoughtSignature"] = signature
+		}
+		parts = append(parts, functionPart)
 	}
 	for _, item := range msg.ToolResults {
 		response := map[string]interface{}{
@@ -956,6 +960,15 @@ func extractGeminiReasoning(parsed map[string]interface{}) *ReasoningOutput {
 	return result
 }
 
+func geminiFunctionCallThoughtSignature(part map[string]interface{}, functionCall map[string]interface{}) string {
+	return firstNonEmptyString(
+		getString(part["thoughtSignature"]),
+		getString(part["thought_signature"]),
+		getString(functionCall["thoughtSignature"]),
+		getString(functionCall["thought_signature"]),
+	)
+}
+
 // parseGeminiUsage 解析 usageMetadata。
 func parseGeminiUsage(parsed map[string]interface{}) Usage {
 	totalInputTokens := getInt64FromPath(parsed, "usageMetadata", "promptTokenCount")
@@ -989,11 +1002,12 @@ func parseGeminiFunctionCalls(parsed map[string]interface{}) []ToolCall {
 			toolCallID = fmt.Sprintf("call_%d", len(result))
 		}
 		result = append(result, ToolCall{
-			ToolCallID:    toolCallID,
-			ToolType:      "function",
-			ToolName:      strings.TrimSpace(getString(fc["name"])),
-			ArgumentsJSON: arguments,
-			Status:        "requested",
+			ToolCallID:       toolCallID,
+			ToolType:         "function",
+			ToolName:         strings.TrimSpace(getString(fc["name"])),
+			ArgumentsJSON:    arguments,
+			ThoughtSignature: geminiFunctionCallThoughtSignature(part, fc),
+			Status:           "requested",
 		})
 	}
 	if result == nil {
@@ -1241,11 +1255,12 @@ func applyGeminiStreamChunk(
 			toolCallID = fmt.Sprintf("call_%d", len(result.ToolCalls))
 		}
 		toolCall := ToolCall{
-			ToolCallID:    toolCallID,
-			ToolType:      "function",
-			ToolName:      strings.TrimSpace(getString(fc["name"])),
-			ArgumentsJSON: arguments,
-			Status:        "requested",
+			ToolCallID:       toolCallID,
+			ToolType:         "function",
+			ToolName:         strings.TrimSpace(getString(fc["name"])),
+			ArgumentsJSON:    arguments,
+			ThoughtSignature: geminiFunctionCallThoughtSignature(part, fc),
+			Status:           "requested",
 		}
 		result.ToolCalls = append(result.ToolCalls, toolCall)
 		if onEvent != nil {
