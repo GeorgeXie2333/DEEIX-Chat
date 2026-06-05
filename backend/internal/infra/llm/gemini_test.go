@@ -93,6 +93,41 @@ func TestApplyGeminiStreamChunkStoresReasoningAndCitations(t *testing.T) {
 	}
 }
 
+func TestApplyGeminiStreamChunkAssignsStableFunctionCallIDs(t *testing.T) {
+	result := &GenerateOutput{ToolCalls: make([]ToolCall, 0)}
+	var emitted []ToolCall
+	err := applyGeminiStreamChunk(mustDecodeObject(t, `{
+		"responseId": "gemini-tool-stream",
+		"candidates": [
+			{
+				"content": {
+					"parts": [
+						{"functionCall": {"name": "first_tool", "args": {"a": 1}}},
+						{"functionCall": {"name": "second_tool", "args": {"b": 2}}}
+					]
+				}
+			}
+		]
+	}`), result, func(event GenerateStreamEvent) error {
+		if event.ServerToolCall != nil {
+			emitted = append(emitted, *event.ServerToolCall)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("apply gemini stream chunk: %v", err)
+	}
+	if len(result.ToolCalls) != 2 || len(emitted) != 2 {
+		t.Fatalf("expected two tool calls, result=%#v emitted=%#v", result.ToolCalls, emitted)
+	}
+	if result.ToolCalls[0].ToolCallID != "call_0" || result.ToolCalls[1].ToolCallID != "call_1" {
+		t.Fatalf("expected stable fallback ids, got %#v", result.ToolCalls)
+	}
+	if emitted[0].ToolCallID != "call_0" || emitted[1].ToolCallID != "call_1" {
+		t.Fatalf("expected emitted fallback ids, got %#v", emitted)
+	}
+}
+
 func TestGeminiGenerateRequestsThoughtSummariesByDefault(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1beta/models/gemini-2.0-flash:generateContent" {

@@ -7958,7 +7958,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "面向用户 API Key 的 OpenAI-compatible chat completions。支持客户端函数调用协议：tools/tool_choice/tool_calls、role=tool 结果消息，以及旧版 functions/function_call；平台只做协议转换，不代 API 用户执行函数。",
+                "description": "面向用户 API Key 的 OpenAI-compatible chat completions。支持客户端函数调用协议：tools/tool_choice/tool_calls、role=tool 结果消息，以及旧版 functions/function_call；平台只做协议转换，不代 API 用户执行函数。配置为 OpenAI Responses 或 xAI Responses 的开放 API 上游会使用 Chat Completions 兼容端点，不暴露 Responses 原生工具。",
                 "consumes": [
                     "application/json"
                 ],
@@ -7991,6 +7991,52 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/models": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "面向用户 API Key 的模型列表，返回 new-api 风格的 success/data/object 结构；当前开放 API 模型均支持 OpenAI Chat Completions 兼容端点。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openapi-compatible"
+                ],
+                "summary": "OpenAI-compatible Models",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_openapi.ModelListResponseDoc"
                         }
                     },
                     "401": {
@@ -14977,6 +15023,55 @@ const docTemplate = `{
                 },
                 "parameters": {
                     "type": "object"
+                }
+            }
+        },
+        "internal_transport_http_openapi.ModelItemDoc": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer",
+                    "example": 1626777600
+                },
+                "id": {
+                    "type": "string",
+                    "example": "gpt-5"
+                },
+                "object": {
+                    "type": "string",
+                    "example": "model"
+                },
+                "owned_by": {
+                    "type": "string",
+                    "example": "deeix"
+                },
+                "supported_endpoint_types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "openai"
+                    ]
+                }
+            }
+        },
+        "internal_transport_http_openapi.ModelListResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_openapi.ModelItemDoc"
+                    }
+                },
+                "object": {
+                    "type": "string",
+                    "example": "list"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },

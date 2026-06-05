@@ -78,6 +78,17 @@ func (h *Handler) DeleteAPIKey(c *gin.Context) {
 }
 
 // ListModels 处理 GET /v1/models。
+// @Summary OpenAI-compatible Models
+// @Description 面向用户 API Key 的模型列表，返回 new-api 风格的 success/data/object 结构；当前开放 API 模型均支持 OpenAI Chat Completions 兼容端点。
+// @Tags openapi-compatible
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} ModelListResponseDoc
+// @Failure 401 {object} openAIErrorResponse
+// @Failure 429 {object} openAIErrorResponse
+// @Failure 500 {object} openAIErrorResponse
+// @Router /v1/models [get]
 func (h *Handler) ListModels(c *gin.Context) {
 	key, ok := h.authenticateCompatible(c)
 	if !ok {
@@ -97,7 +108,7 @@ func (h *Handler) ListModels(c *gin.Context) {
 
 // ChatCompletions 处理 POST /v1/chat/completions。
 // @Summary OpenAI-compatible Chat Completions
-// @Description 面向用户 API Key 的 OpenAI-compatible chat completions。支持客户端函数调用协议：tools/tool_choice/tool_calls、role=tool 结果消息，以及旧版 functions/function_call；平台只做协议转换，不代 API 用户执行函数。
+// @Description 面向用户 API Key 的 OpenAI-compatible chat completions。支持客户端函数调用协议：tools/tool_choice/tool_calls、role=tool 结果消息，以及旧版 functions/function_call；平台只做协议转换，不代 API 用户执行函数。配置为 OpenAI Responses 或 xAI Responses 的开放 API 上游会使用 Chat Completions 兼容端点，不暴露 Responses 原生工具。
 // @Tags openapi-compatible
 // @Accept json
 // @Produce json

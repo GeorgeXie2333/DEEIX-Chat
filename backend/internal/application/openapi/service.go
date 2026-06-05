@@ -144,18 +144,22 @@ type APIKeyView struct {
 	Exportable        bool       `json:"exportable,omitempty"`
 }
 
+const newAPIModelCreatedUnix int64 = 1626777600
+
 // OpenAIModelList 是 /v1/models 的兼容响应。
 type OpenAIModelList struct {
-	Object string        `json:"object"`
-	Data   []OpenAIModel `json:"data"`
+	Success bool          `json:"success"`
+	Data    []OpenAIModel `json:"data"`
+	Object  string        `json:"object"`
 }
 
 // OpenAIModel 是 /v1/models 的模型项。
 type OpenAIModel struct {
-	ID      string `json:"id"`
-	Object  string `json:"object"`
-	Created int64  `json:"created"`
-	OwnedBy string `json:"owned_by"`
+	ID                     string   `json:"id"`
+	Object                 string   `json:"object"`
+	Created                int64    `json:"created"`
+	OwnedBy                string   `json:"owned_by"`
+	SupportedEndpointTypes []string `json:"supported_endpoint_types"`
 }
 
 // RawChatCompletionResult 表示原始 Chat Completions 调用结果。
@@ -308,7 +312,7 @@ func (s *Service) EnforceRateLimit(ctx context.Context, key *domainopenapi.UserA
 
 // ListModels 返回管理员开放白名单内的 active 文本模型。
 func (s *Service) ListModels(ctx context.Context) (OpenAIModelList, error) {
-	result := OpenAIModelList{Object: "list", Data: []OpenAIModel{}}
+	result := OpenAIModelList{Success: true, Object: "list", Data: []OpenAIModel{}}
 	if s == nil || s.channel == nil {
 		return result, nil
 	}
@@ -361,10 +365,11 @@ func (s *Service) ListModels(ctx context.Context) (OpenAIModelList, error) {
 			}
 			seen[publicID] = struct{}{}
 			result.Data = append(result.Data, OpenAIModel{
-				ID:      publicID,
-				Object:  "model",
-				Created: 0,
-				OwnedBy: "deeix",
+				ID:                     publicID,
+				Object:                 "model",
+				Created:                newAPIModelCreatedUnix,
+				OwnedBy:                "deeix",
+				SupportedEndpointTypes: []string{"openai"},
 			})
 		}
 	}

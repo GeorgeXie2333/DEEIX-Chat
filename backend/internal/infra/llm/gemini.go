@@ -771,13 +771,8 @@ func buildGeminiParts(msg Message) []map[string]interface{} {
 	}
 	for _, item := range msg.ToolResults {
 		response := map[string]interface{}{
-			"name": strings.TrimSpace(item.ToolName),
-			"response": map[string]interface{}{
-				"content": buildToolResultContent(item),
-			},
-		}
-		if strings.TrimSpace(item.Error) != "" {
-			response["response"].(map[string]interface{})["error"] = strings.TrimSpace(item.Error)
+			"name":     strings.TrimSpace(item.ToolName),
+			"response": geminiFunctionResponseContent(item),
 		}
 		parts = append(parts, map[string]interface{}{"functionResponse": response})
 	}
@@ -786,6 +781,26 @@ func buildGeminiParts(msg Message) []map[string]interface{} {
 		return []map[string]interface{}{{"text": msg.Content}}
 	}
 	return parts
+}
+
+func geminiFunctionResponseContent(item ToolResult) map[string]interface{} {
+	content := buildToolResultContent(item)
+	var decoded interface{}
+	if err := json.Unmarshal([]byte(content), &decoded); err == nil {
+		switch value := decoded.(type) {
+		case map[string]interface{}:
+			return value
+		case []interface{}:
+			return map[string]interface{}{"result": value}
+		case string:
+			return map[string]interface{}{"content": value}
+		case nil:
+			return map[string]interface{}{"content": ""}
+		default:
+			return map[string]interface{}{"result": value}
+		}
+	}
+	return map[string]interface{}{"content": content}
 }
 
 // ── 公共 HTTP 辅助 ─────────────────────────────────────────────────────────────
@@ -969,7 +984,12 @@ func parseGeminiFunctionCalls(parsed map[string]interface{}) []ToolCall {
 		if arguments == "" {
 			arguments = "{}"
 		}
+		toolCallID := strings.TrimSpace(getString(fc["id"]))
+		if toolCallID == "" {
+			toolCallID = fmt.Sprintf("call_%d", len(result))
+		}
 		result = append(result, ToolCall{
+			ToolCallID:    toolCallID,
 			ToolType:      "function",
 			ToolName:      strings.TrimSpace(getString(fc["name"])),
 			ArgumentsJSON: arguments,
@@ -1216,7 +1236,12 @@ func applyGeminiStreamChunk(
 		if arguments == "" {
 			arguments = "{}"
 		}
+		toolCallID := strings.TrimSpace(getString(fc["id"]))
+		if toolCallID == "" {
+			toolCallID = fmt.Sprintf("call_%d", len(result.ToolCalls))
+		}
 		toolCall := ToolCall{
+			ToolCallID:    toolCallID,
 			ToolType:      "function",
 			ToolName:      strings.TrimSpace(getString(fc["name"])),
 			ArgumentsJSON: arguments,

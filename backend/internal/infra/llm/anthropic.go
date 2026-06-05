@@ -356,7 +356,7 @@ func withAnthropicParallelToolUseOption(toolChoice map[string]interface{}, optio
 	if len(toolChoice) == 0 {
 		return toolChoice
 	}
-	if anthropicDisableParallelToolUse(options) {
+	if anthropicDisableParallelToolUse(options) && strings.TrimSpace(getString(toolChoice["type"])) != "none" {
 		toolChoice["disable_parallel_tool_use"] = true
 	}
 	return toolChoice

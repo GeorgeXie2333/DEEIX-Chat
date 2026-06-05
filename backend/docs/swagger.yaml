@@ -4648,6 +4648,40 @@ definitions:
       parameters:
         type: object
     type: object
+  internal_transport_http_openapi.ModelItemDoc:
+    properties:
+      created:
+        example: 1626777600
+        type: integer
+      id:
+        example: gpt-5
+        type: string
+      object:
+        example: model
+        type: string
+      owned_by:
+        example: deeix
+        type: string
+      supported_endpoint_types:
+        example:
+        - openai
+        items:
+          type: string
+        type: array
+    type: object
+  internal_transport_http_openapi.ModelListResponseDoc:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_transport_http_openapi.ModelItemDoc'
+        type: array
+      object:
+        example: list
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
   internal_transport_http_openapi.openAIError:
     properties:
       code:
@@ -9758,7 +9792,8 @@ paths:
       consumes:
       - application/json
       description: 面向用户 API Key 的 OpenAI-compatible chat completions。支持客户端函数调用协议：tools/tool_choice/tool_calls、role=tool
-        结果消息，以及旧版 functions/function_call；平台只做协议转换，不代 API 用户执行函数。
+        结果消息，以及旧版 functions/function_call；平台只做协议转换，不代 API 用户执行函数。配置为 OpenAI Responses
+        或 xAI Responses 的开放 API 上游会使用 Chat Completions 兼容端点，不暴露 Responses 原生工具。
       parameters:
       - description: OpenAI-compatible chat completion request
         in: body
@@ -9792,6 +9827,36 @@ paths:
       security:
       - BearerAuth: []
       summary: OpenAI-compatible Chat Completions
+      tags:
+      - openapi-compatible
+  /v1/models:
+    get:
+      consumes:
+      - application/json
+      description: 面向用户 API Key 的模型列表，返回 new-api 风格的 success/data/object 结构；当前开放 API
+        模型均支持 OpenAI Chat Completions 兼容端点。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_openapi.ModelListResponseDoc'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_transport_http_openapi.openAIErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/internal_transport_http_openapi.openAIErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_openapi.openAIErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: OpenAI-compatible Models
       tags:
       - openapi-compatible
 securityDefinitions:

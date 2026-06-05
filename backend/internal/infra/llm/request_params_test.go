@@ -898,6 +898,24 @@ func TestBuildAnthropicRequestBodyMapsOpenAIToolChoiceObject(t *testing.T) {
 	}
 }
 
+func TestBuildAnthropicRequestBodyToolChoiceNoneDropsParallelOption(t *testing.T) {
+	payload := mustBuildAnthropicRequestBody(t, "claude-sonnet-4-5", GenerateInput{
+		Messages: []Message{{Role: "user", Content: "answer without tools"}},
+		Options: map[string]interface{}{
+			"parallel_tool_calls": false,
+			"tool_choice":         "none",
+		},
+	}, false)
+
+	toolChoice, ok := payload["tool_choice"].(map[string]interface{})
+	if !ok || toolChoice["type"] != "none" {
+		t.Fatalf("expected Anthropic tool_choice none, got %#v", payload["tool_choice"])
+	}
+	if _, ok := toolChoice["disable_parallel_tool_use"]; ok {
+		t.Fatalf("expected tool_choice none to drop disable_parallel_tool_use, got %#v", toolChoice)
+	}
+}
+
 func TestBuildGeminiRequestBodyWebSearch(t *testing.T) {
 	payload := mustBuildGeminiRequestBody(t, GenerateInput{
 		Messages: []Message{{Role: "user", Content: "hello"}},

@@ -166,8 +166,25 @@ func TestListModelsFiltersAllowlistedActiveTextChatCompletionModels(t *testing.T
 	if result.Object != "list" {
 		t.Fatalf("expected OpenAI list object, got %q", result.Object)
 	}
+	if !result.Success {
+		t.Fatalf("expected new-api compatible success flag")
+	}
 	if got, want := sortedModelIDs(result.Data), []string{"claude-upstream", "gemini-upstream", "gpt-responses-upstream", "grok-upstream", "upstream-model"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected public models: got %#v want %#v", got, want)
+	}
+	for _, item := range result.Data {
+		if item.Object != "model" {
+			t.Fatalf("expected model object, got %#v", item)
+		}
+		if item.Created != newAPIModelCreatedUnix {
+			t.Fatalf("expected new-api compatible created timestamp, got %#v", item)
+		}
+		if item.OwnedBy == "" {
+			t.Fatalf("expected owned_by to be populated, got %#v", item)
+		}
+		if !reflect.DeepEqual(item.SupportedEndpointTypes, []string{"openai"}) {
+			t.Fatalf("expected supported endpoint types, got %#v", item)
+		}
 	}
 }
 

@@ -30,7 +30,7 @@ func (p *LLMRawChatProvider) CompleteChat(ctx context.Context, route llm.RouteCo
 	if p == nil || p.client == nil {
 		return RawChatCompletionResult{}, ErrModelNotAllowed
 	}
-	if llm.NormalizeAdapter(route.Protocol) != llm.AdapterOpenAIChatCompletions {
+	if !usesOpenAPIChatCompletionsPassthrough(route.Protocol) {
 		input, err := buildGenerateInputFromChatCompletion(ctx, body, p.imageResolver)
 		if err != nil {
 			return RawChatCompletionResult{}, err
@@ -58,7 +58,7 @@ func (p *LLMRawChatProvider) StreamChat(
 	if p == nil || p.client == nil {
 		return RawChatCompletionResult{}, ErrModelNotAllowed
 	}
-	if llm.NormalizeAdapter(route.Protocol) != llm.AdapterOpenAIChatCompletions {
+	if !usesOpenAPIChatCompletionsPassthrough(route.Protocol) {
 		input, err := buildGenerateInputFromChatCompletion(ctx, body, p.imageResolver)
 		if err != nil {
 			return RawChatCompletionResult{}, err
@@ -114,6 +114,15 @@ func (p *LLMRawChatProvider) StreamChat(
 		return RawChatCompletionResult{}, err
 	}
 	return rawResultFromLLMOutput(output), nil
+}
+
+func usesOpenAPIChatCompletionsPassthrough(protocol string) bool {
+	switch llm.NormalizeAdapter(protocol) {
+	case llm.AdapterOpenAIChatCompletions, llm.AdapterOpenAIResponses, llm.AdapterXAIResponses:
+		return true
+	default:
+		return false
+	}
 }
 
 func chatResultFromGenerateOutput(output *llm.GenerateOutput, model string, legacyFunctionCall bool) RawChatCompletionResult {

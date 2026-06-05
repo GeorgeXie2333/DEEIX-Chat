@@ -62,3 +62,18 @@ type ChatCompletionChoiceDoc struct {
 	Message      ChatMessageDoc `json:"message"`
 	FinishReason string         `json:"finish_reason" example:"tool_calls"`
 }
+
+// ModelListResponseDoc documents GET /v1/models.
+type ModelListResponseDoc struct {
+	Success bool           `json:"success" example:"true"`
+	Data    []ModelItemDoc `json:"data"`
+	Object  string         `json:"object" example:"list"`
+}
+
+type ModelItemDoc struct {
+	ID                     string   `json:"id" example:"gpt-5"`
+	Object                 string   `json:"object" example:"model"`
+	Created                int64    `json:"created" example:"1626777600"`
+	OwnedBy                string   `json:"owned_by" example:"deeix"`
+	SupportedEndpointTypes []string `json:"supported_endpoint_types" example:"openai"`
+}

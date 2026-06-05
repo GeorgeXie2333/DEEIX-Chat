@@ -67,6 +67,41 @@ func TestBuildChatCompletionsToolMessages(t *testing.T) {
 	}
 }
 
+func TestBuildGeminiFunctionResponsesWrapToolResultContent(t *testing.T) {
+	objectParts := buildGeminiParts(Message{Role: "tool", ToolResults: []ToolResult{{
+		ToolCallID: "call_object",
+		ToolName:   "get_weather",
+		OutputJSON: `{"temperature":20}`,
+	}}})
+	objectResponse := asMap(asMap(objectParts[0]["functionResponse"])["response"])
+	if objectResponse["temperature"] != float64(20) {
+		t.Fatalf("expected JSON object tool result response, got %#v", objectResponse)
+	}
+	if _, ok := objectResponse["content"]; ok {
+		t.Fatalf("expected JSON object not to be nested under content, got %#v", objectResponse)
+	}
+
+	arrayParts := buildGeminiParts(Message{Role: "tool", ToolResults: []ToolResult{{
+		ToolCallID: "call_array",
+		ToolName:   "list_items",
+		OutputJSON: `[{"id":1}]`,
+	}}})
+	arrayResponse := asMap(asMap(arrayParts[0]["functionResponse"])["response"])
+	if resultItems := asSlice(arrayResponse["result"]); len(resultItems) != 1 {
+		t.Fatalf("expected JSON array tool result under result, got %#v", arrayResponse)
+	}
+
+	textParts := buildGeminiParts(Message{Role: "tool", ToolResults: []ToolResult{{
+		ToolCallID: "call_text",
+		ToolName:   "plain_result",
+		OutputJSON: `plain text`,
+	}}})
+	textResponse := asMap(asMap(textParts[0]["functionResponse"])["response"])
+	if textResponse["content"] != "plain text" {
+		t.Fatalf("expected text tool result under content, got %#v", textResponse)
+	}
+}
+
 func TestParseChatCompletionsOutputSeparatesReasoningContentParts(t *testing.T) {
 	result := &GenerateOutput{}
 	parseChatCompletionsOutput(AdapterOpenAIChatCompletions, map[string]interface{}{
