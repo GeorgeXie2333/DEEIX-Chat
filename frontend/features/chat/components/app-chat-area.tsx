@@ -51,6 +51,7 @@ import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { downloadConversationArchive } from "@/features/recent/utils/conversation-archive";
 import type { ConversationOptions } from "@/shared/api/conversation.types";
 import type { MCPToolDTO } from "@/shared/api/mcp.types";
+import { useTheme } from "@/shared/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 const MODEL_OPTIONS_STORAGE_PREFIX = "deeix-chat:chat-model-options:";
@@ -146,6 +147,7 @@ export function AppChatArea() {
     router.push(projectID ? `/chat?project_id=${encodeURIComponent(projectID)}` : "/chat");
   }, [requestNewConversation, routeProjectID, router]);
   const activeGenerationRunsRef = React.useRef<Set<string>>(new Set());
+  const failedGenerationRunsRef = React.useRef<Set<string>>(new Set());
   const { deleteFilesByDefault } = useChatPreferences();
   const {
     items,
@@ -163,9 +165,11 @@ export function AppChatArea() {
     errorMsg,
     messages,
     reload,
+    replaceMessage,
     resumingRunID,
   } = useChatData(conversationID, {
     activeGenerationRunsRef,
+    failedGenerationRunsRef,
   });
   const { greetingTitle } = useChatViewerProfile();
   const [manualConversationTitle, setManualConversationTitle] = React.useState("");
@@ -193,6 +197,7 @@ export function AppChatArea() {
 
   const {
     modelOptions,
+    refreshModelOption,
     modelsLoading,
     modelsErrorMsg,
     sendShortcut,
@@ -233,6 +238,7 @@ export function AppChatArea() {
   const [toolsLoading, setToolsLoading] = React.useState(true);
   const [selectedToolIDs, setSelectedToolIDs] = React.useState<number[]>([]);
   const htmlVisualPrompt = useHTMLVisualPrompt();
+  const { resolvedTheme } = useTheme();
   const initializedOptionsModelRef = React.useRef("");
 
   React.useEffect(() => {
@@ -274,14 +280,23 @@ export function AppChatArea() {
     [selectedModel?.platformModelName],
   );
 
-  const resetModelOptions = React.useCallback(() => {
+  const resetModelOptions = React.useCallback((defaults?: ConversationOptions) => {
     const platformModelName = selectedModel?.platformModelName.trim() || "";
-    const defaults = cloneConversationOptions(selectedModel?.defaultOptions ?? {});
+    const nextDefaults = cloneConversationOptions(defaults ?? selectedModel?.defaultOptions ?? {});
     if (platformModelName) {
       removeCachedModelOptions(platformModelName);
     }
-    setOptions(defaults);
+    setOptions(nextDefaults);
   }, [selectedModel]);
+
+  const restoreBackendDefaultModelOptions = React.useCallback(async () => {
+    const platformModelName = selectedModel?.platformModelName.trim() || selectedPlatformModelName.trim();
+    if (!platformModelName) {
+      return null;
+    }
+    const refreshedModel = await refreshModelOption(platformModelName);
+    return refreshedModel ? cloneConversationOptions(refreshedModel.defaultOptions) : null;
+  }, [refreshModelOption, selectedModel?.platformModelName, selectedPlatformModelName]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -340,6 +355,7 @@ export function AppChatArea() {
 
   const {
     onCycleMessageBranch,
+    onEditAssistantMessage,
     onEditUserMessage,
     onContinueAssistantMessage,
     onRetryAssistantMessage,
@@ -362,6 +378,7 @@ export function AppChatArea() {
     modelOptions,
     selectedToolIDs,
     htmlVisualPromptEnabled: htmlVisualPrompt.enabled,
+    htmlVisualColorMode: resolvedTheme,
     options: modelOptionPolicyDisabled ? EMPTY_CONVERSATION_OPTIONS : options,
     draft,
     attachments,
@@ -372,10 +389,12 @@ export function AppChatArea() {
     onConversationCreated: setLocallyCreatedConversationID,
     touchByPublicID,
     reload,
+    replaceMessage,
     setDraft,
     setAttachments,
     releaseAttachments,
     activeGenerationRunsRef,
+    failedGenerationRunsRef,
     resumingRunID,
   });
   const generating = sending || Boolean(resumingRunID);
@@ -715,6 +734,7 @@ export function AppChatArea() {
     onHTMLVisualPromptChange: htmlVisualPrompt.setEnabled,
     onOptionsChange: setModelOptions,
     onOptionsReset: resetModelOptions,
+    onOptionsDefaultRestore: restoreBackendDefaultModelOptions,
     onUploadFiles,
     onCaptureScreenshot,
     onRemoveAttachment,
@@ -800,6 +820,7 @@ export function AppChatArea() {
                   onRetryUserMessage={onRetryUserMessage}
                   onRetryAssistantMessage={onRetryAssistantMessage}
                   onContinueAssistantMessage={onContinueAssistantMessage}
+                  onEditAssistantMessage={onEditAssistantMessage}
                   onEditUserMessage={onEditUserMessage}
                   onEditImageAttachment={onEditGeneratedImageAttachment}
                   onOpenCodeArtifact={artifactWorkspace.openArtifact}

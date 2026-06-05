@@ -49,6 +49,8 @@ var (
 	ErrSensitivePromptBlocked = errors.New("sensitive prompt blocked")
 	// ErrInvalidMessageBranch 消息分支参数无效。
 	ErrInvalidMessageBranch = errors.New("invalid message branch")
+	// ErrInvalidMessageContent 消息内容不合法。
+	ErrInvalidMessageContent = errors.New("invalid message content")
 	// ErrMessageNotFound 消息不存在或无权限。
 	ErrMessageNotFound = errors.New("message not found")
 	// ErrContextArtifactNotFound 上下文证据不存在或无权限。
@@ -57,6 +59,10 @@ var (
 	ErrInvalidMessageFeedback = errors.New("invalid message feedback")
 	// ErrMessageFeedbackTargetInvalid 反馈目标消息不合法。
 	ErrMessageFeedbackTargetInvalid = errors.New("invalid message feedback target")
+	// ErrMessageEditTargetInvalid 编辑目标消息不合法。
+	ErrMessageEditTargetInvalid = errors.New("invalid message edit target")
+	// ErrMessageEditStateInvalid 当前消息状态不允许编辑。
+	ErrMessageEditStateInvalid = errors.New("invalid message edit state")
 	// ErrModelRouteNotConfigured 模型路由未配置。
 	ErrModelRouteNotConfigured = errors.New("model route not configured")
 	// ErrUpstreamRequestFailed 上游请求失败。

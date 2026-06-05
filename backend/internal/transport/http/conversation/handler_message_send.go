@@ -98,6 +98,7 @@ func (h *Handler) parseSendMessageInput(c *gin.Context) (appconversation.SendMes
 		FileIDs:                 req.FileIDs,
 		SelectedToolIDs:         req.SelectedToolIDs,
 		HTMLVisualPromptEnabled: req.HTMLVisualPromptEnabled,
+		HTMLVisualColorMode:     req.HTMLVisualColorMode,
 		ParentMessagePublicID:   req.ParentMessagePublicID,
 		SourceMessagePublicID:   req.SourceMessagePublicID,
 		BranchReason:            req.BranchReason,
@@ -320,6 +321,10 @@ func handleSendMessageError(c *gin.Context, err error) {
 	case errors.Is(err, appconversation.ErrUpstreamEmptyResponse):
 		response.Error(c, http.StatusBadGateway, "model returned empty response")
 	case errors.Is(err, appconversation.ErrUpstreamRequestFailed):
+		if code := appconversation.MessageErrorCode(err); code != "" {
+			response.ErrorWithCode(c, http.StatusBadGateway, code, mapClientErrorMessage(err))
+			return
+		}
 		response.Error(c, http.StatusBadGateway, mapClientErrorMessage(err))
 	default:
 		response.Error(c, http.StatusInternalServerError, "send message failed")

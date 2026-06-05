@@ -13,6 +13,7 @@ const videoModel: ChatModelOption = {
   defaultOptions: {},
   optionControls: [],
   nativeToolKeys: [],
+  nativeTools: [],
   pricing: null,
 };
 

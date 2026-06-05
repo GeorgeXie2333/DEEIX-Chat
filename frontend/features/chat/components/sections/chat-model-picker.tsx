@@ -17,9 +17,11 @@ import type { BillingDisplayLabels } from "@/shared/lib/billing-display";
 import { resolveLobeHubIconURL, resolveModelIdentity } from "@/shared/lib/model-identity";
 import { cn } from "@/lib/utils";
 
-const MODEL_MENU_MAX_HEIGHT = 320;
+const MODEL_MENU_MAX_HEIGHT = 400;
 const MODEL_MENU_VENDOR_ROW_HEIGHT = 28;
 const MODEL_MENU_MODEL_ROW_HEIGHT = 28;
+const MODEL_MENU_ROW_GAP = 2;
+const MODEL_MENU_LIST_PADDING_BOTTOM = 4;
 const MODEL_MENU_MODEL_PANEL_CHROME_HEIGHT = 12;
 const MODEL_MENU_TEXT_WIDTH_UNIT = 7;
 const MODEL_MENU_CONTENT_GAP_WIDTH = 56;
@@ -52,7 +54,10 @@ function resolveModelMenuMaxHeight(
   chromeHeight: number,
   availablePanelHeight?: number | null,
 ): string {
-  const contentHeight = Math.min(itemCount * rowHeight, MODEL_MENU_MAX_HEIGHT);
+  const actualContentHeight = itemCount > 0
+    ? itemCount * rowHeight + Math.max(0, itemCount - 1) * MODEL_MENU_ROW_GAP + MODEL_MENU_LIST_PADDING_BOTTOM
+    : 0;
+  const contentHeight = Math.min(actualContentHeight, MODEL_MENU_MAX_HEIGHT);
   if (availablePanelHeight && availablePanelHeight > 0) {
     const availableListHeight = Math.max(rowHeight, Math.floor(availablePanelHeight - chromeHeight));
     return `${Math.min(contentHeight, availableListHeight)}px`;
@@ -174,12 +179,12 @@ function ModelMenuScrollContainer({
         </div>
       </div>
       {hasMoreAbove ? (
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex h-3 items-start justify-center rounded-t-lg bg-gradient-to-b from-popover via-popover/80 to-transparent pt-px">
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex h-4 items-start justify-center rounded-t-lg bg-gradient-to-b from-popover via-popover/80 to-transparent pt-px">
           <ChevronDown className="size-3 rotate-180 text-muted-foreground/75" strokeWidth={1.8} />
         </div>
       ) : null}
       {hasMoreBelow ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-3 items-end justify-center rounded-b-lg bg-gradient-to-t from-popover via-popover/80 to-transparent pb-px">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-4 items-end justify-center rounded-b-lg bg-gradient-to-t from-popover via-popover/80 to-transparent pb-px">
           <ChevronDown className="size-3 text-muted-foreground/75" strokeWidth={1.8} />
         </div>
       ) : null}
@@ -382,14 +387,15 @@ function ChatModelMenuItem({
   onSelect,
   pricingLabels,
   viewPricingLabel,
+  pricingTooltipSide,
 }: {
   model: ChatModelOption;
   selected: boolean;
   onSelect: () => void;
   pricingLabels: React.ComponentProps<typeof ModelPricingTooltipContent>["labels"];
   viewPricingLabel: string;
+  pricingTooltipSide: "right";
 }) {
-  const [pricingOpen, setPricingOpen] = React.useState(false);
   const platformModelName = model.platformModelName.trim();
   const identity = React.useMemo(
     () =>
@@ -421,38 +427,21 @@ function ChatModelMenuItem({
         </span>
       </button>
       {model.pricing ? (
-        <Tooltip open={pricingOpen} onOpenChange={setPricingOpen}>
+        <Tooltip>
           <TooltipTrigger asChild>
             <button
               type="button"
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:text-current focus-visible:text-current focus-visible:outline-none group-hover:text-current group-focus-within:text-current group-data-[selected=true]:text-current"
               aria-label={viewPricingLabel}
-              onPointerDown={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                setPricingOpen(true);
-              }}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                setPricingOpen(true);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setPricingOpen(true);
-                }
-              }}
             >
               <CircleDollarSign className="size-3.5" strokeWidth={1.8} />
             </button>
           </TooltipTrigger>
           <TooltipContent
-            side="right"
+            side={pricingTooltipSide}
             align="center"
             sideOffset={8}
-            className="max-w-[560px] text-left font-medium tabular-nums"
+            className="z-[80] max-w-[min(92vw,35rem)] text-left font-medium tabular-nums"
           >
             <ModelPricingTooltipContent
               platformModelName={model.platformModelName}
@@ -663,22 +652,37 @@ export function ChatModelPicker({
       Math.max(0, window.innerWidth - MODEL_MENU_COLLISION_GUTTER * 2),
     );
     const panelChromeHeight = MODEL_MENU_MODEL_PANEL_CHROME_HEIGHT;
-    const contentHeight = Math.min(activeDesktopVendorGroup.items.length * MODEL_MENU_MODEL_ROW_HEIGHT, MODEL_MENU_MAX_HEIGHT);
+    const actualContentHeight = activeDesktopVendorGroup.items.length > 0
+      ? activeDesktopVendorGroup.items.length * MODEL_MENU_MODEL_ROW_HEIGHT
+        + Math.max(0, activeDesktopVendorGroup.items.length - 1) * MODEL_MENU_ROW_GAP
+        + MODEL_MENU_LIST_PADDING_BOTTOM
+      : 0;
+    const contentHeight = Math.min(actualContentHeight, MODEL_MENU_MAX_HEIGHT);
+    const maxListHeight = Math.max(
+      MODEL_MENU_MODEL_ROW_HEIGHT,
+      window.innerHeight - MODEL_MENU_COLLISION_GUTTER * 2 - panelChromeHeight,
+    );
     const initialListHeight = Math.min(
       contentHeight,
-      Math.max(
-        MODEL_MENU_MODEL_ROW_HEIGHT,
-        window.innerHeight - menuRect.top - MODEL_MENU_COLLISION_GUTTER - panelChromeHeight,
-      ),
+      maxListHeight,
     );
     const initialPanelHeight = panelChromeHeight + initialListHeight;
+    const preferredY = menuRect.top + initialPanelHeight <= window.innerHeight - MODEL_MENU_COLLISION_GUTTER
+      ? menuRect.top
+      : menuRect.bottom - initialPanelHeight;
     const y = Math.min(
-      Math.max(menuRect.top, MODEL_MENU_COLLISION_GUTTER),
+      Math.max(preferredY, MODEL_MENU_COLLISION_GUTTER),
       Math.max(MODEL_MENU_COLLISION_GUTTER, window.innerHeight - initialPanelHeight - MODEL_MENU_COLLISION_GUTTER),
     );
     const listMaxHeight = Math.min(
       contentHeight,
-      Math.max(MODEL_MENU_MODEL_ROW_HEIGHT, window.innerHeight - y - MODEL_MENU_COLLISION_GUTTER - panelChromeHeight),
+      Math.max(
+        MODEL_MENU_MODEL_ROW_HEIGHT,
+        Math.min(
+          maxListHeight,
+          window.innerHeight - y - MODEL_MENU_COLLISION_GUTTER - panelChromeHeight,
+        ),
+      ),
     );
     const rightX = menuRect.right + MODEL_MENU_PANEL_GAP;
     const leftX = menuRect.left - MODEL_MENU_PANEL_GAP - panelWidth;
@@ -803,6 +807,7 @@ export function ChatModelPicker({
                         }}
                         pricingLabels={pricingLabels}
                         viewPricingLabel={t("viewPricing")}
+                        pricingTooltipSide="right"
                       />
                     ))}
                   </div>
@@ -905,6 +910,7 @@ export function ChatModelPicker({
                   }}
                     pricingLabels={pricingLabels}
                     viewPricingLabel={t("viewPricing")}
+                    pricingTooltipSide="right"
                   />
                 ))}
               </div>

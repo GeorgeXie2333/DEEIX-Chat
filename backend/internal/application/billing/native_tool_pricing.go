@@ -17,10 +17,15 @@ type NativeToolPricingInput struct {
 
 // NativeToolPricingOverridesFromUSD 校验并转换管理员提交的美元价格覆盖。
 func NativeToolPricingOverridesFromUSD(items []NativeToolPricingInput) (map[string]nativetool.PricingOverride, error) {
-	defaults := nativetool.PricingOverridesFromDefinitions(nativetool.PricingDefinitions())
+	return NativeToolPricingOverridesFromUSDForDefinitions(items, nativetool.Definitions())
+}
+
+// NativeToolPricingOverridesFromUSDForDefinitions 校验并转换管理员提交的美元价格覆盖。
+func NativeToolPricingOverridesFromUSDForDefinitions(items []NativeToolPricingInput, definitions []nativetool.Definition) (map[string]nativetool.PricingOverride, error) {
+	defaults := nativetool.PricingOverridesFromDefinitions(nativetool.PricingDefinitionsFromDefinitions(definitions))
 	results := make(map[string]nativetool.PricingOverride, len(items))
 	for _, item := range items {
-		toolKey := strings.TrimSpace(item.ToolKey)
+		toolKey := normalizeNativeToolPricingKey(strings.TrimSpace(item.ToolKey))
 		defaultOverride, ok := defaults[toolKey]
 		if !ok {
 			return nil, fmt.Errorf("%w: unknown native tool %q", ErrInvalidNativeToolPricing, toolKey)
@@ -39,7 +44,12 @@ func NativeToolPricingOverridesFromUSD(items []NativeToolPricingInput) (map[stri
 
 // ParseNativeToolPricingOverridesJSON 解析系统设置中保存的原生工具价格覆盖。
 func ParseNativeToolPricingOverridesJSON(raw string) (map[string]nativetool.PricingOverride, error) {
-	overrides, err := nativetool.ParsePricingOverridesJSON(raw)
+	return ParseNativeToolPricingOverridesJSONForDefinitions(raw, nativetool.Definitions())
+}
+
+// ParseNativeToolPricingOverridesJSONForDefinitions 解析指定原生工具目录下保存的价格覆盖。
+func ParseNativeToolPricingOverridesJSONForDefinitions(raw string, definitions []nativetool.Definition) (map[string]nativetool.PricingOverride, error) {
+	overrides, err := nativetool.ParsePricingOverridesJSONForDefinitions(raw, definitions)
 	if err == nil {
 		return overrides, nil
 	}
@@ -53,10 +63,10 @@ func ParseNativeToolPricingOverridesJSON(raw string) (map[string]nativetool.Pric
 	if legacyErr := json.Unmarshal([]byte(value), &legacy); legacyErr != nil {
 		return nil, fmt.Errorf("%w: invalid native tool pricing json", ErrInvalidNativeToolPricing)
 	}
-	defaults := nativetool.PricingOverridesFromDefinitions(nativetool.PricingDefinitions())
+	defaults := nativetool.PricingOverridesFromDefinitions(nativetool.PricingDefinitionsFromDefinitions(definitions))
 	converted := make(map[string]nativetool.PricingOverride, len(legacy))
 	for key, priceNanousd := range legacy {
-		toolKey := strings.TrimSpace(key)
+		toolKey := normalizeNativeToolPricingKey(strings.TrimSpace(key))
 		defaultOverride, ok := defaults[toolKey]
 		if !ok {
 			return nil, fmt.Errorf("%w: unknown native tool %q", ErrInvalidNativeToolPricing, toolKey)
@@ -74,5 +84,52 @@ func ParseNativeToolPricingOverridesJSON(raw string) (map[string]nativetool.Pric
 
 // MarshalNativeToolPricingOverridesJSON 将覆盖价格规范化为系统设置 JSON。
 func MarshalNativeToolPricingOverridesJSON(overrides map[string]nativetool.PricingOverride) (string, error) {
-	return nativetool.PricingOverridesJSON(overrides)
+	return MarshalNativeToolPricingOverridesJSONForDefinitions(overrides, nativetool.Definitions())
+}
+
+// MarshalNativeToolPricingOverridesJSONForDefinitions 将指定目录下的覆盖价格规范化为系统设置 JSON。
+func MarshalNativeToolPricingOverridesJSONForDefinitions(overrides map[string]nativetool.PricingOverride, definitions []nativetool.Definition) (string, error) {
+	normalized := make(map[string]nativetool.PricingOverride, len(overrides))
+	for key, override := range overrides {
+		normalized[normalizeNativeToolPricingKey(key)] = override
+	}
+	return nativetool.PricingOverridesJSONForDefinitions(normalized, definitions)
+}
+
+func normalizeNativeToolPricingKey(key string) string {
+	key = strings.TrimSpace(key)
+	switch key {
+	case "openaiWebSearchReasoning", "openaiWebSearchStandard":
+		return "openai.web_search"
+	case "openaiShell":
+		return "openai.shell"
+	case "openaiImageGeneration":
+		return "openai.image_generation"
+	case "openaiCodeInterpreter":
+		return "openai.code_interpreter"
+	case "anthropicWebSearch":
+		return "anthropic.web_search_20260209"
+	case "anthropicWebFetch":
+		return "anthropic.web_fetch_20260209"
+	case "anthropicCodeExecution":
+		return "anthropic.code_execution_20260120"
+	case "anthropicAdvisor":
+		return "anthropic.advisor_20260301"
+	case "anthropicToolSearch":
+		return "anthropic.tool_search_tool_regex_20251119"
+	case "xaiWebSearch":
+		return "xai.web_search"
+	case "xaiXSearch":
+		return "xai.x_search"
+	case "xaiCodeExecution":
+		return "xai.code_interpreter"
+	case "xaiAttachmentSearch":
+		return "xai.attachment_search"
+	case "xaiCollectionsSearch":
+		return "xai.collections_search"
+	case "googleGoogleSearch":
+		return "google.google_search"
+	default:
+		return key
+	}
 }

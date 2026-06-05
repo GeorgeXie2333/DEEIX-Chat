@@ -120,11 +120,7 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 			}
 		}
 	}
-	nativeToolPricingOverrides, err := appbilling.ParseNativeToolPricingOverridesJSON(nativeToolPricingJSON)
-	if err != nil {
-		return BillingConfigResponse{}, err
-	}
-	nativeToolPricingJSON, err = appbilling.MarshalNativeToolPricingOverridesJSON(nativeToolPricingOverrides)
+	nativeToolPricing, err := h.service.ListNativeToolPricing(ctx, nativeToolPricingJSON)
 	if err != nil {
 		return BillingConfigResponse{}, err
 	}
@@ -133,7 +129,7 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 		PrepaidAmountUSD:               prepaidAmountUSD,
 		PrepaidAmountNanousd:           usdToNanousd(prepaidAmountUSD),
 		NativeToolBillingEnabled:       nativeToolBillingEnabled,
-		NativeToolPricing:              toNativeToolPricingResponses(appbilling.ListNativeToolPricing(nativeToolPricingJSON)),
+		NativeToolPricing:              toNativeToolPricingResponses(nativeToolPricing),
 		FreeModelRateLimitRPM:          freeModelRateLimitRPM,
 		FreeModelDailyLimit:            freeModelDailyLimit,
 		FreeModelRateLimitExemptModels: freeModelRateLimitExemptModels,
@@ -189,7 +185,7 @@ func (h *Handler) PatchBillingConfig(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 			return
 		}
-		value, err := appbilling.MarshalNativeToolPricingOverridesJSON(overrides)
+		value, err := h.service.NormalizeNativeToolPricingJSON(c.Request.Context(), overrides)
 		if err != nil {
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 			return
@@ -254,13 +250,34 @@ func (h *Handler) PatchBillingConfig(c *gin.Context) {
 
 func nativeToolPricingOverridesFromRequest(items []NativeToolPricingRequest) (map[string]nativetool.PricingOverride, error) {
 	inputs := make([]appbilling.NativeToolPricingInput, 0, len(items))
+	overrides := make(map[string]nativetool.PricingOverride, len(items))
 	for _, item := range items {
+		if item.PriceUSD <= 0 && (item.PriceNanousd > 0 || strings.TrimSpace(item.Unit) != "" || strings.TrimSpace(item.PriceLabel) != "" || item.Billable) {
+			key := strings.TrimSpace(item.ToolKey)
+			if key == "" {
+				continue
+			}
+			overrides[key] = nativetool.PricingOverride{
+				PriceNanousd: item.PriceNanousd,
+				Unit:         strings.TrimSpace(item.Unit),
+				PriceLabel:   strings.TrimSpace(item.PriceLabel),
+				Billable:     item.Billable,
+			}
+			continue
+		}
 		inputs = append(inputs, appbilling.NativeToolPricingInput{
 			ToolKey:  strings.TrimSpace(item.ToolKey),
 			PriceUSD: item.PriceUSD,
 		})
 	}
-	return appbilling.NativeToolPricingOverridesFromUSD(inputs)
+	usdOverrides, err := appbilling.NativeToolPricingOverridesFromUSD(inputs)
+	if err != nil {
+		return nil, err
+	}
+	for key, override := range usdOverrides {
+		overrides[key] = override
+	}
+	return overrides, nil
 }
 
 // ListPlans godoc

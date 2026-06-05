@@ -450,6 +450,7 @@ type Config struct {
 	RefreshTokenTTLHours         int
 	LoginMaxFailures             int
 	LoginLockMinutes             int
+	RateLimitEnabled             bool
 	RateLimitRPM                 int
 	PublicAuthRateLimitRPM       int
 	UsernameLoginEnabled         bool
@@ -653,6 +654,7 @@ func Load() Config {
 		RefreshTokenTTLHours:              720,
 		LoginMaxFailures:                  5,
 		LoginLockMinutes:                  15,
+		RateLimitEnabled:                  false,
 		RateLimitRPM:                      60,
 		PublicAuthRateLimitRPM:            30,
 		UsernameLoginEnabled:              true,

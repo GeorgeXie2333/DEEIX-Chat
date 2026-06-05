@@ -202,12 +202,16 @@
     "videoReferenceTooMany": "视频生成最多只能使用一张参考图。",
     "videoReferenceInvalid": "视频参考图无效，仅支持 JPEG、PNG 或 WebP。",
     "videoReferenceSizeMismatch": "视频参考图尺寸必须与所选分辨率一致。",
+    "imageStreamUnsupported": "Tips：当前上游可能不支持流式响应，请管理员在模型能力中关闭“图像流式调用”（设置 image.stream=false）后重试。",
     "routeProtocolMismatch": "当前模型路由协议与媒体任务不匹配，请检查模型绑定。",
     "invalidTask": "媒体任务参数无效。"
   },
   "message": {
     "feedbackTargetInvalid": "消息反馈目标无效。",
+    "editStateInvalid": "当前消息状态不允许编辑。",
+    "editTargetInvalid": "只能编辑 AI 回复。",
     "invalidBranch": "消息分支无效。",
+    "invalidContent": "消息内容无效。",
     "invalidFeedback": "消息反馈无效。",
     "invalidId": "消息 ID 无效。",
     "notFound": "消息不存在。",
@@ -276,6 +280,8 @@
   "upstream": {
     "unavailable": "上游服务不可用。"
   },
+  "upstreamEmptyResponse": "上游返回了空响应，请稍后重试或联系管理员检查模型路由。",
+  "upstreamRequestFailed": "上游请求失败，请稍后重试或联系管理员检查模型路由。",
   "user": {
     "accountDeleteVerificationRequired": "删除账号前需要先验证身份。",
     "emptyPatch": "请至少修改一个用户字段。",

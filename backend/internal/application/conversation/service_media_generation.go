@@ -586,7 +586,7 @@ func (s *Service) resolveMediaImageEditInputs(ctx context.Context, input MediaIm
 		if readErr != nil {
 			return nil, nil, readErr
 		}
-		part.FileName = strings.TrimSpace(attachment.FileName)
+		part.FileName = mediaImageEditInputFileName(attachment.FileName, part.MimeType)
 		parts = append(parts, part)
 	}
 	return attachments, parts, nil
@@ -625,7 +625,7 @@ func (s *Service) readMediaImageEditFile(ctx context.Context, userID uint, fileI
 	if mimeType == "" {
 		mimeType = strings.TrimSpace(content.File.DetectedMIME)
 	}
-	data, mimeType, err = validateGeneratedImageBytes(data, mimeType)
+	data, mimeType, err = normalizeMediaImageEditInput(data, mimeType)
 	if err != nil {
 		return llm.ContentPart{}, ErrMediaImageEditInputInvalid
 	}
@@ -633,7 +633,7 @@ func (s *Service) readMediaImageEditFile(ctx context.Context, userID uint, fileI
 		Kind:     llm.ContentPartImage,
 		MimeType: mimeType,
 		Data:     data,
-		FileName: strings.TrimSpace(content.File.FileName),
+		FileName: mediaImageEditInputFileName(content.File.FileName, mimeType),
 	}, nil
 }
 
@@ -714,14 +714,14 @@ func sanitizeOpenAIVideoGenerationOptions(modelName string, options map[string]i
 	if len(options) == 0 {
 		return nil
 	}
-	seconds := strings.TrimSpace(stringModelOptionValue(options["seconds"]))
+	seconds := strings.TrimSpace(modelOptionStringValue(options["seconds"]))
 	switch seconds {
 	case "4", "8", "12":
 		options["seconds"] = seconds
 	default:
 		delete(options, "seconds")
 	}
-	size := strings.TrimSpace(stringModelOptionValue(options["size"]))
+	size := strings.TrimSpace(modelOptionStringValue(options["size"]))
 	if !isMediaVideoSizeAllowed(modelName, size) {
 		delete(options, "size")
 	} else {
@@ -734,7 +734,7 @@ func sanitizeOpenAIVideoGenerationOptions(modelName string, options map[string]i
 }
 
 func resolveMediaVideoSize(modelName string, options map[string]interface{}) string {
-	size := strings.TrimSpace(stringModelOptionValue(options["size"]))
+	size := strings.TrimSpace(modelOptionStringValue(options["size"]))
 	if isMediaVideoSizeAllowed(modelName, size) {
 		return size
 	}

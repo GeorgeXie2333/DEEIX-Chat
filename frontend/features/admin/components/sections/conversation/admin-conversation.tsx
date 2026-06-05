@@ -10,8 +10,10 @@ import { SettingsFieldEditor } from "../shared/settings-runtime-panel";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -161,13 +163,13 @@ function ModelOptionPolicyGuideButton({ t }: { t: (key: string) => string }) {
           {t("guide.button")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[760px]">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[min(86vh,760px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[720px]">
+        <DialogHeader className="shrink-0 px-4 py-4">
           <DialogTitle>{t("guide.title")}</DialogTitle>
           <DialogDescription>{t("guide.description")}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 text-sm text-muted-foreground">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-2 text-sm text-muted-foreground">
           <section className="space-y-2">
             <h4 className="text-sm font-medium text-foreground">{t("guide.pathTitle")}</h4>
             <div className="grid gap-3 md:grid-cols-2">
@@ -321,6 +323,11 @@ generationConfig.safetySettings.threshold`}
             </div>
           </section>
         </div>
+        <DialogFooter className="shrink-0 px-4 py-3">
+          <DialogClose asChild>
+            <Button type="button">{t("guide.close")}</Button>
+          </DialogClose>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -331,8 +338,8 @@ export function AdminConversationSettingsPage() {
   const conversationSettingsFields = React.useMemo(() => buildConversationSettingsFields(t), [t]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
-  const [settingsMap, setSettingsMap] = React.useState<Record<string, string>>(() => applyConversationDefaults({}));
-  const [savedMap, setSavedMap] = React.useState<Record<string, string>>(() => applyConversationDefaults({}));
+  const [settingsMap, setSettingsMap] = React.useState<Record<string, string>>({});
+  const [savedMap, setSavedMap] = React.useState<Record<string, string>>({});
   const [modelOptions, setModelOptions] = React.useState<ModelOption[]>(() =>
     buildTaskModelOptions({
       models: [],
@@ -423,19 +430,22 @@ export function AdminConversationSettingsPage() {
     [conversationSettingsFields],
   );
   const modelOptionMode = settingsMap["chat.model_option_policy_mode"] || "allowlist";
-  const visibleModelOptionFields = React.useMemo(
-    () => modelOptionFields.filter((field) => {
-      switch (field.key) {
-        case "model_option_policy_mode":
-          return true;
-        case "model_option_allowed_paths":
-          return modelOptionMode === "allowlist";
-        case "model_option_denied_paths":
-          return modelOptionMode === "denylist";
-        default:
-          return false;
+  const modelOptionModeField = React.useMemo(
+    () => modelOptionFields.find((field) => field.key === "model_option_policy_mode") ?? null,
+    [modelOptionFields],
+  );
+  const activeModelOptionRuleField = React.useMemo(
+    () => {
+      const activeKey = modelOptionMode === "denylist"
+        ? "model_option_denied_paths"
+        : modelOptionMode === "allowlist"
+          ? "model_option_allowed_paths"
+          : "";
+      if (!activeKey) {
+        return null;
       }
-    }),
+      return modelOptionFields.find((field) => field.key === activeKey) ?? null;
+    },
     [modelOptionFields, modelOptionMode],
   );
   const hasDirtyField = React.useCallback(
@@ -454,7 +464,13 @@ export function AdminConversationSettingsPage() {
   const modelOptionActions = renderSaveAction(modelOptionFields);
   const conversationActions = renderSaveAction(conversationFields);
 
-  function renderField(field: ConversationSettingsField, index: number) {
+  function renderField(
+    field: ConversationSettingsField,
+    index: number,
+    options?: {
+      animateLayout?: boolean;
+    },
+  ) {
     const id = fieldID(field);
     if (id === "chat.conversation_task_model") {
       return (
@@ -495,6 +511,7 @@ export function AdminConversationSettingsPage() {
           disabled={loading || saving}
           labelAction={labelAction}
           afterControl={afterControl}
+          animateLayout={options?.animateLayout ?? true}
           onChange={(value) => setSettingsMap((prev) => ({ ...prev, [id]: value }))}
         />
       </SettingsFieldItem>
@@ -505,7 +522,7 @@ export function AdminConversationSettingsPage() {
     <SettingsPage>
       <SettingsSection title={t("sections.conversation")} actions={conversationActions}>
         <SettingsFieldList>
-          {conversationFields.map(renderField)}
+          {conversationFields.map((field, index) => renderField(field, index))}
         </SettingsFieldList>
       </SettingsSection>
 
@@ -513,7 +530,12 @@ export function AdminConversationSettingsPage() {
 
       <SettingsSection title={t("sections.optionPassthrough")} actions={modelOptionActions}>
         <SettingsFieldList>
-          {visibleModelOptionFields.map(renderField)}
+          {modelOptionModeField ? renderField(modelOptionModeField, 0) : null}
+          {activeModelOptionRuleField
+            ? renderField(activeModelOptionRuleField, 1, {
+              animateLayout: false,
+            })
+            : null}
         </SettingsFieldList>
       </SettingsSection>
     </SettingsPage>

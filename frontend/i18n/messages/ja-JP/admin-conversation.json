@@ -71,6 +71,7 @@
   },
   "guide": {
     "button": "ガイド",
+    "close": "閉じる",
     "title": "パラメーター透過ガイド",
     "description": "ユーザー options のどのフィールドを上流リクエストへ渡せるかを制御します。",
     "pathTitle": "パスの書き方",

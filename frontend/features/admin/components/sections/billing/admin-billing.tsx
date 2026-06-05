@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Check, CircleAlert, Copy, Download, Pencil, Plus, RotateCcw, Save, Trash2, Upload, X } from "lucide-react";
 import { motion } from "motion/react";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale, useMessages, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import { AdminDateTimePicker, adminDateTimeFormValue, adminDateTimeValueToISOStr
 import { AdminBulkConfirmDialog } from "@/features/admin/components/bulk-confirm-dialog";
 import { PlanBillingDialog, PricingBillingDialog } from "@/features/admin/components/sections/billing/billing-dialogs";
 import { PeriodBillingTable, PricingUnitCell } from "@/features/admin/components/sections/billing/billing-tables";
+import { SettingsCollapsibleContent } from "@/features/admin/components/sections/shared/settings-collapsible-content";
 import {
   Table,
   TableBody,
@@ -108,6 +109,7 @@ import { resolveApiBaseURL } from "@/shared/api/http-client";
 import { LobeHubIcon } from "@/shared/components/lobehub-icon";
 import { configuredSettingsMap } from "@/shared/lib/settings-meta";
 import { KNOWN_VENDOR_OPTIONS, resolveLobeHubIconURL, resolveModelIdentity } from "@/shared/lib/model-identity";
+import { localizedNativeToolText } from "@/shared/lib/native-tool-i18n";
 
 type NativeToolPricingFormState = Record<string, { price: string; customized: boolean }>;
 
@@ -331,6 +333,7 @@ function isRedemptionCodeFormatValid(value: string): boolean {
 
 export function AdminBillingPage() {
   const locale = useLocale();
+  const messages = useMessages();
   const t = useTranslations("adminBilling");
   const tActions = useTranslations("common.actions");
   const tCommonErrors = useTranslations("common.errors");
@@ -1167,7 +1170,7 @@ export function AdminBillingPage() {
   async function savePaymentSettings() {
     const providers = normalizePaymentProviders(paymentSettings.payment_providers);
     const usdToCnyRate = Number(paymentSettings.usd_to_cny_rate);
-    if (providers.length > 0 && (!Number.isFinite(usdToCnyRate) || usdToCnyRate <= 0)) {
+    if (providers.includes("epay") && (!Number.isFinite(usdToCnyRate) || usdToCnyRate <= 0)) {
       toast.error(t("toast.paymentIncomplete"), { description: t("toast.paymentRateRequired") });
       return;
     }
@@ -1578,154 +1581,112 @@ export function AdminBillingPage() {
       </div>
 
       <FieldGroup className="gap-0">
-        <Field>
-          <div className="flex">
-            <div className="min-w-0 flex-1">
-              <FieldLabel htmlFor="billing.usd_to_cny_rate">{t("payment.usdToCnyRate")}</FieldLabel>
-              <FieldDescription className="text-[11px]">{t("payment.usdToCnyRateDescription")}</FieldDescription>
-            </div>
-            <div className="min-w-52 shrink-0">
-              <Input
-                id="billing.usd_to_cny_rate"
-                value={paymentSettings.usd_to_cny_rate}
-                className="text-right"
-                disabled={loading || saving}
-                onChange={(event) => updatePaymentSetting("usd_to_cny_rate", event.target.value)}
-              />
-            </div>
-          </div>
-        </Field>
-
-        <div className="pt-4">
+        <div>
           <Tabs value={paymentTab} onValueChange={(value) => setPaymentTab(value as PaymentProvider)}>
-            <div className="flex justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <FieldLabel>{t("payment.channels")}</FieldLabel>
-                <FieldDescription className="text-[11px]">{t("payment.channelsDescription")}</FieldDescription>
-              </div>
-              <TabsList className="h-8">
+            <SettingsFieldRow
+              title={t("payment.channels")}
+              description={t("payment.channelsDescription")}
+            >
+              <TabsList className="h-8 w-full">
                 <TabsTrigger value="stripe">Stripe</TabsTrigger>
                 <TabsTrigger value="epay">EPay</TabsTrigger>
               </TabsList>
-            </div>
+            </SettingsFieldRow>
 
             <TabsContent value="stripe" className="mt-4 space-y-4">
-              <Field>
-                <div className="flex">
-                  <div className="min-w-0 flex-1">
-                    <FieldLabel>{t("payment.enableStripe")}</FieldLabel>
-                    <FieldDescription className="text-[11px]">{t("payment.enableStripeDescription")}</FieldDescription>
-                  </div>
-                  <Switch size="sm" checked={stripeEnabled} disabled={loading || saving} onCheckedChange={(checked) => setPaymentProviderEnabled("stripe", checked)} />
-                </div>
-              </Field>
-              <Field>
-                <div className="flex gap-3">
-                  <div className="min-w-0 flex-1">
-                    <FieldLabel>{t("payment.stripeWebhookEndpoint")}</FieldLabel>
-                    <FieldDescription className="text-[11px]">{t("payment.stripeWebhookEndpointDescription")}</FieldDescription>
-                  </div>
-                  <div className="flex w-52 shrink-0 items-center gap-1.5">
-                    <Input value={stripeWebhookEndpoint} className="h-8 min-w-0 truncate text-xs" readOnly />
-                    <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0 shadow-none" onClick={() => void copyStripeWebhookEndpoint()} aria-label={tActions("copy")} title={tActions("copy")}>
+              <SettingsFieldRow
+                title={t("payment.enableStripe")}
+                description={t("payment.enableStripeDescription")}
+              >
+                <Switch size="sm" checked={stripeEnabled} disabled={loading || saving} onCheckedChange={(checked) => setPaymentProviderEnabled("stripe", checked)} />
+              </SettingsFieldRow>
+              <SettingsCollapsibleContent open={stripeEnabled} contentClassName="space-y-4">
+                <SettingsFieldRow
+                  title={t("payment.stripeWebhookEndpoint")}
+                  description={t("payment.stripeWebhookEndpointDescription")}
+                >
+                  <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1">
+                    <Input value={stripeWebhookEndpoint} className="min-w-0 truncate text-left text-xs md:text-right" readOnly />
+                    <Button type="button" variant="secondary" size="icon" className="size-8 shrink-0 rounded-md shadow-none active:scale-90 transition-transform" onClick={() => void copyStripeWebhookEndpoint()} aria-label={tActions("copy")} title={tActions("copy")}>
                       <Copy className="size-3.5" />
                     </Button>
                   </div>
-                </div>
-              </Field>
-              <Field>
-                <div className="flex">
-                  <div className="min-w-0 flex-1">
-                    <FieldLabel>{t("payment.stripePublishableKey")}</FieldLabel>
-                    <FieldDescription className="text-[11px]">{t("payment.stripePublishableKeyDescription")}</FieldDescription>
-                  </div>
-                  <div className="min-w-52 shrink-0">
-                    <Input value={paymentSettings.stripe_publishable_key} className="text-right" disabled={loading || saving} placeholder="pk_..." onChange={(event) => updatePaymentSetting("stripe_publishable_key", event.target.value)} />
-                  </div>
-                </div>
-              </Field>
-              <Field>
-                <div className="flex">
-                  <div className="min-w-0 flex-1">
-                    <FieldLabel>{t("payment.stripeSecretKey")}</FieldLabel>
-                    <FieldDescription className="text-[11px]">{t("payment.stripeSecretKeyDescription")}</FieldDescription>
-                  </div>
-                  <div className="min-w-52 shrink-0">
-                    <Input value={paymentSettings.stripe_secret_key} className="text-right" type="password" disabled={loading || saving} placeholder={paymentConfiguredMap["billing.stripe_secret_key"] ? tInput("configuredPasswordPlaceholder") : "sk_..."} onChange={(event) => updatePaymentSetting("stripe_secret_key", event.target.value)} />
-                  </div>
-                </div>
-              </Field>
-              <Field>
-                <div className="flex">
-                  <div className="min-w-0 flex-1">
-                    <FieldLabel>{t("payment.stripeWebhookSecret")}</FieldLabel>
-                    <FieldDescription className="text-[11px]">{t("payment.stripeWebhookSecretDescription")}</FieldDescription>
-                  </div>
-                  <div className="min-w-52 shrink-0">
-                    <Input value={paymentSettings.stripe_webhook_secret} className="text-right" type="password" disabled={loading || saving} placeholder={paymentConfiguredMap["billing.stripe_webhook_secret"] ? tInput("configuredPasswordPlaceholder") : "whsec_..."} onChange={(event) => updatePaymentSetting("stripe_webhook_secret", event.target.value)} />
-                  </div>
-                </div>
-              </Field>
+                </SettingsFieldRow>
+                <SettingsFieldRow
+                  title={t("payment.stripePublishableKey")}
+                  description={t("payment.stripePublishableKeyDescription")}
+                >
+                  <Input value={paymentSettings.stripe_publishable_key} className="text-right" disabled={loading || saving} placeholder="pk_..." onChange={(event) => updatePaymentSetting("stripe_publishable_key", event.target.value)} />
+                </SettingsFieldRow>
+                <SettingsFieldRow
+                  title={t("payment.stripeSecretKey")}
+                  description={t("payment.stripeSecretKeyDescription")}
+                >
+                  <Input value={paymentSettings.stripe_secret_key} className="text-right" type="password" disabled={loading || saving} placeholder={paymentConfiguredMap["billing.stripe_secret_key"] ? tInput("configuredPasswordPlaceholder") : "sk_..."} onChange={(event) => updatePaymentSetting("stripe_secret_key", event.target.value)} />
+                </SettingsFieldRow>
+                <SettingsFieldRow
+                  title={t("payment.stripeWebhookSecret")}
+                  description={t("payment.stripeWebhookSecretDescription")}
+                >
+                  <Input value={paymentSettings.stripe_webhook_secret} className="text-right" type="password" disabled={loading || saving} placeholder={paymentConfiguredMap["billing.stripe_webhook_secret"] ? tInput("configuredPasswordPlaceholder") : "whsec_..."} onChange={(event) => updatePaymentSetting("stripe_webhook_secret", event.target.value)} />
+                </SettingsFieldRow>
+              </SettingsCollapsibleContent>
             </TabsContent>
 
             <TabsContent value="epay" className="mt-4 space-y-4">
-              <Field>
-                <div className="flex">
-                  <div className="min-w-0 flex-1">
-                    <FieldLabel>{t("payment.enableEPay")}</FieldLabel>
-                    <FieldDescription className="text-[11px]">{t("payment.enableEPayDescription")}</FieldDescription>
-                  </div>
-                  <Switch size="sm" checked={epayEnabled} disabled={loading || saving} onCheckedChange={(checked) => setPaymentProviderEnabled("epay", checked)} />
-                </div>
-              </Field>
-              <Field>
-                <div className="flex">
-                  <div className="min-w-0 flex-1">
-                    <FieldLabel>{t("payment.epayGateway")}</FieldLabel>
-                    <FieldDescription className="text-[11px]">{t("payment.epayGatewayDescription")}</FieldDescription>
-                  </div>
-                  <div className="min-w-52 shrink-0">
-                    <Input value={paymentSettings.epay_gateway_url} className="text-right" disabled={loading || saving} placeholder="https://..." onChange={(event) => updatePaymentSetting("epay_gateway_url", event.target.value)} />
-                  </div>
-                </div>
-              </Field>
-              <Field>
-                <div className="flex">
-                  <div className="min-w-0 flex-1">
-                    <FieldLabel>{t("payment.epayPid")}</FieldLabel>
-                    <FieldDescription className="text-[11px]">{t("payment.epayPidDescription")}</FieldDescription>
-                  </div>
-                  <div className="min-w-52 shrink-0">
-                    <Input value={paymentSettings.epay_pid} className="text-right" disabled={loading || saving} onChange={(event) => updatePaymentSetting("epay_pid", event.target.value)} />
-                  </div>
-                </div>
-              </Field>
-              <Field>
-                <div className="flex">
-                  <div className="min-w-0 flex-1">
-                    <FieldLabel>{t("payment.epayKey")}</FieldLabel>
-                    <FieldDescription className="text-[11px]">{t("payment.epayKeyDescription")}</FieldDescription>
-                  </div>
-                  <div className="min-w-52 shrink-0">
-                    <Input value={paymentSettings.epay_key} className="text-right" type="password" disabled={loading || saving} placeholder={paymentConfiguredMap["billing.epay_key"] ? tInput("configuredPasswordPlaceholder") : ""} onChange={(event) => updatePaymentSetting("epay_key", event.target.value)} />
-                  </div>
-                </div>
-              </Field>
-              <Field>
-                <div className="space-y-2">
-                  <div>
-                    <FieldLabel>{t("payment.epayTypes")}</FieldLabel>
-                    <FieldDescription className="text-[11px]">{t("payment.epayTypesDescription")}</FieldDescription>
-                  </div>
-                  <Textarea
-                    value={paymentSettings.epay_types}
-                    className="h-28 w-full resize-none overflow-y-auto font-mono [field-sizing:fixed]"
+              <SettingsFieldRow
+                title={t("payment.enableEPay")}
+                description={t("payment.enableEPayDescription")}
+              >
+                <Switch size="sm" checked={epayEnabled} disabled={loading || saving} onCheckedChange={(checked) => setPaymentProviderEnabled("epay", checked)} />
+              </SettingsFieldRow>
+              <SettingsCollapsibleContent open={epayEnabled} contentClassName="space-y-4">
+                <SettingsFieldRow
+                  title={t("payment.usdToCnyRate")}
+                  description={t("payment.usdToCnyRateDescription")}
+                >
+                  <Input
+                    id="billing.usd_to_cny_rate"
+                    value={paymentSettings.usd_to_cny_rate}
+                    className="text-right"
                     disabled={loading || saving}
-                    spellCheck={false}
-                    onChange={(event) => updatePaymentSetting("epay_types", event.target.value)}
+                    onChange={(event) => updatePaymentSetting("usd_to_cny_rate", event.target.value)}
                   />
-                </div>
-              </Field>
+                </SettingsFieldRow>
+                <SettingsFieldRow
+                  title={t("payment.epayGateway")}
+                  description={t("payment.epayGatewayDescription")}
+                >
+                  <Input value={paymentSettings.epay_gateway_url} className="text-right" disabled={loading || saving} placeholder="https://..." onChange={(event) => updatePaymentSetting("epay_gateway_url", event.target.value)} />
+                </SettingsFieldRow>
+                <SettingsFieldRow
+                  title={t("payment.epayPid")}
+                  description={t("payment.epayPidDescription")}
+                >
+                  <Input value={paymentSettings.epay_pid} className="text-right" disabled={loading || saving} onChange={(event) => updatePaymentSetting("epay_pid", event.target.value)} />
+                </SettingsFieldRow>
+                <SettingsFieldRow
+                  title={t("payment.epayKey")}
+                  description={t("payment.epayKeyDescription")}
+                >
+                  <Input value={paymentSettings.epay_key} className="text-right" type="password" disabled={loading || saving} placeholder={paymentConfiguredMap["billing.epay_key"] ? tInput("configuredPasswordPlaceholder") : ""} onChange={(event) => updatePaymentSetting("epay_key", event.target.value)} />
+                </SettingsFieldRow>
+                <Field>
+                  <div className="space-y-2">
+                    <div>
+                      <FieldLabel>{t("payment.epayTypes")}</FieldLabel>
+                      <FieldDescription className="text-[11px]">{t("payment.epayTypesDescription")}</FieldDescription>
+                    </div>
+                    <Textarea
+                      value={paymentSettings.epay_types}
+                      className="h-28 w-full resize-none overflow-y-auto font-mono [field-sizing:fixed]"
+                      disabled={loading || saving}
+                      spellCheck={false}
+                      onChange={(event) => updatePaymentSetting("epay_types", event.target.value)}
+                    />
+                  </div>
+                </Field>
+              </SettingsCollapsibleContent>
             </TabsContent>
           </Tabs>
         </div>
@@ -1940,8 +1901,8 @@ export function AdminBillingPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[44px] py-0 text-center">
-                  <div className="flex h-8 items-center justify-center">
+                <TableHead className="w-[44px] py-1.5 text-center">
+                  <div className="flex h-7 items-center justify-center">
                     <Checkbox
                       checked={redemptionSelectAllState}
                       onCheckedChange={(checked) => handleSelectAllRedemptions(checked === true)}
@@ -1968,8 +1929,8 @@ export function AdminBillingPage() {
                   const redemptionLimitTotal = item.maxRedemptions == null ? t("redemption.unlimited") : String(item.maxRedemptions);
                   return (
                     <TableRow key={item.id} tone={unavailableReason ? "muted" : undefined} className={cn(unavailableReason && "text-muted-foreground")}>
-                      <TableCell className="w-[44px] py-0 text-center">
-                        <div className="flex h-10 items-center justify-center">
+                      <TableCell className="w-[44px] py-1.5 text-center">
+                        <div className="flex h-7 items-center justify-center">
                           <Checkbox
                             checked={selectedRedemptionIDs.has(item.id)}
                             onCheckedChange={(checked) => handleToggleRedemptionSelected(item.id, checked === true)}
@@ -1978,7 +1939,7 @@ export function AdminBillingPage() {
                         </div>
                       </TableCell>
                       <TableCell className="w-[168px] max-w-[168px] py-1.5 font-mono text-xs">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex h-7 items-center gap-1.5">
                           <span className="min-w-0 max-w-[112px] truncate">{displayCode}</span>
                           <Button
                             type="button"
@@ -2029,36 +1990,40 @@ export function AdminBillingPage() {
                         </div>
                       </TableCell>
                       <TableCell className="w-[76px] py-1.5 text-center">
-                        <Switch
-                          size="sm"
-                          checked={item.status === "active"}
-                          disabled={redemptionBulkPending || redemptionStatusPendingID === item.id}
-                          onCheckedChange={(checked) => void setRedemptionCodeStatus(item, checked)}
-                          aria-label={item.status === "active" ? t("redemption.disable") : t("redemption.enable")}
-                        />
+                        <div className="flex h-7 items-center justify-center">
+                          <Switch
+                            size="sm"
+                            checked={item.status === "active"}
+                            disabled={redemptionBulkPending || redemptionStatusPendingID === item.id}
+                            onCheckedChange={(checked) => void setRedemptionCodeStatus(item, checked)}
+                            aria-label={item.status === "active" ? t("redemption.disable") : t("redemption.enable")}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell className="w-[104px] py-1.5 text-xs text-muted-foreground">{item.expiresAt ? formatDateTime(item.expiresAt, locale) : t("redemption.never")}</TableCell>
-                      <TableCell stickyEnd className="w-[88px] py-1 text-right">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-xs"
-                          className="h-7 w-7 text-muted-foreground shadow-none"
-                          onClick={() => openRedemptionEdit(item)}
-                          aria-label={t("redemption.edit")}
-                        >
-                          <Pencil className="size-3.5 stroke-1" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-xs"
-                          className="h-7 w-7 text-destructive shadow-none hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => setRedemptionDeleteTarget(item)}
-                          aria-label={tActions("delete")}
-                        >
-                          <Trash2 className="size-3.5 stroke-1" />
-                        </Button>
+                      <TableCell stickyEnd className="w-[88px] py-1.5 text-right">
+                        <div className="flex h-7 items-center justify-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-xs"
+                            className="h-7 w-7 text-muted-foreground shadow-none"
+                            onClick={() => openRedemptionEdit(item)}
+                            aria-label={t("redemption.edit")}
+                          >
+                            <Pencil className="size-3.5 stroke-1" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-xs"
+                            className="h-7 w-7 text-destructive shadow-none hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => setRedemptionDeleteTarget(item)}
+                            aria-label={tActions("delete")}
+                          >
+                            <Trash2 className="size-3.5 stroke-1" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -2213,8 +2178,8 @@ export function AdminBillingPage() {
 
                     return (
                       <TableRow key={row.platformModelName}>
-                        <TableCell className="py-1">
-                          <div className="flex min-w-0 items-center gap-2">
+                        <TableCell className="py-1.5">
+                          <div className="flex h-7 min-w-0 items-center gap-2">
                             <LobeHubIcon iconUrl={iconURL} label={row.platformModelName} />
                             <div className="flex min-w-0 flex-1">
                               <span className="truncate text-xs font-medium leading-5 text-foreground">
@@ -2223,35 +2188,39 @@ export function AdminBillingPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="py-1">
-                          <Switch
-                            size="sm"
-                            checked={row.isFree}
-                            disabled={loading || saving || Boolean(freeSwitchPendingModel)}
-                            onCheckedChange={(checked) => void toggleModelFree(row, checked)}
-                            aria-label={`${row.platformModelName} ${t("modelPricing.freeModel")}`}
-                          />
+                        <TableCell className="py-1.5">
+                          <div className="flex h-7 items-center">
+                            <Switch
+                              size="sm"
+                              checked={row.isFree}
+                              disabled={loading || saving || Boolean(freeSwitchPendingModel)}
+                              onCheckedChange={(checked) => void toggleModelFree(row, checked)}
+                              aria-label={`${row.platformModelName} ${t("modelPricing.freeModel")}`}
+                            />
+                          </div>
                         </TableCell>
-                        <TableCell className="py-1">
+                        <TableCell className="py-1.5">
                           {row.pricing ? t(`pricingModes.${normalizePricingMode(row.pricing.pricingMode)}`) : <span className="text-muted-foreground">-</span>}
                         </TableCell>
-                        <TableCell className="py-1">
+                        <TableCell className="py-1.5">
                           <PricingUnitCell pricing={row.pricing} />
                         </TableCell>
-                        <TableCell className="py-1 text-muted-foreground">
+                        <TableCell className="py-1.5 text-muted-foreground">
                           {formatDateTime(row.pricing?.updatedAt ?? "", locale)}
                         </TableCell>
-                        <TableCell stickyEnd className="w-[56px] py-1 text-right">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-xs"
-                            className="h-7 w-7 text-muted-foreground shadow-none"
-                            onClick={() => openEdit(row)}
-                            aria-label={t("actions.editPricing")}
-                          >
-                            <Pencil className="size-3.5 stroke-1" />
-                          </Button>
+                        <TableCell stickyEnd className="w-[56px] py-1.5 text-right">
+                          <div className="flex h-7 items-center justify-end">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-xs"
+                              className="h-7 w-7 text-muted-foreground shadow-none"
+                              onClick={() => openEdit(row)}
+                              aria-label={t("actions.editPricing")}
+                            >
+                              <Pencil className="size-3.5 stroke-1" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -2294,13 +2263,16 @@ export function AdminBillingPage() {
             </SettingsFieldRow>
           </SettingsFieldItem>
         </SettingsFieldList>
-        <div className="mt-5 space-y-2">
-          <div className="text-xs text-muted-foreground">{t("toolPricing.defaultPriceDescription")}</div>
+        <SettingsCollapsibleContent open={nativeToolBillingEnabled} contentClassName="mt-5 space-y-2">
+          <p className="px-1 text-[11px] leading-5 text-muted-foreground">
+            {t("toolPricing.nativeToolCount", { count: nativeToolPricing.length })}
+          </p>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{t("toolPricing.provider")}</TableHead>
                 <TableHead>{t("toolPricing.tool")}</TableHead>
+                <TableHead>{t("toolPricing.type")}</TableHead>
                 <TableHead className="text-right">{t("toolPricing.defaultPrice")}</TableHead>
                 <TableHead className="text-right">{t("toolPricing.price")}</TableHead>
               </TableRow>
@@ -2311,13 +2283,21 @@ export function AdminBillingPage() {
                   price: formatNativeToolPriceInput(nativeToolPriceUSD(row)),
                   customized: Boolean(row.customized),
                 };
+                const label = localizedNativeToolText(messages, "nativeToolLabels", row.toolKey) || row.label || row.type || row.toolKey;
+                const description = localizedNativeToolText(messages, "nativeToolDescriptions", row.toolKey) || row.description || row.type || row.toolKey;
                 const defaultPrice = row.defaultPriceNanousd > 0
                   ? `${formatNativeToolPriceUSD(row.defaultPriceNanousd)} / ${t(`toolPricing.units.${row.unit || "call"}`)}`
                   : t(`toolPricing.prices.${row.priceLabel || "notMetered"}`);
                 return (
                   <TableRow key={`${row.provider}-${row.toolKey}`}>
                     <TableCell className="py-1.5 text-xs text-muted-foreground">{row.provider}</TableCell>
-                    <TableCell className="py-1.5 text-xs text-foreground">{t(`toolPricing.tools.${row.toolKey}`)}</TableCell>
+                    <TableCell className="py-1.5 text-xs text-foreground">
+                      <div className="flex min-w-0 flex-col">
+                        <span className="truncate">{label}</span>
+                        <span className="truncate text-[11px] text-muted-foreground">{description}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-1.5 font-mono text-xs text-muted-foreground">{row.type || row.toolKey}</TableCell>
                     <TableCell className="py-1.5 text-right font-mono text-xs text-muted-foreground">
                       {defaultPrice}
                     </TableCell>
@@ -2352,8 +2332,9 @@ export function AdminBillingPage() {
               })}
             </TableBody>
           </Table>
+          <p className="text-[11px] leading-5 text-muted-foreground">{t("toolPricing.defaultPriceDescription")}</p>
           <p className="text-[11px] leading-5 text-muted-foreground">{t("toolPricing.note")}</p>
-        </div>
+        </SettingsCollapsibleContent>
       </SettingsSection>
 
       <PlanBillingDialog
@@ -2398,176 +2379,178 @@ export function AdminBillingPage() {
         }}
       >
         {redemptionForm ? (
-          <DialogContent>
-            <DialogHeader>
+          <DialogContent className="flex max-h-[min(86vh,760px)] flex-col gap-0 overflow-hidden p-0">
+            <DialogHeader className="shrink-0 px-4 py-4">
               <DialogTitle>{redemptionForm.id ? t("redemption.editTitle") : t("redemption.createTitle")}</DialogTitle>
               <DialogDescription>
                 {redemptionForm.id ? t("redemption.editDescription") : t("redemption.createDescription")}
               </DialogDescription>
             </DialogHeader>
 
-            <motion.form layout transition={DIALOG_LAYOUT_TRANSITION} onSubmit={(event) => void saveRedemptionCode(event)} className="space-y-4">
-              {!redemptionForm.id ? (
-                <div className="grid gap-5 md:grid-cols-2">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">{t("redemption.code")}</p>
-                    <Input
-                      id="redemption-code"
-                      value={redemptionForm.code}
-                      placeholder={t("redemption.codePlaceholder")}
-                      disabled={redemptionSaving}
-                      onChange={(event) => setRedemptionForm((current) => current ? { ...current, code: event.target.value } : current)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">{t("redemption.quantity")}</p>
-                    <Input
-                      id="redemption-quantity"
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={redemptionForm.quantity}
-                      disabled={redemptionSaving || Boolean(redemptionForm.code.trim())}
-                      onChange={(event) => setRedemptionForm((current) => current ? { ...current, quantity: event.target.value } : current)}
-                    />
-                  </div>
-                </div>
-              ) : null}
-
-              <div className={cn("grid gap-5", redemptionForm.id && "md:grid-cols-2")}>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">{t("redemption.mode")}</p>
-                  <Select
-                    value={redemptionForm.mode}
-                    disabled={redemptionSaving || Boolean(redemptionForm.id)}
-                    onValueChange={(value) => {
-                      const mode = value === "period" ? "period" : "usage";
-                      setRedemptionForm((current) => current ? {
-                        ...current,
-                        mode,
-                        planID: mode === "period" ? current.planID || defaultRedemptionPlanID : current.planID,
-                      } : current);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent align="end">
-                      <SelectItem value="usage">{t("billingConfig.modes.usage")}</SelectItem>
-                      <SelectItem value="period">{t("billingConfig.modes.period")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {redemptionForm.id ? (
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">{t("redemption.status")}</p>
-                    <div className="flex h-8 items-center px-1">
-                      <Switch
-                        size="sm"
-                        checked={redemptionForm.status === "active"}
+            <motion.form layout transition={DIALOG_LAYOUT_TRANSITION} onSubmit={(event) => void saveRedemptionCode(event)} className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-2">
+                {!redemptionForm.id ? (
+                  <div className="grid grid-cols-2 gap-5">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">{t("redemption.code")}</p>
+                      <Input
+                        id="redemption-code"
+                        value={redemptionForm.code}
+                        placeholder={t("redemption.codePlaceholder")}
                         disabled={redemptionSaving}
-                        onCheckedChange={(checked) => setRedemptionForm((current) => current ? { ...current, status: checked ? "active" : "inactive" } : current)}
-                        aria-label={redemptionForm.status === "active" ? t("redemption.disable") : t("redemption.enable")}
+                        onChange={(event) => setRedemptionForm((current) => current ? { ...current, code: event.target.value } : current)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">{t("redemption.quantity")}</p>
+                      <Input
+                        id="redemption-quantity"
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={redemptionForm.quantity}
+                        disabled={redemptionSaving || Boolean(redemptionForm.code.trim())}
+                        onChange={(event) => setRedemptionForm((current) => current ? { ...current, quantity: event.target.value } : current)}
                       />
                     </div>
                   </div>
                 ) : null}
-              </div>
 
-              {redemptionForm.mode === "usage" ? (
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">{t("redemption.creditUSD")}</p>
-                  <Input
-                    id="redemption-credit"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={redemptionForm.creditUSD}
-                    disabled={redemptionSaving || Boolean(redemptionForm.id)}
-                    onChange={(event) => setRedemptionForm((current) => current ? { ...current, creditUSD: event.target.value } : current)}
-                  />
-                </div>
-              ) : (
-                <div className="grid gap-5 md:grid-cols-2">
+                <div className={cn("grid gap-5", redemptionForm.id && "grid-cols-2")}>
                   <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">{t("redemption.plan")}</p>
+                    <p className="text-xs text-muted-foreground">{t("redemption.mode")}</p>
                     <Select
-                      value={redemptionForm.planID}
-                      disabled={redemptionSaving || Boolean(redemptionForm.id) || activePlanOptions.length === 0}
-                      onValueChange={(value) => setRedemptionForm((current) => current ? { ...current, planID: value } : current)}
+                      value={redemptionForm.mode}
+                      disabled={redemptionSaving || Boolean(redemptionForm.id)}
+                      onValueChange={(value) => {
+                        const mode = value === "period" ? "period" : "usage";
+                        setRedemptionForm((current) => current ? {
+                          ...current,
+                          mode,
+                          planID: mode === "period" ? current.planID || defaultRedemptionPlanID : current.planID,
+                        } : current);
+                      }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={t("redemption.planPlaceholder")} />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent align="end">
-                        {activePlanOptions.map((plan) => (
-                          <SelectItem key={plan.id} value={String(plan.id)}>{plan.name || plan.code}</SelectItem>
-                        ))}
+                        <SelectItem value="usage">{t("billingConfig.modes.usage")}</SelectItem>
+                        <SelectItem value="period">{t("billingConfig.modes.period")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {redemptionForm.id ? (
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">{t("redemption.status")}</p>
+                      <div className="flex h-8 items-center px-1">
+                        <Switch
+                          size="sm"
+                          checked={redemptionForm.status === "active"}
+                          disabled={redemptionSaving}
+                          onCheckedChange={(checked) => setRedemptionForm((current) => current ? { ...current, status: checked ? "active" : "inactive" } : current)}
+                          aria-label={redemptionForm.status === "active" ? t("redemption.disable") : t("redemption.enable")}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                {redemptionForm.mode === "usage" ? (
                   <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">{t("redemption.durationDays")}</p>
+                    <p className="text-xs text-muted-foreground">{t("redemption.creditUSD")}</p>
                     <Input
-                      id="redemption-duration"
+                      id="redemption-credit"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={redemptionForm.creditUSD}
+                      disabled={redemptionSaving || Boolean(redemptionForm.id)}
+                      onChange={(event) => setRedemptionForm((current) => current ? { ...current, creditUSD: event.target.value } : current)}
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-5">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">{t("redemption.plan")}</p>
+                      <Select
+                        value={redemptionForm.planID}
+                        disabled={redemptionSaving || Boolean(redemptionForm.id) || activePlanOptions.length === 0}
+                        onValueChange={(value) => setRedemptionForm((current) => current ? { ...current, planID: value } : current)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("redemption.planPlaceholder")} />
+                        </SelectTrigger>
+                        <SelectContent align="end">
+                          {activePlanOptions.map((plan) => (
+                            <SelectItem key={plan.id} value={String(plan.id)}>{plan.name || plan.code}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">{t("redemption.durationDays")}</p>
+                      <Input
+                        id="redemption-duration"
+                        type="number"
+                        min={1}
+                        value={redemptionForm.durationDays}
+                        disabled={redemptionSaving || Boolean(redemptionForm.id)}
+                        onChange={(event) => setRedemptionForm((current) => current ? { ...current, durationDays: event.target.value } : current)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-5">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">{t("redemption.maxRedemptions")}</p>
+                    <Input
+                      id="redemption-max"
                       type="number"
                       min={1}
-                      value={redemptionForm.durationDays}
-                      disabled={redemptionSaving || Boolean(redemptionForm.id)}
-                      onChange={(event) => setRedemptionForm((current) => current ? { ...current, durationDays: event.target.value } : current)}
+                      value={redemptionForm.maxRedemptions}
+                      placeholder={t("redemption.unlimited")}
+                      disabled={redemptionSaving}
+                      onChange={(event) => setRedemptionForm((current) => current ? { ...current, maxRedemptions: event.target.value } : current)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">{t("redemption.perUserLimit")}</p>
+                    <Input
+                      id="redemption-per-user"
+                      type="number"
+                      min={1}
+                      max={redemptionForm.maxRedemptions.trim() || undefined}
+                      value={redemptionForm.perUserLimit}
+                      disabled={redemptionSaving}
+                      onChange={(event) => setRedemptionForm((current) => current ? { ...current, perUserLimit: event.target.value } : current)}
                     />
                   </div>
                 </div>
-              )}
 
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">{t("redemption.maxRedemptions")}</p>
-                  <Input
-                    id="redemption-max"
-                    type="number"
-                    min={1}
-                    value={redemptionForm.maxRedemptions}
-                    placeholder={t("redemption.unlimited")}
-                    disabled={redemptionSaving}
-                    onChange={(event) => setRedemptionForm((current) => current ? { ...current, maxRedemptions: event.target.value } : current)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">{t("redemption.perUserLimit")}</p>
-                  <Input
-                    id="redemption-per-user"
-                    type="number"
-                    min={1}
-                    max={redemptionForm.maxRedemptions.trim() || undefined}
-                    value={redemptionForm.perUserLimit}
-                    disabled={redemptionSaving}
-                    onChange={(event) => setRedemptionForm((current) => current ? { ...current, perUserLimit: event.target.value } : current)}
-                  />
-                </div>
-              </div>
-
-              <AdminDateTimePicker
-                value={redemptionForm.expiresAt}
-                disabled={redemptionSaving}
-                label={t("redemption.expiresAt")}
-                placeholder={t("redemption.never")}
-                onChange={(value) => setRedemptionForm((current) => current ? { ...current, expiresAt: value } : current)}
-              />
-
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">{t("redemption.description")}</p>
-                <Textarea
-                  id="redemption-description"
-                  value={redemptionForm.description}
-                  className="h-20 resize-none"
+                <AdminDateTimePicker
+                  value={redemptionForm.expiresAt}
                   disabled={redemptionSaving}
-                  onChange={(event) => setRedemptionForm((current) => current ? { ...current, description: event.target.value } : current)}
+                  label={t("redemption.expiresAt")}
+                  placeholder={t("redemption.never")}
+                  onChange={(value) => setRedemptionForm((current) => current ? { ...current, expiresAt: value } : current)}
                 />
+
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">{t("redemption.description")}</p>
+                  <Textarea
+                    id="redemption-description"
+                    value={redemptionForm.description}
+                    className="h-20 resize-none"
+                    disabled={redemptionSaving}
+                    onChange={(event) => setRedemptionForm((current) => current ? { ...current, description: event.target.value } : current)}
+                  />
+                </div>
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="shrink-0 px-4 py-3">
                 <Button type="button" variant="ghost" disabled={redemptionSaving} onClick={() => setRedemptionForm(null)}>
                   {tActions("cancel")}
                 </Button>
@@ -2588,13 +2571,13 @@ export function AdminBillingPage() {
           }
         }}
       >
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="flex max-h-[min(86vh,760px)] flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="shrink-0 px-4 py-4">
             <DialogTitle>{t("redemption.createdCodesTitle")}</DialogTitle>
             <DialogDescription>{t("redemption.createdCodesDescription")}</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-2">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-medium">{t("redemption.createdCodes")}</p>
               <Button type="button" variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs shadow-none" onClick={() => void copyCreatedRedemptionCodes()}>
@@ -2621,7 +2604,7 @@ export function AdminBillingPage() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="shrink-0 px-4 py-3">
             <Button type="button" onClick={() => setCreatedRedemptionCodes([])}>
               {tActions("close")}
             </Button>
@@ -2639,7 +2622,6 @@ export function AdminBillingPage() {
         description={t("redemption.bulkConfirmDescription", { count: selectedRedemptionIDs.size })}
         confirmLabel={redemptionBulkConfirmLabel(redemptionBulkAction)}
         pendingLabel={t("redemption.bulkPending")}
-        destructive={redemptionBulkAction === "delete"}
         onConfirm={confirmRedemptionBulkAction}
       />
 
@@ -2653,7 +2635,6 @@ export function AdminBillingPage() {
         description={t("redemption.deleteDescription")}
         confirmLabel={tActions("delete")}
         pendingLabel={t("redemption.deleting")}
-        destructive
         onConfirm={() => void deleteSingleRedemptionCode()}
       />
     </div>

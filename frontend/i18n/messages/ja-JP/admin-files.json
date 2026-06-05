@@ -84,6 +84,11 @@
         "label": "既定サイズ上限",
         "description": "単一添付ファイルの既定サイズ上限を設定します。画面上の単位は MB です。",
         "placeholder": "サイズ上限（MB）"
+      },
+      "user_storage_quota_bytes": {
+        "label": "ユーザー保存容量上限",
+        "description": "各ユーザーが保存できるファイル総量の上限です。0 または空欄の場合は無制限です。",
+        "placeholder": "例: 1073741824"
       }
     },
     "file": {

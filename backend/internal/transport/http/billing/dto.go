@@ -8,6 +8,7 @@ import (
 
 	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
 	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
 )
 
 // ── 请求 DTO ─────────────────────────────────────────────────────────────────
@@ -58,8 +59,12 @@ type BillingConfigRequest struct {
 
 // NativeToolPricingRequest 保存原生工具价格。金额单位为美元。
 type NativeToolPricingRequest struct {
-	ToolKey  string  `json:"toolKey" binding:"required,max=128"`
-	PriceUSD float64 `json:"priceUSD" binding:"min=0"`
+	ToolKey      string  `json:"toolKey" binding:"required,max=128"`
+	PriceUSD     float64 `json:"priceUSD" binding:"min=0"`
+	PriceNanousd int64   `json:"priceNanousd" binding:"omitempty,min=0"`
+	Unit         string  `json:"unit" binding:"omitempty,max=32"`
+	PriceLabel   string  `json:"priceLabel" binding:"omitempty,max=64"`
+	Billable     bool    `json:"billable"`
 }
 
 // UpdateBillingAccountBalanceRequest 管理员设置用户按量余额。
@@ -502,6 +507,9 @@ type BillingConfigResponse struct {
 type NativeToolPricingResponse struct {
 	Provider            string  `json:"provider"`
 	ToolKey             string  `json:"toolKey"`
+	Label               string  `json:"label"`
+	Description         string  `json:"description"`
+	Type                string  `json:"type"`
 	PriceNanousd        int64   `json:"priceNanousd"`
 	PriceUSD            float64 `json:"priceUSD"`
 	DefaultPriceNanousd int64   `json:"defaultPriceNanousd"`
@@ -687,6 +695,9 @@ func toNativeToolPricingResponses(items []appbilling.NativeToolPricingView) []Na
 		results = append(results, NativeToolPricingResponse{
 			Provider:            strings.TrimSpace(item.Provider),
 			ToolKey:             strings.TrimSpace(item.ToolKey),
+			Label:               strings.TrimSpace(item.Label),
+			Description:         strings.TrimSpace(item.Description),
+			Type:                strings.TrimSpace(item.Type),
 			PriceNanousd:        item.PriceNanousd,
 			PriceUSD:            item.PriceUSD,
 			DefaultPriceNanousd: item.DefaultPriceNanousd,
@@ -698,6 +709,23 @@ func toNativeToolPricingResponses(items []appbilling.NativeToolPricingView) []Na
 		})
 	}
 	return results
+}
+
+func nativeToolPricingOverridesFromRequests(items []NativeToolPricingRequest) map[string]nativetool.PricingOverride {
+	overrides := make(map[string]nativetool.PricingOverride, len(items))
+	for _, item := range items {
+		key := strings.TrimSpace(item.ToolKey)
+		if key == "" {
+			continue
+		}
+		overrides[key] = nativetool.PricingOverride{
+			PriceNanousd: item.PriceNanousd,
+			Unit:         strings.TrimSpace(item.Unit),
+			PriceLabel:   strings.TrimSpace(item.PriceLabel),
+			Billable:     item.Billable,
+		}
+	}
+	return overrides
 }
 
 func toSubscriptionResponse(sub *domainbilling.Subscription) SubscriptionResponse {

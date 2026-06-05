@@ -106,6 +106,24 @@
     "deleteFilesDescription": "他の会話から参照されていないファイルのみ削除します。他の会話で使用されているファイルは保持されます。",
     "thisConversation": "この会話",
     "untitled": "新しい会話",
+    "bulk": {
+      "archive": {
+        "title": "選択した会話をアーカイブ",
+        "description": "選択した {count} 件の会話をアーカイブしますか？",
+        "confirm": "アーカイブ"
+      },
+      "unarchive": {
+        "title": "選択した会話のアーカイブを解除",
+        "description": "選択した {count} 件の会話のアーカイブを解除しますか？",
+        "confirm": "アーカイブ解除"
+      },
+      "revokeShares": {
+        "title": "選択した共有を閉じる",
+        "description": "選択した {count} 件の会話の共有を閉じますか？既存の共有リンクは利用できなくなります。",
+        "confirm": "共有を閉じる"
+      },
+      "pending": "処理中..."
+    },
     "cancel": "キャンセル",
     "save": "保存",
     "delete": "削除"

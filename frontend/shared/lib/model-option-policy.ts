@@ -79,6 +79,20 @@ export type NativeToolDefinition = {
   usageAliases: string[];
 };
 
+export type ModelNativeToolConfig = {
+  id: string;
+  key: string;
+  protocol: string;
+  protocols: string[];
+  provider?: string;
+  type: string;
+  label: string;
+  description?: string;
+  enabled: boolean;
+  defaultEnabled: boolean;
+  payload: Record<string, unknown>;
+};
+
 export const MODEL_OPTION_POLICY_PROTOCOL_LABELS: Record<ModelOptionPolicyProtocol, string> = {
   default: "Default",
   openai_chat_completions: "OpenAI（Chat Completions）",
@@ -201,7 +215,10 @@ export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
 }
 
 export function resolveModelOptionPolicyProtocol(protocol: string): ModelOptionPolicyProtocol {
-  switch (protocol.trim()) {
+  switch (protocol.trim().toLowerCase()) {
+    case "openai":
+    case "openai_responses":
+      return "openai_responses";
     case "openai_chat_completions":
       return "openai_chat_completions";
     case "openai_image_generations":
@@ -210,20 +227,25 @@ export function resolveModelOptionPolicyProtocol(protocol: string): ModelOptionP
       return "openai_image_edits";
     case "openai_video_generations":
       return "openai_video_generations";
+    case "anthropic":
+    case "claude":
     case "anthropic_messages":
       return "anthropic_messages";
+    case "xai":
+    case "grok":
     case "xai_responses":
       return "xai_responses";
     case "xai_image":
       return "xai_image";
     case "xai_image_edits":
       return "xai_image_edits";
+    case "google":
+    case "gemini":
     case "google_generate_content":
     case "gemini_generate_content":
       return "gemini_generate_content";
     case "google_image_generation":
       return "google_image_generation";
-    case "openai_responses":
     default:
       return "openai_responses";
   }

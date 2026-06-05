@@ -1,7 +1,7 @@
 import type { SettingsGrouped } from "@/shared/api/settings.types";
 import { resolveLocalizedErrorMessage } from "@/i18n/resolve-error-message";
 
-export type ConversationFieldType = "int" | "bool" | "string" | "password" | "textarea" | "select" | "tabs" | "button";
+export type ConversationFieldType = "int" | "bool" | "string" | "password" | "textarea" | "json" | "select" | "tabs" | "button";
 
 export type ConversationSettingsField = {
   namespace: "chat";
@@ -31,6 +31,7 @@ export const DEFAULT_MODEL_OPTION_ALLOWED_PATHS = `{
     "max_output_tokens",
     "max_completion_tokens",
     "stop",
+    "tools",
     "response_format.type"
   ],
   "openai_chat_completions": [
@@ -44,6 +45,7 @@ export const DEFAULT_MODEL_OPTION_ALLOWED_PATHS = `{
   ],
   "openai_responses": [
     "service_tier",
+    "store",
     "reasoning.effort",
     "reasoning.summary",
     "text.verbosity"
@@ -82,10 +84,12 @@ export const DEFAULT_MODEL_OPTION_ALLOWED_PATHS = `{
     "output_config.effort",
     "speed",
     "top_k",
+    "cache_control",
     "thinking.type",
     "thinking.budget_tokens"
   ],
   "xai_responses": [
+    "store",
     "reasoning.effort"
   ],
   "xai_image": [
@@ -158,7 +162,7 @@ export function buildConversationSettingsFields(t: ConversationSettingsTranslato
       key: "model_option_allowed_paths",
       label: t("fields.allowedPaths.label"),
       description: t("fields.allowedPaths.description"),
-      type: "textarea",
+      type: "json",
       placeholder: DEFAULT_MODEL_OPTION_ALLOWED_PATHS,
     },
     {
@@ -166,7 +170,7 @@ export function buildConversationSettingsFields(t: ConversationSettingsTranslato
       key: "model_option_denied_paths",
       label: t("fields.deniedPaths.label"),
       description: t("fields.deniedPaths.description"),
-      type: "textarea",
+      type: "json",
       placeholder: DEFAULT_MODEL_OPTION_DENIED_PATHS,
     },
     {

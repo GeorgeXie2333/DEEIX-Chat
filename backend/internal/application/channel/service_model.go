@@ -9,6 +9,7 @@ import (
 	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
 	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
 )
 
 // ---------------------------------------------------------------------------
@@ -130,6 +131,28 @@ func (s *Service) listAllActiveModelRows(ctx context.Context) ([]repository.Chan
 		results = append(results, items...)
 		if len(items) < batchSize {
 			return results, nil
+		}
+	}
+}
+
+// ListNativeToolDefinitions 返回内置目录叠加所有模型能力 JSON 中声明的官方原生工具。
+func (s *Service) ListNativeToolDefinitions(ctx context.Context) ([]nativetool.Definition, error) {
+	const batchSize = 500
+	dynamic := make([]nativetool.Definition, 0)
+	for offset := 0; ; offset += batchSize {
+		items, _, err := s.repo.ListModels(ctx, repository.ListChannelModelsInput{
+			Offset: offset,
+			Limit:  batchSize,
+			Sort:   "sortOrder_asc",
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range items {
+			dynamic = append(dynamic, nativetool.DefinitionsFromCapabilitiesJSON(item.CapabilitiesJSON)...)
+		}
+		if len(items) < batchSize {
+			return nativetool.MergeDefinitions(dynamic), nil
 		}
 	}
 }
@@ -464,6 +487,64 @@ func (s *Service) ListModelUpstreamSources(ctx context.Context, modelID uint, pa
 		views = append(views, v)
 	}
 	return views, total, nil
+}
+
+// BindModelUpstreamSource 将当前平台模型绑定到一个已存在的上游模型。
+func (s *Service) BindModelUpstreamSource(ctx context.Context, modelID uint, input BindModelUpstreamSourceInput) (*ModelUpstreamSourceView, error) {
+	modelItem, err := s.repo.GetModelByID(ctx, modelID)
+	if err != nil {
+		return nil, err
+	}
+	upstream, err := s.repo.GetUpstreamByID(ctx, input.UpstreamID)
+	if err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(upstream.Status) != "active" {
+		return nil, ErrUpstreamSourceUnavailable
+	}
+	upstreamModel, err := s.repo.GetUpstreamModelByID(ctx, input.UpstreamModelID, input.UpstreamID)
+	if err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(upstreamModel.Status) != "active" {
+		return nil, ErrUpstreamSourceUnavailable
+	}
+
+	protocolInput := strings.TrimSpace(input.Protocol)
+	if protocolInput == "" {
+		protocolInput = strings.TrimSpace(upstreamModel.SuggestedProtocol)
+	}
+	protocol, err := resolveRouteProtocol(protocolInput, upstream.Compatible, upstream.ProtocolDefaultsJSON, upstreamModel.KindsJSON)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.validateRouteProtocolCombination(ctx, upstream.ID, modelItem.ID, upstreamModel.ID, 0, protocol); err != nil {
+		return nil, err
+	}
+
+	route := &domainchannel.PlatformModelRoute{
+		PlatformModelID: modelItem.ID,
+		UpstreamModelID: upstreamModel.ID,
+		Protocol:        protocol,
+		Status:          normalizeStatus(input.Status),
+		Priority:        normalizePriority(input.Priority),
+		Weight:          normalizeWeight(input.Weight),
+		Source:          "manual",
+	}
+	if err := s.repo.UpsertPlatformModelRoute(ctx, route); err != nil {
+		if isDuplicateKeyError(err) {
+			return nil, ErrUpstreamModelConflict
+		}
+		return nil, err
+	}
+	s.InvalidateModelCatalog()
+
+	source, err := s.repo.GetModelUpstreamSourceByRouteID(ctx, modelItem.PlatformModelName, route.ID)
+	if err != nil {
+		return nil, err
+	}
+	view := toModelUpstreamSourceView(*source)
+	return &view, nil
 }
 
 // UpdateModelUpstreamSource 更新模型上游来源配置。

@@ -202,12 +202,16 @@
     "videoReferenceTooMany": "Video generation can use at most one reference image.",
     "videoReferenceInvalid": "The video reference image is invalid. Use JPEG, PNG, or WebP.",
     "videoReferenceSizeMismatch": "The video reference image size must match the selected resolution.",
+    "imageStreamUnsupported": "Tips: The upstream may not support streaming responses. Ask an administrator to disable \"Image streaming call\" in model capabilities (set image.stream=false), then try again.",
     "routeProtocolMismatch": "The current model route protocol does not match this media task. Check the model binding.",
     "invalidTask": "Invalid media task parameters."
   },
   "message": {
     "feedbackTargetInvalid": "Invalid message feedback target.",
+    "editStateInvalid": "This message cannot be edited in its current state.",
+    "editTargetInvalid": "Only AI replies can be edited.",
     "invalidBranch": "Invalid message branch.",
+    "invalidContent": "Invalid message content.",
     "invalidFeedback": "Invalid message feedback.",
     "invalidId": "Invalid message ID.",
     "notFound": "Message not found.",
@@ -276,6 +280,8 @@
   "upstream": {
     "unavailable": "Upstream service is unavailable."
   },
+  "upstreamEmptyResponse": "The upstream returned an empty response. Try again later or ask an administrator to check the model route.",
+  "upstreamRequestFailed": "The upstream request failed. Try again later or ask an administrator to check the model route.",
   "user": {
     "accountDeleteVerificationRequired": "Verify your identity before deleting the account.",
     "emptyPatch": "Change at least one user field.",

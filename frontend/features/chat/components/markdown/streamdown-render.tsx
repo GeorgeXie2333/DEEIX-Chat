@@ -38,6 +38,8 @@ import {
 } from "./streamdown-components";
 import {
   normalizeContent,
+  normalizeHTMLVisualBlankLines,
+  normalizeHTMLVisualMarkdownFences,
   normalizeLatexUnicodeSymbols,
   normalizeMathDelimiters,
   normalizeMermaidBlocks,
@@ -210,7 +212,11 @@ const THINKING_STREAMDOWN_COMPONENTS = {
 } as const;
 
 function normalizeStreamdownContent(content: unknown): string {
-  return normalizeMermaidBlocks(normalizeLatexUnicodeSymbols(normalizeMathDelimiters(normalizeContent(content))));
+  return normalizeHTMLVisualBlankLines(
+    normalizeHTMLVisualMarkdownFences(
+      normalizeMermaidBlocks(normalizeLatexUnicodeSymbols(normalizeMathDelimiters(normalizeContent(content)))),
+    ),
+  );
 }
 
 function detectStreamdownFeatures(content: string): StreamdownFeatureFlags {

@@ -160,6 +160,9 @@ func migrate(db *gorm.DB, cfg config.Config) error {
 	if err := applyIdentityBaselineConstraints(db); err != nil {
 		return err
 	}
+	if err := applyIdentitySessionBaseline(db); err != nil {
+		return err
+	}
 	if err := applyIdentityProviderBaseline(db); err != nil {
 		return err
 	}
@@ -378,6 +381,26 @@ func applyIdentityBaselineConstraints(db *gorm.DB) error {
 	return nil
 }
 
+func applyIdentitySessionBaseline(db *gorm.DB) error {
+	statements := []string{
+		`ALTER TABLE "identity_sessions"
+		ADD COLUMN IF NOT EXISTS "previous_refresh_token_hash" varchar(255) NOT NULL DEFAULT ''`,
+		`COMMENT ON COLUMN "identity_sessions"."previous_refresh_token_hash" IS '上一枚刷新令牌哈希'`,
+		`ALTER TABLE "identity_sessions"
+		ADD COLUMN IF NOT EXISTS "refresh_rotated_at" timestamptz`,
+		`COMMENT ON COLUMN "identity_sessions"."refresh_rotated_at" IS '刷新令牌轮换时间'`,
+		`CREATE INDEX IF NOT EXISTS idx_identity_sessions_refresh_rotated_at
+		ON "identity_sessions" ("refresh_rotated_at")`,
+	}
+
+	for _, statement := range statements {
+		if err := db.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func applyIdentityProviderBaseline(db *gorm.DB) error {
 	statements := []string{
 		`ALTER TABLE "identity_providers"
@@ -419,6 +442,11 @@ func applyConversationBaselineIndexes(db *gorm.DB) error {
 		WHERE status = 'active'`,
 		`CREATE INDEX IF NOT EXISTS idx_chat_conversation_shares_user_status_updated_at
 		ON "chat_conversation_shares" ("user_id", "status", "updated_at" DESC, "id" DESC)`,
+		`ALTER TABLE "chat_messages"
+		ADD COLUMN IF NOT EXISTS "edited_at" timestamptz`,
+		`COMMENT ON COLUMN "chat_messages"."edited_at" IS '用户编辑时间'`,
+		`CREATE INDEX IF NOT EXISTS idx_chat_messages_edited_at
+		ON "chat_messages" ("edited_at")`,
 		`ALTER TABLE "chat_runs"
 		ADD COLUMN IF NOT EXISTS "task_type" varchar(32) NOT NULL DEFAULT 'chat'`,
 		`COMMENT ON COLUMN "chat_runs"."task_type" IS '任务类型'`,

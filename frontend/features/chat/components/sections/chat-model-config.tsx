@@ -29,11 +29,15 @@ type ChatModelConfigProps = {
   disabled: boolean;
   options: ConversationOptions;
   defaultOptions: ConversationOptions;
+  optionControls?: unknown[];
+  nativeToolKeys?: string[];
+  nativeTools?: unknown[];
   modelOptionPolicy: ModelOptionPolicy | null;
   selectedProtocol: string;
   selectedModelName: string;
   onOptionsChange: React.Dispatch<React.SetStateAction<ConversationOptions>>;
-  onOptionsReset: () => void;
+  onOptionsReset: (defaults?: ConversationOptions) => void;
+  onDefaultOptionsRestore?: () => Promise<ConversationOptions | null>;
 };
 
 const CUSTOM_SELECT_VALUE = "__custom__";
@@ -106,7 +110,7 @@ export function ChatModelConfig({
     const nextOptions = resetAdvancedSettings(options, defaultOptions, selectedProtocol, modelOptionPolicy, selectedModelName);
     setCustomInputs({});
     if (JSON.stringify(nextOptions) === JSON.stringify(defaultOptions)) {
-      onOptionsReset();
+      onOptionsReset(defaultOptions);
       return;
     }
     onOptionsChange(nextOptions);

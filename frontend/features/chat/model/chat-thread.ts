@@ -162,9 +162,28 @@ export type BranchSelectionPathItem = {
   publicID?: string | null;
 };
 
+type MessageLabels = {
+  generationInterrupted: string;
+  streamInterrupted?: string;
+  imageRunning?: string;
+  resolveErrorMessage?: (errorCode: string, fallback: string, details?: UpstreamDebugInfo) => string;
+};
+
+function resolveAssistantErrorMessage(item: MessageDTO, labels: MessageLabels, details?: UpstreamDebugInfo): string {
+  const fallback = item.errorMessage.trim();
+  if (item.errorCode === "stream_interrupted" || item.errorCode === "conversation_run.stream_interrupted") {
+    return labels.streamInterrupted || fallback;
+  }
+  const errorCode = item.errorCode.trim();
+  if (errorCode && labels.resolveErrorMessage) {
+    return labels.resolveErrorMessage(errorCode, fallback, details);
+  }
+  return fallback;
+}
+
 export function mapServerMessage(
   item: MessageDTO,
-  labels: { generationInterrupted: string; streamInterrupted?: string; imageRunning?: string } = {
+  labels: MessageLabels = {
     generationInterrupted: "Generation interrupted",
   },
   options: { liveRunIDs?: ReadonlySet<string> } = {},
@@ -186,6 +205,7 @@ export function mapServerMessage(
     serverMessageID: item.id,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
+    editedAt: item.editedAt ?? null,
     myFeedback: item.myFeedback || null,
     thumbsUpCount: item.thumbsUpCount ?? 0,
     thumbsDownCount: item.thumbsDownCount ?? 0,
@@ -209,13 +229,11 @@ export function mapServerMessage(
     msg.billingCost = item.billingCost;
     msg.processTrace = parseProcessTrace(item);
     if ((item.status === "error" || item.status === "interrupted") && item.errorMessage?.trim()) {
+      const details = extractInlineAlertDetails(item);
       msg.inlineAlert = {
         title: labels.generationInterrupted,
-        message:
-          item.errorCode === "stream_interrupted" || item.errorCode === "conversation_run.stream_interrupted"
-            ? labels.streamInterrupted || item.errorMessage.trim()
-            : item.errorMessage.trim(),
-        details: extractInlineAlertDetails(item),
+        message: resolveAssistantErrorMessage(item, labels, details),
+        details,
       };
     }
     if (item.status === "pending") {

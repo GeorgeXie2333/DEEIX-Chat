@@ -5,6 +5,16 @@ import { useLocale, useTranslations } from "next-intl";
 import { Edit3, Pin, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -482,8 +492,8 @@ export function AdminAnnouncementsPage() {
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex justify-center">
+                  <TableCell className="py-1.5 text-center">
+                    <div className="flex h-7 items-center justify-center">
                       <Switch
                         size="sm"
                         checked={Boolean(item.pinned)}
@@ -493,8 +503,8 @@ export function AdminAnnouncementsPage() {
                       />
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex justify-center">
+                  <TableCell className="py-1.5 text-center">
+                    <div className="flex h-7 items-center justify-center">
                       <Switch
                         size="sm"
                         checked={item.status === "active"}
@@ -504,7 +514,7 @@ export function AdminAnnouncementsPage() {
                       />
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1.5">
                     <Input
                       type="text"
                       inputMode="numeric"
@@ -517,9 +527,9 @@ export function AdminAnnouncementsPage() {
                       className="h-7 w-[58px] px-2 text-left text-xs tabular-nums"
                     />
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{activeWindowLabel(item, locale)}</TableCell>
-                  <TableCell stickyEnd className="text-right">
-                    <div className="flex justify-end gap-1">
+                  <TableCell className="py-1.5 text-xs text-muted-foreground">{activeWindowLabel(item, locale)}</TableCell>
+                  <TableCell stickyEnd className="py-1.5 text-right">
+                    <div className="flex h-7 items-center justify-end gap-1">
                       <Button type="button" size="icon-sm" variant="ghost" onClick={() => openEdit(item)} aria-label={t("edit")}>
                         <Edit3 className="size-3.5 stroke-1" />
                       </Button>
@@ -549,20 +559,20 @@ export function AdminAnnouncementsPage() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(nextOpen) => !saving && setDialogOpen(nextOpen)}>
-        <DialogContent className="sm:max-w-[920px]">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[min(90vh,820px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[720px]">
+          <DialogHeader className="shrink-0 px-4 py-4">
             <DialogTitle>{form.id ? t("editTitle") : t("createTitle")}</DialogTitle>
             <DialogDescription>{t("dialogDescription")}</DialogDescription>
           </DialogHeader>
 
           <form
-            className="space-y-4"
+            className="flex min-h-0 flex-1 flex-col"
             onSubmit={(event) => {
               event.preventDefault();
               void save();
             }}
           >
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid min-h-0 flex-1 grid-cols-2 gap-5 overflow-y-auto px-4 py-2">
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">{t("fields.title")}</p>
                 <Input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} disabled={saving} />
@@ -578,9 +588,7 @@ export function AdminAnnouncementsPage() {
                   onToChange={(value) => setForm((current) => ({ ...current, expiresAt: dateRangeBoundaryValue(value, "end") }))}
                 />
               </div>
-            </div>
 
-            <div className="grid gap-5 md:grid-cols-4">
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">{t("fields.type")}</p>
                 <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: normalizeAnnouncementType(value) })} disabled={saving}>
@@ -602,7 +610,7 @@ export function AdminAnnouncementsPage() {
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">{t("fields.pinned")}</p>
-                <div className="flex h-9 items-center">
+                <div className="flex h-8 items-center">
                   <Switch
                     size="sm"
                     checked={form.pinned}
@@ -614,7 +622,7 @@ export function AdminAnnouncementsPage() {
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">{t("fields.status")}</p>
-                <div className="flex h-9 items-center">
+                <div className="flex h-8 items-center">
                   <Switch
                     size="sm"
                     checked={form.status === "active"}
@@ -624,28 +632,26 @@ export function AdminAnnouncementsPage() {
                   />
                 </div>
               </div>
-            </div>
 
-            <div className="grid gap-5 md:grid-cols-2">
-              <div className="space-y-1">
+              <div className="col-span-2 space-y-1 md:col-span-1">
                 <p className="text-xs text-muted-foreground">{t("fields.contentMarkdown")}</p>
                 <Textarea
                   value={form.contentMarkdown}
                   onChange={(event) => setForm({ ...form, contentMarkdown: event.target.value })}
                   disabled={saving}
-                  className="h-[220px] resize-none text-xs"
+                  className="h-32 resize-none overflow-y-auto text-xs [field-sizing:fixed]"
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="col-span-2 space-y-1 md:col-span-1">
                 <p className="text-xs text-muted-foreground">{t("fields.preview")}</p>
-                <div className="h-[220px] overflow-y-auto rounded-md border border-border/60 bg-muted/20 px-3 py-2">
+                <div className="h-32 overflow-y-auto rounded-md border border-border/60 bg-muted/20 px-3 py-2">
                   <StreamdownRender content={form.contentMarkdown || t("previewEmpty")} className="text-sm" />
                 </div>
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="shrink-0 px-4 py-3">
               <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)} disabled={saving}>
                 {common("actions.cancel")}
               </Button>
@@ -657,22 +663,29 @@ export function AdminAnnouncementsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => !saving && !open && setDeleteTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("deleteTitle")}</DialogTitle>
-            <DialogDescription>{t("deleteDescription")}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" size="sm" onClick={() => setDeleteTarget(null)} disabled={saving}>
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !saving && !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("deleteDescription")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>
               {common("actions.cancel")}
-            </Button>
-            <Button type="button" variant="destructive" size="sm" onClick={confirmDelete} disabled={saving}>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmDelete();
+              }}
+              disabled={saving}
+            >
               {saving ? t("deleting") : t("delete")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

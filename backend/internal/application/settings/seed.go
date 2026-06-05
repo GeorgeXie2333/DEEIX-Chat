@@ -20,6 +20,7 @@ func defaultSettings() []domainsettings.SystemSetting {
 		{Namespace: "auth", Key: "refresh_token_ttl_hours", Value: "720", ValueType: "int", Description: "Refresh Token 有效期(小时)"},
 		{Namespace: "auth", Key: "login_max_failures", Value: "5", ValueType: "int", Description: "登录失败锁定阈值"},
 		{Namespace: "auth", Key: "login_lock_minutes", Value: "15", ValueType: "int", Description: "锁定时长(分钟)"},
+		{Namespace: "auth", Key: "rate_limit_enabled", Value: "false", ValueType: "bool", Description: "是否启用平台 HTTP 429 限流"},
 		{Namespace: "auth", Key: "rate_limit_rpm", Value: "60", ValueType: "int", Description: "全局限流 RPM"},
 		{Namespace: "auth", Key: "public_auth_rate_limit_rpm", Value: "30", ValueType: "int", Description: "公开鉴权接口限流 RPM"},
 		{Namespace: "auth", Key: "login_page_title", Value: defaultLoginPageTitle, ValueType: "string", Description: "登录页面标题"},
@@ -49,7 +50,7 @@ func defaultSettings() []domainsettings.SystemSetting {
 		{Namespace: "billing", Key: "free_model_rate_limit_rpm", Value: "0", ValueType: "int", Description: "免费模型每用户每分钟请求数，0表示不限"},
 		{Namespace: "billing", Key: "free_model_daily_limit", Value: "0", ValueType: "int", Description: "免费模型每用户每日请求数，0表示不限"},
 		{Namespace: "billing", Key: "free_model_rate_limit_exempt_models", Value: "", ValueType: "string", Description: "免费模型限流豁免平台模型名，逗号或换行分隔"},
-		{Namespace: "billing", Key: "usd_to_cny_rate", Value: "7.2", ValueType: "string", Description: "美元换人民币支付汇率"},
+		{Namespace: "billing", Key: "usd_to_cny_rate", Value: "7.2", ValueType: "string", Description: "易支付美元兑人民币汇率"},
 		{Namespace: "billing", Key: "payment_providers", Value: "disabled", ValueType: "string", Description: "启用支付渠道，多个用英文逗号分隔：stripe,epay"},
 		{Namespace: "billing", Key: "stripe_publishable_key", Value: "", ValueType: "string", Description: "Stripe Publishable Key"},
 		{Namespace: "billing", Key: "stripe_secret_key", Value: "", ValueType: "string", Description: "Stripe Secret Key"},
@@ -79,7 +80,7 @@ func defaultSettings() []domainsettings.SystemSetting {
 		{Namespace: "chat", Key: "model_option_denied_paths", Value: config.DefaultModelOptionDeniedPathsJSON(), ValueType: "json", Description: "模型 options 黑名单路径 JSON，default 对所有协议生效"},
 
 		// 存储配置
-		{Namespace: "storage", Key: "user_storage_quota_bytes", Value: "104857600", ValueType: "int", Description: "用户配额(字节)"},
+		{Namespace: "storage", Key: "user_storage_quota_bytes", Value: "104857600", ValueType: "int", Description: "用户总存储配额(字节)，0表示不限制"},
 		{Namespace: "storage", Key: "max_upload_file_bytes", Value: "20971520", ValueType: "int", Description: "默认附件大小上限(字节)"},
 		{Namespace: "storage", Key: "max_message_files", Value: "10", ValueType: "int", Description: "单消息附件数"},
 

@@ -202,12 +202,16 @@
     "videoReferenceTooMany": "動画生成で使用できる参照画像は1枚までです。",
     "videoReferenceInvalid": "動画参照画像が無効です。JPEG、PNG、WebP を使用してください。",
     "videoReferenceSizeMismatch": "動画参照画像のサイズは選択した解像度と一致している必要があります。",
+    "imageStreamUnsupported": "ヒント: 上流がストリーミング応答に対応していない可能性があります。管理者にモデル能力の「画像ストリーミング呼び出し」を無効化（image.stream=false）してもらい、もう一度お試しください。",
     "routeProtocolMismatch": "現在のモデルルートプロトコルはこのメディアタスクと一致しません。モデルバインドを確認してください。",
     "invalidTask": "メディアタスクのパラメーターが無効です。"
   },
   "message": {
     "feedbackTargetInvalid": "メッセージフィードバック対象が無効です。",
+    "editStateInvalid": "現在の状態ではこのメッセージを編集できません。",
+    "editTargetInvalid": "AI の返信のみ編集できます。",
     "invalidBranch": "メッセージ分岐が無効です。",
+    "invalidContent": "メッセージ内容が無効です。",
     "invalidFeedback": "メッセージフィードバックが無効です。",
     "invalidId": "メッセージ ID が無効です。",
     "notFound": "メッセージが見つかりません。",
@@ -276,6 +280,8 @@
   "upstream": {
     "unavailable": "上流サービスを利用できません。"
   },
+  "upstreamEmptyResponse": "上流が空の応答を返しました。しばらくしてからもう一度お試しになるか、管理者にモデルルートの確認を依頼してください。",
+  "upstreamRequestFailed": "上流リクエストに失敗しました。しばらくしてからもう一度お試しになるか、管理者にモデルルートの確認を依頼してください。",
   "user": {
     "accountDeleteVerificationRequired": "アカウントを削除する前に本人確認を行ってください。",
     "emptyPatch": "少なくとも1つのユーザー項目を変更してください。",

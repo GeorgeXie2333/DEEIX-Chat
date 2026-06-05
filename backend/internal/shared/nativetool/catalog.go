@@ -37,6 +37,9 @@ type Definition struct {
 type PricingDefinition struct {
 	Provider     string
 	ToolKey      string
+	Label        string
+	Description  string
+	Type         string
 	PriceNanousd int64
 	Unit         string
 	PriceLabel   string
@@ -355,50 +358,50 @@ var definitions = []Definition{
 		Key:              "google.google_search",
 		Label:            "Google Search",
 		Description:      "Google hosted search grounding tool.",
-		Payload:          map[string]interface{}{"type": "google_search", "google_search": map[string]interface{}{}},
+		Payload:          map[string]interface{}{"google_search": map[string]interface{}{}},
 		DefaultEnabled:   true,
 		PriceLabel:       "notMetered",
 		UsageAliases:     []string{"google_search"},
 		rawTypeFieldKeys: []string{"google_search", "googleSearch"},
 	},
-}
-
-var pricingDefinitions = []PricingDefinition{
-	{Provider: "OpenAI", ToolKey: "openaiWebSearchReasoning", PriceNanousd: priceUSD001Nanousd, Unit: "call", Billable: true},
-	{Provider: "OpenAI", ToolKey: "openaiWebSearchStandard", PriceNanousd: priceUSD0025Nanousd, Unit: "call", Billable: true},
-	{Provider: "OpenAI", ToolKey: "openaiShell", Unit: "call"},
-	{Provider: "OpenAI", ToolKey: "openaiImageGeneration", PriceNanousd: priceUSD01Nanousd, Unit: "call", Billable: true},
-	{Provider: "OpenAI", ToolKey: "openaiCodeInterpreter", Unit: "call"},
-	{Provider: "Anthropic", ToolKey: "anthropicWebSearch", PriceNanousd: priceUSD001Nanousd, Unit: "call", Billable: true},
-	{Provider: "Anthropic", ToolKey: "anthropicWebFetch", Unit: "call"},
-	{Provider: "Anthropic", ToolKey: "anthropicCodeExecution", Unit: "call"},
-	{Provider: "Anthropic", ToolKey: "anthropicAdvisor", Unit: "call"},
-	{Provider: "Anthropic", ToolKey: "anthropicToolSearch", Unit: "call"},
-	{Provider: "xAI", ToolKey: "xaiWebSearch", PriceNanousd: priceUSD0005Nanousd, Unit: "call", Billable: true},
-	{Provider: "xAI", ToolKey: "xaiXSearch", PriceNanousd: priceUSD0005Nanousd, Unit: "call", Billable: true},
-	{Provider: "xAI", ToolKey: "xaiCodeExecution", PriceNanousd: priceUSD0005Nanousd, Unit: "call", Billable: true},
-	{Provider: "xAI", ToolKey: "xaiAttachmentSearch", PriceNanousd: priceUSD001Nanousd, Unit: "call", Billable: true},
-	{Provider: "xAI", ToolKey: "xaiCollectionsSearch", PriceNanousd: priceUSD00025Nanousd, Unit: "call", Billable: true},
-	{Provider: "Google", ToolKey: "googleGoogleSearch", Unit: "call"},
+	{
+		Protocol:         "gemini_generate_content",
+		Provider:         "Google",
+		Type:             "url_context",
+		Key:              "google.url_context",
+		Label:            "URL Context",
+		Description:      "Google hosted URL context tool.",
+		Payload:          map[string]interface{}{"url_context": map[string]interface{}{}},
+		DefaultEnabled:   true,
+		PriceLabel:       "notMetered",
+		UsageAliases:     []string{"url_context"},
+		rawTypeFieldKeys: []string{"url_context", "urlContext"},
+	},
 }
 
 var usagePricesByKey = map[string]UsagePrice{
-	"openaiWebSearchReasoning": {Provider: "openai", ServiceName: "OpenAI Web search", NanousdPerCall: priceUSD001Nanousd},
-	"openaiWebSearchStandard":  {Provider: "openai", ServiceName: "OpenAI Web search", NanousdPerCall: priceUSD0025Nanousd},
-	"openaiShell":              {Provider: "openai", ServiceName: "OpenAI Shell"},
-	"openaiImageGeneration":    {Provider: "openai", ServiceName: "OpenAI Image Generation", NanousdPerCall: priceUSD01Nanousd},
-	"openaiCodeInterpreter":    {Provider: "openai", ServiceName: "OpenAI Code Interpreter"},
-	"anthropicWebSearch":       {Provider: "anthropic", ServiceName: "Anthropic Web search", NanousdPerCall: priceUSD001Nanousd},
-	"anthropicWebFetch":        {Provider: "anthropic", ServiceName: "Anthropic Web Fetch"},
-	"anthropicCodeExecution":   {Provider: "anthropic", ServiceName: "Anthropic Code Execution"},
-	"anthropicAdvisor":         {Provider: "anthropic", ServiceName: "Anthropic Advisor"},
-	"anthropicToolSearch":      {Provider: "anthropic", ServiceName: "Anthropic Tool Search"},
-	"xaiWebSearch":             {Provider: "xai", ServiceName: "xAI Web Search", NanousdPerCall: priceUSD0005Nanousd},
-	"xaiXSearch":               {Provider: "xai", ServiceName: "xAI X Search", NanousdPerCall: priceUSD0005Nanousd},
-	"xaiCodeExecution":         {Provider: "xai", ServiceName: "xAI Code Execution", NanousdPerCall: priceUSD0005Nanousd},
-	"xaiAttachmentSearch":      {Provider: "xai", ServiceName: "xAI File Attachments Search", NanousdPerCall: priceUSD001Nanousd},
-	"xaiCollectionsSearch":     {Provider: "xai", ServiceName: "xAI Collections Search / RAG", NanousdPerCall: priceUSD00025Nanousd},
-	"googleGoogleSearch":       {Provider: "google", ServiceName: "Google Search grounding"},
+	"openai.web_search":                         {Provider: "openai", ServiceName: "OpenAI Web search", NanousdPerCall: priceUSD0025Nanousd},
+	"openai.web_search_preview":                 {Provider: "openai", ServiceName: "OpenAI Web search preview", NanousdPerCall: priceUSD0025Nanousd},
+	"openai.shell":                              {Provider: "openai", ServiceName: "OpenAI Shell"},
+	"openai.image_generation":                   {Provider: "openai", ServiceName: "OpenAI Image Generation", NanousdPerCall: priceUSD01Nanousd},
+	"openai.code_interpreter":                   {Provider: "openai", ServiceName: "OpenAI Code Interpreter"},
+	"anthropic.web_search_20250305":             {Provider: "anthropic", ServiceName: "Anthropic Web search", NanousdPerCall: priceUSD001Nanousd},
+	"anthropic.web_search_20260209":             {Provider: "anthropic", ServiceName: "Anthropic Web search", NanousdPerCall: priceUSD001Nanousd},
+	"anthropic.web_fetch_20250910":              {Provider: "anthropic", ServiceName: "Anthropic Web Fetch"},
+	"anthropic.web_fetch_20260209":              {Provider: "anthropic", ServiceName: "Anthropic Web Fetch"},
+	"anthropic.code_execution_20250825":         {Provider: "anthropic", ServiceName: "Anthropic Code Execution"},
+	"anthropic.code_execution_20260120":         {Provider: "anthropic", ServiceName: "Anthropic Code Execution"},
+	"anthropic.advisor_20260301":                {Provider: "anthropic", ServiceName: "Anthropic Advisor"},
+	"anthropic.tool_search_tool_regex_20251119": {Provider: "anthropic", ServiceName: "Anthropic Tool Search"},
+	"anthropic.tool_search_tool_bm25_20251119":  {Provider: "anthropic", ServiceName: "Anthropic Tool Search"},
+	"xai.web_search":                            {Provider: "xai", ServiceName: "xAI Web Search", NanousdPerCall: priceUSD0005Nanousd},
+	"xai.x_search":                              {Provider: "xai", ServiceName: "xAI X Search", NanousdPerCall: priceUSD0005Nanousd},
+	"xai.code_interpreter":                      {Provider: "xai", ServiceName: "xAI Code Execution", NanousdPerCall: priceUSD0005Nanousd},
+	"xai.attachment_search":                     {Provider: "xai", ServiceName: "xAI File Attachments Search", NanousdPerCall: priceUSD001Nanousd},
+	"xai.collections_search":                    {Provider: "xai", ServiceName: "xAI Collections Search / RAG", NanousdPerCall: priceUSD00025Nanousd},
+	"google.google_search":                      {Provider: "google", ServiceName: "Google Search grounding"},
+	"google.code_execution":                     {Provider: "google", ServiceName: "Google Code Execution"},
+	"google.url_context":                        {Provider: "google", ServiceName: "Google URL Context"},
 }
 
 // Definitions 返回全部官方原生工具定义。
@@ -450,48 +453,138 @@ func FindByKey(key string) (Definition, bool) {
 	return Definition{}, false
 }
 
-// CanonicalPayload 从用户 options.tools 项中只提取工具引用，并返回后端固定 payload。
-func CanonicalPayload(protocol string, raw map[string]interface{}) (map[string]interface{}, bool) {
+var nativeToolDeniedPayloadKeys = map[string]struct{}{
+	"model":                {},
+	"messages":             {},
+	"input":                {},
+	"instructions":         {},
+	"prompt":               {},
+	"system":               {},
+	"systemInstruction":    {},
+	"headers":              {},
+	"api_key":              {},
+	"apiKey":               {},
+	"base_url":             {},
+	"baseURL":              {},
+	"stream":               {},
+	"previous_response_id": {},
+}
+
+// PayloadFromOption 识别用户 options.tools 项中的官方原生工具，并返回可发送给上游的规范化 payload。
+func PayloadFromOption(protocol string, raw map[string]interface{}) (Definition, map[string]interface{}, bool) {
 	toolType := strings.TrimSpace(stringValue(raw["type"]))
 	if toolType == "" {
 		toolType = inferToolTypeFromRawKeys(protocol, raw)
 	}
 	if toolType == "" {
-		return nil, false
+		return Definition{}, nil, false
 	}
 	definition, ok := Find(protocol, toolType)
 	if !ok {
-		return nil, false
+		return Definition{}, nil, false
 	}
-	return cloneMap(definition.Payload), true
+	return definition, buildPayload(definition, raw), true
 }
 
-// CanonicalPayloadByKey 从用户 options.tools 项中识别指定官方原生工具 key，并返回后端固定 payload。
-func CanonicalPayloadByKey(key string, raw map[string]interface{}) (map[string]interface{}, bool) {
+// PayloadFromKey 识别指定官方原生工具 key，并返回可发送给上游的规范化 payload。
+func PayloadFromKey(key string, raw map[string]interface{}) (Definition, map[string]interface{}, bool) {
 	key = strings.TrimSpace(key)
 	for _, definition := range definitions {
 		if definition.Key != key {
 			continue
 		}
-		if !rawMatchesDefinition(definition, raw) {
+		matched, payload, ok := PayloadFromOption(definition.Protocol, raw)
+		if !ok {
 			continue
 		}
-		return cloneMap(definition.Payload), true
+		return matched, payload, true
 	}
-	return nil, false
+	return Definition{}, nil, false
+}
+
+// CanonicalPayload 按官方原生工具定义生成可发送给上游的规范 payload。
+func CanonicalPayload(definition Definition, raw map[string]interface{}) map[string]interface{} {
+	return buildPayload(definition, raw)
+}
+
+func buildPayload(definition Definition, raw map[string]interface{}) map[string]interface{} {
+	payload := cloneMap(raw)
+	if payload == nil {
+		payload = make(map[string]interface{})
+	}
+	for key := range nativeToolDeniedPayloadKeys {
+		delete(payload, key)
+	}
+	if _, typedPayload := definition.Payload["type"]; !typedPayload {
+		delete(payload, "type")
+	}
+	for _, key := range definition.rawTypeFieldKeys {
+		if _, canonical := definition.Payload[key]; !canonical {
+			delete(payload, key)
+		}
+	}
+	mergePayload(payload, definition.Payload)
+	return payload
+}
+
+func mergePayload(dst map[string]interface{}, src map[string]interface{}) {
+	for key, value := range src {
+		srcMap, srcIsMap := value.(map[string]interface{})
+		dstMap, dstIsMap := dst[key].(map[string]interface{})
+		if srcIsMap && dstIsMap {
+			mergePayload(dstMap, srcMap)
+			continue
+		}
+		dst[key] = cloneValue(value)
+	}
 }
 
 // PricingDefinitions 返回内置默认原生工具计费展示目录。
 func PricingDefinitions() []PricingDefinition {
-	result := make([]PricingDefinition, len(pricingDefinitions))
-	copy(result, pricingDefinitions)
+	return PricingDefinitionsFromDefinitions(Definitions())
+}
+
+// PricingDefinitionsFromDefinitions 返回指定原生工具目录对应的计费展示目录。
+func PricingDefinitionsFromDefinitions(items []Definition) []PricingDefinition {
+	result := make([]PricingDefinition, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+	for _, definition := range items {
+		key := strings.TrimSpace(definition.Key)
+		if key == "" {
+			continue
+		}
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		unit := strings.TrimSpace(definition.BillingUnit)
+		if unit == "" {
+			unit = "call"
+		}
+		result = append(result, PricingDefinition{
+			Provider:     strings.TrimSpace(definition.Provider),
+			ToolKey:      key,
+			Label:        strings.TrimSpace(definition.Label),
+			Description:  strings.TrimSpace(definition.Description),
+			Type:         strings.TrimSpace(definition.Type),
+			PriceNanousd: definition.PriceNanousd,
+			Unit:         unit,
+			PriceLabel:   strings.TrimSpace(definition.PriceLabel),
+			Billable:     definition.Billable || definition.PriceNanousd > 0,
+		})
+	}
 	return result
 }
 
 // PricingDefinitionsWithOverrides 返回应用管理员覆盖后的原生工具计费展示目录。
 func PricingDefinitionsWithOverrides(raw string) []PricingDefinition {
-	items := PricingDefinitions()
-	overrides, err := ParsePricingOverridesJSON(raw)
+	return PricingDefinitionsWithOverridesFromDefinitions(raw, Definitions())
+}
+
+// PricingDefinitionsWithOverridesFromDefinitions 返回指定目录应用管理员覆盖后的原生工具计费展示目录。
+func PricingDefinitionsWithOverridesFromDefinitions(raw string, definitions []Definition) []PricingDefinition {
+	items := PricingDefinitionsFromDefinitions(definitions)
+	overrides, err := ParsePricingOverridesJSONForDefinitions(raw, definitions)
 	if err != nil {
 		return items
 	}
@@ -506,6 +599,174 @@ func PricingDefinitionsWithOverrides(raw string) []PricingDefinition {
 		items[index].Billable = override.Billable
 	}
 	return items
+}
+
+// MergeDefinitions 合并内置目录和管理员在模型能力中声明的动态官方工具目录。
+func MergeDefinitions(extra []Definition) []Definition {
+	result := Definitions()
+	seen := make(map[string]struct{}, len(result)+len(extra))
+	for _, definition := range result {
+		seen[definitionIdentity(definition)] = struct{}{}
+	}
+	for _, definition := range extra {
+		normalized, ok := normalizeDefinition(definition)
+		if !ok {
+			continue
+		}
+		identity := definitionIdentity(normalized)
+		if _, exists := seen[identity]; exists {
+			continue
+		}
+		seen[identity] = struct{}{}
+		result = append(result, normalized)
+	}
+	return result
+}
+
+func definitionIdentity(definition Definition) string {
+	return strings.Join([]string{
+		strings.TrimSpace(definition.Protocol),
+		strings.TrimSpace(definition.Key),
+		strings.TrimSpace(definition.Type),
+	}, "\x00")
+}
+
+func normalizeDefinition(definition Definition) (Definition, bool) {
+	definition.Protocol = strings.TrimSpace(definition.Protocol)
+	definition.Provider = strings.TrimSpace(definition.Provider)
+	definition.Type = strings.TrimSpace(definition.Type)
+	definition.Key = strings.TrimSpace(definition.Key)
+	definition.Label = strings.TrimSpace(definition.Label)
+	definition.Description = strings.TrimSpace(definition.Description)
+	definition.BillingUnit = strings.TrimSpace(definition.BillingUnit)
+	definition.PriceLabel = strings.TrimSpace(definition.PriceLabel)
+	definition.RiskLevel = strings.TrimSpace(definition.RiskLevel)
+	if definition.Type == "" {
+		definition.Type = strings.TrimSpace(stringValue(definition.Payload["type"]))
+	}
+	if definition.Key == "" || definition.Protocol == "" || definition.Type == "" {
+		return Definition{}, false
+	}
+	if definition.Provider == "" {
+		definition.Provider = "Custom"
+	}
+	if definition.Label == "" {
+		definition.Label = definition.Type
+	}
+	if definition.Description == "" {
+		definition.Description = definition.Type
+	}
+	if definition.Payload == nil {
+		definition.Payload = map[string]interface{}{"type": definition.Type}
+	}
+	if definition.BillingUnit == "" {
+		definition.BillingUnit = "call"
+	}
+	definition.UsageAliases = normalizeStringList(definition.UsageAliases)
+	return definition, true
+}
+
+// DefinitionsFromCapabilitiesJSON 读取模型能力 JSON 中由管理员声明的官方原生工具。
+func DefinitionsFromCapabilitiesJSON(raw string) []Definition {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return nil
+	}
+	var payload struct {
+		NativeTools []struct {
+			Key            string                 `json:"key"`
+			ToolKey        string                 `json:"toolKey"`
+			Protocol       string                 `json:"protocol"`
+			Protocols      []string               `json:"protocols"`
+			Provider       string                 `json:"provider"`
+			Type           string                 `json:"type"`
+			Label          string                 `json:"label"`
+			Description    string                 `json:"description"`
+			Payload        map[string]interface{} `json:"payload"`
+			DefaultEnabled bool                   `json:"defaultEnabled"`
+			Billable       bool                   `json:"billable"`
+			BillingUnit    string                 `json:"billingUnit"`
+			PriceNanousd   int64                  `json:"priceNanousd"`
+			PriceLabel     string                 `json:"priceLabel"`
+			RiskLevel      string                 `json:"riskLevel"`
+			UsageAliases   []string               `json:"usageAliases"`
+			Enabled        *bool                  `json:"enabled"`
+		} `json:"nativeTools"`
+	}
+	if err := json.Unmarshal([]byte(value), &payload); err != nil {
+		return nil
+	}
+	definitions := make([]Definition, 0, len(payload.NativeTools))
+	for _, item := range payload.NativeTools {
+		if item.Enabled != nil && !*item.Enabled {
+			continue
+		}
+		key := strings.TrimSpace(item.Key)
+		if key == "" {
+			key = strings.TrimSpace(item.ToolKey)
+		}
+		protocols := nativeToolProtocols(item.Protocols, item.Protocol)
+		for _, protocol := range protocols {
+			definition, ok := normalizeDefinition(Definition{
+				Protocol:       protocol,
+				Provider:       item.Provider,
+				Type:           item.Type,
+				Key:            key,
+				Label:          item.Label,
+				Description:    item.Description,
+				Payload:        cloneMap(item.Payload),
+				DefaultEnabled: item.DefaultEnabled,
+				Billable:       item.Billable,
+				BillingUnit:    item.BillingUnit,
+				PriceNanousd:   item.PriceNanousd,
+				PriceLabel:     item.PriceLabel,
+				RiskLevel:      item.RiskLevel,
+				UsageAliases:   item.UsageAliases,
+			})
+			if ok {
+				definitions = append(definitions, definition)
+			}
+		}
+	}
+	return definitions
+}
+
+func nativeToolProtocols(values []string, single string) []string {
+	protocols := make([]string, 0, len(values)+1)
+	seen := make(map[string]struct{}, len(values)+1)
+	add := func(value string) {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			return
+		}
+		if _, exists := seen[value]; exists {
+			return
+		}
+		seen[value] = struct{}{}
+		protocols = append(protocols, value)
+	}
+	for _, value := range values {
+		add(value)
+	}
+	add(single)
+	return protocols
+}
+
+func normalizeStringList(values []string) []string {
+	result := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		if _, exists := seen[value]; exists {
+			continue
+		}
+		seen[value] = struct{}{}
+		result = append(result, value)
+	}
+	return result
 }
 
 // DefaultPricingJSON 返回原生工具默认计费配置 JSON。
@@ -528,8 +789,8 @@ func PricingOverridesFromDefinitions(items []PricingDefinition) map[string]Prici
 		result[key] = PricingOverride{
 			PriceNanousd: item.PriceNanousd,
 			Unit:         strings.TrimSpace(item.Unit),
-			PriceLabel:   strings.TrimSpace(item.PriceLabel),
-			Billable:     item.Billable,
+			PriceLabel:   "",
+			Billable:     item.PriceNanousd > 0,
 		}
 	}
 	return result
@@ -537,7 +798,12 @@ func PricingOverridesFromDefinitions(items []PricingDefinition) map[string]Prici
 
 // PricingOverridesJSON 将覆盖配置规范化为稳定 JSON。
 func PricingOverridesJSON(overrides map[string]PricingOverride) (string, error) {
-	normalized, err := normalizePricingOverrides(overrides)
+	return PricingOverridesJSONForDefinitions(overrides, Definitions())
+}
+
+// PricingOverridesJSONForDefinitions 将指定目录下的覆盖配置规范化为稳定 JSON。
+func PricingOverridesJSONForDefinitions(overrides map[string]PricingOverride, definitions []Definition) (string, error) {
+	normalized, err := normalizePricingOverrides(overrides, definitions)
 	if err != nil {
 		return "", err
 	}
@@ -550,6 +816,11 @@ func PricingOverridesJSON(overrides map[string]PricingOverride) (string, error) 
 
 // ParsePricingOverridesJSON 解析并校验管理员原生工具计费覆盖配置。
 func ParsePricingOverridesJSON(raw string) (map[string]PricingOverride, error) {
+	return ParsePricingOverridesJSONForDefinitions(raw, Definitions())
+}
+
+// ParsePricingOverridesJSONForDefinitions 解析并校验指定目录下的管理员原生工具计费覆盖配置。
+func ParsePricingOverridesJSONForDefinitions(raw string, definitions []Definition) (map[string]PricingOverride, error) {
 	value := strings.TrimSpace(raw)
 	if value == "" {
 		return map[string]PricingOverride{}, nil
@@ -558,20 +829,25 @@ func ParsePricingOverridesJSON(raw string) (map[string]PricingOverride, error) {
 	if err := json.Unmarshal([]byte(value), &parsed); err != nil {
 		return nil, fmt.Errorf("native tool pricing must be a JSON object: %w", err)
 	}
-	return normalizePricingOverrides(parsed)
+	return normalizePricingOverrides(parsed, definitions)
 }
 
 // PricingOverridesUseDefaults 判断配置是否等同于内置默认价格。
 func PricingOverridesUseDefaults(raw string) bool {
+	return PricingOverridesUseDefaultsForDefinitions(raw, Definitions())
+}
+
+// PricingOverridesUseDefaultsForDefinitions 判断配置是否等同于指定目录默认价格。
+func PricingOverridesUseDefaultsForDefinitions(raw string, definitions []Definition) bool {
 	value := strings.TrimSpace(raw)
 	if value == "" {
 		return true
 	}
-	overrides, err := ParsePricingOverridesJSON(value)
+	overrides, err := ParsePricingOverridesJSONForDefinitions(value, definitions)
 	if err != nil {
 		return true
 	}
-	defaults := PricingOverridesFromDefinitions(PricingDefinitions())
+	defaults := PricingOverridesFromDefinitions(PricingDefinitionsFromDefinitions(definitions))
 	for key, override := range overrides {
 		defaultOverride, ok := defaults[key]
 		if !ok || !pricingOverrideEqual(override, defaultOverride) {
@@ -589,43 +865,53 @@ func UsagePricingKey(protocol string, toolName string) (string, bool) {
 	case "anthropic_messages":
 		switch tool {
 		case "web_search":
-			return "anthropicWebSearch", true
+			return "anthropic.web_search_20260209", true
 		case "web_fetch":
-			return "anthropicWebFetch", true
+			return "anthropic.web_fetch_20260209", true
 		case "code_execution":
-			return "anthropicCodeExecution", true
+			return "anthropic.code_execution_20260120", true
 		case "advisor":
-			return "anthropicAdvisor", true
+			return "anthropic.advisor_20260301", true
 		case "tool_search_tool_regex", "tool_search_tool_bm25":
-			return "anthropicToolSearch", true
+			if tool == "tool_search_tool_regex" {
+				return "anthropic.tool_search_tool_regex_20251119", true
+			}
+			return "anthropic.tool_search_tool_bm25_20251119", true
 		}
 	case "openai_responses", "openai_chat_completions":
 		switch tool {
-		case "web_search", "web_search_preview":
-			return "openaiWebSearchStandard", true
+		case "web_search":
+			return "openai.web_search", true
+		case "web_search_preview":
+			return "openai.web_search_preview", true
 		case "shell":
-			return "openaiShell", true
+			return "openai.shell", true
 		case "image_generation":
-			return "openaiImageGeneration", true
+			return "openai.image_generation", true
 		case "code_interpreter":
-			return "openaiCodeInterpreter", true
+			return "openai.code_interpreter", true
 		}
 	case "xai_responses":
 		switch tool {
 		case "web_search":
-			return "xaiWebSearch", true
+			return "xai.web_search", true
 		case "x_search":
-			return "xaiXSearch", true
+			return "xai.x_search", true
 		case "code_interpreter", "code_execution":
-			return "xaiCodeExecution", true
+			return "xai.code_interpreter", true
 		case "attachment_search", "file_attachment_search":
-			return "xaiAttachmentSearch", true
+			return "xai.attachment_search", true
 		case "file_search", "collection_search", "collections_search":
-			return "xaiCollectionsSearch", true
+			return "xai.collections_search", true
 		}
 	case "gemini_generate_content", "google_image_generation":
-		if tool == "google_search" {
-			return "googleGoogleSearch", true
+		switch tool {
+		case "google_search":
+			return "google.google_search", true
+		case "code_execution":
+			return "google.code_execution", true
+		case "url_context":
+			return "google.url_context", true
 		}
 	}
 	return "", false
@@ -655,8 +941,97 @@ func UsagePriceByKeyWithOverrides(key string, overrides map[string]PricingOverri
 	return price, true
 }
 
-func normalizePricingOverrides(overrides map[string]PricingOverride) (map[string]PricingOverride, error) {
-	defaults := PricingOverridesFromDefinitions(PricingDefinitions())
+// UsagePriceForToolWithOverrides 返回指定协议下实际 toolName 对应的按次价格。
+func UsagePriceForToolWithOverrides(protocol string, toolName string, definitions []Definition, overrides map[string]PricingOverride) (UsagePrice, bool) {
+	if key, ok := UsagePricingKey(protocol, toolName); ok {
+		return UsagePriceByKeyWithOverrides(key, overrides)
+	}
+	definition, ok := FindUsageDefinition(protocol, toolName, definitions)
+	if !ok {
+		return UsagePrice{}, false
+	}
+	return usagePriceFromDefinitionWithOverrides(definition, overrides)
+}
+
+// FindUsageDefinition 按协议和上游返回的工具名解析目录定义。
+func FindUsageDefinition(protocol string, toolName string, definitions []Definition) (Definition, bool) {
+	protocol = strings.TrimSpace(protocol)
+	toolName = strings.TrimSpace(toolName)
+	if protocol == "" || toolName == "" {
+		return Definition{}, false
+	}
+	for _, definition := range definitions {
+		if strings.TrimSpace(definition.Protocol) != protocol {
+			continue
+		}
+		if nativeToolUsageNameMatches(definition, toolName) {
+			normalized, ok := normalizeDefinition(definition)
+			if ok {
+				return normalized, true
+			}
+		}
+	}
+	return Definition{}, false
+}
+
+func nativeToolUsageNameMatches(definition Definition, toolName string) bool {
+	if strings.TrimSpace(definition.Type) == toolName {
+		return true
+	}
+	if strings.TrimSpace(stringValue(definition.Payload["type"])) == toolName {
+		return true
+	}
+	for _, alias := range definition.UsageAliases {
+		if strings.TrimSpace(alias) == toolName {
+			return true
+		}
+	}
+	return false
+}
+
+func usagePriceFromDefinitionWithOverrides(definition Definition, overrides map[string]PricingOverride) (UsagePrice, bool) {
+	key := strings.TrimSpace(definition.Key)
+	if key == "" {
+		return UsagePrice{}, false
+	}
+	price := UsagePrice{
+		Provider:       strings.ToLower(strings.TrimSpace(definition.Provider)),
+		ServiceName:    nativeToolServiceName(definition),
+		NanousdPerCall: definition.PriceNanousd,
+	}
+	override, hasOverride := overrides[key]
+	if hasOverride {
+		if override.PriceNanousd <= 0 {
+			return UsagePrice{}, false
+		}
+		price.NanousdPerCall = override.PriceNanousd
+	}
+	if price.Provider == "" {
+		price.Provider = "custom"
+	}
+	if price.NanousdPerCall <= 0 {
+		return UsagePrice{}, false
+	}
+	return price, true
+}
+
+func nativeToolServiceName(definition Definition) string {
+	provider := strings.TrimSpace(definition.Provider)
+	label := strings.TrimSpace(definition.Label)
+	if label == "" {
+		label = strings.TrimSpace(definition.Type)
+	}
+	if provider == "" {
+		return label
+	}
+	if label == "" {
+		return provider
+	}
+	return provider + " " + label
+}
+
+func normalizePricingOverrides(overrides map[string]PricingOverride, definitions []Definition) (map[string]PricingOverride, error) {
+	defaults := PricingOverridesFromDefinitions(PricingDefinitionsFromDefinitions(definitions))
 	result := make(map[string]PricingOverride, len(overrides))
 	for key, override := range overrides {
 		key = strings.TrimSpace(key)
@@ -725,7 +1100,7 @@ func cloneDefinition(definition Definition) Definition {
 }
 
 func cloneMap(src map[string]interface{}) map[string]interface{} {
-	if len(src) == 0 {
+	if src == nil {
 		return nil
 	}
 	dst := make(map[string]interface{}, len(src))

@@ -42,16 +42,19 @@ import {
   streamImageGeneration,
   streamMessage as streamConversationMessage,
   streamVideoGeneration,
+  updateMessage,
   type ConversationStreamOptions,
 } from "@/shared/api/conversation";
 import type {
   ConversationDTO,
   ConversationOptions,
   MediaImageRequest,
+  MessageDTO,
   SendMessageRequest,
   SendMessageResult,
   StreamMessageEvent,
 } from "@/shared/api/conversation.types";
+import { ApiError } from "@/shared/api/http-client";
 
 const CONVERSATION_METADATA_REFRESH_DELAYS = [800, 1200, 1800, 2600, 3500, 5000] as const;
 
@@ -80,6 +83,13 @@ function resolveImageLoadingAspectRatio(options: ConversationOptions): ImageLoad
     return "portrait";
   }
   return "square";
+}
+
+function streamEventErrorToApiError(
+  event: Extract<StreamMessageEvent, { type: "error" }>,
+  fallback: string,
+): ApiError {
+  return new ApiError(event.message || fallback, 502, event.debug, event.errorCode);
 }
 
 function resolveInputSideUsageValue(...values: Array<number | null | undefined>): number {
@@ -139,7 +149,7 @@ function normalizeLabelsJSON(value: string | null | undefined): string {
 
 function isPlaceholderConversationTitle(title: string): boolean {
   const value = title.trim().toLowerCase();
-  return ["", "new conversation", "untitled", "新会话", "新对话", "新的对话"].includes(value);
+  return ["", "new conversation", "new chat", "untitled", "新会话", "新对话", "新的对话"].includes(value);
 }
 
 function shouldRefreshGeneratedConversationMetadata(item: ConversationDTO | null, visibleMessageCount: number): boolean {
@@ -187,6 +197,7 @@ export function useChatMessageSubmit({
   modelOptions,
   selectedToolIDs,
   htmlVisualPromptEnabled,
+  htmlVisualColorMode,
   options,
   draft,
   attachments,
@@ -197,6 +208,7 @@ export function useChatMessageSubmit({
   onConversationCreated,
   touchByPublicID,
   reload,
+  replaceMessage,
   setDraft,
   setAttachments,
   releaseAttachments,
@@ -215,6 +227,7 @@ export function useChatMessageSubmit({
   resetStreamBuffer,
   startStream,
   activeGenerationRunsRef,
+  failedGenerationRunsRef,
 }: {
   conversationID: string | null;
   resetToken: number;
@@ -223,6 +236,7 @@ export function useChatMessageSubmit({
   modelOptions: ChatModelOption[];
   selectedToolIDs: number[];
   htmlVisualPromptEnabled: boolean;
+  htmlVisualColorMode: "light" | "dark";
   options: ConversationOptions;
   draft: string;
   attachments: PendingAttachment[];
@@ -233,6 +247,7 @@ export function useChatMessageSubmit({
   onConversationCreated?: (conversationPublicID: string) => void;
   touchByPublicID: (publicID: string, patch?: Partial<ConversationDTO>) => void;
   reload: () => void;
+  replaceMessage: (message: MessageDTO) => void;
   setDraft: React.Dispatch<React.SetStateAction<string>>;
   setAttachments: React.Dispatch<React.SetStateAction<PendingAttachment[]>>;
   releaseAttachments: (items: PendingAttachment[]) => void;
@@ -251,6 +266,7 @@ export function useChatMessageSubmit({
   resetStreamBuffer: () => void;
   startStream: (exchangeKey: string) => void;
   activeGenerationRunsRef?: React.RefObject<Set<string>>;
+  failedGenerationRunsRef?: React.RefObject<Set<string>>;
 }) {
   const t = useTranslations("chat.submit");
   const [sending, setSending] = React.useState(false);
@@ -599,6 +615,7 @@ export function useChatMessageSubmit({
             content: payloadContent,
             selectedToolIDs: selectedToolIDs.length > 0 ? selectedToolIDs : undefined,
             htmlVisualPrompt: htmlVisualPromptEnabled || undefined,
+            htmlVisualColorMode: htmlVisualPromptEnabled ? htmlVisualColorMode : undefined,
           };
           completed = await streamConversationMessage(token, targetConversationID, chatPayload, streamOptions);
         } else {
@@ -615,14 +632,31 @@ export function useChatMessageSubmit({
           }
         }
 
+        failedGenerationRunsRef?.current.delete(clientRunID);
         sentSuccessfully = true;
         flushStreamTextNow();
         resetStreamBuffer();
+        const assistantMessageStatus = completed.assistantMessage.status || "success";
+        const assistantMessageSucceeded = assistantMessageStatus === "success";
         setPendingExchange((prev) => {
           if (!prev || prev.key !== exchangeKey) {
             return prev;
           }
           const streamedText = prev.assistantText;
+          const terminalErrorMessage = terminalStreamError
+            ? resolveErrorMessage(streamEventErrorToApiError(terminalStreamError, t("retryLater")), terminalStreamError.message || t("retryLater"))
+            : "";
+          const completedErrorMessage = completed.assistantMessage.errorCode
+            ? resolveErrorMessage(
+                new ApiError(
+                  completed.assistantMessage.errorMessage || t("retryLater"),
+                  502,
+                  terminalStreamError?.debug,
+                  completed.assistantMessage.errorCode,
+                ),
+                completed.assistantMessage.errorMessage || t("retryLater"),
+              )
+            : completed.assistantMessage.errorMessage;
           return {
             ...prev,
             userPublicID: completed.userMessage.publicID,
@@ -659,14 +693,14 @@ export function useChatMessageSubmit({
             assistantReasoningTokens: completed.assistantMessage.reasoningTokens,
             assistantLatencyMS: completed.assistantMessage.latencyMS,
             assistantProcessTrace: toPendingProcessTrace(completed.assistantMessage.processTrace),
-            assistantStatus: completed.assistantMessage.status || "success",
+            assistantStatus: assistantMessageStatus,
             assistantErrorCode: completed.assistantMessage.errorCode,
             assistantErrorMessage: completed.assistantMessage.errorMessage,
             assistantInlineAlert:
               completed.assistantMessage.status === "error" || completed.assistantMessage.status === "interrupted"
                 ? {
                     title: t("generationInterrupted"),
-                    message: terminalStreamError?.message || completed.assistantMessage.errorMessage || t("retryLater"),
+                    message: terminalErrorMessage || completedErrorMessage || t("retryLater"),
                     details: terminalStreamError?.debug,
                   }
                 : undefined,
@@ -696,7 +730,7 @@ export function useChatMessageSubmit({
           targetConversationID,
           toConversationPatch(targetConversation, requestPlatformModelName),
         );
-        if (shouldRefreshConversationMetadata) {
+        if (assistantMessageSucceeded && shouldRefreshConversationMetadata) {
           void refreshGeneratedConversationMetadata(
             token,
             targetConversationID,
@@ -707,7 +741,7 @@ export function useChatMessageSubmit({
           });
         }
         releaseAttachments(effectiveAttachments);
-        if ((completed.assistantMessage.status || "success") === "success") {
+        if (assistantMessageSucceeded) {
           notifyResponseCompletion({
             content: completed.assistantMessage.content,
             conversationPublicID: targetConversationID,
@@ -739,6 +773,7 @@ export function useChatMessageSubmit({
         const errorMessage = resolveErrorMessage(error, t("retryLater"));
         const errorDetails = resolveErrorDetails(error);
         const errorSummary = resolveErrorSummary(error, t("retryLater"));
+        failedGenerationRunsRef?.current.add(clientRunID);
         shouldKeepConversationLayout = true;
         if (resetComposer && restoreDraftOnFailure) {
           setDraft(content);
@@ -783,6 +818,7 @@ export function useChatMessageSubmit({
     [
       activeConversation,
       activeGenerationRunsRef,
+      failedGenerationRunsRef,
       conversationID,
       enqueueStreamText,
       flushStreamTextNow,
@@ -796,6 +832,7 @@ export function useChatMessageSubmit({
       modelOptions,
       selectedToolIDs,
       htmlVisualPromptEnabled,
+      htmlVisualColorMode,
       selectedPlatformModelName,
       sending,
       setAttachments,
@@ -921,6 +958,31 @@ export function useChatMessageSubmit({
     [submitMessage, t],
   );
 
+  const onEditAssistantMessage = React.useCallback(
+    async (message: ChatAreaMessage, content: string) => {
+      const messagePublicID = resolvePersistedPublicID(message.publicID);
+      const nextContent = content.trim();
+      if (!messagePublicID || !nextContent) {
+        toast.error(t("editReplyFailed"), { description: t("continueReplyUnavailable") });
+        return false;
+      }
+      const token = await resolveAccessToken();
+      if (!token) {
+        toast.error(t("editReplyFailed"), { description: t("signInRequired") });
+        return false;
+      }
+      try {
+        const updated = await updateMessage(token, messagePublicID, { content: nextContent });
+        replaceMessage(updated);
+        return true;
+      } catch {
+        toast.error(t("editReplyFailed"), { description: t("retryLater") });
+        return false;
+      }
+    },
+    [replaceMessage, t],
+  );
+
   const onCycleMessageBranch = React.useCallback(
     (parentPublicID: string | null, direction: "previous" | "next") => {
       const siblings = buildChildrenIndex(combinedMessages).get(toBranchKey(parentPublicID)) ?? [];
@@ -949,6 +1011,7 @@ export function useChatMessageSubmit({
 
   return {
     onCycleMessageBranch,
+    onEditAssistantMessage,
     onEditUserMessage,
     onContinueAssistantMessage,
     onRetryAssistantMessage,

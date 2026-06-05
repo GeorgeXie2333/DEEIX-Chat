@@ -42,6 +42,7 @@ export type ChatTraceBlock = {
   title: string;
   summary: string;
   contentMarkdown: string;
+  contentSegments?: string[];
   status: string;
   stage?: string;
   roundID?: string;
@@ -139,6 +140,7 @@ export type ChatAreaMessage = {
   serverMessageID?: number;
   createdAt?: string;
   updatedAt?: string;
+  editedAt?: string | null;
   isPending?: boolean;
   isStreaming?: boolean;
   isFileProc?: boolean; // Active file_proc stream stage.
