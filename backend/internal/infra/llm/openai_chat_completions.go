@@ -302,13 +302,15 @@ func applyChatStreamEvent(
 		}
 	}
 	if reasoning := extractChatStreamReasoningDelta(parsed); reasoning != nil && reasoning.Text != "" {
-		mergeReasoningDeltaOutput(&result.Reasoning, reasoning)
-		if onEvent != nil {
-			if err := onEvent(GenerateStreamEvent{
-				Reasoning:  reasoning,
-				ResponseID: result.ResponseID,
-			}); err != nil {
-				return err
+		if reasoning = normalizeChatStreamReasoningDelta(result, reasoning); reasoning != nil && reasoning.Text != "" {
+			mergeReasoningDeltaOutput(&result.Reasoning, reasoning)
+			if onEvent != nil {
+				if err := onEvent(GenerateStreamEvent{
+					Reasoning:  reasoning,
+					ResponseID: result.ResponseID,
+				}); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -332,6 +334,57 @@ func applyChatStreamEvent(
 		}
 	}
 	return nil
+}
+
+func normalizeChatStreamReasoningDelta(result *GenerateOutput, delta *ReasoningDelta) *ReasoningDelta {
+	if delta == nil || delta.Text == "" || result == nil || result.Reasoning == nil {
+		return delta
+	}
+	existing := result.Reasoning.Text
+	if delta.Kind == "summary_text" {
+		existing = result.Reasoning.Summary
+	}
+	normalized := normalizeChatStreamTextDelta(existing, delta.Text)
+	if normalized == delta.Text {
+		return delta
+	}
+	if normalized == "" {
+		return nil
+	}
+	cloned := *delta
+	cloned.Text = normalized
+	return &cloned
+}
+
+func normalizeChatStreamTextDelta(existing string, next string) string {
+	if next == "" || existing == "" {
+		return next
+	}
+	if strings.HasPrefix(next, existing) {
+		return strings.TrimPrefix(next, existing)
+	}
+	if strings.HasSuffix(existing, next) {
+		return ""
+	}
+	if overlap := chatStreamTextOverlapPrefixLength(existing, next); overlap > 0 {
+		return next[overlap:]
+	}
+	return next
+}
+
+func chatStreamTextOverlapPrefixLength(existing string, next string) int {
+	existingRunes := []rune(existing)
+	nextRunes := []rune(next)
+	maxOverlap := len(existingRunes)
+	if len(nextRunes) < maxOverlap {
+		maxOverlap = len(nextRunes)
+	}
+	for size := maxOverlap; size > 0; size-- {
+		if string(existingRunes[len(existingRunes)-size:]) == string(nextRunes[:size]) {
+			return len(string(nextRunes[:size]))
+		}
+	}
+	return 0
 }
 
 func mergeChatStreamToolCalls(parsed map[string]interface{}, result *GenerateOutput) {

@@ -174,6 +174,134 @@ func TestApplyChatStreamEventSeparatesReasoningContentParts(t *testing.T) {
 	}
 }
 
+func TestApplyChatStreamEventNormalizesCumulativeReasoningContent(t *testing.T) {
+	result := &GenerateOutput{}
+	var emitted string
+
+	for _, chunk := range []string{"The", "The user", "The user asks"} {
+		emitted += applyChatReasoningStreamChunk(t, result, chunk)
+	}
+
+	if emitted != "The user asks" {
+		t.Fatalf("expected emitted reasoning to normalize cumulative chunks, got %q", emitted)
+	}
+	if result.Reasoning == nil || result.Reasoning.Text != "The user asks" {
+		t.Fatalf("expected stored reasoning to normalize cumulative chunks, got %#v", result.Reasoning)
+	}
+}
+
+func TestApplyChatStreamEventKeepsTrueReasoningDeltas(t *testing.T) {
+	result := &GenerateOutput{}
+	var emitted string
+
+	for _, chunk := range []string{"The", " user", " asks"} {
+		emitted += applyChatReasoningStreamChunk(t, result, chunk)
+	}
+
+	if emitted != "The user asks" {
+		t.Fatalf("expected emitted reasoning to preserve true deltas, got %q", emitted)
+	}
+	if result.Reasoning == nil || result.Reasoning.Text != "The user asks" {
+		t.Fatalf("expected stored reasoning to preserve true deltas, got %#v", result.Reasoning)
+	}
+}
+
+func TestApplyChatStreamEventDropsDuplicateReasoningChunks(t *testing.T) {
+	result := &GenerateOutput{}
+	var emitted string
+
+	for _, chunk := range []string{"abc", "abc"} {
+		emitted += applyChatReasoningStreamChunk(t, result, chunk)
+	}
+
+	if emitted != "abc" {
+		t.Fatalf("expected duplicate reasoning chunks to be ignored, got %q", emitted)
+	}
+	if result.Reasoning == nil || result.Reasoning.Text != "abc" {
+		t.Fatalf("expected stored reasoning to ignore duplicates, got %#v", result.Reasoning)
+	}
+}
+
+func TestApplyChatStreamEventTrimsOverlappingReasoningChunks(t *testing.T) {
+	result := &GenerateOutput{}
+	var emitted string
+
+	for _, chunk := range []string{"The user", "user asks"} {
+		emitted += applyChatReasoningStreamChunk(t, result, chunk)
+	}
+
+	if emitted != "The user asks" {
+		t.Fatalf("expected overlapping reasoning chunks to emit only new suffixes, got %q", emitted)
+	}
+	if result.Reasoning == nil || result.Reasoning.Text != "The user asks" {
+		t.Fatalf("expected stored reasoning to trim overlaps, got %#v", result.Reasoning)
+	}
+}
+
+func TestApplyChatStreamEventNormalizesCumulativeReasoningContentParts(t *testing.T) {
+	result := &GenerateOutput{}
+	var emitted string
+
+	for _, chunk := range []string{"hidden", "hidden thought"} {
+		emitted += applyChatReasoningContentPartStreamChunk(t, result, chunk)
+	}
+
+	if emitted != "hidden thought" {
+		t.Fatalf("expected emitted content-part reasoning to normalize cumulative chunks, got %q", emitted)
+	}
+	if result.Reasoning == nil || result.Reasoning.Text != "hidden thought" {
+		t.Fatalf("expected stored content-part reasoning to normalize cumulative chunks, got %#v", result.Reasoning)
+	}
+}
+
+func applyChatReasoningStreamChunk(t *testing.T, result *GenerateOutput, chunk string) string {
+	t.Helper()
+	var emitted string
+	err := applyChatStreamEvent(AdapterOpenAIChatCompletions, map[string]interface{}{
+		"choices": []interface{}{
+			map[string]interface{}{
+				"delta": map[string]interface{}{
+					"reasoning_content": chunk,
+				},
+			},
+		},
+	}, result, func(event GenerateStreamEvent) error {
+		if event.Reasoning != nil {
+			emitted += event.Reasoning.Text
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("apply chat stream event: %v", err)
+	}
+	return emitted
+}
+
+func applyChatReasoningContentPartStreamChunk(t *testing.T, result *GenerateOutput, chunk string) string {
+	t.Helper()
+	var emitted string
+	err := applyChatStreamEvent(AdapterOpenAIChatCompletions, map[string]interface{}{
+		"choices": []interface{}{
+			map[string]interface{}{
+				"delta": map[string]interface{}{
+					"content": []interface{}{
+						map[string]interface{}{"type": "reasoning", "text": chunk},
+					},
+				},
+			},
+		},
+	}, result, func(event GenerateStreamEvent) error {
+		if event.Reasoning != nil {
+			emitted += event.Reasoning.Text
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("apply chat stream event: %v", err)
+	}
+	return emitted
+}
+
 func TestBuildChatCompletionsCustomToolMessages(t *testing.T) {
 	payload := mustBuildRequestBody(t, AdapterOpenAIChatCompletions, "gpt-5", EndpointChatCompletions, GenerateInput{
 		Messages: []Message{
