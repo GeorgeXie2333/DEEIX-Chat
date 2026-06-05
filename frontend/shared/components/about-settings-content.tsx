@@ -118,14 +118,14 @@ export function AboutSettingsContent({
     },
     {
       label: labels.blog,
-      value: "blog.cheny.me",
-      href: "https://blog.cheny.me/",
+      value: "blog.george-tse.top",
+      href: "https://blog.george-tse.top/",
       icon: Newspaper,
     },
     {
       label: labels.contact,
       value: "Comi AI",
-      href: "/",
+      href: "mailto:admin@comiai.cc",
       icon: Mail,
     },
   ];

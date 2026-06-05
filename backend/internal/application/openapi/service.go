@@ -459,7 +459,7 @@ func (s *Service) CompleteChatCompletion(ctx context.Context, prepared *Prepared
 	answerText := completionTextFromBody(body)
 	body["model"] = prepared.publicModelID
 	if result.ReasoningText != "" {
-		injectThinkIntoCompletionBody(body, result.ReasoningText)
+		addReasoningContentToCompletionBody(body, result.ReasoningText)
 	}
 	usage := result.Usage
 	if usage == (llm.Usage{}) {
@@ -482,19 +482,10 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 	var reasoningText strings.Builder
 	var usage llm.Usage
 	usageSent := false
-	thinkOpened := false
-	thinkClosed := false
 
-	emitThink := func(content string) error {
-		chunk := makeStreamContentChunk(prepared.publicModelID, content)
+	emitReasoning := func(content string) error {
+		chunk := makeStreamReasoningChunk(prepared.publicModelID, content)
 		return emit(chunk)
-	}
-	closeThinkIfNeeded := func() error {
-		if thinkOpened && !thinkClosed {
-			thinkClosed = true
-			return emitThink("</think>")
-		}
-		return nil
 	}
 
 	result, err := s.chatProvider.StreamChat(ctx, prepared.routeConfig, prepared.request, func(event RawChatStreamEvent) error {
@@ -505,12 +496,10 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 		if event.Reasoning != nil && strings.TrimSpace(event.Reasoning.Text) != "" {
 			text := event.Reasoning.Text
 			reasoningText.WriteString(text)
-			if !thinkOpened {
-				thinkOpened = true
-				text = "<think>" + text
-			}
-			if err := emitThink(text); err != nil {
-				return err
+			if len(event.Body) == 0 || !streamChunkHasReasoning(event.Body) {
+				if err := emitReasoning(text); err != nil {
+					return err
+				}
 			}
 		}
 		if len(event.Body) == 0 {
@@ -519,9 +508,6 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 		chunk := cloneMap(event.Body)
 		chunk["model"] = prepared.publicModelID
 		if streamChunkHasContent(chunk) {
-			if err := closeThinkIfNeeded(); err != nil {
-				return err
-			}
 			outputText.WriteString(streamContentDelta(chunk))
 		}
 		return emit(chunk)
@@ -532,9 +518,6 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 		return err
 	}
 	s.markRouteSuccess(ctx, prepared)
-	if err := closeThinkIfNeeded(); err != nil {
-		return err
-	}
 	if llm.NormalizeAdapter(prepared.routeConfig.Protocol) != llm.AdapterOpenAIChatCompletions && len(result.ToolCalls) > 0 {
 		if err := emit(chatStreamToolFinishChunk(prepared.publicModelID, result.ResponseID)); err != nil {
 			return err
@@ -824,13 +807,12 @@ func cloneMap(raw map[string]interface{}) map[string]interface{} {
 	return result
 }
 
-func injectThinkIntoCompletionBody(body map[string]interface{}, reasoning string) {
-	think := strings.TrimSpace(reasoning)
-	if think == "" {
+func addReasoningContentToCompletionBody(body map[string]interface{}, reasoning string) {
+	content := strings.TrimSpace(reasoning)
+	if content == "" {
 		return
 	}
 	choices, _ := body["choices"].([]interface{})
-	prefix := "<think>" + think + "</think>"
 	for _, rawChoice := range choices {
 		choice, ok := rawChoice.(map[string]interface{})
 		if !ok {
@@ -843,8 +825,9 @@ func injectThinkIntoCompletionBody(body map[string]interface{}, reasoning string
 		if len(asSlice(message["tool_calls"])) > 0 {
 			continue
 		}
-		content := stringValue(message["content"])
-		message["content"] = prefix + content
+		if strings.TrimSpace(stringValue(message["reasoning_content"])) == "" {
+			message["reasoning_content"] = content
+		}
 	}
 }
 
@@ -1014,6 +997,10 @@ func streamChunkHasContent(chunk map[string]interface{}) bool {
 	return streamContentDelta(chunk) != ""
 }
 
+func streamChunkHasReasoning(chunk map[string]interface{}) bool {
+	return streamReasoningDelta(chunk) != ""
+}
+
 func streamContentDelta(chunk map[string]interface{}) string {
 	choices, _ := chunk["choices"].([]interface{})
 	if len(choices) == 0 {
@@ -1021,12 +1008,76 @@ func streamContentDelta(chunk map[string]interface{}) string {
 	}
 	choice, _ := choices[0].(map[string]interface{})
 	delta, _ := choice["delta"].(map[string]interface{})
-	return contentText(delta["content"])
+	return streamVisibleContentText(delta["content"])
+}
+
+func streamReasoningDelta(chunk map[string]interface{}) string {
+	choices, _ := chunk["choices"].([]interface{})
+	if len(choices) == 0 {
+		return ""
+	}
+	choice, _ := choices[0].(map[string]interface{})
+	delta, _ := choice["delta"].(map[string]interface{})
+	if text := contentText(delta["reasoning_content"]); text != "" {
+		return text
+	}
+	if text := contentText(delta["reasoning"]); text != "" {
+		return text
+	}
+	return streamReasoningContentText(delta["content"])
+}
+
+func streamVisibleContentText(raw interface{}) string {
+	switch typed := raw.(type) {
+	case []interface{}:
+		var sb strings.Builder
+		for _, item := range typed {
+			part, ok := item.(map[string]interface{})
+			if !ok || isStreamReasoningContentType(part["type"]) {
+				continue
+			}
+			sb.WriteString(stringValue(part["text"]))
+		}
+		return sb.String()
+	default:
+		return contentText(raw)
+	}
+}
+
+func streamReasoningContentText(raw interface{}) string {
+	switch typed := raw.(type) {
+	case []interface{}:
+		var sb strings.Builder
+		for _, item := range typed {
+			part, ok := item.(map[string]interface{})
+			if !ok || !isStreamReasoningContentType(part["type"]) {
+				continue
+			}
+			sb.WriteString(firstNonEmpty(stringValue(part["text"]), stringValue(part["content"])))
+		}
+		return sb.String()
+	case map[string]interface{}:
+		if !isStreamReasoningContentType(typed["type"]) {
+			return ""
+		}
+		return firstNonEmpty(stringValue(typed["text"]), stringValue(typed["content"]))
+	default:
+		return ""
+	}
+}
+
+func isStreamReasoningContentType(raw interface{}) bool {
+	switch strings.TrimSpace(strings.ToLower(stringValue(raw))) {
+	case "reasoning", "reasoning_content", "reasoning_text", "thinking":
+		return true
+	default:
+		return false
+	}
 }
 
 func makeStreamContentChunk(model string, content string) map[string]interface{} {
 	return map[string]interface{}{
-		"id":      "chatcmpl-openapi-think",
+		"id":      "chatcmpl-openapi-content",
 		"object":  "chat.completion.chunk",
 		"created": time.Now().Unix(),
 		"model":   model,
@@ -1035,6 +1086,23 @@ func makeStreamContentChunk(model string, content string) map[string]interface{}
 				"index": 0,
 				"delta": map[string]interface{}{
 					"content": content,
+				},
+			},
+		},
+	}
+}
+
+func makeStreamReasoningChunk(model string, content string) map[string]interface{} {
+	return map[string]interface{}{
+		"id":      "chatcmpl-openapi-reasoning",
+		"object":  "chat.completion.chunk",
+		"created": time.Now().Unix(),
+		"model":   model,
+		"choices": []interface{}{
+			map[string]interface{}{
+				"index": 0,
+				"delta": map[string]interface{}{
+					"reasoning_content": content,
 				},
 			},
 		},
