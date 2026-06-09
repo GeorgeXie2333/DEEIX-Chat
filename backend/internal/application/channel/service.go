@@ -50,6 +50,7 @@ type ResolvedRoute struct {
 	BindingCode                string
 	Protocol                   string
 	BaseURL                    string
+	UpstreamCompatible         string
 	APIKey                     string
 	ConnectTimeoutMS           int
 	ReadTimeoutMS              int

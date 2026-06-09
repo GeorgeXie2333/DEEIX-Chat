@@ -137,16 +137,7 @@ func normalizeChatMaxTokens(options map[string]interface{}) {
 	if len(options) == 0 {
 		return
 	}
-	if _, ok := options["max_output_tokens"]; ok {
-		return
-	}
-	if value, ok := options["max_completion_tokens"]; ok {
-		options["max_output_tokens"] = value
-		return
-	}
-	if value, ok := options["max_tokens"]; ok {
-		options["max_output_tokens"] = value
-	}
+	normalizeMaxTokenTarget(options, "max_output_tokens", "max_completion_tokens", "max_tokens")
 }
 
 func parseChatCompletionMessages(ctx context.Context, raw interface{}, resolver chatImageResolver) ([]llm.Message, error) {

@@ -1141,6 +1141,7 @@ type routeScanRow struct {
 	ModelSystemPrompt          string
 	Protocol                   string
 	BaseURL                    string
+	UpstreamCompatible         string
 	APIKeysEnc                 string
 	ConnectTimeoutMS           int
 	ReadTimeoutMS              int
@@ -1169,7 +1170,7 @@ func (r *Repo) ListActiveRoutesByModel(ctx context.Context, platformModelName st
 		Select(
 			"r.id AS route_id, um.id AS upstream_model_id, u.id AS upstream_id, u.name AS upstream_name, "+
 				"pm.id AS platform_model_id, pm.name AS platform_model_name, pm.vendor AS model_vendor, pm.icon AS model_icon, pm.kinds_json AS model_kinds_json, pm.capabilities_json AS model_capabilities_json, pm.system_prompt AS model_system_prompt, "+
-				"r.protocol, u.base_url, u.api_keys_enc, "+
+				"r.protocol, u.base_url, u.compatible AS upstream_compatible, u.api_keys_enc, "+
 				"u.connect_timeout_ms, u.read_timeout_ms, u.stream_idle_timeout_ms, "+
 				"u.headers_json, r.headers_json AS route_headers_json, "+
 				"um.binding_code, um.upstream_model_name, r.weight, r.priority AS route_priority, "+
@@ -1207,6 +1208,7 @@ func (r *Repo) ListActiveRoutesByModel(ctx context.Context, platformModelName st
 			ModelSystemPrompt:          s.ModelSystemPrompt,
 			Protocol:                   s.Protocol,
 			BaseURL:                    s.BaseURL,
+			UpstreamCompatible:         s.UpstreamCompatible,
 			APIKeysEnc:                 s.APIKeysEnc,
 			ConnectTimeoutMS:           s.ConnectTimeoutMS,
 			ReadTimeoutMS:              s.ReadTimeoutMS,

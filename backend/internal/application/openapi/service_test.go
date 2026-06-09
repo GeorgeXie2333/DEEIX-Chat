@@ -221,6 +221,121 @@ func TestPrepareChatCompletionAllowsPublicChatProtocolsWithoutPreferredProtocol(
 	}
 }
 
+func TestPrepareChatCompletionNormalizesMaxTokensByResolvedRoute(t *testing.T) {
+	key := &domainopenapi.UserAPIKey{ID: 9, UserID: 42, Status: domainopenapi.APIKeyStatusActive}
+	tests := []struct {
+		name                string
+		protocol            string
+		compatible          string
+		request             map[string]interface{}
+		wantMaxTokens       interface{}
+		wantMaxCompletion   interface{}
+		wantMaxOutput       interface{}
+		wantNoMaxTokens     bool
+		wantNoMaxCompletion bool
+		wantNoMaxOutput     bool
+	}{
+		{
+			name:       "official OpenAI Chat Completions maps legacy max_tokens",
+			protocol:   llm.AdapterOpenAIChatCompletions,
+			compatible: "openai",
+			request: map[string]interface{}{
+				"max_tokens": 128,
+			},
+			wantMaxCompletion: 128,
+			wantNoMaxTokens:   true,
+			wantNoMaxOutput:   true,
+		},
+		{
+			name:       "custom Chat Completions keeps legacy max_tokens",
+			protocol:   llm.AdapterOpenAIChatCompletions,
+			compatible: "custom",
+			request: map[string]interface{}{
+				"max_tokens": 256,
+			},
+			wantMaxTokens:       256,
+			wantNoMaxCompletion: true,
+			wantNoMaxOutput:     true,
+		},
+		{
+			name:       "official OpenAI target field wins conflicts",
+			protocol:   llm.AdapterOpenAIChatCompletions,
+			compatible: "openai",
+			request: map[string]interface{}{
+				"max_tokens":            128,
+				"max_completion_tokens": 64,
+			},
+			wantMaxCompletion: 64,
+			wantNoMaxTokens:   true,
+			wantNoMaxOutput:   true,
+		},
+		{
+			name:       "Gemini maps legacy max_tokens",
+			protocol:   llm.AdapterGoogleGenerateContent,
+			compatible: "google",
+			request: map[string]interface{}{
+				"max_tokens": 300,
+			},
+			wantMaxOutput:       300,
+			wantNoMaxTokens:     true,
+			wantNoMaxCompletion: true,
+		},
+		{
+			name:       "Gemini maps OpenAI completion alias",
+			protocol:   llm.AdapterGoogleGenerateContent,
+			compatible: "google",
+			request: map[string]interface{}{
+				"max_completion_tokens": 200,
+			},
+			wantMaxOutput:       200,
+			wantNoMaxTokens:     true,
+			wantNoMaxCompletion: true,
+		},
+		{
+			name:       "Gemini target field wins conflicts",
+			protocol:   llm.AdapterGoogleGenerateContent,
+			compatible: "google",
+			request: map[string]interface{}{
+				"max_tokens":            300,
+				"max_completion_tokens": 200,
+				"max_output_tokens":     100,
+			},
+			wantMaxOutput:       100,
+			wantNoMaxTokens:     true,
+			wantNoMaxCompletion: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			channel := &capturingChannelStub{protocol: tt.protocol, compatible: tt.compatible}
+			service := NewService(Dependencies{
+				KeyRepo:           newKeyRepoStub(),
+				Settings:          settingsStub{"model_allowlist": "chat-openai", "rate_limit_rpm": "60"},
+				Channel:           channel,
+				ChatProvider:      &chatProviderStub{},
+				DataEncryptionKey: "test-secret",
+				Now:               fixedNow,
+			})
+			request := map[string]interface{}{
+				"model":    "upstream-model",
+				"messages": []interface{}{map[string]interface{}{"role": "user", "content": "hello"}},
+			}
+			for key, value := range tt.request {
+				request[key] = value
+			}
+
+			prepared, err := service.PrepareChatCompletion(context.Background(), key, request, "req_1", false)
+			if err != nil {
+				t.Fatalf("PrepareChatCompletion returned error: %v", err)
+			}
+			assertRequestField(t, prepared.request, "max_tokens", tt.wantMaxTokens, tt.wantNoMaxTokens)
+			assertRequestField(t, prepared.request, "max_completion_tokens", tt.wantMaxCompletion, tt.wantNoMaxCompletion)
+			assertRequestField(t, prepared.request, "max_output_tokens", tt.wantMaxOutput, tt.wantNoMaxOutput)
+		})
+	}
+}
+
 func TestBuildGenerateInputFromChatCompletionParsesMultimodalDataURL(t *testing.T) {
 	input, err := buildGenerateInputFromChatCompletion(context.Background(), map[string]interface{}{
 		"model":       "vision-chat",
@@ -576,6 +691,7 @@ func (channelStub) MarkRouteFailure(context.Context, *appchannel.ResolvedRoute, 
 
 type capturingChannelStub struct {
 	protocol          string
+	compatible        string
 	preferredProtocol string
 	upstreamModelName string
 }
@@ -592,12 +708,13 @@ func (c *capturingChannelStub) ResolveRoute(_ context.Context, input appchannel.
 	c.preferredProtocol = input.PreferredProtocol
 	c.upstreamModelName = input.UpstreamModelName
 	return &appchannel.ResolvedRoute{
-		PlatformModelName: input.PlatformModelName,
-		Protocol:          c.protocol,
-		BaseURL:           "https://upstream.example",
-		UpstreamModel:     strings.TrimSpace(input.UpstreamModelName),
-		BindingCode:       "binding_1",
-		UpstreamName:      "upstream",
+		PlatformModelName:  input.PlatformModelName,
+		Protocol:           c.protocol,
+		UpstreamCompatible: c.compatible,
+		BaseURL:            "https://upstream.example",
+		UpstreamModel:      strings.TrimSpace(input.UpstreamModelName),
+		BindingCode:        "binding_1",
+		UpstreamName:       "upstream",
 	}, nil
 }
 
@@ -667,6 +784,20 @@ type jsonNumber string
 
 func (n jsonNumber) String() string {
 	return string(n)
+}
+
+func assertRequestField(t *testing.T, payload map[string]interface{}, key string, want interface{}, wantMissing bool) {
+	t.Helper()
+	got, ok := payload[key]
+	if wantMissing {
+		if ok {
+			t.Fatalf("expected request field %q to be omitted, got %#v in %#v", key, got, payload)
+		}
+		return
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("expected request field %q=%#v, got %#v in %#v", key, want, got, payload)
+	}
 }
 
 func getStringFromNestedMap(payload map[string]interface{}, parent string, child string) string {

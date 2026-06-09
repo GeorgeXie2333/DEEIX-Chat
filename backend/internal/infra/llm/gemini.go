@@ -261,6 +261,7 @@ func geminiProtectedProviderOptionKeys() []string {
 		"input",
 		"instructions",
 		"logprobs",
+		"max_tokens",
 		"max_completion_tokens",
 		"max_output_tokens",
 		"maxOutputTokens",
@@ -397,7 +398,7 @@ func applyGeminiGenerationOptions(generationConfig map[string]interface{}, optio
 			}
 		}
 	}
-	if maxTokens, ok := firstGeminiIntOption(options, "max_output_tokens", "max_completion_tokens", "maxOutputTokens"); ok && maxTokens > 0 {
+	if maxTokens, ok := firstGeminiIntOption(options, "max_output_tokens", "maxOutputTokens", "max_completion_tokens", "max_tokens"); ok && maxTokens > 0 {
 		generationConfig["maxOutputTokens"] = maxTokens
 	}
 	if value, ok := modelParamFloat(options, "temperature"); ok {

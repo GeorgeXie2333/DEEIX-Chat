@@ -994,6 +994,26 @@ func TestBuildGeminiRequestBodyWebSearch(t *testing.T) {
 	}
 }
 
+func TestBuildGeminiRequestBodyMapsLegacyMaxTokensOnlyToGenerationConfig(t *testing.T) {
+	payload := mustBuildGeminiRequestBody(t, GenerateInput{
+		Messages: []Message{{Role: "user", Content: "hello"}},
+		Options: map[string]interface{}{
+			"max_tokens": 2048,
+		},
+	})
+
+	generationConfig, ok := payload["generationConfig"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected generationConfig, got %#v", payload["generationConfig"])
+	}
+	if generationConfig["maxOutputTokens"] != 2048 {
+		t.Fatalf("expected maxOutputTokens=2048, got %#v", generationConfig["maxOutputTokens"])
+	}
+	if _, ok := payload["max_tokens"]; ok {
+		t.Fatalf("expected root max_tokens to be omitted, got %#v", payload)
+	}
+}
+
 func TestBuildGeminiRequestBodyStructuredOutputAndGenerationConfig(t *testing.T) {
 	payload := mustBuildGeminiRequestBody(t, GenerateInput{
 		Messages: []Message{{Role: "user", Content: "hello"}},

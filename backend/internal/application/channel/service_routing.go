@@ -339,6 +339,7 @@ func buildResolvedRoute(row repository.ChannelUpstreamRouteRow, apiKey string) *
 		BindingCode:                strings.TrimSpace(row.BindingCode),
 		Protocol:                   row.Protocol,
 		BaseURL:                    strings.TrimSpace(row.BaseURL),
+		UpstreamCompatible:         strings.TrimSpace(row.UpstreamCompatible),
 		APIKey:                     apiKey,
 		ConnectTimeoutMS:           row.ConnectTimeoutMS,
 		ReadTimeoutMS:              row.ReadTimeoutMS,

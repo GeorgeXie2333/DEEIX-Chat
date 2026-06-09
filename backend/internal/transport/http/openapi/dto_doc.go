@@ -4,17 +4,22 @@ package openapi
 // The runtime handler accepts transparent OpenAI-compatible JSON; these fields
 // document the supported tool/function calling subset.
 type ChatCompletionRequestDoc struct {
-	Model             string                 `json:"model" example:"gpt-5"`
-	Messages          []ChatMessageDoc       `json:"messages"`
-	Stream            bool                   `json:"stream,omitempty"`
-	Tools             []ChatToolDoc          `json:"tools,omitempty"`
-	ToolChoice        interface{}            `json:"tool_choice,omitempty" swaggertype:"object"`
-	ParallelToolCalls *bool                  `json:"parallel_tool_calls,omitempty"`
-	Functions         []LegacyFunctionDoc    `json:"functions,omitempty"`
-	FunctionCall      interface{}            `json:"function_call,omitempty" swaggertype:"object"`
-	Temperature       *float64               `json:"temperature,omitempty"`
-	MaxTokens         *int                   `json:"max_tokens,omitempty"`
-	Extra             map[string]interface{} `json:"-" swaggerignore:"true"`
+	Model             string              `json:"model" example:"gpt-5"`
+	Messages          []ChatMessageDoc    `json:"messages"`
+	Stream            bool                `json:"stream,omitempty"`
+	Tools             []ChatToolDoc       `json:"tools,omitempty"`
+	ToolChoice        interface{}         `json:"tool_choice,omitempty" swaggertype:"object"`
+	ParallelToolCalls *bool               `json:"parallel_tool_calls,omitempty"`
+	Functions         []LegacyFunctionDoc `json:"functions,omitempty"`
+	FunctionCall      interface{}         `json:"function_call,omitempty" swaggertype:"object"`
+	Temperature       *float64            `json:"temperature,omitempty"`
+	// Legacy OpenAI-compatible output token limit. Official OpenAI Chat Completions routes normalize this to max_completion_tokens; Gemini routes normalize it to max_output_tokens.
+	MaxTokens *int `json:"max_tokens,omitempty"`
+	// OpenAI Chat Completions output token limit.
+	MaxCompletionTokens *int `json:"max_completion_tokens,omitempty"`
+	// Gemini output token limit.
+	MaxOutputTokens *int                   `json:"max_output_tokens,omitempty"`
+	Extra           map[string]interface{} `json:"-" swaggerignore:"true"`
 }
 
 type ChatMessageDoc struct {

@@ -428,9 +428,12 @@ func (s *Service) PrepareChatCompletion(
 		}
 	}
 
+	preparedRequest := cloneMap(request)
+	normalizePreparedChatMaxTokens(preparedRequest, route)
+
 	return &PreparedChatCompletion{
 		key:               key,
-		request:           cloneMap(request),
+		request:           preparedRequest,
 		requestID:         strings.TrimSpace(requestID),
 		stream:            stream,
 		route:             route,
@@ -440,6 +443,37 @@ func (s *Service) PrepareChatCompletion(
 		platformModelName: platformModelName,
 		publicModelID:     publicModelID,
 	}, nil
+}
+
+func normalizePreparedChatMaxTokens(request map[string]interface{}, route *appchannel.ResolvedRoute) {
+	if len(request) == 0 || route == nil {
+		return
+	}
+	switch llm.NormalizeAdapter(route.Protocol) {
+	case llm.AdapterOpenAIChatCompletions:
+		if strings.EqualFold(strings.TrimSpace(route.UpstreamCompatible), "openai") {
+			normalizeMaxTokenTarget(request, "max_completion_tokens", "max_tokens")
+		}
+	case llm.AdapterGoogleGenerateContent:
+		normalizeMaxTokenTarget(request, "max_output_tokens", "max_completion_tokens", "max_tokens")
+	}
+}
+
+func normalizeMaxTokenTarget(payload map[string]interface{}, target string, aliases ...string) {
+	if len(payload) == 0 || strings.TrimSpace(target) == "" {
+		return
+	}
+	if _, ok := payload[target]; !ok {
+		for _, alias := range aliases {
+			if value, exists := payload[alias]; exists {
+				payload[target] = value
+				break
+			}
+		}
+	}
+	for _, alias := range aliases {
+		delete(payload, alias)
+	}
 }
 
 // CompleteChatCompletion 执行非流式 Chat Completions，并返回兼容 JSON。

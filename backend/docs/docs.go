@@ -14878,7 +14878,16 @@ const docTemplate = `{
                         "$ref": "#/definitions/internal_transport_http_openapi.LegacyFunctionDoc"
                     }
                 },
+                "max_completion_tokens": {
+                    "description": "OpenAI Chat Completions output token limit.",
+                    "type": "integer"
+                },
+                "max_output_tokens": {
+                    "description": "Gemini output token limit.",
+                    "type": "integer"
+                },
                 "max_tokens": {
+                    "description": "Legacy OpenAI-compatible output token limit. Official OpenAI Chat Completions routes normalize this to max_completion_tokens; Gemini routes normalize it to max_output_tokens.",
                     "type": "integer"
                 },
                 "messages": {

@@ -470,6 +470,7 @@ func shouldSkipNormalizedProviderOption(key string, value interface{}) bool {
 		"stop",
 		"reasoning_effort",
 		"verbosity",
+		"max_tokens",
 		"max_output_tokens",
 		"max_completion_tokens",
 		"response_format",

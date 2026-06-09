@@ -38,17 +38,18 @@ func TestRemoveCandidateUsesUpstreamModelIDInsteadOfPlatformModelName(t *testing
 
 func TestBuildResolvedRouteSnapshotsModelIdentity(t *testing.T) {
 	route := buildResolvedRoute(repository.ChannelUpstreamRouteRow{
-		RouteID:           5,
-		PlatformModelID:   9,
-		PlatformModelName: "gpt-5.5",
-		UpstreamModelID:   7,
-		UpstreamID:        3,
-		UpstreamName:      "OpenAI Official",
-		BindingCode:       "upm_abc",
-		ModelVendor:       "openai",
-		ModelIcon:         "openai",
-		UpstreamModelName: "gpt-5.5-20260501",
-		Protocol:          "openai_responses",
+		RouteID:            5,
+		PlatformModelID:    9,
+		PlatformModelName:  "gpt-5.5",
+		UpstreamModelID:    7,
+		UpstreamID:         3,
+		UpstreamName:       "OpenAI Official",
+		BindingCode:        "upm_abc",
+		ModelVendor:        "openai",
+		ModelIcon:          "openai",
+		UpstreamModelName:  "gpt-5.5-20260501",
+		UpstreamCompatible: "openai",
+		Protocol:           "openai_responses",
 	}, "sk-test")
 
 	if route.RouteID != 5 || route.PlatformModelID != 9 || route.UpstreamModelID != 7 {
@@ -59,6 +60,9 @@ func TestBuildResolvedRouteSnapshotsModelIdentity(t *testing.T) {
 	}
 	if route.PlatformModelName != "gpt-5.5" || route.BindingCode != "upm_abc" || route.ModelVendor != "openai" || route.ModelIcon != "openai" {
 		t.Fatalf("expected platform model snapshot, got %#v", route)
+	}
+	if route.UpstreamCompatible != "openai" {
+		t.Fatalf("expected upstream compatible snapshot, got %#v", route)
 	}
 }
 

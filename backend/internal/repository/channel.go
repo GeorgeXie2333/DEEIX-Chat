@@ -103,6 +103,7 @@ type ChannelUpstreamRouteRow struct {
 	ModelSystemPrompt          string
 	Protocol                   string
 	BaseURL                    string
+	UpstreamCompatible         string
 	APIKeysEnc                 string
 	ConnectTimeoutMS           int
 	ReadTimeoutMS              int
