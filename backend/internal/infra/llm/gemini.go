@@ -647,13 +647,94 @@ func buildGeminiTools(tools []ToolDefinition) []map[string]interface{} {
 		declarations = append(declarations, map[string]interface{}{
 			"name":        name,
 			"description": strings.TrimSpace(tool.Description),
-			"parameters":  decodeToolSchema(tool.InputSchema),
+			"parameters":  sanitizeGeminiToolSchema(decodeToolSchema(tool.InputSchema)),
 		})
 	}
 	if len(declarations) == 0 {
 		return nil
 	}
 	return []map[string]interface{}{{"functionDeclarations": declarations}}
+}
+
+func sanitizeGeminiToolSchema(schema map[string]interface{}) map[string]interface{} {
+	sanitized := sanitizeGeminiSchemaMap(schema)
+	if len(sanitized) == 0 {
+		return map[string]interface{}{"type": "object", "properties": map[string]interface{}{}}
+	}
+	if strings.TrimSpace(getString(sanitized["type"])) == "" {
+		sanitized["type"] = "object"
+	}
+	if _, ok := sanitized["properties"]; !ok && strings.TrimSpace(getString(sanitized["type"])) == "object" {
+		sanitized["properties"] = map[string]interface{}{}
+	}
+	return sanitized
+}
+
+func sanitizeGeminiSchemaMap(schema map[string]interface{}) map[string]interface{} {
+	if len(schema) == 0 {
+		return map[string]interface{}{}
+	}
+	sanitized := make(map[string]interface{}, len(schema))
+	for key, value := range schema {
+		switch key {
+		case "type":
+			if normalizedType, ok := normalizeGeminiSchemaType(value); ok {
+				sanitized[key] = normalizedType
+			}
+		case "description", "enum", "format", "minimum", "maximum", "minLength", "maxLength", "minItems", "maxItems", "required", "propertyOrdering", "nullable":
+			sanitized[key] = value
+		case "properties":
+			properties := sanitizeGeminiSchemaProperties(value)
+			if len(properties) > 0 {
+				sanitized[key] = properties
+			}
+		case "items":
+			if items := sanitizeGeminiSchemaMap(asMap(value)); len(items) > 0 {
+				sanitized[key] = items
+			}
+		}
+	}
+	if strings.TrimSpace(getString(sanitized["type"])) == "" {
+		if properties, ok := sanitized["properties"].(map[string]interface{}); ok && len(properties) > 0 {
+			sanitized["type"] = "object"
+		} else if _, ok := sanitized["items"]; ok {
+			sanitized["type"] = "array"
+		}
+	}
+	return sanitized
+}
+
+func sanitizeGeminiSchemaProperties(raw interface{}) map[string]interface{} {
+	properties := asMap(raw)
+	if len(properties) == 0 {
+		return nil
+	}
+	sanitized := make(map[string]interface{}, len(properties))
+	for name, value := range properties {
+		property := sanitizeGeminiSchemaMap(asMap(value))
+		if len(property) == 0 {
+			property = map[string]interface{}{"type": "object"}
+		}
+		sanitized[name] = property
+	}
+	return sanitized
+}
+
+func normalizeGeminiSchemaType(value interface{}) (string, bool) {
+	if text := strings.TrimSpace(getString(value)); text != "" {
+		return text, true
+	}
+	values, ok := value.([]interface{})
+	if !ok {
+		return "", false
+	}
+	for _, item := range values {
+		text := strings.TrimSpace(getString(item))
+		if text != "" && text != "null" {
+			return text, true
+		}
+	}
+	return "", false
 }
 
 func buildGeminiProviderTools(tools []map[string]interface{}) []map[string]interface{} {

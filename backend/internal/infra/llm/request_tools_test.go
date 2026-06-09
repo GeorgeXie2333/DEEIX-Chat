@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -658,6 +659,57 @@ func TestBuildGeminiToolsMergesProviderAndMCPTools(t *testing.T) {
 	declarations := tools[3]["functionDeclarations"].([]map[string]interface{})
 	if declarations[0]["name"] != "bing_search" {
 		t.Fatalf("expected MCP tool fourth, got %#v", tools[3])
+	}
+}
+
+func TestBuildGeminiToolsSanitizesUnsupportedJSONSchemaKeywords(t *testing.T) {
+	schema := json.RawMessage(`{
+		"$schema":"https://json-schema.org/draft/2020-12/schema",
+		"type":"object",
+		"properties":{
+			"query":{"type":["string","null"],"description":"Search text"},
+			"limit":{"type":"integer","exclusiveMinimum":0,"maximum":10},
+			"filters":{"properties":{"source":{"type":"string"}}}
+		},
+		"required":["query"],
+		"additionalProperties":false
+	}`)
+	payload := mustBuildGeminiRequestBody(t, GenerateInput{
+		Messages: []Message{{Role: "user", Content: "search"}},
+		Tools: []ToolDefinition{{
+			Name:        "web_search",
+			Description: "Search the web",
+			InputSchema: schema,
+		}},
+	})
+
+	tools := payload["tools"].([]map[string]interface{})
+	declarations := tools[0]["functionDeclarations"].([]map[string]interface{})
+	parameters := declarations[0]["parameters"].(map[string]interface{})
+	if _, ok := parameters["$schema"]; ok {
+		t.Fatalf("expected root $schema to be removed, got %#v", parameters)
+	}
+	if _, ok := parameters["additionalProperties"]; ok {
+		t.Fatalf("expected root additionalProperties to be removed, got %#v", parameters)
+	}
+	properties := parameters["properties"].(map[string]interface{})
+	query := properties["query"].(map[string]interface{})
+	if query["type"] != "string" {
+		t.Fatalf("expected nullable type array to become string, got %#v", query)
+	}
+	limit := properties["limit"].(map[string]interface{})
+	if _, ok := limit["exclusiveMinimum"]; ok {
+		t.Fatalf("expected nested exclusiveMinimum to be removed, got %#v", limit)
+	}
+	if limit["maximum"] != float64(10) {
+		t.Fatalf("expected nested maximum to be preserved, got %#v", limit)
+	}
+	filters := properties["filters"].(map[string]interface{})
+	if filters["type"] != "object" {
+		t.Fatalf("expected nested object type to be inferred from properties, got %#v", filters)
+	}
+	if got := parameters["required"]; !reflect.DeepEqual(got, []interface{}{"query"}) {
+		t.Fatalf("expected required to be preserved, got %#v", got)
 	}
 }
 

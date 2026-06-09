@@ -4567,6 +4567,11 @@ definitions:
         type: string
       parallel_tool_calls:
         type: boolean
+      reasoning_effort:
+        description: Official OpenAI Chat Completions routes drop reasoning_effort
+          when function tools are present because upstream rejects that combination.
+        example: medium
+        type: string
       stream:
         type: boolean
       temperature:

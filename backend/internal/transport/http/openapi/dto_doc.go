@@ -13,6 +13,8 @@ type ChatCompletionRequestDoc struct {
 	Functions         []LegacyFunctionDoc `json:"functions,omitempty"`
 	FunctionCall      interface{}         `json:"function_call,omitempty" swaggertype:"object"`
 	Temperature       *float64            `json:"temperature,omitempty"`
+	// Official OpenAI Chat Completions routes drop reasoning_effort when function tools are present because upstream rejects that combination.
+	ReasoningEffort string `json:"reasoning_effort,omitempty" example:"medium"`
 	// Legacy OpenAI-compatible output token limit. Official OpenAI Chat Completions routes normalize this to max_completion_tokens; Gemini routes normalize it to max_output_tokens.
 	MaxTokens *int `json:"max_tokens,omitempty"`
 	// OpenAI Chat Completions output token limit.

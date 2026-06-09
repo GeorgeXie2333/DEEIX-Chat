@@ -430,6 +430,7 @@ func (s *Service) PrepareChatCompletion(
 
 	preparedRequest := cloneMap(request)
 	normalizePreparedChatMaxTokens(preparedRequest, route)
+	normalizePreparedChatReasoningEffort(preparedRequest, route)
 
 	return &PreparedChatCompletion{
 		key:               key,
@@ -460,6 +461,37 @@ func normalizePreparedChatMaxTokens(request map[string]interface{}, route *appch
 		}
 	case llm.AdapterGoogleGenerateContent:
 		normalizeMaxTokenTarget(request, "max_output_tokens", "max_completion_tokens", "max_tokens")
+	}
+}
+
+func normalizePreparedChatReasoningEffort(request map[string]interface{}, route *appchannel.ResolvedRoute) {
+	if len(request) == 0 || route == nil || !isOfficialOpenAIUpstream(route) {
+		return
+	}
+	switch llm.NormalizeAdapter(route.Protocol) {
+	case llm.AdapterOpenAIChatCompletions, llm.AdapterOpenAIResponses:
+		if requestHasFunctionTools(request) {
+			delete(request, "reasoning_effort")
+		}
+	}
+}
+
+func isOfficialOpenAIUpstream(route *appchannel.ResolvedRoute) bool {
+	return route != nil && strings.EqualFold(strings.TrimSpace(route.UpstreamCompatible), "openai")
+}
+
+func requestHasFunctionTools(request map[string]interface{}) bool {
+	return nonEmptyArrayValue(request["tools"]) || nonEmptyArrayValue(request["functions"])
+}
+
+func nonEmptyArrayValue(value interface{}) bool {
+	switch typed := value.(type) {
+	case []interface{}:
+		return len(typed) > 0
+	case []map[string]interface{}:
+		return len(typed) > 0
+	default:
+		return false
 	}
 }
 

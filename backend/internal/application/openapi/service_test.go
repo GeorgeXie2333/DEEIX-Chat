@@ -371,6 +371,115 @@ func TestPrepareChatCompletionNormalizesMaxTokensByResolvedRoute(t *testing.T) {
 	}
 }
 
+func TestPrepareChatCompletionDropsOfficialOpenAIReasoningEffortWhenToolsPresent(t *testing.T) {
+	key := &domainopenapi.UserAPIKey{ID: 9, UserID: 42, Status: domainopenapi.APIKeyStatusActive}
+	tests := []struct {
+		name                string
+		protocol            string
+		compatible          string
+		request             map[string]interface{}
+		wantReasoningEffort interface{}
+		wantNoReasoning     bool
+	}{
+		{
+			name:       "official OpenAI Chat Completions drops reasoning effort with tools",
+			protocol:   llm.AdapterOpenAIChatCompletions,
+			compatible: "openai",
+			request: map[string]interface{}{
+				"reasoning_effort": "medium",
+				"tools": []interface{}{map[string]interface{}{
+					"type": "function",
+					"function": map[string]interface{}{
+						"name": "lookup",
+						"parameters": map[string]interface{}{
+							"type":       "object",
+							"properties": map[string]interface{}{},
+						},
+					},
+				}},
+			},
+			wantNoReasoning: true,
+		},
+		{
+			name:       "official OpenAI Responses Chat Completions passthrough drops reasoning effort with tools",
+			protocol:   llm.AdapterOpenAIResponses,
+			compatible: "openai",
+			request: map[string]interface{}{
+				"reasoning_effort": "high",
+				"tools": []interface{}{map[string]interface{}{
+					"type": "function",
+					"function": map[string]interface{}{
+						"name": "lookup",
+						"parameters": map[string]interface{}{
+							"type":       "object",
+							"properties": map[string]interface{}{},
+						},
+					},
+				}},
+			},
+			wantNoReasoning: true,
+		},
+		{
+			name:       "official OpenAI keeps reasoning effort without tools",
+			protocol:   llm.AdapterOpenAIChatCompletions,
+			compatible: "openai",
+			request: map[string]interface{}{
+				"reasoning_effort": "low",
+			},
+			wantReasoningEffort: "low",
+		},
+		{
+			name:       "custom Chat Completions keeps reasoning effort with tools",
+			protocol:   llm.AdapterOpenAIChatCompletions,
+			compatible: "custom",
+			request: map[string]interface{}{
+				"reasoning_effort": "medium",
+				"tools": []interface{}{map[string]interface{}{
+					"type": "function",
+					"function": map[string]interface{}{
+						"name": "lookup",
+						"parameters": map[string]interface{}{
+							"type":       "object",
+							"properties": map[string]interface{}{},
+						},
+					},
+				}},
+			},
+			wantReasoningEffort: "medium",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			channel := &capturingChannelStub{protocol: tt.protocol, compatible: tt.compatible}
+			service := NewService(Dependencies{
+				KeyRepo:           newKeyRepoStub(),
+				Settings:          settingsStub{"model_allowlist": "chat-openai", "rate_limit_rpm": "60"},
+				Channel:           channel,
+				ChatProvider:      &chatProviderStub{},
+				DataEncryptionKey: "test-secret",
+				Now:               fixedNow,
+			})
+			request := map[string]interface{}{
+				"model":    "upstream-model",
+				"messages": []interface{}{map[string]interface{}{"role": "user", "content": "hello"}},
+			}
+			for key, value := range tt.request {
+				request[key] = value
+			}
+
+			prepared, err := service.PrepareChatCompletion(context.Background(), key, request, "req_1", false)
+			if err != nil {
+				t.Fatalf("PrepareChatCompletion returned error: %v", err)
+			}
+			assertRequestField(t, prepared.request, "reasoning_effort", tt.wantReasoningEffort, tt.wantNoReasoning)
+			if _, ok := prepared.request["tools"]; !ok && tt.request["tools"] != nil {
+				t.Fatalf("expected tools to be preserved, got %#v", prepared.request)
+			}
+		})
+	}
+}
+
 func TestBuildGenerateInputFromChatCompletionParsesMultimodalDataURL(t *testing.T) {
 	input, err := buildGenerateInputFromChatCompletion(context.Background(), map[string]interface{}{
 		"model":       "vision-chat",

@@ -14903,6 +14903,11 @@ const docTemplate = `{
                 "parallel_tool_calls": {
                     "type": "boolean"
                 },
+                "reasoning_effort": {
+                    "description": "Official OpenAI Chat Completions routes drop reasoning_effort when function tools are present because upstream rejects that combination.",
+                    "type": "string",
+                    "example": "medium"
+                },
                 "stream": {
                     "type": "boolean"
                 },
