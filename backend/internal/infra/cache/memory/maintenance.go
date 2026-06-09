@@ -41,6 +41,11 @@ func (c *Cache) sweepExpiredLocked(now time.Time) {
 			delete(c.fixedHTTP, key)
 		}
 	}
+	for key, item := range c.freeModelDaily {
+		if now.After(item.expiresAt) {
+			delete(c.freeModelDaily, key)
+		}
+	}
 	cutoff := now.Add(-slidingWindowRetention)
 	for key, events := range c.slidingHTTP {
 		kept := events[:0]
@@ -54,6 +59,20 @@ func (c *Cache) sweepExpiredLocked(now time.Time) {
 			continue
 		}
 		c.slidingHTTP[key] = kept
+	}
+	freeModelCutoff := now.Add(-time.Minute)
+	for userID, events := range c.freeModelMinute {
+		kept := events[:0]
+		for _, item := range events {
+			if item.After(freeModelCutoff) {
+				kept = append(kept, item)
+			}
+		}
+		if len(kept) == 0 {
+			delete(c.freeModelMinute, userID)
+			continue
+		}
+		c.freeModelMinute[userID] = kept
 	}
 	for upstreamID, item := range c.rateLimits {
 		if now.After(item.backoffUntil) && now.After(item.countExpires) {

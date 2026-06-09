@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -65,4 +66,73 @@ func (c *Cache) AllowFixedWindow(ctx context.Context, keys []string, limit int, 
 	}
 	c.maybeSweepLocked(now)
 	return allowed, nil
+}
+
+func (c *Cache) AllowFreeModelUsage(ctx context.Context, userID uint, requestsPerMinute int, dailyLimit int, now time.Time) (bool, bool, bool, error) {
+	if c == nil || userID == 0 || (requestsPerMinute <= 0 && dailyLimit <= 0) {
+		return true, false, false, nil
+	}
+	if now.IsZero() {
+		now = time.Now()
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	minuteExceeded := false
+	if requestsPerMinute > 0 {
+		cutoff := now.Add(-time.Minute)
+		events := c.freeModelMinute[userID][:0]
+		for _, item := range c.freeModelMinute[userID] {
+			if item.After(cutoff) {
+				events = append(events, item)
+			}
+		}
+		c.freeModelMinute[userID] = events
+		minuteExceeded = len(events) >= requestsPerMinute
+	}
+
+	dailyExceeded := false
+	dailyKey := ""
+	if dailyLimit > 0 {
+		dailyKey = freeModelDailyKey(userID, now)
+		item := c.freeModelDaily[dailyKey]
+		if now.After(item.expiresAt) {
+			item = fixedWindowCounter{expiresAt: now.Add(time.Duration(secondsUntilNextLocalDay(now)) * time.Second)}
+			c.freeModelDaily[dailyKey] = item
+		}
+		dailyExceeded = item.count >= dailyLimit
+	}
+
+	if minuteExceeded || dailyExceeded {
+		c.maybeSweepLocked(now)
+		return false, minuteExceeded, dailyExceeded, nil
+	}
+
+	if requestsPerMinute > 0 {
+		c.freeModelMinute[userID] = append(c.freeModelMinute[userID], now)
+	}
+	if dailyLimit > 0 {
+		item := c.freeModelDaily[dailyKey]
+		if now.After(item.expiresAt) {
+			item = fixedWindowCounter{expiresAt: now.Add(time.Duration(secondsUntilNextLocalDay(now)) * time.Second)}
+		}
+		item.count++
+		c.freeModelDaily[dailyKey] = item
+	}
+	c.maybeSweepLocked(now)
+	return true, false, false, nil
+}
+
+func freeModelDailyKey(userID uint, now time.Time) string {
+	return fmt.Sprintf("%d:%s", userID, now.Format("20060102"))
+}
+
+func secondsUntilNextLocalDay(now time.Time) int {
+	nextDay := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
+	ttl := int(nextDay.Sub(now).Seconds())
+	if ttl < 60 {
+		return 60
+	}
+	return ttl
 }

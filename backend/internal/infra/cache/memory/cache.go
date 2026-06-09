@@ -33,6 +33,9 @@ type Cache struct {
 
 	slidingHTTP map[string][]time.Time
 	fixedHTTP   map[string]fixedWindowCounter
+
+	freeModelMinute map[uint][]time.Time
+	freeModelDaily  map[string]fixedWindowCounter
 }
 
 type expiringString struct {
@@ -60,6 +63,9 @@ func New() *Cache {
 		keyCounters:  map[uint]int64{},
 		slidingHTTP:  map[string][]time.Time{},
 		fixedHTTP:    map[string]fixedWindowCounter{},
+
+		freeModelMinute: map[uint][]time.Time{},
+		freeModelDaily:  map[string]fixedWindowCounter{},
 	}
 }
 

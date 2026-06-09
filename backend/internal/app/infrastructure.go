@@ -18,6 +18,11 @@ import (
 	"gorm.io/gorm"
 )
 
+type appRateLimiter interface {
+	middleware.RateLimiter
+	AllowFreeModelUsage(ctx context.Context, userID uint, requestsPerMinute int, dailyLimit int, now time.Time) (bool, bool, bool, error)
+}
+
 func openDatabase(cfg config.Config) (*gorm.DB, error) {
 	switch strings.ToLower(strings.TrimSpace(cfg.DatabaseDriver)) {
 	case "", "postgres":
@@ -74,7 +79,7 @@ func buildConversationCache(cfg config.Config, redisClient *redis.Client, memory
 	return nil
 }
 
-func buildRateLimiter(cfg config.Config, redisClient *redis.Client, memoryCache *memorycache.Cache) middleware.RateLimiter {
+func buildRateLimiter(cfg config.Config, redisClient *redis.Client, memoryCache *memorycache.Cache) appRateLimiter {
 	if useRedisCache(cfg, redisClient) {
 		return rediscache.NewRateLimiter(redisClient)
 	}
