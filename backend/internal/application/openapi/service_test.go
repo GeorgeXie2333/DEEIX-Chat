@@ -270,6 +270,41 @@ func TestPrepareChatCompletionNormalizesMaxTokensByResolvedRoute(t *testing.T) {
 			wantNoMaxOutput:   true,
 		},
 		{
+			name:       "official OpenAI Responses route maps legacy max_tokens for Chat Completions passthrough",
+			protocol:   llm.AdapterOpenAIResponses,
+			compatible: "openai",
+			request: map[string]interface{}{
+				"max_tokens": 128,
+			},
+			wantMaxCompletion: 128,
+			wantNoMaxTokens:   true,
+			wantNoMaxOutput:   true,
+		},
+		{
+			name:       "official OpenAI Responses route maps Responses max_output_tokens for Chat Completions passthrough",
+			protocol:   llm.AdapterOpenAIResponses,
+			compatible: "openai",
+			request: map[string]interface{}{
+				"max_output_tokens": 96,
+			},
+			wantMaxCompletion: 96,
+			wantNoMaxTokens:   true,
+			wantNoMaxOutput:   true,
+		},
+		{
+			name:       "official OpenAI Responses route keeps Chat Completions target field in conflicts",
+			protocol:   llm.AdapterOpenAIResponses,
+			compatible: "openai",
+			request: map[string]interface{}{
+				"max_tokens":            128,
+				"max_output_tokens":     96,
+				"max_completion_tokens": 64,
+			},
+			wantMaxCompletion: 64,
+			wantNoMaxTokens:   true,
+			wantNoMaxOutput:   true,
+		},
+		{
 			name:       "Gemini maps legacy max_tokens",
 			protocol:   llm.AdapterGoogleGenerateContent,
 			compatible: "google",

@@ -454,6 +454,10 @@ func normalizePreparedChatMaxTokens(request map[string]interface{}, route *appch
 		if strings.EqualFold(strings.TrimSpace(route.UpstreamCompatible), "openai") {
 			normalizeMaxTokenTarget(request, "max_completion_tokens", "max_tokens")
 		}
+	case llm.AdapterOpenAIResponses:
+		if strings.EqualFold(strings.TrimSpace(route.UpstreamCompatible), "openai") {
+			normalizeMaxTokenTarget(request, "max_completion_tokens", "max_output_tokens", "max_tokens")
+		}
 	case llm.AdapterGoogleGenerateContent:
 		normalizeMaxTokenTarget(request, "max_output_tokens", "max_completion_tokens", "max_tokens")
 	}
