@@ -60,6 +60,7 @@ type Modules struct {
 	Settings     *settingshttp.Module
 	UserSettings *usersettingshttp.Module
 	OpenAPI      *openapihttp.Module
+	StartupLog   func(*zap.Logger)
 }
 
 // NewEngine 创建并注册 API 路由。
@@ -187,6 +188,9 @@ func NewEngine(cfg *config.Runtime, log *zap.Logger, modules Modules, hc HealthC
 		}
 	}
 
+	if modules.StartupLog != nil {
+		modules.StartupLog(log)
+	}
 	registerFrontendStatic(engine, snapshot.FrontendDistDir, log)
 
 	return engine, nil

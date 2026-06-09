@@ -294,6 +294,8 @@ export function resolveAdvancedSettingDefinitions(protocol: string, modelName = 
       return [TEMPERATURE_SETTING];
     case "openai_responses":
       return [TEMPERATURE_SETTING, RESPONSES_REASONING_EFFORT, RESPONSES_VERBOSITY];
+    case "openrouter_responses":
+      return [TEMPERATURE_SETTING, RESPONSES_REASONING_EFFORT];
     case "xai_responses":
       return [TEMPERATURE_SETTING, XAI_RESPONSES_REASONING_EFFORT];
     case "anthropic_messages":

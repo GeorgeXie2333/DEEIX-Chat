@@ -46,7 +46,7 @@
       "taken": "このユーザー名はすでに使用されています。"
     },
     "toast": {
-      "initialUsernameRequired": "初期ユーザー名は変更してから続行する必要があります。",
+      "initialUsernameRequired": "初期ユーザー名を変更してください。",
       "setUsernameFailed": "ユーザー名の設定に失敗しました",
       "usernameUpdated": "ユーザー名を更新しました",
       "profileUpdated": "プロフィールを更新しました",

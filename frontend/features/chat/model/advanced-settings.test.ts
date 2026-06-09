@@ -16,6 +16,7 @@ const allowAdvancedPolicy: ModelOptionPolicy = {
     default: ["temperature"],
     openai_chat_completions: ["reasoning_effort", "verbosity"],
     openai_responses: ["reasoning.effort", "text.verbosity"],
+    openrouter_responses: ["reasoning.effort"],
     xai_responses: ["reasoning.effort"],
     anthropic_messages: ["output_config.effort"],
     gemini_generate_content: ["thinkingConfig.thinkingLevel"],
@@ -75,6 +76,21 @@ test("resolveAdvancedSettings exposes updated reasoning effort values by provide
 
   assert.equal(xAIReasoning?.value, "none");
   assert.deepEqual(xAIReasoning?.values, ["none", "low", "medium", "high"]);
+});
+
+test("resolveAdvancedSettings exposes OpenRouter Responses reasoning controls", () => {
+  assert.deepEqual(
+    resolveAdvancedSettings({
+      protocol: "openrouter_responses",
+      options: { temperature: 0.5, reasoning: { effort: "high" } },
+      defaultOptions: {},
+      policy: allowAdvancedPolicy,
+    }).map((item) => [item.kind, item.key, item.value]),
+    [
+      ["temperature", "temperature", 0.5],
+      ["reasoningEffort", "reasoning.effort", "high"],
+    ],
+  );
 });
 
 test("resolveAdvancedSettings maps Anthropic effort with medium default", () => {

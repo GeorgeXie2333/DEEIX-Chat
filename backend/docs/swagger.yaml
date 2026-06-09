@@ -4318,7 +4318,6 @@ definitions:
         maxLength: 64
         type: string
       content:
-        maxLength: 20000
         type: string
       contentType:
         enum:
@@ -4449,7 +4448,6 @@ definitions:
   internal_transport_http_conversation.UpdateMessageRequest:
     properties:
       content:
-        maxLength: 200000
         type: string
     required:
     - content
@@ -4747,7 +4745,7 @@ info:
   contact: {}
   description: DEEIX Chat 后端 API 文档
   title: DEEIX Chat API
-  version: 0.2.0
+  version: 0.2.2
 paths:
   /admin/announcements:
     get:

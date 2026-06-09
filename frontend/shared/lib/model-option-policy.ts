@@ -2,6 +2,7 @@ export const MODEL_OPTION_POLICY_PROTOCOLS = [
   "default",
   "openai_chat_completions",
   "openai_responses",
+  "openrouter_responses",
   "openai_image_generations",
   "openai_image_edits",
   "openai_video_generations",
@@ -97,6 +98,7 @@ export const MODEL_OPTION_POLICY_PROTOCOL_LABELS: Record<ModelOptionPolicyProtoc
   default: "Default",
   openai_chat_completions: "OpenAI（Chat Completions）",
   openai_responses: "OpenAI（Responses）",
+  openrouter_responses: "OpenRouter（Responses）",
   openai_image_generations: "OpenAI（Images Generations）",
   openai_image_edits: "OpenAI（Images Edits）",
   openai_video_generations: "OpenAI（Video Generations）",
@@ -219,6 +221,9 @@ export function resolveModelOptionPolicyProtocol(protocol: string): ModelOptionP
     case "openai":
     case "openai_responses":
       return "openai_responses";
+    case "openrouter":
+    case "openrouter_responses":
+      return "openrouter_responses";
     case "openai_chat_completions":
       return "openai_chat_completions";
     case "openai_image_generations":

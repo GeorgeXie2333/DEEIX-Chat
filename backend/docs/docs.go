@@ -14543,8 +14543,7 @@ const docTemplate = `{
                     "maxLength": 64
                 },
                 "content": {
-                    "type": "string",
-                    "maxLength": 20000
+                    "type": "string"
                 },
                 "contentType": {
                     "type": "string",
@@ -14733,8 +14732,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "type": "string",
-                    "maxLength": 200000
+                    "type": "string"
                 }
             }
         },
@@ -15181,7 +15179,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "0.2.0",
+	Version:          "0.2.2",
 	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},

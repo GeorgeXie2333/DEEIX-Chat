@@ -16,6 +16,7 @@
   "projects": {
     "title": "プロジェクト",
     "create": "プロジェクトを新規作成",
+    "newChatInProject": "プロジェクト内で新規チャット",
     "menu": "プロジェクトメニュー",
     "empty": "プロジェクトはありません",
     "unassigned": "既定",

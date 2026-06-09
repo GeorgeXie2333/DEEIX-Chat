@@ -62,7 +62,7 @@
     "turnstileNotConfigured": "人間確認が設定されていません。",
     "turnstileRequired": "先に人間確認を完了してください。",
     "unauthorized": "セッションの有効期限が切れました。もう一度サインインしてください。",
-    "usernameChangeRequired": "ユーザー名の変更が必要です。",
+    "usernameChangeRequired": "初期ユーザー名を変更してください。",
     "verificationCodeAttemptsExceeded": "認証の試行回数が多すぎます。新しいコードをリクエストしてください。",
     "verificationCodeInvalid": "認証コードが無効、または期限切れです。",
     "verificationCodeRecent": "認証コードは最近送信されています。しばらくしてからもう一度お試しください。"
@@ -129,6 +129,7 @@
     "originForbidden": "このオリジンは許可されていません。"
   },
   "embedding": {
+    "serviceNotConfigured": "先に埋め込みサービスを有効化して設定してください。",
     "serviceUnavailable": "埋め込みサービスを利用できません。"
   },
   "file": {

@@ -76,7 +76,7 @@
     "refresh": "更新",
     "selectedItems": "{count}件選択中",
     "pagination": "全{total}件、{page} / {pageCount}ページ",
-    "pageSize": "{size}件 / ページ",
+    "pageSize": "{size} 件 / ページ",
     "previousPage": "前のページ",
     "nextPage": "次のページ"
   },

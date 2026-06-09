@@ -4,7 +4,7 @@
         "description": "DEEIX Chat 后端 API 文档",
         "title": "DEEIX Chat API",
         "contact": {},
-        "version": "0.2.0"
+        "version": "0.2.2"
     },
     "basePath": "/api/v1",
     "paths": {
@@ -14536,8 +14536,7 @@
                     "maxLength": 64
                 },
                 "content": {
-                    "type": "string",
-                    "maxLength": 20000
+                    "type": "string"
                 },
                 "contentType": {
                     "type": "string",
@@ -14726,8 +14725,7 @@
             ],
             "properties": {
                 "content": {
-                    "type": "string",
-                    "maxLength": 200000
+                    "type": "string"
                 }
             }
         },

@@ -921,7 +921,7 @@ func (s *Service) sendMessageInternal(
 	}
 
 	handleCanceledGeneration := func(generateErr error) bool {
-		if generateErr == nil || (ctx.Err() == nil && !errors.Is(generateErr, ErrMessageGenerationCanceled)) {
+		if generateErr == nil || (ctx.Err() == nil && !isMessageGenerationCanceledError(generateErr)) {
 			return false
 		}
 		partialText := strings.TrimSpace(streamedText.String())

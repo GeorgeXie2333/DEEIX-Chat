@@ -163,6 +163,23 @@ func TestSafeFileContentTypeDowngradesActiveContent(t *testing.T) {
 	}
 }
 
+func TestMessagePageParamsAllowsRestoreWindow(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("GET", "/messages?page=1&page_size=1000", nil)
+
+	_, pageSize := messagePageParams(c)
+	if pageSize != 1000 {
+		t.Fatalf("messagePageParams page size = %d, want 1000", pageSize)
+	}
+
+	_, normalPageSize := pageParams(c)
+	if normalPageSize != maxHTTPPageSize {
+		t.Fatalf("pageParams page size = %d, want %d", normalPageSize, maxHTTPPageSize)
+	}
+}
+
 func TestBuildContentDispositionDefaultsToAttachment(t *testing.T) {
 	got := buildContentDisposition("report.html", false)
 	want := `attachment; filename="report.html"; filename*=UTF-8''report.html`
