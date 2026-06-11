@@ -1,6 +1,14 @@
 "use client";
 
+import type { CSSProperties } from "react";
+
 import { cn } from "@/lib/utils";
+
+import {
+  appLogoMaskImage,
+  appLogoVisualHeight,
+  appLogoVisualWidth,
+} from "./app-logo-assets";
 
 type AppLogoProps = {
   alt?: string;
@@ -14,22 +22,31 @@ export function AppLogo({
   height,
   className,
 }: AppLogoProps) {
-  const fontSize = Math.max(13, Math.min(32, Math.round(height * 0.42)));
+  const visualHeight = appLogoVisualHeight(height);
+  const visualWidth = appLogoVisualWidth(height);
+  const style = {
+    width: visualWidth,
+    height: visualHeight,
+    maskImage: appLogoMaskImage(),
+    maskPosition: "center",
+    maskRepeat: "no-repeat",
+    maskSize: "contain",
+    WebkitMaskImage: appLogoMaskImage(),
+    WebkitMaskPosition: "center",
+    WebkitMaskRepeat: "no-repeat",
+    WebkitMaskSize: "contain",
+  } as CSSProperties;
 
   return (
     <span
+      role="img"
       aria-label={alt}
       title={alt}
       className={cn(
-        "flex w-fit min-w-fit items-center justify-center whitespace-nowrap font-semibold leading-none tracking-normal text-foreground",
+        "inline-block shrink-0 bg-current text-foreground align-middle leading-none",
         className,
       )}
-      style={{
-        fontFamily: "var(--font-economist)",
-        fontSize,
-      }}
-    >
-      Comi AI
-    </span>
+      style={style}
+    />
   );
 }

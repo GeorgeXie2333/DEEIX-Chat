@@ -1,7 +1,7 @@
 const PWA_ASSET_VERSION = "0.2.2";
-const PWA_ASSET_CACHE_KEY = "632cb83037d9";
+const PWA_ASSET_CACHE_KEY = "e39f8ccca01c";
 const PWA_ASSET_MANIFEST = {
-  "/pwa/icon.svg": "/pwa/generated/icon.fe1d64d9758c.svg",
+  "/pwa/icon.svg": "/pwa/generated/icon.7b6200e89318.svg",
   "/pwa/icon-192.png": "/pwa/generated/icon-192.d7a0049daaa7.png",
   "/pwa/icon-512.png": "/pwa/generated/icon-512.bd37e5f66cc5.png",
   "/pwa/icon-maskable-512.png": "/pwa/generated/icon-maskable-512.647d8497d850.png",

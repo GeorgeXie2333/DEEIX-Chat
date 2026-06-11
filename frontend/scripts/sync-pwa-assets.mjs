@@ -16,6 +16,12 @@ const assets = [
   { source: "icon-maskable-512.png", path: "/pwa/icon-maskable-512.png" },
   { source: "apple-touch-icon.png", path: "/pwa/apple-touch-icon.png" },
 ];
+const appShellCacheSources = [
+  "logo.svg",
+  "logo-color.svg",
+  "logo-black.svg",
+  "logo-white.svg",
+];
 
 function contentHash(buffer) {
   return createHash("sha256").update(buffer).digest("hex").slice(0, 12);
@@ -38,7 +44,16 @@ for (const asset of assets) {
   pwaAssetManifest[asset.path] = targetPath;
 }
 
-const pwaAssetCacheKey = contentHash(Buffer.from(JSON.stringify(pwaAssetManifest)));
+const appShellAssetHashes = {};
+
+for (const source of appShellCacheSources) {
+  appShellAssetHashes[`/${source}`] = contentHash(readFileSync(join(publicDir, source)));
+}
+
+const pwaAssetCacheKey = contentHash(Buffer.from(JSON.stringify({
+  pwaAssetManifest,
+  appShellAssetHashes,
+})));
 
 mkdirSync(dirname(manifestFile), { recursive: true });
 writeFileSync(
