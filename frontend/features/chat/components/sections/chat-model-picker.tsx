@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,7 +24,7 @@ const MODEL_MENU_ROW_GAP = 2;
 const MODEL_MENU_LIST_PADDING_BOTTOM = 4;
 const MODEL_MENU_MODEL_PANEL_CHROME_HEIGHT = 12;
 const MODEL_MENU_TEXT_WIDTH_UNIT = 7;
-const MODEL_MENU_CONTENT_GAP_WIDTH = 56;
+const MODEL_MENU_CONTENT_GAP_WIDTH = 84;
 const MODEL_MENU_VIEWPORT_GUTTER = 24;
 const MODEL_MENU_PANEL_GAP = 8;
 const MODEL_MENU_COLLISION_GUTTER = 12;
@@ -276,6 +276,27 @@ function ModelPricingTooltipContent({
   );
 }
 
+function ModelDescriptionTooltipContent({
+  platformModelName,
+  description,
+  noDescriptionLabel,
+}: {
+  platformModelName: string;
+  description: string;
+  noDescriptionLabel: string;
+}) {
+  const normalizedDescription = description.trim();
+
+  return (
+    <div className="flex max-w-72 flex-col gap-1">
+      <span className={PRICING_TOOLTIP_TITLE_CLASS}>{platformModelName}</span>
+      <span className={cn(PRICING_TOOLTIP_BODY_CLASS, "whitespace-pre-wrap break-words")}>
+        {normalizedDescription || noDescriptionLabel}
+      </span>
+    </div>
+  );
+}
+
 function PricingTooltipRow({ label, value }: { label: string; value: string }) {
   return (
     <div className={cn("grid grid-cols-[minmax(5.5rem,max-content)_auto] items-baseline gap-5", PRICING_TOOLTIP_BODY_CLASS)}>
@@ -386,6 +407,8 @@ function ChatModelMenuItem({
   selected,
   onSelect,
   pricingLabels,
+  viewDescriptionLabel,
+  noDescriptionLabel,
   viewPricingLabel,
   pricingTooltipSide,
 }: {
@@ -393,6 +416,8 @@ function ChatModelMenuItem({
   selected: boolean;
   onSelect: () => void;
   pricingLabels: React.ComponentProps<typeof ModelPricingTooltipContent>["labels"];
+  viewDescriptionLabel: string;
+  noDescriptionLabel: string;
   viewPricingLabel: string;
   pricingTooltipSide: "right";
 }) {
@@ -426,6 +451,29 @@ function ChatModelMenuItem({
           {selected ? <Check className="size-3 text-current" strokeWidth={1.7} /> : null}
         </span>
       </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:text-current focus-visible:text-current focus-visible:outline-none group-hover:text-current group-focus-within:text-current group-data-[selected=true]:text-current"
+            aria-label={viewDescriptionLabel}
+          >
+            <Info className="size-3.5" strokeWidth={1.8} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent
+          side={pricingTooltipSide}
+          align="center"
+          sideOffset={8}
+          className="z-[80] max-w-[min(92vw,20rem)] text-left font-medium"
+        >
+          <ModelDescriptionTooltipContent
+            platformModelName={model.platformModelName}
+            description={model.description}
+            noDescriptionLabel={noDescriptionLabel}
+          />
+        </TooltipContent>
+      </Tooltip>
       {model.pricing ? (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -807,6 +855,8 @@ export function ChatModelPicker({
                           onModelChange(item.platformModelName);
                         }}
                         pricingLabels={pricingLabels}
+                        viewDescriptionLabel={t("viewDescription")}
+                        noDescriptionLabel={t("noDescription")}
                         viewPricingLabel={t("viewPricing")}
                         pricingTooltipSide="right"
                       />
@@ -911,6 +961,8 @@ export function ChatModelPicker({
                     onModelChange(item.platformModelName);
                   }}
                     pricingLabels={pricingLabels}
+                    viewDescriptionLabel={t("viewDescription")}
+                    noDescriptionLabel={t("noDescription")}
                     viewPricingLabel={t("viewPricing")}
                     pricingTooltipSide="right"
                   />

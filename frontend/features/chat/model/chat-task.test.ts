@@ -6,6 +6,7 @@ import type { ChatModelOption, PendingAttachment } from "../types/chat-runtime.t
 
 const videoModel: ChatModelOption = {
   platformModelName: "sora-2",
+  description: "",
   icon: "",
   vendor: "openai",
   kinds: ["video_gen"],

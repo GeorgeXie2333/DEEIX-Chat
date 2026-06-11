@@ -596,7 +596,7 @@ export function InitialSecurityGuard() {
 
         <div className="flex h-full flex-col p-5">
           <div className="flex items-center justify-between gap-4">
-            <AppLogo width={86} height={24} priority className="h-6 w-auto" />
+            <AppLogo height={24} priority className="h-6 w-auto" />
             <Onboarding.StepIndicator variant="dots" dotClassName="bg-muted-foreground/25" />
           </div>
 

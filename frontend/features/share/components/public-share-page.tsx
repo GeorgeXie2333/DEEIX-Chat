@@ -371,7 +371,7 @@ export function PublicSharePage() {
             </div>
           </div>
           <Link href="/" aria-label="Comi AI" className="mt-0.5 inline-flex h-8 shrink-0 items-center">
-            <AppLogo width={78} height={24} priority className="h-6 w-auto" />
+            <AppLogo height={24} priority className="h-6 w-auto" />
           </Link>
         </header>
 

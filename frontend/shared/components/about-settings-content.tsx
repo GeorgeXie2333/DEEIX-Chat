@@ -136,7 +136,7 @@ export function AboutSettingsContent({
         <div className="space-y-5 px-0.5">
           <div className="flex min-w-0 flex-col gap-2.5">
             <div className="flex h-14 w-40 shrink-0 items-center sm:w-48">
-              <AppLogo width={180} height={56} className="h-auto w-36 sm:w-44" />
+              <AppLogo height={56} className="h-auto w-36 sm:w-44" />
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="text-xs text-muted-foreground">{consoleLabel}</span>

@@ -28,12 +28,6 @@ const requiredLandingKeys = [
   "previewContextDescription",
   "previewGovernance",
   "previewGovernanceDescription",
-  "previewMetricModelsValue",
-  "previewMetricSwitchesValue",
-  "previewMetricApiValue",
-  "previewMetricModels",
-  "previewMetricFlows",
-  "previewMetricPlane",
 ];
 
 function readLoginMessages(locale) {
@@ -49,10 +43,5 @@ for (const locale of ["zh-CN", "en-US", "ja-JP"]) {
       assert.equal(typeof messages.landing[key], "string", `${locale} missing landing.${key}`);
       assert.ok(messages.landing[key].trim().length > 0, `${locale} landing.${key} must not be empty`);
     }
-    assert.doesNotMatch(
-      messages.landing.previewMetricModelsValue,
-      /^\d+$/,
-      `${locale} landing.previewMetricModelsValue must not present a fixed model count`,
-    );
   });
 }

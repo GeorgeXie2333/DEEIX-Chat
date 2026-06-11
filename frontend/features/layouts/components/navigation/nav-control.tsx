@@ -36,7 +36,6 @@ export function NavControl() {
             )}
           >
             <AppLogo
-              width={64}
               height={48}
               priority
               className="h-5 object-contain"

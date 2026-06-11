@@ -27,6 +27,7 @@
   "providerLogin": "Continue with {provider}",
   "alreadyHaveAccount": "Already have an account?",
   "noAccount": "No account?",
+  "orContinueWith": "Or continue with",
   "landing": {
     "headline": "GPT, Gemini, Claude, and Grok in one place",
     "description": "Use the leading AI models, switch whenever you need, and connect through official APIs for a steadier experience.",
@@ -47,13 +48,7 @@
     "previewContext": "Images and research",
     "previewContextDescription": "Use Gemini for images, source material, and complex information.",
     "previewGovernance": "Fast answers",
-    "previewGovernanceDescription": "Use Grok for quick questions and fresh topics.",
-    "previewMetricModelsValue": "Top",
-    "previewMetricSwitchesValue": "Free",
-    "previewMetricApiValue": "API",
-    "previewMetricModels": "models",
-    "previewMetricFlows": "switching",
-    "previewMetricPlane": "direct"
+    "previewGovernanceDescription": "Use Grok for quick questions and fresh topics."
   },
   "toasts": {
     "codeRequired": "Enter a verification code or recovery code.",

@@ -417,6 +417,8 @@
     "selectModel": "选择模型",
     "vendor": "厂商",
     "viewPricing": "查看价格",
+    "viewDescription": "查看描述",
+    "noDescription": "暂无描述",
     "freeModel": "免费模型",
     "freeModelDescription": "不会扣除按量余额",
     "tieredPricing": "阶梯计费",

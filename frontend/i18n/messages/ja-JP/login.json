@@ -27,6 +27,7 @@
   "providerLogin": "{provider}で続行",
   "alreadyHaveAccount": "すでにアカウントをお持ちですか？",
   "noAccount": "アカウントをお持ちでないですか？",
+  "orContinueWith": "または次の方法で続行",
   "landing": {
     "headline": "GPT、Gemini、Claude、Grok をひとつの場所で",
     "description": "主要な AI モデルをまとめて使えます。必要に応じて自由に切り替え、公式 API 直結でより安定した体験を提供します。",
@@ -47,13 +48,7 @@
     "previewContext": "画像と資料整理",
     "previewContextDescription": "Gemini で画像、資料、複雑な情報を扱えます。",
     "previewGovernance": "すばやい回答",
-    "previewGovernanceDescription": "Grok で短い質問や新しい話題をすばやく確認できます。",
-    "previewMetricModelsValue": "主要",
-    "previewMetricSwitchesValue": "自由",
-    "previewMetricApiValue": "公式",
-    "previewMetricModels": "モデル",
-    "previewMetricFlows": "切替",
-    "previewMetricPlane": "直結"
+    "previewGovernanceDescription": "Grok で短い質問や新しい話題をすばやく確認できます。"
   },
   "toasts": {
     "codeRequired": "認証コードまたは復旧コードを入力してください。",

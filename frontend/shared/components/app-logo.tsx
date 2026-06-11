@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 
 type AppLogoProps = {
   alt?: string;
-  width: number;
   height: number;
   priority?: boolean;
   className?: string;
@@ -26,7 +25,7 @@ export function AppLogo({
         className,
       )}
       style={{
-        fontFamily: '"Palatino Linotype", Palatino, "Book Antiqua", serif',
+        fontFamily: "var(--font-economist)",
         fontSize,
       }}
     >

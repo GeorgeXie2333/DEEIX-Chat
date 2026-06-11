@@ -417,6 +417,8 @@
     "selectModel": "Select model",
     "vendor": "Vendor",
     "viewPricing": "View pricing",
+    "viewDescription": "View description",
+    "noDescription": "No description",
     "freeModel": "Free model",
     "freeModelDescription": "No usage balance will be deducted",
     "tieredPricing": "Tiered pricing",

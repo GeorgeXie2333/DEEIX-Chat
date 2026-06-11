@@ -27,6 +27,7 @@
   "providerLogin": "使用 {provider} 登录",
   "alreadyHaveAccount": "已有账号？",
   "noAccount": "没有账号？",
+  "orContinueWith": "或使用以下方式登录",
   "landing": {
     "headline": "GPT、Gemini、Claude、Grok，一站自由切换",
     "description": "主流 AI 模型一应俱全，按需切换使用；官方 API 直连，响应稳定，体验更安心。",
@@ -47,13 +48,7 @@
     "previewContext": "看图和整理资料",
     "previewContextDescription": "用 Gemini 处理图片、资料和复杂信息。",
     "previewGovernance": "实时问答",
-    "previewGovernanceDescription": "用 Grok 处理快速问答和新鲜话题。",
-    "previewMetricModelsValue": "主流",
-    "previewMetricSwitchesValue": "自由",
-    "previewMetricApiValue": "官方",
-    "previewMetricModels": "模型",
-    "previewMetricFlows": "切换",
-    "previewMetricPlane": "直连"
+    "previewGovernanceDescription": "用 Grok 处理快速问答和新鲜话题。"
   },
   "toasts": {
     "codeRequired": "请输入验证码或恢复码",

@@ -417,6 +417,8 @@
     "selectModel": "モデルを選択",
     "vendor": "ベンダー",
     "viewPricing": "価格を表示",
+    "viewDescription": "説明を表示",
+    "noDescription": "説明なし",
     "freeModel": "無料モデル",
     "freeModelDescription": "従量残高は差し引かれません",
     "tieredPricing": "階層課金",
