@@ -340,6 +340,11 @@
       "regenerateRecoveryCodesFailed": "復旧コードの再生成に失敗しました",
       "providerUnavailable": "この ID プロバイダーは現在バインドできません",
       "bindIdentityFailed": "ID プロバイダーのバインドに失敗しました"
+    },
+    "logoutAllDialog": {
+      "title": "すべての端末からログアウトしますか？",
+      "description": "確認すると、他のブラウザー、デスクトップアプリ、モバイル端末を含むこのアカウントの有効なセッションが無効になります。この端末もログイン画面へ戻ります。",
+      "confirm": "すべての端末からログアウト"
     }
   },
   "openAPIPage": {
@@ -655,7 +660,8 @@
       "description": "米ドル金額を入力",
       "amount": "チャージ金額",
       "amountAria": "チャージする米ドル金額",
-      "confirm": "チャージ"
+      "confirm": "チャージ",
+      "currentBalance": "現在の残高: {value}"
     },
     "redemption": {
       "open": "引き換え",

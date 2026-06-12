@@ -1,80 +1,54 @@
 {
   "title": "ログ",
   "centerTitle": "ログセンター",
-  "audit": "監査ログ",
-  "usage": "利用ログ",
-  "system": "システムイベント",
-  "tabs": {
-    "audit": "監査",
-    "usage": "利用ログ",
-    "auth": "認証ログ",
-    "system": "システムイベント"
-  },
-  "toast": {
-    "sessionExpired": "ログイン状態が失効しました",
-    "signInAgain": "続行するには再度ログインしてください。",
-    "auditLoadFailed": "監査ログの読み込みに失敗しました",
-    "authLoadFailed": "認証ログの読み込みに失敗しました",
-    "systemLoadFailed": "システムイベントの読み込みに失敗しました",
-    "usageLoadFailed": "利用ログの読み込みに失敗しました",
-    "modelFilterLoadFailed": "モデルフィルターの読み込みに失敗しました"
-  },
-  "sort": {
-    "idDesc": "ID 新しい順",
-    "idAsc": "ID 古い順",
-    "createdDesc": "作成日時 新しい順",
-    "createdAsc": "作成日時 古い順",
-    "occurredDesc": "発生日時 新しい順",
-    "occurredAsc": "発生日時 古い順",
-    "callTimeDesc": "呼び出し日時 新しい順",
-    "callTimeAsc": "呼び出し日時 古い順",
-    "costDesc": "費用 高い順",
-    "tokensDesc": "Token 多い順",
-    "latencyDesc": "レイテンシ 高い順"
-  },
-  "filters": {
-    "allResources": "すべて",
-    "allActions": "すべて",
-    "allSources": "すべて",
-    "allEvents": "すべて",
-    "allResults": "すべて",
-    "allLevels": "すべて",
-    "timeRange": "期間",
-    "levels": {
-      "info": "情報",
-      "warn": "警告",
-      "error": "エラー"
-    }
-  },
-  "columns": {
-    "actor": "操作者",
-    "action": "操作",
-    "resource": "リソース",
-    "time": "時間",
-    "requestID": "リクエスト ID",
-    "user": "ユーザー",
-    "event": "イベント",
-    "result": "結果",
-    "reason": "理由",
-    "level": "レベル",
-    "source": "ソース",
-    "message": "メッセージ",
-    "caller": "呼び出し元",
-    "model": "モデル",
-    "billing": "課金",
-    "latency": "レイテンシ"
-  },
   "audit": {
     "searchPlaceholder": "ユーザー ID、操作、リソース、リクエスト ID、IP、詳細を検索",
-    "empty": "監査ログはありません"
-  },
-  "auth": {
-    "searchPlaceholder": "ユーザー ID またはイベント種別を検索",
-    "empty": "認証ログはありません"
-  },
-  "system": {
-    "searchPlaceholder": "ソース、イベント、リソース、リクエスト ID、詳細を検索",
-    "empty": "システムイベントはありません"
+    "empty": "監査ログはありません",
+    "resources": {
+      "user": "ユーザーとアカウント",
+      "conversation": "会話",
+      "conversation_project": "プロジェクト",
+      "message": "メッセージ",
+      "file": "ファイル",
+      "memory": "メモリ",
+      "settings": "システム設定"
+    },
+    "actions": {
+      "login": "ログイン",
+      "stream_message": "メッセージ送信",
+      "create_conversation": "会話を作成",
+      "rename_conversation": "会話名を変更",
+      "export_conversation": "会話をエクスポート",
+      "delete_conversation": "会話を削除",
+      "set_conversation_star": "会話をお気に入りに設定",
+      "set_conversation_archive": "会話をアーカイブ",
+      "set_conversation_project": "会話をプロジェクトへ移動",
+      "batch_set_conversation_project": "会話を一括移動",
+      "create_conversation_project": "プロジェクトを作成",
+      "update_conversation_project": "プロジェクトを更新",
+      "delete_conversation_project": "プロジェクトを削除",
+      "reorder_conversation_projects": "プロジェクトを並べ替え",
+      "create_conversation_share": "共有を作成",
+      "regenerate_conversation_share": "共有を再生成",
+      "revoke_conversation_share": "共有を取り消し",
+      "revoke_conversation_shares": "共有を一括取り消し",
+      "clone_shared_conversation": "共有会話を複製",
+      "update_message": "メッセージを更新",
+      "set_message_feedback": "メッセージを評価",
+      "upload_file": "ファイルをアップロード",
+      "update_file": "ファイルを更新",
+      "delete_file": "ファイルを削除",
+      "upsert_user_memory": "メモリを保存",
+      "delete_user_memory": "メモリを削除",
+      "settings_update": "システム設定を更新",
+      "admin_create_user": "管理者がユーザーを作成",
+      "admin_patch_user": "管理者がユーザーを更新",
+      "admin_update_user_status": "管理者がユーザー状態を更新",
+      "admin_revoke_user_sessions": "管理者がセッションを無効化",
+      "admin_reset_user_password": "管理者がパスワードをリセット",
+      "admin_reset_user_2fa": "管理者が二段階認証をリセット",
+      "admin_delete_user": "管理者がユーザーを削除"
+    }
   },
   "usage": {
     "searchPlaceholder": "ユーザー ID、プラットフォームモデル、上流モデル、上流名、バインドコード、プロトコルを検索",
@@ -138,18 +112,105 @@
       }
     }
   },
+  "system": {
+    "searchPlaceholder": "ソース、イベント、リソース、リクエスト ID、詳細を検索",
+    "empty": "システムイベントはありません"
+  },
+  "tabs": {
+    "audit": "監査",
+    "usage": "利用ログ",
+    "auth": "認証ログ",
+    "system": "システムイベント",
+    "orders": "注文記録",
+    "conversation": "会話イベント"
+  },
+  "toast": {
+    "sessionExpired": "ログイン状態が失効しました",
+    "signInAgain": "続行するには再度ログインしてください。",
+    "auditLoadFailed": "監査ログの読み込みに失敗しました",
+    "authLoadFailed": "認証ログの読み込みに失敗しました",
+    "systemLoadFailed": "システムイベントの読み込みに失敗しました",
+    "usageLoadFailed": "利用ログの読み込みに失敗しました",
+    "modelFilterLoadFailed": "モデルフィルターの読み込みに失敗しました",
+    "ordersLoadFailed": "注文記録の読み込みに失敗しました",
+    "conversationEventsLoadFailed": "会話イベントの読み込みに失敗しました"
+  },
+  "sort": {
+    "idDesc": "ID 新しい順",
+    "idAsc": "ID 古い順",
+    "createdDesc": "作成日時 新しい順",
+    "createdAsc": "作成日時 古い順",
+    "occurredDesc": "発生日時 新しい順",
+    "occurredAsc": "発生日時 古い順",
+    "callTimeDesc": "呼び出し日時 新しい順",
+    "callTimeAsc": "呼び出し日時 古い順",
+    "costDesc": "費用 高い順",
+    "tokensDesc": "Token 多い順",
+    "latencyDesc": "レイテンシ 高い順",
+    "paidDesc": "支払日時 新しい順",
+    "amountDesc": "金額 高い順",
+    "sequenceAsc": "イベント順序 古い順"
+  },
+  "filters": {
+    "allResources": "すべて",
+    "allActions": "すべて",
+    "allSources": "すべて",
+    "allEvents": "すべて",
+    "allResults": "すべて",
+    "allLevels": "すべて",
+    "timeRange": "期間",
+    "levels": {
+      "info": "情報",
+      "warn": "警告",
+      "error": "エラー"
+    }
+  },
+  "columns": {
+    "actor": "操作者",
+    "action": "操作",
+    "resource": "リソース",
+    "time": "時間",
+    "requestID": "リクエスト ID",
+    "user": "ユーザー",
+    "event": "イベント",
+    "result": "結果",
+    "reason": "理由",
+    "level": "レベル",
+    "source": "ソース",
+    "message": "メッセージ",
+    "caller": "呼び出し元",
+    "model": "モデル",
+    "billing": "課金",
+    "latency": "レイテンシ",
+    "orderNo": "注文番号",
+    "type": "種別",
+    "provider": "プロバイダー",
+    "status": "状態",
+    "amount": "金額",
+    "scope": "スコープ",
+    "tool": "ツール",
+    "runID": "実行 ID"
+  },
+  "auth": {
+    "searchPlaceholder": "ユーザー ID またはイベント種別を検索",
+    "empty": "認証ログはありません"
+  },
   "detail": {
     "titles": {
       "audit": "監査ログ詳細",
       "auth": "認証ログ詳細",
       "usage": "利用ログ詳細",
-      "system": "システムイベント詳細"
+      "system": "システムイベント詳細",
+      "order": "注文記録詳細",
+      "conversation": "会話イベント詳細"
     },
     "fallbacks": {
       "authEvent": "認証イベント",
       "modelCall": "モデル呼び出し",
       "systemEvent": "システムイベント",
-      "auditEvent": "監査イベント"
+      "auditEvent": "監査イベント",
+      "order": "注文記録",
+      "conversationEvent": "会話イベント"
     },
     "blocks": {
       "event": "イベント",
@@ -159,7 +220,11 @@
       "resource": "リソース",
       "call": "呼び出し",
       "modelRoute": "モデルルート",
-      "usageBilling": "利用量課金"
+      "usageBilling": "利用量課金",
+      "order": "注文",
+      "payment": "支払い",
+      "conversationEvent": "会話イベント",
+      "tool": "ツール"
     },
     "fields": {
       "action": "操作",
@@ -188,7 +253,26 @@
       "totalTokens": "合計 Token",
       "reasoning": "推理",
       "callCount": "呼び出し回数",
-      "latency": "レイテンシ"
+      "latency": "レイテンシ",
+      "orderNo": "注文番号",
+      "orderType": "注文種別",
+      "provider": "プロバイダー",
+      "status": "状態",
+      "paidAt": "支払日時",
+      "amount": "金額",
+      "credit": "クレジット",
+      "interval": "期間",
+      "externalPaymentID": "外部支払い ID",
+      "externalCheckoutID": "外部チェックアウト ID",
+      "runID": "実行 ID",
+      "eventScope": "イベントスコープ",
+      "stage": "ステージ",
+      "seq": "順序",
+      "messageID": "メッセージ ID",
+      "toolName": "ツール名",
+      "toolCallID": "ツール呼び出し ID",
+      "title": "タイトル",
+      "summary": "概要"
     },
     "result": {
       "success": "成功",
@@ -197,6 +281,47 @@
     },
     "jsonTitle": "詳細 JSON",
     "copied": "{label}をコピーしました",
-    "copyFailed": "コピーに失敗しました"
+    "copyFailed": "コピーに失敗しました",
+    "rawUsageJsonTitle": "Raw Usage JSON"
+  },
+  "orders": {
+    "searchPlaceholder": "ユーザー ID、注文番号、プロバイダー、状態、外部支払い ID を検索",
+    "empty": "注文記録はありません",
+    "filters": {
+      "all": "すべて",
+      "orderType": "注文種別",
+      "provider": "プロバイダー",
+      "status": "支払い状態"
+    },
+    "types": {
+      "subscription": "サブスクリプション",
+      "topup": "チャージ"
+    },
+    "status": {
+      "pending": "処理待ち",
+      "paid": "支払済み",
+      "expired": "期限切れ",
+      "failed": "失敗"
+    }
+  },
+  "conversation": {
+    "searchPlaceholder": "ユーザー ID、実行 ID、イベント、ステージ、タイトル、ツール名を検索",
+    "empty": "会話イベントはありません",
+    "filters": {
+      "all": "すべて",
+      "scope": "スコープ",
+      "eventType": "イベント種別",
+      "status": "状態"
+    },
+    "scopes": {
+      "trace_block": "トレースブロック",
+      "trace_event": "トレースイベント",
+      "tool_call": "ツール呼び出し"
+    },
+    "status": {
+      "streaming": "ストリーミング中",
+      "completed": "完了",
+      "error": "エラー"
+    }
   }
 }

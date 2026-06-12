@@ -108,7 +108,8 @@
       "description": "外部サイトへ移動します。リンク先を確認してください。",
       "linkAddress": "リンク先",
       "copy": "リンクをコピー",
-      "copied": "リンクをコピーしました"
+      "copied": "リンクをコピーしました",
+      "copyFailed": "リンクのコピーに失敗しました"
     },
     "codeBlock": {
       "collapse": "折りたたむ",
@@ -184,7 +185,9 @@
     "memoryNamePlaceholder": "好みの名前（例: 返信スタイル）",
     "memoryValuePlaceholder": "好みの内容（例: 簡潔な日本語で返信してください）",
     "savingPreference": "保存中...",
-    "savePreference": "好みを保存"
+    "savePreference": "好みを保存",
+    "expandUserMessage": "展開",
+    "collapseUserMessage": "折りたたむ"
   },
   "loadError": {
     "title": "会話の読み込みに失敗しました",
@@ -411,6 +414,26 @@
       "openai": "OpenAI ネイティブツール",
       "claude": "Claude ネイティブツール",
       "google": "Google ネイティブツール"
+    },
+    "inputPlaceholder": "メッセージを入力、または @ でモデル・ファイル・ツールを追加",
+    "voiceListeningPlaceholder": "音声を入力中…",
+    "defaultMCPToolsSaved": "既定の MCP ツールを保存しました",
+    "defaultMCPToolsSaveFailed": "既定の MCP ツールの保存に失敗しました",
+    "sessionExpired": "セッションの有効期限が切れました。再度ログインしてください。",
+    "mcpExpandServerTools": "{server} のツールを展開",
+    "mcpCollapseServerTools": "{server} のツールを折りたたむ",
+    "mcpToggleTool": "{tool} を選択",
+    "mcpSetDefaultTool": "新しいチャットで {tool} を既定で使用",
+    "mcpUnsetDefaultTool": "新しいチャットで {tool} を既定使用しない",
+    "mcpDefaultToolEnabled": "新しいチャットで既定で有効",
+    "mcpDefaultToolDisabled": "新しいチャットの既定ツールに設定",
+    "mention": {
+      "fileFallback": "ファイル",
+      "sections": {
+        "file": "ファイル",
+        "tool": "MCP",
+        "model": "モデル"
+      }
     }
   },
   "modelPicker": {
@@ -441,7 +464,8 @@
     "perCall": "1 回あたり",
     "perSecond": "1 秒あたり",
     "callUnit": "回",
-    "secondUnit": "秒"
+    "secondUnit": "秒",
+    "empty": "利用可能なモデルはありません"
   },
   "shareDialog": {
     "title": "この会話を共有",
@@ -476,7 +500,15 @@
       "retrieval": "検索",
       "fullContext": "全文",
       "skipped": "未採用",
-      "file": "ファイル"
+      "file": "ファイル",
+      "descriptions": {
+        "directRead": "画像などのファイルを視覚コンテキストとして直接送信しました。",
+        "budget": "ファイルが全文コンテキスト予算内のため、抽出テキストをこのターンに含めました。",
+        "retrieval": "RAG 検索を使用し、関連する断片のみをこのターンに含めました。",
+        "fullContext": "抽出した全文をこのターンに含めました。",
+        "skipped": "予算超過または利用可能な抽出テキストがないため、このターンには含めませんでした。",
+        "file": "このファイルは今回のコンテキスト処理に使用されました。"
+      }
     },
     "rag": {
       "sourceFallback": "断片ソース {fileID}",

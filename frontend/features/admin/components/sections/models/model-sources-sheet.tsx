@@ -508,7 +508,7 @@ export function UpstreamSourcesSheet({
     } finally {
       setBindPending(false);
     }
-  }, [bindForm, bindPending, loadSources, model, onRefreshModel, toastT]);
+  }, [bindForm, bindPending, loadSources, model, onRefreshModel, pageSize, toastT]);
 
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const virtualRows = useVirtualTableRows(sources, {

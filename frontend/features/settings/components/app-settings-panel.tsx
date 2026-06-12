@@ -4,9 +4,11 @@ import { SettingsSidebar } from "@/features/settings/components/settings-sidebar
 
 export function AppSettingsPanel({
   children,
+  activeSection,
   basePath = "/setting",
 }: {
   children: ReactNode;
+  activeSection?: string;
   basePath?: string;
 }) {
   const wideContent = activeSection === "account" || activeSection === "subscription" || activeSection === "openapi";

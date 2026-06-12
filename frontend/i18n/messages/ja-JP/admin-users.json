@@ -258,6 +258,7 @@
     "bulkBalancePartialFailed": "一部の残高一括設定に失敗しました",
     "bulkBalanceFailed": "残高の一括設定に失敗しました",
     "bulkBalanceUpdated": "{count} 人のユーザー残高を更新しました",
-    "bulkBalanceAdjustmentDescription": "管理者がユーザー管理で残高を一括設定"
+    "bulkBalanceAdjustmentDescription": "管理者がユーザー管理で残高を一括設定",
+    "bulkDeleting": "ユーザーを削除中"
   }
 }

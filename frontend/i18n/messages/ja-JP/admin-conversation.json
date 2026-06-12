@@ -1,7 +1,8 @@
 {
   "sections": {
     "conversation": "会話設定",
-    "optionPassthrough": "パラメーター透過"
+    "optionPassthrough": "パラメーター透過",
+    "contextCompression": "コンテキスト圧縮"
   },
   "taskModel": {
     "follow": "現在のモデルに従う"
@@ -50,7 +51,70 @@
       "label": "ラベル生成プロンプト",
       "description": "モデルは JSON: '{' \"labels\": [\"ラベル1\", \"ラベル2\"] '}' を返す必要があります。'{{MESSAGES}}' プレースホルダーに対応しています。"
     },
-    "defaultPromptPlaceholder": "空欄の場合は組み込みの既定プロンプトを使用します"
+    "defaultPromptPlaceholder": "空欄の場合は組み込みの既定プロンプトを使用します",
+    "contextCompactEnabled": {
+      "label": "コンテキスト圧縮",
+      "description": "コンテキスト圧縮を全体で許可します。ユーザーは各自のチャット設定で無効にできます。"
+    },
+    "contextTokenBudget": {
+      "label": "Token 予算による切り詰め",
+      "description": "現在のモデルのコンテキスト上限から予算を自動計算し、送信する履歴を調整します。"
+    },
+    "contextMaxTurns": {
+      "label": "圧縮を開始するターン数",
+      "description": "会話がこのターン数を超えたときにコンテキスト圧縮を開始します。0 で無効になります。",
+      "placeholder": "開始ターン数"
+    },
+    "contextCompactTriggerTokens": {
+      "label": "圧縮 Token しきい値",
+      "description": "累積メッセージ Token がこの値を超えたときにコンテキスト圧縮を開始します。0 で無効になります。",
+      "placeholder": "Token しきい値"
+    },
+    "contextCompactPreserveTurns": {
+      "label": "保持する直近ターン数",
+      "description": "圧縮時に元のまま保持する直近ターン数です。それ以前の内容は要約されます。",
+      "placeholder": "保持ターン数"
+    },
+    "contextCompactHighlightsPerRole": {
+      "label": "ロールごとの要点数",
+      "description": "テンプレート圧縮でユーザーとアシスタントの各ロールに保持する要点の上限です。",
+      "placeholder": "要点数"
+    },
+    "contextCompactSnippetChars": {
+      "label": "抜粋文字数上限",
+      "description": "テンプレート圧縮で1件のメッセージ抜粋に保持する最大文字数です。",
+      "placeholder": "文字数上限"
+    },
+    "contextArtifactRetentionDays": {
+      "label": "証拠データ保持日数",
+      "description": "RAG 結果、履歴証拠、ツール結果などのコンテキスト証拠を保持する日数です。0 で自動期限切れを無効にします。",
+      "placeholder": "保持日数"
+    },
+    "compactAsync": {
+      "label": "バックグラウンド圧縮",
+      "description": "現在の返信後にテンプレートまたは LLM 圧縮を実行し、返信処理の待ち時間を減らします。"
+    },
+    "compactLLM": {
+      "label": "LLM 圧縮",
+      "description": "モデルを呼び出して意味的な要約を生成します。オフの場合はテンプレート要約のみを使用します。"
+    },
+    "compactTaskModel": {
+      "label": "圧縮モデル",
+      "description": "圧縮要約の生成に使用するモデルです。「現在のモデルに従う」で会話モデルが非対応の場合は既定チャットモデルを使用します。"
+    },
+    "compactMaxFailures": {
+      "label": "サーキットしきい値",
+      "description": "LLM 圧縮の連続失敗回数のしきい値です。到達後はテンプレート要約へ切り替えます。",
+      "placeholder": "サーキットしきい値"
+    },
+    "compactSystemPrompt": {
+      "label": "完全要約プロンプト",
+      "description": "完全圧縮時に LLM へ送るカスタム指示です。空欄の場合は組み込みの既定値を使用します。"
+    },
+    "compactLightPrompt": {
+      "label": "軽量要約プロンプト",
+      "description": "軽量圧縮時に LLM へ送るカスタム指示です。空欄の場合は組み込みの既定値を使用します。"
+    }
   },
   "preview": {
     "title": "リアルタイムプレビュー",

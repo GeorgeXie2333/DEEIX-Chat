@@ -3,7 +3,7 @@ import { AdminOpenAPISettingsPage } from "@/features/admin/components/sections/o
 
 export default function AdminOpenAPISettingsRoute() {
   return (
-    <AdminShell activeSection="open-api" basePath="/admin">
+    <AdminShell basePath="/admin">
       <AdminOpenAPISettingsPage />
     </AdminShell>
   );
