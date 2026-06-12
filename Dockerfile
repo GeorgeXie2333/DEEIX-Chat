@@ -15,6 +15,10 @@ COPY scripts /src/scripts
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 COPY frontend/scripts ./scripts
 COPY frontend/public/pwa ./public/pwa
+COPY frontend/public/logo.svg ./public/logo.svg
+COPY frontend/public/logo-color.svg ./public/logo-color.svg
+COPY frontend/public/logo-black.svg ./public/logo-black.svg
+COPY frontend/public/logo-white.svg ./public/logo-white.svg
 COPY frontend/public/sw.js ./public/sw.js
 
 RUN corepack enable
