@@ -1,12 +1,15 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
+import { AnimatePresence, motion } from "motion/react";
 import {
   Check,
   ChevronLeft,
   ChevronRight,
   Code2,
+  FileText,
   Globe2,
   Image as ImageIcon,
   ImageOff,
@@ -17,21 +20,29 @@ import {
   Wrench,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 
 import { AudioLines } from "@/components/animate-ui/icons/audio-lines";
 import { Blocks } from "@/components/animate-ui/icons/blocks";
 import { Pause } from "@/components/animate-ui/icons/pause";
-import { Plus } from "@/components/animate-ui/icons/plus";
 import { Send } from "@/components/animate-ui/icons/send";
 import { Link as LinkIcon } from "@/components/animate-ui/icons/link";
 import { Crop } from "@/components/animate-ui/icons/crop";
 import { X as XIcon } from "@/components/animate-ui/icons/x";
+import { PlusIcon } from "@/components/ui/plus";
 import type {
   ChatModelOption,
   PendingAttachment,
   UploadingAttachment,
 } from "@/features/chat/types/chat-runtime";
 import { useSpeechInput } from "@/features/chat/hooks/use-speech-input";
+import {
+  useChatMentionMenu,
+  type ChatMentionMenuItem,
+  type ChatMentionMenuKind,
+  type ChatMentionMenuLayout,
+  type ChatMentionMenuSection,
+} from "@/features/chat/hooks/use-chat-mention-menu";
 import { ChatModelPicker } from "@/features/chat/components/sections/chat-model-picker";
 import { ChatModelConfig } from "@/features/chat/components/sections/chat-model-config";
 import { formatBytes, resolveFileIcon } from "@/features/files/utils/file-display";
@@ -57,7 +68,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { resolveFileProcessingBadge, resolveFileProcessingToneClass } from "@/shared/lib/file-processing";
 import { cn } from "@/lib/utils";
+import { LobeHubIcon } from "@/shared/components/lobehub-icon";
+import { resolveLobeHubIconURL, resolveModelIdentity } from "@/shared/lib/model-identity";
 import type { ConversationOptions } from "@/shared/api/conversation.types";
+import type { FileObjectDTO } from "@/shared/api/file.types";
 import type { MCPToolDTO } from "@/shared/api/mcp.types";
 import { isNativeToolTypeAllowed, type ModelOptionPolicy } from "@/shared/lib/model-option-policy";
 import type { SendShortcut } from "@/features/settings/types/settings";
@@ -84,6 +98,7 @@ type ChatInputProps = {
   selectedPlatformModelName: string;
   availableTools: MCPToolDTO[];
   selectedToolIDs: number[];
+  defaultToolIDs: number[];
   htmlVisualPromptEnabled: boolean;
   maxSelectedTools: number;
   toolsLoading: boolean;
@@ -94,11 +109,14 @@ type ChatInputProps = {
   modelDisabled?: boolean;
   onDraftChange: (value: string) => void;
   onModelChange: (platformModelName: string) => void;
+  onModelCatalogRefresh?: () => void | Promise<void>;
   onSelectedToolsChange: (toolIDs: number[]) => void;
+  onDefaultToolsChange: (toolIDs: number[]) => void | Promise<void>;
   onHTMLVisualPromptChange: (enabled: boolean) => void;
   onOptionsChange: React.Dispatch<React.SetStateAction<ConversationOptions>>;
   onOptionsReset: (defaults?: ConversationOptions) => void;
   onOptionsDefaultRestore: () => Promise<ConversationOptions | null>;
+  onAttachExistingFile: (file: FileObjectDTO) => void | Promise<void>;
   onUploadFiles: (files: File[]) => void | Promise<void>;
   onCaptureScreenshot: () => void | Promise<void>;
   onRemoveAttachment: (fileID: string) => void;
@@ -167,6 +185,71 @@ function CompactToolMenuItem({
   );
 }
 
+function MentionMenuItem({
+  item,
+  active,
+  onSelect,
+}: {
+  item: ChatMentionMenuItem;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  const platformModelName = item.kind === "model" ? item.model.platformModelName.trim() : "";
+  const identity = React.useMemo(() => {
+    if (item.kind !== "model") {
+      return null;
+    }
+    return resolveModelIdentity({
+      code: item.model.platformModelName,
+      vendor: item.model.vendor,
+      icon: item.model.icon,
+    });
+  }, [item]);
+  const iconURL = React.useMemo(() => identity ? resolveLobeHubIconURL(identity.modelIcon) : "", [identity]);
+
+  return (
+    <button
+      type="button"
+      role="option"
+      aria-selected={active}
+      data-active={active}
+      className="flex h-8 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-[11px] font-medium text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
+      onMouseDown={(event) => {
+        event.preventDefault();
+        onSelect();
+      }}
+    >
+      {item.kind === "model" ? (
+        <LobeHubIcon iconUrl={iconURL} label={platformModelName} />
+      ) : item.kind === "file" ? (
+        <span className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
+          <FileText className="size-3.5" strokeWidth={1.7} />
+        </span>
+      ) : (
+        <span className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
+          <Wrench className="size-3.5" strokeWidth={1.7} />
+        </span>
+      )}
+      <span className="flex min-w-0 flex-1 items-baseline gap-2 overflow-hidden">
+        <span
+          className={cn(
+            "text-foreground/90",
+            item.kind === "tool" ? "shrink-0 whitespace-nowrap" : "min-w-0 truncate",
+          )}
+        >
+          {item.label}
+        </span>
+        {item.description ? (
+          <span className="min-w-0 truncate font-normal text-muted-foreground/80">{item.description}</span>
+        ) : null}
+      </span>
+      <span className="flex size-3.5 shrink-0 items-center justify-center">
+        {item.selected ? <Check className="size-3.5 text-current" strokeWidth={1.8} /> : null}
+      </span>
+    </button>
+  );
+}
+
 function nativeToolIcon(tool: NativeToolOption, hovered: boolean): React.ReactNode {
   const iconClassName = cn(
     "size-3.5 transition-transform duration-200 ease-out",
@@ -197,6 +280,58 @@ function nativeToolIcon(tool: NativeToolOption, hovered: boolean): React.ReactNo
     return <Search className={iconClassName} strokeWidth={1.6} />;
   }
   return <Globe2 className={iconClassName} strokeWidth={1.6} />;
+}
+
+const MentionMenuContent = React.memo(function MentionMenuContent({
+  activeIndex,
+  sectionOffsets,
+  sections,
+  t,
+  onSelect,
+}: {
+  activeIndex: number;
+  sectionOffsets: Map<ChatMentionMenuKind, number>;
+  sections: ChatMentionMenuSection[];
+  t: (key: string) => string;
+  onSelect: (item: ChatMentionMenuItem) => void;
+}) {
+  return (
+    <>
+      {sections.map((section) => {
+        const sectionOffset = sectionOffsets.get(section.kind) ?? 0;
+        return (
+          <div key={section.kind} className="space-y-0.5">
+            <div className="px-2 pb-1 pt-1.5 text-[11px] font-semibold text-muted-foreground">
+              {t(`mention.sections.${section.kind}`)}
+            </div>
+            {section.items.map((item, index) => (
+              <MentionMenuItem
+                key={item.id}
+                item={item}
+                active={sectionOffset + index === activeIndex}
+                onSelect={() => onSelect(item)}
+              />
+            ))}
+          </div>
+        );
+      })}
+    </>
+  );
+});
+
+function resolveMentionMenuMotionStyle(layout: ChatMentionMenuLayout | null): React.CSSProperties | undefined {
+  if (!layout) {
+    return undefined;
+  }
+  return {
+    bottom: layout.bottom,
+    left: layout.left,
+    top: layout.top,
+    width: layout.width,
+    contain: "layout paint",
+    transformOrigin: layout.placement === "bottom" ? "top center" : "bottom center",
+    willChange: "height, opacity, transform",
+  };
 }
 
 function resolveComposerModeIndicator(
@@ -292,6 +427,7 @@ function ChatInputComponent({
   selectedPlatformModelName,
   availableTools,
   selectedToolIDs,
+  defaultToolIDs,
   htmlVisualPromptEnabled,
   maxSelectedTools,
   toolsLoading,
@@ -302,11 +438,14 @@ function ChatInputComponent({
   modelDisabled = false,
   onDraftChange,
   onModelChange,
+  onModelCatalogRefresh,
   onSelectedToolsChange,
+  onDefaultToolsChange,
   onHTMLVisualPromptChange,
   onOptionsChange,
   onOptionsReset,
   onOptionsDefaultRestore,
+  onAttachExistingFile,
   onUploadFiles,
   onCaptureScreenshot,
   onRemoveAttachment,
@@ -318,15 +457,21 @@ function ChatInputComponent({
   const tNativeToolLabels = useTranslations("chat.nativeToolLabels");
   const tNativeToolDescriptions = useTranslations("chat.nativeToolDescriptions");
   const tFileStatus = useTranslations("files.status");
-  const [isPlusHovered, setIsPlusHovered] = React.useState(false);
   const [isBlocksHovered, setIsBlocksHovered] = React.useState(false);
   const [isVoiceHovered, setIsVoiceHovered] = React.useState(false);
-  const speechInput = useSpeechInput({ draft, onDraftChange });
+  const speechInput = useSpeechInput({
+    draft,
+    listeningPlaceholder: tComposer("voiceListeningPlaceholder"),
+    onDraftChange,
+    placeholder: tComposer("inputPlaceholder"),
+  });
   const [toolsMenuOpen, setToolsMenuOpen] = React.useState(false);
   const [toolsMenuView, setToolsMenuView] = React.useState<ToolMenuView>("main");
   const [ragWarnDismissed, setRagWarnDismissed] = React.useState(false);
   const [previewAttachment, setPreviewAttachment] = React.useState<PendingAttachment | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const inputGroupRef = React.useRef<HTMLDivElement | null>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
   const composingRef = React.useRef(false);
   const hasDraftText = draft.trim().length > 0;
   const canSend = (draft.trim().length > 0 || attachments.length > 0) && !sending && !loading && !uploading;
@@ -384,6 +529,58 @@ function ChatInputComponent({
       setToolsMenuView("main");
     }
   }, []);
+  const {
+    activeIndex: mentionActiveIndex,
+    handleBlur: handleMentionBlur,
+    handleChange: handleMentionChange,
+    handleFocus: handleMentionFocus,
+    handleKeyDown: handleMentionKeyDown,
+    menuID: mentionMenuID,
+    menuLayout: mentionMenuLayout,
+    menuRef: mentionMenuRef,
+    menuReady: mentionMenuReady,
+    open: showMentionMenu,
+    sections: mentionSections,
+    select: selectMentionItem,
+  } = useChatMentionMenu({
+    attachments,
+    availableTools,
+    defaultFileLabel: tComposer("mention.fileFallback"),
+    disabled: sending || loading || uploading || modelLoading || modelDisabled,
+    draft,
+    maxSelectedTools,
+    modelOptions,
+    selectedPlatformModelName,
+    selectedToolIDs,
+    anchorRef: inputGroupRef,
+    textareaRef,
+    toolsDisabled: isMediaMode,
+    onDraftChange,
+    onFileSelect: onAttachExistingFile,
+    onModelCatalogRefresh,
+    onModelChange,
+    onSelectedToolsChange,
+    onToolLimitReached: () => {
+      toast.error(tComposer("mcpToolLimitTitle"), {
+        description: tComposer("mcpToolLimitDescription", { limit: maxSelectedTools }),
+      });
+    },
+  });
+  const mentionSectionOffsets = React.useMemo(() => {
+    const offsets = new Map<ChatMentionMenuKind, number>();
+    let offset = 0;
+    for (const section of mentionSections) {
+      offsets.set(section.kind, offset);
+      offset += section.items.length;
+    }
+    return offsets;
+  }, [mentionSections]);
+  const mentionMenuMotionStyle = React.useMemo(
+    () => resolveMentionMenuMotionStyle(mentionMenuLayout),
+    [mentionMenuLayout],
+  );
+  const mentionMenuHeight = mentionMenuLayout?.height ?? 0;
+  const shouldRenderMentionMenu = showMentionMenu && mentionMenuReady && mentionMenuMotionStyle !== undefined;
   const onSelectUploadTool = React.useCallback(() => {
     setToolsMenuOpen(false);
     setToolsMenuView("main");
@@ -420,6 +617,7 @@ function ChatInputComponent({
       />
 
       <InputGroup
+        ref={inputGroupRef}
         className={cn(
           "bg-pure rounded-3xl border-[0.5px] border-border/70 shadow-xs has-[[data-slot=input-group-control]:focus-visible]:ring-0 has-[[data-slot=input-group-control]:focus-visible]:border-border",
         )}
@@ -445,7 +643,7 @@ function ChatInputComponent({
                 {attachments.map((item) => (
                   <div
                     key={item.fileID}
-                    className="bg-pure group relative flex h-14 w-full shrink-0 items-center gap-1.5 rounded-lg border border-border/50 bg-background/95 px-2 text-left shadow-[0_1px_2px_rgba(0,0,0,0.025)] transition-colors hover:border-border hover:bg-accent/30 sm:w-[228px] sm:px-2.5"
+                    className="group relative flex h-14 w-full shrink-0 items-center gap-1.5 rounded-lg bg-muted/35 px-2 text-left transition-colors hover:bg-muted/50 dark:bg-white/[0.06] dark:hover:bg-white/[0.09] sm:w-[228px] sm:px-2.5"
                   >
                     <button
                       type="button"
@@ -505,7 +703,7 @@ function ChatInputComponent({
                 {uploadingAttachments.map((item) => (
                   <div
                     key={item.tempID}
-                    className="bg-pure relative flex h-14 w-full shrink-0 items-center gap-2.5 rounded-lg border border-border/50 bg-background/95 px-2.5 sm:w-[228px]"
+                    className="relative flex h-14 w-full shrink-0 items-center gap-2.5 rounded-lg bg-muted/35 px-2.5 dark:bg-white/[0.06] sm:w-[228px]"
                     aria-label={tComposer("uploadingAttachment", { name: item.fileName })}
                   >
                     <Skeleton className="size-5 shrink-0 rounded-sm" />
@@ -530,19 +728,69 @@ function ChatInputComponent({
           </div>
         ) : null}
 
+        {typeof document !== "undefined" ? createPortal(
+          <AnimatePresence initial={false}>
+            {shouldRenderMentionMenu ? (
+              <motion.div
+                ref={mentionMenuRef}
+                id={mentionMenuID}
+                key="chat-mention-menu"
+                role="listbox"
+                className="bg-pure fixed z-[60] overflow-hidden rounded-xl border-[0.5px] border-border/70 text-popover-foreground shadow-xs"
+                style={mentionMenuMotionStyle}
+                initial={{
+                  height: Math.min(mentionMenuHeight, 12),
+                  opacity: 0,
+                  scale: 0.99,
+                  y: mentionMenuLayout?.placement === "top" ? 4 : -4,
+                }}
+                animate={{ height: mentionMenuHeight, opacity: 1, scale: 1, y: 0 }}
+                exit={{
+                  height: Math.min(mentionMenuHeight, 12),
+                  opacity: 0,
+                  scale: 0.99,
+                  y: mentionMenuLayout?.placement === "top" ? 4 : -4,
+                }}
+                transition={{
+                  height: { type: "spring", stiffness: 520, damping: 42, mass: 0.75 },
+                  opacity: { duration: 0.1, ease: "easeOut" },
+                  scale: { duration: 0.12, ease: "easeOut" },
+                  y: { duration: 0.12, ease: "easeOut" },
+                }}
+              >
+                <div data-mention-menu-scroll className="h-full overflow-y-auto p-1.5">
+                  <MentionMenuContent
+                    activeIndex={mentionActiveIndex}
+                    sectionOffsets={mentionSectionOffsets}
+                    sections={mentionSections}
+                    t={tComposer}
+                    onSelect={selectMentionItem}
+                  />
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>,
+          document.body,
+        ) : null}
+
         <InputGroupTextarea
+          ref={textareaRef}
           value={draft}
           disabled={sending || loading || uploading}
           readOnly={speechInput.active}
           placeholder={speechInput.placeholder}
           rows={1}
+          aria-controls={showMentionMenu ? mentionMenuID : undefined}
+          aria-expanded={showMentionMenu ? true : undefined}
           style={{ fontFamily: "var(--font-chat)", fontWeight: "var(--font-chat-weight)" }}
           className={cn(
             "rounded-3xl min-h-12 overflow-y-auto px-5 pt-4 text-[15px] leading-6 placeholder:text-muted-foreground placeholder:font-[inherit] placeholder:leading-[inherit]",
             inputHeightClassName,
             speechInput.active ? "placeholder:font-normal placeholder:text-muted-foreground" : "",
           )}
-          onChange={(event) => onDraftChange(event.target.value)}
+          onFocus={handleMentionFocus}
+          onBlur={handleMentionBlur}
+          onChange={(event) => handleMentionChange(event.target.value)}
           onPaste={(event) => {
             const files = clipboardFilesFromPaste(event);
             if (files.length === 0) {
@@ -565,6 +813,10 @@ function ChatInputComponent({
             }
             const shouldSend = isSendShortcutEvent(sendShortcut, event);
 
+            if (handleMentionKeyDown(event)) {
+              return;
+            }
+
             if (shouldSend) {
               event.preventDefault();
               if (canSend) {
@@ -586,13 +838,10 @@ function ChatInputComponent({
                   className="relative size-7 rounded-md text-muted-foreground hover:text-foreground sm:size-8"
                   disabled={sending || loading || uploading}
                   aria-label={tComposer("openTools")}
-                  onMouseEnter={() => setIsPlusHovered(true)}
-                  onMouseLeave={() => setIsPlusHovered(false)}
                 >
-                  <Plus
+                  <PlusIcon
                     size={20}
                     strokeWidth={1.4}
-                    animate={isPlusHovered ? "default" : undefined}
                   />
                   {selectedToolMenuCount > 0 ? (
                     <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-medium leading-none text-primary-foreground">
@@ -631,10 +880,12 @@ function ChatInputComponent({
                     <ChatMCPPanel
                       availableTools={availableTools}
                       selectedToolIDs={selectedToolIDs}
+                      defaultToolIDs={defaultToolIDs}
                       maxSelectedTools={maxSelectedTools}
                       disabled={sending || loading || uploading || toolsLoading}
                       showHeader={false}
                       onSelectedToolsChange={onSelectedToolsChange}
+                      onDefaultToolsChange={onDefaultToolsChange}
                     />
                   </div>
                 ) : (
@@ -787,6 +1038,7 @@ function ChatInputComponent({
               selectedPlatformModelName={selectedPlatformModelName}
               loading={modelLoading}
               disabled={modelDisabled}
+              onModelCatalogRefresh={onModelCatalogRefresh}
               onModelChange={onModelChange}
             />
 

@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	defaultPageSize    = 20
-	maxPageSize        = 100
-	maxMessagePageSize = 1000
+	defaultPageSize       = 20
+	maxPageSize           = 100
+	maxAdminEventPageSize = 1000
+	maxMessagePageSize    = 1000
 )
 
 // DeleteConversationOptions 定义会话删除选项。
@@ -346,6 +347,35 @@ func (s *Service) ListConversationRuns(
 
 	offset, limit := normalizePage(page, pageSize)
 	return s.repo.ListConversationRuns(ctx, userID, conversationID, offset, limit)
+}
+
+// EventLogListFilter 描述管理员对话事件筛选和排序条件。
+type EventLogListFilter struct {
+	Query          string
+	EventScope     string
+	EventType      string
+	Status         string
+	UserID         uint
+	ConversationID uint
+	CreatedFrom    *time.Time
+	CreatedTo      *time.Time
+	Sort           string
+}
+
+// ListConversationEventLogs 分页查询管理员对话事件。
+func (s *Service) ListConversationEventLogs(ctx context.Context, page int, pageSize int, filter EventLogListFilter) ([]model.EventLog, int64, error) {
+	offset, limit := normalizePageWithMax(page, pageSize, maxAdminEventPageSize)
+	return s.repo.ListConversationEventLogs(ctx, repository.ConversationEventLogListFilter{
+		Query:          filter.Query,
+		EventScope:     filter.EventScope,
+		EventType:      filter.EventType,
+		Status:         filter.Status,
+		UserID:         filter.UserID,
+		ConversationID: filter.ConversationID,
+		CreatedFrom:    filter.CreatedFrom,
+		CreatedTo:      filter.CreatedTo,
+		Sort:           filter.Sort,
+	}, offset, limit)
 }
 
 // ListConversationRunsByRunIDs 批量查询消息对应的运行快照。

@@ -169,6 +169,11 @@
       "unknownLocation": "Unknown location",
       "unknownIP": "Unknown IP"
     },
+    "logoutAllDialog": {
+      "title": "Sign out all active devices?",
+      "description": "After confirmation, active sessions for this account in other browsers, desktop apps, or mobile devices will be invalidated. This device will return to the sign-in page too.",
+      "confirm": "Sign out all devices"
+    },
     "deleteDialog": {
       "title": "Delete account",
       "description": "Deleting your account is permanent. Your account and chat history cannot be restored.",
@@ -451,7 +456,7 @@
     "context": {
       "sectionTitle": "Context management",
       "autoCompactTitle": "Auto-compact context",
-      "autoCompactDescription": "When a conversation approaches the model limit, earlier messages are summarized automatically to keep the conversation continuous. Turn this off to compact manually."
+      "autoCompactDescription": "When a conversation exceeds the turn or token threshold, the system summarizes earlier messages and keeps the most recent turns in full to reduce context size. Turn this off to disable automatic context compression."
     },
     "file": {
       "sectionTitle": "File processing",
@@ -652,7 +657,8 @@
     },
     "topUp": {
       "title": "Top up",
-      "description": "Enter a USD amount.",
+      "description": "Enter a USD amount and confirm the payment method.",
+      "currentBalance": "Current balance {value}",
       "amount": "Top-up amount",
       "amountAria": "Top-up amount in USD",
       "confirm": "Top up"

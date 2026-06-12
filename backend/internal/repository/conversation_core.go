@@ -85,6 +85,7 @@ type MessageRepository interface {
 	GetMessageByID(ctx context.Context, conversationID uint, messageID uint) (*domainconversation.Message, error)
 	GetLatestMessage(ctx context.Context, conversationID uint) (*domainconversation.Message, error)
 	ListMessageAncestors(ctx context.Context, conversationID uint, leafMessageID uint, maxDepth int) ([]domainconversation.Message, error)
+	ListMessageAncestorsUntil(ctx context.Context, conversationID uint, leafMessageID uint, stopMessageID uint, maxDepth int) ([]domainconversation.Message, bool, error)
 }
 
 // MessageFeedbackRepository 封装消息反馈能力。
@@ -106,6 +107,20 @@ type ConversationTraceRepository interface {
 	CreateConversationToolCalls(ctx context.Context, items []domainconversation.ToolCall) error
 	ListConversationRuns(ctx context.Context, userID uint, conversationID uint, offset int, limit int) ([]domainconversation.Run, int64, error)
 	ListConversationRunsByRunIDs(ctx context.Context, userID uint, conversationID uint, runIDs []string) ([]domainconversation.Run, error)
+	ListConversationEventLogs(ctx context.Context, filter ConversationEventLogListFilter, offset int, limit int) ([]domainconversation.EventLog, int64, error)
+}
+
+// ConversationEventLogListFilter 描述管理员对话事件列表筛选和排序条件。
+type ConversationEventLogListFilter struct {
+	Query          string
+	EventScope     string
+	EventType      string
+	Status         string
+	UserID         uint
+	ConversationID uint
+	CreatedFrom    *time.Time
+	CreatedTo      *time.Time
+	Sort           string
 }
 
 // MessageEmbeddingRepository 封装消息历史向量存储与检索能力。
@@ -116,8 +131,6 @@ type MessageEmbeddingRepository interface {
 
 // CompactRepository 封装上下文压缩快照能力。
 type CompactRepository interface {
-	SumMessageTokens(ctx context.Context, conversationID uint) (int64, error)
-	ListMessages(ctx context.Context, conversationID uint, offset int, limit int) ([]domainconversation.Message, int64, error)
 	CreateContextSnapshot(ctx context.Context, item *domainconversation.ContextSnapshot) error
 	GetContextSnapshotByRunID(ctx context.Context, runID string) (*domainconversation.ContextSnapshot, error)
 	GetLatestContextSnapshot(ctx context.Context, conversationID uint) (*domainconversation.ContextSnapshot, error)

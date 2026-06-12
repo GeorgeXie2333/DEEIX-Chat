@@ -169,6 +169,11 @@
       "unknownLocation": "未知地区",
       "unknownIP": "未知 IP"
     },
+    "logoutAllDialog": {
+      "title": "登出所有在线设备？",
+      "description": "确认后，此账号在其他浏览器、桌面端或移动设备上的在线会话都会失效。当前设备也会回到登录页。",
+      "confirm": "确认登出所有设备"
+    },
     "deleteDialog": {
       "title": "删除账户",
       "description": "删除账号是永久性的。您将无法恢复您的账号或聊天记录。",
@@ -451,7 +456,7 @@
     "context": {
       "sectionTitle": "上下文管理",
       "autoCompactTitle": "自动压缩上下文",
-      "autoCompactDescription": "当对话上下文接近模型限制时，自动对早期消息进行摘要压缩，保持对话连续性。关闭后需手动触发压缩。"
+      "autoCompactDescription": "开启后，当对话超过轮次或 Token 阈值时，系统会自动将较早消息压缩为摘要，并保留最近几轮原文，以减少上下文。关闭后，将不会自动压缩对话上下文。"
     },
     "file": {
       "sectionTitle": "文件处理",
@@ -652,7 +657,8 @@
     },
     "topUp": {
       "title": "充值",
-      "description": "输入美元金额",
+      "description": "输入美元金额并确认支付方式。",
+      "currentBalance": "当前余额 {value}",
       "amount": "充值金额",
       "amountAria": "充值美元金额",
       "confirm": "充值"

@@ -43,9 +43,10 @@ import {
   TableEmptyRow,
   TableHead,
   TableHeader,
+  TableLoadingRow,
   TableRow,
-  TableSkeletonRows,
 } from "@/components/ui/table";
+import { useVirtualTableRows, VirtualTablePaddingRow } from "@/components/ui/virtual-table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-tools";
 import {
   SettingsFieldItem,
@@ -53,6 +54,7 @@ import {
   SettingsFieldRow,
   SettingsSection,
 } from "@/shared/components/settings-layout";
+import { CopyActionButton, useCopyAction } from "@/shared/components/copy-action";
 import {
   getAdminReferenceData,
   batchDeleteAdminRedemptionCodes,
@@ -73,10 +75,13 @@ import { listAllAdminPages } from "@/features/admin/api/shared";
 import type { AdminBillingMode, AdminBillingPlanDTO, AdminModelPricingDTO, AdminRedemptionCodeDTO, NativeToolPricingDTO, NativeToolPricingUpdateDTO } from "@/features/admin/api/billing.types";
 import type { AdminLLMModelDTO } from "@/features/admin/api/llm.types";
 import { resolveErrorMessage } from "@/features/admin/types/llm";
+import {
+  mergeBatchResultData,
+  runBulkActionInChunks,
+} from "@/shared/lib/bulk-action";
 import { cn } from "@/lib/utils";
 import {
   DEFAULT_PAGE_SIZE,
-  PAGE_SIZE_OPTIONS,
   PAYMENT_DEFAULTS,
   buildModelPricingExportObject,
   buildPricingRows,
@@ -338,6 +343,12 @@ export function AdminBillingPage() {
   const tActions = useTranslations("common.actions");
   const tCommonErrors = useTranslations("common.errors");
   const tInput = useTranslations("common.input");
+  const { copy, isCopied } = useCopyAction({
+    messages: {
+      copied: tActions("copied"),
+      failed: tCommonErrors("copyFailed"),
+    },
+  });
   const importPricingInputRef = React.useRef<HTMLInputElement | null>(null);
   const [plans, setPlans] = React.useState<AdminBillingPlanDTO[]>([]);
   const [models, setModels] = React.useState<AdminLLMModelDTO[]>([]);
@@ -392,18 +403,8 @@ export function AdminBillingPage() {
   const [redemptionBulkPending, setRedemptionBulkPending] = React.useState(false);
   const [redemptionDeleteTarget, setRedemptionDeleteTarget] = React.useState<AdminRedemptionCodeDTO | null>(null);
   const [createdRedemptionCodes, setCreatedRedemptionCodes] = React.useState<string[]>([]);
-  const [redemptionCopyingID, setRedemptionCopyingID] = React.useState<number | null>(null);
   const [redemptionStatusPendingID, setRedemptionStatusPendingID] = React.useState<number | null>(null);
   const stripeWebhookEndpoint = React.useMemo(() => `${resolveApiBaseURL()}/api/v1/billing/payments/stripe/webhook`, []);
-
-  const copyStripeWebhookEndpoint = React.useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(stripeWebhookEndpoint);
-      toast.success(tActions("copied"));
-    } catch {
-      toast.error(tCommonErrors("copyFailed"));
-    }
-  }, [stripeWebhookEndpoint, tActions, tCommonErrors]);
 
   const loadData = React.useCallback(async () => {
     setLoading(true);
@@ -602,6 +603,18 @@ export function AdminBillingPage() {
   }, [filteredRows, page, pageSize]);
   const redemptionPageCount = Math.max(1, Math.ceil(redemptionTotal / redemptionPageSize));
   const redemptionTableLoading = loading || redemptionLoading;
+  const redemptionVirtualRows = useVirtualTableRows(redemptionCodes, {
+    enabled: redemptionCodes.length > 100,
+    estimateSize: 40,
+  });
+  const modelPricingVirtualRows = useVirtualTableRows(pageRows, {
+    enabled: pageRows.length > 100,
+    estimateSize: 40,
+  });
+  const redemptionInitialLoading = redemptionTableLoading && redemptionCodes.length === 0;
+  const showRedemptionRows = redemptionCodes.length > 0;
+  const modelPricingInitialLoading = loading && pageRows.length === 0;
+  const showModelPricingRows = pageRows.length > 0;
   const isPaymentDirty = React.useMemo(
     () => paymentSettingsChanged(paymentSettings, savedPaymentSettings),
     [paymentSettings, savedPaymentSettings],
@@ -738,21 +751,6 @@ export function AdminBillingPage() {
     });
   }
 
-  async function copyCreatedRedemptionCodes() {
-    if (createdRedemptionCodes.length === 0) return;
-    await copyRedemptionText(createdRedemptionCodes.join("\n"));
-  }
-
-  async function copyRedemptionText(value: string) {
-    if (!value.trim()) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      toast.success(tActions("copied"));
-    } catch {
-      toast.error(tCommonErrors("copyFailed"));
-    }
-  }
-
   async function fetchRedemptionCodePlaintext(item: AdminRedemptionCodeDTO): Promise<string> {
     const token = await resolveAccessToken();
     if (!token) {
@@ -798,27 +796,20 @@ export function AdminBillingPage() {
     return { results, failedCount };
   }
 
-  async function copyStoredRedemptionCode(item: AdminRedemptionCodeDTO) {
-    setRedemptionCopyingID(item.id);
-    try {
-      const code = await fetchRedemptionCodePlaintext(item);
-      await copyRedemptionText(code);
-    } catch (error) {
-      toast.error(t("toast.redemptionCopyFailed"), { description: resolveErrorMessage(error) });
-    } finally {
-      setRedemptionCopyingID(null);
-    }
-  }
-
   async function copySelectedRedemptionCodes() {
     setRedemptionBulkPending(true);
     try {
       const { results, failedCount } = await revealSelectedRedemptionCodes();
       if (results.length === 0) return;
-      await navigator.clipboard.writeText(results.map((result) => result.code).join("\n"));
-      toast.success(t("toast.redemptionBulkCopied", { count: results.length }), {
-        description: failedCount > 0 ? t("toast.redemptionBulkRevealSkipped", { count: failedCount }) : undefined,
+      const copied = await copy(results.map((result) => result.code).join("\n"), {
+        key: "selected-redemption-codes",
+        copied: t("toast.redemptionBulkCopied", { count: results.length }),
+        copiedDescription: failedCount > 0 ? t("toast.redemptionBulkRevealSkipped", { count: failedCount }) : undefined,
+        failed: t("toast.redemptionBulkCopyFailed"),
       });
+      if (!copied) {
+        return;
+      }
     } catch (error) {
       toast.error(t("toast.redemptionBulkCopyFailed"), { description: resolveErrorMessage(error) });
     } finally {
@@ -881,8 +872,20 @@ export function AdminBillingPage() {
         toast.error(t("toast.sessionExpired"), { description: t("toast.sessionExpiredDescription") });
         return;
       }
-      const updatedCodes = await Promise.all(ids.map((id) => updateAdminRedemptionCode(token, id, { status })));
-      setRedemptionCodes((current) => current.map((item) => updatedCodes.find((data) => data.code.id === item.id)?.code ?? item));
+      const updatedCodes = (await runBulkActionInChunks({
+        chunkSize: 10,
+        items: ids,
+        title: t("redemption.bulkPending"),
+        runChunk: async (chunk) => {
+          const codes: AdminRedemptionCodeDTO[] = [];
+          for (const id of chunk) {
+            const data = await updateAdminRedemptionCode(token, id, { status });
+            codes.push(data.code);
+          }
+          return codes;
+        },
+      })).flat();
+      setRedemptionCodes((current) => current.map((item) => updatedCodes.find((code) => code.id === item.id) ?? item));
       setSelectedRedemptionIDs(new Set());
       setRedemptionBulkAction(null);
       toast.success(status === "active" ? t("toast.redemptionBulkEnabled", { count: ids.length }) : t("toast.redemptionBulkDisabled", { count: ids.length }));
@@ -941,7 +944,11 @@ export function AdminBillingPage() {
         toast.error(t("toast.sessionExpired"), { description: t("toast.sessionExpiredDescription") });
         return;
       }
-      const result = await batchDeleteAdminRedemptionCodes(token, { ids });
+      const result = mergeBatchResultData(await runBulkActionInChunks({
+        items: ids,
+        title: t("redemption.bulkDeleteTitle"),
+        runChunk: (chunk) => batchDeleteAdminRedemptionCodes(token, { ids: chunk }),
+      }));
       setSelectedRedemptionIDs(new Set());
       setRedemptionBulkAction(null);
       if (result.failedCount > 0) {
@@ -1607,9 +1614,16 @@ export function AdminBillingPage() {
                 >
                   <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1">
                     <Input value={stripeWebhookEndpoint} className="min-w-0 truncate text-left text-xs md:text-right" readOnly />
-                    <Button type="button" variant="secondary" size="icon" className="size-8 shrink-0 rounded-md shadow-none active:scale-90 transition-transform" onClick={() => void copyStripeWebhookEndpoint()} aria-label={tActions("copy")} title={tActions("copy")}>
-                      <Copy className="size-3.5" />
-                    </Button>
+                    <CopyActionButton
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="size-8 shrink-0 rounded-md shadow-none active:scale-90 transition-transform"
+                      value={stripeWebhookEndpoint}
+                      messages={{ copied: tActions("copied"), failed: tCommonErrors("copyFailed") }}
+                      aria-label={tActions("copy")}
+                      title={tActions("copy")}
+                    />
                   </div>
                 </SettingsFieldRow>
                 <SettingsFieldRow
@@ -1861,7 +1875,7 @@ export function AdminBillingPage() {
               {
                 key: "copy-codes",
                 label: t("redemption.copySelected"),
-                icon: <Copy className="size-3.5 stroke-1" />,
+                icon: isCopied("selected-redemption-codes") ? <Check className="size-3.5 stroke-1" /> : <Copy className="size-3.5 stroke-1" />,
                 onClick: () => void copySelectedRedemptionCodes(),
               },
               {
@@ -1898,7 +1912,11 @@ export function AdminBillingPage() {
             </Button>
           </TableToolbar>
 
-          <Table>
+          <Table
+            viewportRef={redemptionVirtualRows.viewportRef}
+            viewportClassName={redemptionVirtualRows.viewportClassName}
+            viewportStyle={redemptionVirtualRows.viewportStyle}
+          >
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[44px] py-1.5 text-center">
@@ -1920,10 +1938,11 @@ export function AdminBillingPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {redemptionTableLoading ? <TableSkeletonRows colSpan={8} rowCount={4} /> : null}
+              {redemptionInitialLoading ? <TableLoadingRow colSpan={8} /> : null}
               {!redemptionTableLoading && redemptionCodes.length === 0 ? <TableEmptyRow colSpan={8}>{t("redemption.empty")}</TableEmptyRow> : null}
-              {!redemptionTableLoading
-                ? redemptionCodes.map((item) => {
+              {showRedemptionRows ? <VirtualTablePaddingRow colSpan={8} height={redemptionVirtualRows.paddingTop} /> : null}
+              {showRedemptionRows
+                ? redemptionVirtualRows.rows.map(({ item }) => {
                   const unavailableReason = redemptionUnavailableReason(item);
                   const displayCode = item.codeHint || "-";
                   const redemptionLimitTotal = item.maxRedemptions == null ? t("redemption.unlimited") : String(item.maxRedemptions);
@@ -1941,17 +1960,17 @@ export function AdminBillingPage() {
                       <TableCell className="w-[168px] max-w-[168px] py-1.5 font-mono text-xs">
                         <div className="flex h-7 items-center gap-1.5">
                           <span className="min-w-0 max-w-[112px] truncate">{displayCode}</span>
-                          <Button
+                          <CopyActionButton
                             type="button"
                             variant="ghost"
                             size="icon-xs"
                             className="h-6 w-6 text-muted-foreground shadow-none"
-                            disabled={redemptionCopyingID === item.id}
-                            onClick={() => void copyStoredRedemptionCode(item)}
+                            messages={{ copied: tActions("copied"), failed: t("toast.redemptionCopyFailed") }}
+                            resolveValue={() => fetchRedemptionCodePlaintext(item)}
+                            onResolveError={(error) => toast.error(t("toast.redemptionCopyFailed"), { description: resolveErrorMessage(error) })}
+                            iconClassName="size-3.5 stroke-1.5"
                             aria-label={tActions("copy")}
-                          >
-                            <Copy className="size-3.5 stroke-1.5" />
-                          </Button>
+                          />
                           {unavailableReason ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -2029,6 +2048,7 @@ export function AdminBillingPage() {
                   );
                 })
                 : null}
+              {showRedemptionRows ? <VirtualTablePaddingRow colSpan={8} height={redemptionVirtualRows.paddingBottom} /> : null}
             </TableBody>
           </Table>
 
@@ -2037,7 +2057,6 @@ export function AdminBillingPage() {
             page={redemptionPage}
             pageCount={redemptionPageCount}
             pageSize={redemptionPageSize}
-            pageSizeOptions={PAGE_SIZE_OPTIONS}
             onPageChange={setRedemptionPage}
             onPageSizeChange={(next) => {
               setRedemptionPageSize(next);
@@ -2153,7 +2172,11 @@ export function AdminBillingPage() {
             </Button>
           </TableToolbar>
 
-          <Table>
+          <Table
+            viewportRef={modelPricingVirtualRows.viewportRef}
+            viewportClassName={modelPricingVirtualRows.viewportClassName}
+            viewportStyle={modelPricingVirtualRows.viewportStyle}
+          >
             <TableHeader>
               <TableRow>
                 <TableHead className="min-w-[210px]">{t("modelPricing.platformModel")}</TableHead>
@@ -2165,10 +2188,11 @@ export function AdminBillingPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? <TableSkeletonRows colSpan={6} rowCount={10} /> : null}
+              {modelPricingInitialLoading ? <TableLoadingRow colSpan={6} /> : null}
               {!loading && pageRows.length === 0 ? <TableEmptyRow colSpan={6}>{t("modelPricing.empty")}</TableEmptyRow> : null}
-              {!loading
-                ? pageRows.map((row) => {
+              {showModelPricingRows ? <VirtualTablePaddingRow colSpan={6} height={modelPricingVirtualRows.paddingTop} /> : null}
+              {showModelPricingRows
+                ? modelPricingVirtualRows.rows.map(({ item: row }) => {
                     const identity = resolveModelIdentity({
                       code: row.platformModelName,
                       vendor: row.vendor,
@@ -2226,6 +2250,7 @@ export function AdminBillingPage() {
                     );
                   })
                 : null}
+              {showModelPricingRows ? <VirtualTablePaddingRow colSpan={6} height={modelPricingVirtualRows.paddingBottom} /> : null}
             </TableBody>
           </Table>
 
@@ -2234,7 +2259,6 @@ export function AdminBillingPage() {
             page={page}
             pageCount={pageCount}
             pageSize={pageSize}
-            pageSizeOptions={PAGE_SIZE_OPTIONS}
             onPageChange={setPage}
             onPageSizeChange={(next) => {
               setPageSize(next);
@@ -2580,25 +2604,31 @@ export function AdminBillingPage() {
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-2">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-medium">{t("redemption.createdCodes")}</p>
-              <Button type="button" variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs shadow-none" onClick={() => void copyCreatedRedemptionCodes()}>
-                <Copy className="size-3.5" />
+              <CopyActionButton
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs shadow-none"
+                value={createdRedemptionCodes.join("\n")}
+                messages={{ copied: tActions("copied"), failed: tCommonErrors("copyFailed") }}
+                disabled={createdRedemptionCodes.length === 0}
+              >
                 {t("redemption.copyAll")}
-              </Button>
+              </CopyActionButton>
             </div>
             <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
               {createdRedemptionCodes.map((code) => (
                 <div key={code} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border border-border/60 bg-muted/25 px-3 py-2">
                   <span className="min-w-0 break-all font-mono text-xs">{code}</span>
-                  <Button
+                  <CopyActionButton
                     type="button"
                     variant="ghost"
                     size="icon-sm"
                     className="text-muted-foreground"
-                    onClick={() => void copyRedemptionText(code)}
+                    value={code}
+                    messages={{ copied: tActions("copied"), failed: tCommonErrors("copyFailed") }}
                     aria-label={tActions("copy")}
-                  >
-                    <Copy className="size-3.5" />
-                  </Button>
+                  />
                 </div>
               ))}
             </div>

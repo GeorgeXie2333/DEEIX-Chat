@@ -47,14 +47,17 @@ import { useChatData } from "@/features/chat/hooks/use-chat-data";
 import { toPendingAttachment } from "@/features/chat/model/message-submit";
 import { exportConversationArchive, getConversation } from "@/shared/api/conversation";
 import { listAvailableMCPTools } from "@/shared/api/mcp";
+import { getUserSettings, patchUserSettings } from "@/shared/api/user-settings";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { downloadConversationArchive } from "@/features/recent/utils/conversation-archive";
 import type { ConversationDTO, ConversationOptions } from "@/shared/api/conversation.types";
+import type { FileObjectDTO } from "@/shared/api/file.types";
 import type { MCPToolDTO } from "@/shared/api/mcp.types";
 import { useTheme } from "@/shared/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 const MODEL_OPTIONS_STORAGE_PREFIX = "deeix-chat:chat-model-options:";
+const DEFAULT_MCP_TOOLS_SETTING_KEY = "chat.default_mcp_tool_ids";
 const EMPTY_CONVERSATION_OPTIONS: ConversationOptions = {};
 
 function modelOptionsStorageKey(platformModelName: string): string {
@@ -97,6 +100,52 @@ function removeCachedModelOptions(platformModelName: string): void {
   } catch {
     // localStorage may be unavailable in private browsing or strict environments.
   }
+}
+
+function parseDefaultMCPToolIDs(raw: string | null | undefined): number[] {
+  const value = raw?.trim();
+  if (!value) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    const seen = new Set<number>();
+    const result: number[] = [];
+    for (const item of parsed) {
+      const id = typeof item === "number" ? item : Number(item);
+      if (Number.isSafeInteger(id) && id > 0 && !seen.has(id)) {
+        seen.add(id);
+        result.push(id);
+      }
+    }
+    return result;
+  } catch {
+    return [];
+  }
+}
+
+function normalizeAvailableMCPTools(tools: MCPToolDTO[]): MCPToolDTO[] {
+  const seen = new Set<number>();
+  return tools.filter((tool) => {
+    if (!Number.isSafeInteger(tool.id) || tool.id <= 0 || seen.has(tool.id)) {
+      return false;
+    }
+    const status = typeof tool.status === "string" ? tool.status.trim() : "";
+    if (status && status !== "active") {
+      return false;
+    }
+    seen.add(tool.id);
+    return true;
+  });
+}
+
+function filterAvailableMCPToolIDs(toolIDs: number[], tools: MCPToolDTO[], limit?: number): number[] {
+  const availableIDs = new Set(tools.map((tool) => tool.id));
+  const result = toolIDs.filter((id) => availableIDs.has(id));
+  return typeof limit === "number" && limit >= 0 ? result.slice(0, limit) : result;
 }
 
 export function AppChatArea() {
@@ -232,6 +281,7 @@ export function AppChatArea() {
 
   const {
     modelOptions,
+    refreshModelCatalog,
     refreshModelOption,
     modelsLoading,
     modelsErrorMsg,
@@ -268,13 +318,19 @@ export function AppChatArea() {
     [modelOptions, selectedPlatformModelName],
   );
   const modelOptionPolicyDisabled = modelOptionPolicy?.mode?.trim() === "disabled";
+  const refreshModelCatalogForComposer = React.useCallback(async () => {
+    await refreshModelCatalog();
+  }, [refreshModelCatalog]);
   const [options, setOptions] = React.useState<ConversationOptions>({});
   const [availableTools, setAvailableTools] = React.useState<MCPToolDTO[]>([]);
   const [toolsLoading, setToolsLoading] = React.useState(true);
   const [selectedToolIDs, setSelectedToolIDs] = React.useState<number[]>([]);
+  const [defaultToolIDs, setDefaultToolIDs] = React.useState<number[]>([]);
+  const defaultToolIDsRef = React.useRef<number[]>([]);
   const htmlVisualPrompt = useHTMLVisualPrompt();
   const { resolvedTheme } = useTheme();
   const initializedOptionsModelRef = React.useRef("");
+  const selectedModelDefaultOptionsRef = React.useRef<ConversationOptions>({});
 
   React.useEffect(() => {
     setSelectedToolIDs((current) => {
@@ -289,15 +345,31 @@ export function AppChatArea() {
     const platformModelName = selectedModel?.platformModelName.trim() || "";
     if (!platformModelName) {
       initializedOptionsModelRef.current = "";
+      selectedModelDefaultOptionsRef.current = {};
       setOptions({});
       return;
     }
-    if (initializedOptionsModelRef.current === platformModelName) {
+    const nextDefaultOptions = cloneConversationOptions(selectedModel.defaultOptions);
+    const previousDefaultOptions = selectedModelDefaultOptionsRef.current;
+    if (initializedOptionsModelRef.current !== platformModelName) {
+      initializedOptionsModelRef.current = platformModelName;
+      selectedModelDefaultOptionsRef.current = nextDefaultOptions;
+      const cachedOptions = readCachedModelOptions(platformModelName);
+      setOptions(cloneConversationOptions(cachedOptions ?? nextDefaultOptions));
       return;
     }
-    initializedOptionsModelRef.current = platformModelName;
-    const cachedOptions = readCachedModelOptions(platformModelName);
-    setOptions(cloneConversationOptions(cachedOptions ?? selectedModel.defaultOptions));
+    selectedModelDefaultOptionsRef.current = nextDefaultOptions;
+    const previousDefaultOptionsJSON = JSON.stringify(previousDefaultOptions);
+    if (previousDefaultOptionsJSON === JSON.stringify(nextDefaultOptions)) {
+      return;
+    }
+    setOptions((currentOptions) => {
+      if (JSON.stringify(currentOptions) !== previousDefaultOptionsJSON) {
+        return currentOptions;
+      }
+      removeCachedModelOptions(platformModelName);
+      return cloneConversationOptions(nextDefaultOptions);
+    });
   }, [selectedModel]);
 
   const setModelOptions = React.useCallback(
@@ -347,13 +419,28 @@ export function AppChatArea() {
           }
           return;
         }
-        const tools = await listAvailableMCPTools(token);
+        const [toolsResult, settings] = await Promise.all([
+          listAvailableMCPTools(token),
+          getUserSettings(token).catch(() => ({} as Record<string, string>)),
+        ]);
         if (cancelled) {
           return;
         }
+        const tools = normalizeAvailableMCPTools(toolsResult);
+        const userDefaultToolIDs = filterAvailableMCPToolIDs(
+          parseDefaultMCPToolIDs(settings[DEFAULT_MCP_TOOLS_SETTING_KEY]),
+          tools,
+        );
         setAvailableTools(tools);
+        setDefaultToolIDs(userDefaultToolIDs);
         const availableIDs = new Set(tools.map((item) => item.id));
-        setSelectedToolIDs((previous) => previous.filter((id) => availableIDs.has(id)));
+        setSelectedToolIDs((previous) => {
+          const retained = previous.filter((id) => availableIDs.has(id));
+          if (retained.length > 0 || conversationID) {
+            return retained;
+          }
+          return userDefaultToolIDs.slice(0, mcpMaxSelectedTools);
+        });
       } catch {
         if (!cancelled) {
           setAvailableTools([]);
@@ -370,7 +457,39 @@ export function AppChatArea() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [conversationID, mcpMaxSelectedTools]);
+
+  React.useEffect(() => {
+    defaultToolIDsRef.current = defaultToolIDs;
+  }, [defaultToolIDs]);
+
+  React.useEffect(() => {
+    if (conversationID) {
+      return;
+    }
+    setSelectedToolIDs(filterAvailableMCPToolIDs(defaultToolIDsRef.current, availableTools, mcpMaxSelectedTools));
+  }, [availableTools, conversationID, mcpMaxSelectedTools, newConversationRevision]);
+
+  const onDefaultToolIDsChange = React.useCallback(async (nextToolIDs: number[]) => {
+    const nextDefaults = filterAvailableMCPToolIDs(nextToolIDs, availableTools, mcpMaxSelectedTools);
+    const previousDefaults = defaultToolIDs;
+    setDefaultToolIDs(nextDefaults);
+    try {
+      const token = await resolveAccessToken();
+      if (!token) {
+        throw new Error(t("composer.sessionExpired"));
+      }
+      await patchUserSettings(token, {
+        [DEFAULT_MCP_TOOLS_SETTING_KEY]: JSON.stringify(nextDefaults),
+      });
+      toast.success(t("composer.defaultMCPToolsSaved"));
+    } catch (error) {
+      setDefaultToolIDs(previousDefaults);
+      toast.error(t("composer.defaultMCPToolsSaveFailed"), {
+        description: error instanceof Error ? error.message : t("composer.retryLater"),
+      });
+    }
+  }, [availableTools, defaultToolIDs, mcpMaxSelectedTools, t]);
 
   const {
     uploading,
@@ -506,6 +625,49 @@ export function AppChatArea() {
       setSelectedPlatformModelName,
       t,
     ],
+  );
+
+  const onAttachExistingFile = React.useCallback(
+    (file: FileObjectDTO) => {
+      const alreadyAttached = attachments.some((item) => item.fileID === file.fileID);
+      if (alreadyAttached) {
+        return;
+      }
+      if (maxFilesPerMessage > 0 && attachments.length >= maxFilesPerMessage) {
+        toast.error(t("attachments.limitReached"), {
+          description: t("attachments.maxUploadFiles", { count: maxFilesPerMessage }),
+        });
+        return;
+      }
+      setAttachments((previous) => {
+        if (previous.some((item) => item.fileID === file.fileID)) {
+          return previous;
+        }
+        return [
+          ...previous,
+          {
+            fileID: file.fileID,
+            fileName: file.fileName,
+            mimeType: file.mimeType,
+            detectedMime: file.detectedMIME,
+            fileCategory: file.fileCategory,
+            sizeBytes: file.sizeBytes,
+            processingStatus: file.processingStatus,
+            processingReady: file.processingReady,
+            processingErrorCode: file.processingErrorCode,
+            processingErrorMessage: file.processingErrorMessage,
+            extractStatus: file.extractStatus,
+            embedStatus: file.embedStatus,
+            ragReady: false,
+            ragReason: "",
+            ocrUsed: false,
+            ragOptOut: file.ragOptOut,
+          },
+        ];
+      });
+      window.requestAnimationFrame(onScrollToLatest);
+    },
+    [attachments, maxFilesPerMessage, onScrollToLatest, setAttachments, t],
   );
 
   React.useEffect(() => {
@@ -759,6 +921,7 @@ export function AppChatArea() {
     selectedPlatformModelName,
     availableTools,
     selectedToolIDs,
+    defaultToolIDs,
     htmlVisualPromptEnabled: htmlVisualPrompt.enabled,
     maxSelectedTools: mcpMaxSelectedTools,
     toolsLoading,
@@ -768,11 +931,14 @@ export function AppChatArea() {
     modelLoading: modelsLoading,
     onDraftChange: setDraft,
     onModelChange: setSelectedPlatformModelName,
+    onModelCatalogRefresh: refreshModelCatalogForComposer,
     onSelectedToolsChange: setSelectedToolIDs,
+    onDefaultToolsChange: onDefaultToolIDsChange,
     onHTMLVisualPromptChange: htmlVisualPrompt.setEnabled,
     onOptionsChange: setModelOptions,
     onOptionsReset: resetModelOptions,
     onOptionsDefaultRestore: restoreBackendDefaultModelOptions,
+    onAttachExistingFile,
     onUploadFiles,
     onCaptureScreenshot,
     onRemoveAttachment,

@@ -906,6 +906,7 @@ func parseAnthropicUsage(parsed map[string]interface{}) Usage {
 		CacheWrite5mTokens: cacheCreation5mInputTokens,
 		CacheWrite1hTokens: cacheCreation1hInputTokens,
 		Speed:              strings.TrimSpace(getStringFromPath(parsed, "usage", "speed")),
+		RawUsageJSON:       rawUsageJSONFromPath(parsed, "usage"),
 	}
 }
 
@@ -1358,6 +1359,7 @@ func applyAnthropicStreamEvent(
 		deltaUsage := asMap(parsed["usage"])
 		if out := toInt64(deltaUsage["output_tokens"]); out > 0 {
 			result.Usage.OutputTokens = out
+			result.Usage.RawUsageJSON = MergeRawUsageJSON(result.Usage.RawUsageJSON, rawUsageJSONFromPath(parsed, "usage"))
 			if onEvent != nil {
 				return onEvent(GenerateStreamEvent{
 					Usage:      result.Usage,

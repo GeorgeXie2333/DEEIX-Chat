@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronDown, Info } from "lucide-react";
+import { Check, ChevronDown, Info, Star } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -31,9 +31,11 @@ type FilteredMCPToolGroup = MCPToolGroup & {
 type ChatMCPProps = {
   availableTools: MCPToolDTO[];
   selectedToolIDs: number[];
+  defaultToolIDs: number[];
   maxSelectedTools: number;
   disabled: boolean;
   onSelectedToolsChange: (toolIDs: number[]) => void;
+  onDefaultToolsChange: (toolIDs: number[]) => void | Promise<void>;
 };
 
 type ChatMCPPanelProps = ChatMCPProps & {
@@ -120,8 +122,10 @@ function resolveToolSelectionLimit(value: number): number {
 export function ChatMCPPanel({
   availableTools,
   selectedToolIDs,
+  defaultToolIDs,
   maxSelectedTools,
   onSelectedToolsChange,
+  onDefaultToolsChange,
   className,
   showHeader = true,
 }: ChatMCPPanelProps) {
@@ -129,6 +133,7 @@ export function ChatMCPPanel({
   const [search, setSearch] = React.useState("");
   const [expandedServerKeys, setExpandedServerKeys] = React.useState<Set<string>>(() => new Set());
   const selectedToolIDSet = React.useMemo(() => new Set(selectedToolIDs), [selectedToolIDs]);
+  const defaultToolIDSet = React.useMemo(() => new Set(defaultToolIDs), [defaultToolIDs]);
   const selectedToolCount = selectedToolIDs.length;
   const selectionLimit = resolveToolSelectionLimit(maxSelectedTools);
   const toolGroups = React.useMemo(
@@ -182,6 +187,21 @@ export function ChatMCPPanel({
       onSelectedToolsChange([...selectedToolIDs, ...missingIDs]);
     },
     [onSelectedToolsChange, selectedToolIDs, selectionLimit, showToolLimitToast],
+  );
+
+  const toggleDefaultTool = React.useCallback(
+    (toolID: number) => {
+      if (defaultToolIDSet.has(toolID)) {
+        void onDefaultToolsChange(defaultToolIDs.filter((id) => id !== toolID));
+        return;
+      }
+      if (defaultToolIDs.length >= selectionLimit) {
+        showToolLimitToast();
+        return;
+      }
+      void onDefaultToolsChange([...defaultToolIDs, toolID]);
+    },
+    [defaultToolIDs, defaultToolIDSet, onDefaultToolsChange, selectionLimit, showToolLimitToast],
   );
 
   const toggleServerExpanded = React.useCallback((serverKey: string) => {
@@ -299,6 +319,7 @@ export function ChatMCPPanel({
                       <div className="ml-4 mt-1 space-y-1 pl-2">
                         {group.visibleTools.map((tool) => {
                           const checked = selectedToolIDSet.has(tool.id);
+                          const isDefault = defaultToolIDSet.has(tool.id);
                           const label = resolveMCPToolLabel(tool, tComposer("tool", { id: tool.id }));
                           const description = (tool.description ?? "").trim() || tComposer("noToolDescription");
                           return (
@@ -317,6 +338,33 @@ export function ChatMCPPanel({
                               <span className="flex size-3 shrink-0 items-center justify-center text-current">
                                 {checked ? <Check className="size-3 text-current" strokeWidth={1.7} /> : null}
                               </span>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-label={isDefault
+                                      ? tComposer("mcpUnsetDefaultTool", { tool: label })
+                                      : tComposer("mcpSetDefaultTool", { tool: label })}
+                                    className={cn(
+                                      "ml-1 flex size-6 shrink-0 items-center justify-center rounded-md text-current outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground",
+                                      isDefault && "text-amber-500",
+                                    )}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggleDefaultTool(tool.id);
+                                    }}
+                                  >
+                                    <Star
+                                      className="size-3.5"
+                                      strokeWidth={1.8}
+                                      fill={isDefault ? "currentColor" : "none"}
+                                    />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" align="center" sideOffset={8}>
+                                  {isDefault ? tComposer("mcpDefaultToolEnabled") : tComposer("mcpDefaultToolDisabled")}
+                                </TooltipContent>
+                              </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <button
@@ -359,9 +407,11 @@ export function ChatMCPPanel({
 export function ChatMCP({
   availableTools,
   selectedToolIDs,
+  defaultToolIDs,
   maxSelectedTools,
   disabled,
   onSelectedToolsChange,
+  onDefaultToolsChange,
 }: ChatMCPProps) {
   const tComposer = useTranslations("chat.composer");
   const [hovered, setHovered] = React.useState(false);
@@ -416,9 +466,11 @@ export function ChatMCP({
         <ChatMCPPanel
           availableTools={availableTools}
           selectedToolIDs={selectedToolIDs}
+          defaultToolIDs={defaultToolIDs}
           maxSelectedTools={maxSelectedTools}
           disabled={disabled}
           onSelectedToolsChange={onSelectedToolsChange}
+          onDefaultToolsChange={onDefaultToolsChange}
         />
       </PopoverContent>
     </Popover>

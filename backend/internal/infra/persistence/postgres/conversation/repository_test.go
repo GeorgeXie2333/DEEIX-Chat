@@ -71,6 +71,134 @@ func TestListMessagesBeforeIDReturnsPreviousWindowAscending(t *testing.T) {
 	}
 }
 
+func TestListMessageAncestorsUntilStopsAtBoundary(t *testing.T) {
+	db := openConversationRepositoryTestDB(t)
+	repo := NewRepo(db)
+	ctx := context.Background()
+
+	conversation := model.Conversation{
+		UserID:     1,
+		PublicID:   "conv_ancestors_until",
+		Title:      "ancestors until",
+		LabelsJSON: "[]",
+		SessionKey: "session_ancestors_until",
+		Status:     "active",
+	}
+	if err := db.Create(&conversation).Error; err != nil {
+		t.Fatalf("create conversation: %v", err)
+	}
+
+	messages := make([]model.Message, 0, 6)
+	var parentID *uint
+	for index := 1; index <= 6; index++ {
+		message := model.Message{
+			ConversationID:  conversation.ID,
+			UserID:          1,
+			PublicID:        fmt.Sprintf("msg_%d", index),
+			ParentMessageID: parentID,
+			Role:            "user",
+			ContentType:     "text",
+			Content:         fmt.Sprintf("message %d", index),
+			BranchReason:    "default",
+			Status:          "success",
+		}
+		if err := db.Create(&message).Error; err != nil {
+			t.Fatalf("create message %d: %v", index, err)
+		}
+		messages = append(messages, message)
+		nextParentID := message.ID
+		parentID = &nextParentID
+	}
+
+	got, found, err := repo.ListMessageAncestorsUntil(ctx, conversation.ID, messages[5].ID, messages[2].ID, 10)
+	if err != nil {
+		t.Fatalf("ListMessageAncestorsUntil() error = %v", err)
+	}
+	if !found {
+		t.Fatal("expected boundary to be found")
+	}
+	if len(got) != 4 {
+		t.Fatalf("expected boundary through leaf, got %#v", got)
+	}
+	if got[0].PublicID != "msg_3" || got[len(got)-1].PublicID != "msg_6" {
+		t.Fatalf("expected msg_3..msg_6, got %#v", got)
+	}
+	if got[0].ParentPublicID != "msg_2" {
+		t.Fatalf("expected boundary parent public id hydrated, got %q", got[0].ParentPublicID)
+	}
+}
+
+func TestListMessageAncestorsUntilReportsMissingBoundary(t *testing.T) {
+	db := openConversationRepositoryTestDB(t)
+	repo := NewRepo(db)
+	ctx := context.Background()
+
+	conversation := model.Conversation{
+		UserID:     1,
+		PublicID:   "conv_missing_boundary",
+		Title:      "missing boundary",
+		LabelsJSON: "[]",
+		SessionKey: "session_missing_boundary",
+		Status:     "active",
+	}
+	if err := db.Create(&conversation).Error; err != nil {
+		t.Fatalf("create conversation: %v", err)
+	}
+	message := model.Message{
+		ConversationID: conversation.ID,
+		UserID:         1,
+		PublicID:       "msg_1",
+		Role:           "user",
+		ContentType:    "text",
+		Content:        "message 1",
+		BranchReason:   "default",
+		Status:         "success",
+	}
+	if err := db.Create(&message).Error; err != nil {
+		t.Fatalf("create message: %v", err)
+	}
+
+	got, found, err := repo.ListMessageAncestorsUntil(ctx, conversation.ID, message.ID, message.ID+100, 10)
+	if err != nil {
+		t.Fatalf("ListMessageAncestorsUntil() error = %v", err)
+	}
+	if found {
+		t.Fatal("expected boundary to be missing")
+	}
+	if len(got) != 1 || got[0].PublicID != "msg_1" {
+		t.Fatalf("expected available ancestor path, got %#v", got)
+	}
+}
+
+func TestUpdateConversationMetadataSQLiteUsesPortableTrim(t *testing.T) {
+	db := openConversationRepositoryTestDB(t)
+	repo := NewRepo(db)
+	ctx := context.Background()
+
+	conversation := model.Conversation{
+		UserID:     1,
+		PublicID:   "conv_metadata_sqlite",
+		Title:      " 新对话 ",
+		LabelsJSON: "[]",
+		SessionKey: "session_metadata_sqlite",
+		Status:     "active",
+	}
+	if err := db.Create(&conversation).Error; err != nil {
+		t.Fatalf("create conversation: %v", err)
+	}
+
+	updated, err := repo.UpdateConversationMetadata(ctx, conversation.ID, "SQLite 标题", `["技术"]`)
+	if err != nil {
+		t.Fatalf("UpdateConversationMetadata() error = %v", err)
+	}
+	if updated.Title != "SQLite 标题" {
+		t.Fatalf("updated title = %q, want %q", updated.Title, "SQLite 标题")
+	}
+	if updated.LabelsJSON != `["技术"]` {
+		t.Fatalf("updated labels = %q, want %q", updated.LabelsJSON, `["技术"]`)
+	}
+}
+
 func openConversationRepositoryTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	name := strings.NewReplacer("/", "_", " ", "_").Replace(t.Name())

@@ -84,6 +84,13 @@ func (r *Repo) sqliteDialect() bool {
 	return r != nil && r.db != nil && r.db.Dialector != nil && r.db.Dialector.Name() == "sqlite"
 }
 
+func (r *Repo) trimFunctionName() string {
+	if r.sqliteDialect() {
+		return "trim"
+	}
+	return "btrim"
+}
+
 // CreateConversation 创建会话。
 func (r *Repo) CreateConversation(ctx context.Context, item *domainconversation.Conversation) error {
 	entity := toConversationModel(item)
@@ -467,7 +474,7 @@ func (r *Repo) UpdateConversationMetadata(ctx context.Context, conversationID ui
 	updates := map[string]interface{}{}
 	if strings.TrimSpace(title) != "" {
 		updates["title"] = gorm.Expr(
-			"CASE WHEN lower(btrim(title)) IN ? THEN ? ELSE title END",
+			fmt.Sprintf("CASE WHEN lower(%s(title)) IN ? THEN ? ELSE title END", r.trimFunctionName()),
 			[]string{"", "new conversation", "new chat", "untitled", "新会话", "新对话", "新的对话"},
 			strings.TrimSpace(title),
 		)
@@ -1532,6 +1539,73 @@ func (r *Repo) ListConversationRuns(
 	return toConversationRunDomains(items), total, nil
 }
 
+// ListConversationEventLogs 分页查询管理员对话事件日志。
+func (r *Repo) ListConversationEventLogs(
+	ctx context.Context,
+	filter repository.ConversationEventLogListFilter,
+	offset int,
+	limit int,
+) ([]domainconversation.EventLog, int64, error) {
+	items := make([]models.ChatRunEvent, 0)
+	var total int64
+	query := r.db.WithContext(ctx).Model(&models.ChatRunEvent{})
+	if filter.UserID > 0 {
+		query = query.Where("user_id = ?", filter.UserID)
+	}
+	if filter.ConversationID > 0 {
+		query = query.Where("conversation_id = ?", filter.ConversationID)
+	}
+	if search := strings.TrimSpace(filter.Query); search != "" {
+		like := "%" + strings.ToLower(search) + "%"
+		query = query.Where(
+			"LOWER(run_id) LIKE ? OR LOWER(event_id) LIKE ? OR LOWER(event_type) LIKE ? OR LOWER(phase) LIKE ? OR LOWER(stage) LIKE ? OR LOWER(title) LIKE ? OR LOWER(summary) LIKE ? OR LOWER(tool_name) LIKE ?",
+			like,
+			like,
+			like,
+			like,
+			like,
+			like,
+			like,
+			like,
+		)
+	}
+	if eventScope := strings.TrimSpace(filter.EventScope); eventScope != "" {
+		query = query.Where("event_scope = ?", eventScope)
+	}
+	if eventType := strings.TrimSpace(filter.EventType); eventType != "" {
+		query = query.Where("event_type = ?", eventType)
+	}
+	if status := strings.TrimSpace(filter.Status); status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if filter.CreatedFrom != nil {
+		query = query.Where("created_at >= ?", *filter.CreatedFrom)
+	}
+	if filter.CreatedTo != nil {
+		query = query.Where("created_at <= ?", *filter.CreatedTo)
+	}
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, translateError(err)
+	}
+	order := "created_at DESC, id DESC"
+	switch strings.TrimSpace(filter.Sort) {
+	case "created_asc":
+		order = "created_at ASC, id ASC"
+	case "latency_desc":
+		order = "latency_ms DESC, id DESC"
+	case "seq_asc":
+		order = "run_id ASC, seq ASC, id ASC"
+	}
+	if err := query.
+		Order(order).
+		Offset(offset).
+		Limit(limit).
+		Find(&items).Error; err != nil {
+		return nil, 0, translateError(err)
+	}
+	return toConversationEventLogDomains(items), total, nil
+}
+
 // ListConversationRunsByRunIDs 按运行 ID 查询会话运行快照。
 func (r *Repo) ListConversationRunsByRunIDs(
 	ctx context.Context,
@@ -1638,6 +1712,60 @@ ORDER BY id ASC`
 		return nil, err
 	}
 	return toMessageDomains(path), nil
+}
+
+// ListMessageAncestorsUntil 从指定消息向上遍历 parent_message_id 链，直到命中 stopMessageID 或达到深度上限。
+func (r *Repo) ListMessageAncestorsUntil(ctx context.Context, conversationID uint, leafMessageID uint, stopMessageID uint, maxDepth int) ([]domainconversation.Message, bool, error) {
+	if maxDepth <= 0 {
+		maxDepth = 200
+	}
+	if leafMessageID == 0 || stopMessageID == 0 {
+		return nil, false, repository.ErrInvalidInput
+	}
+
+	const cteSQL = `
+WITH RECURSIVE ancestors AS (
+    SELECT *, 1 AS _depth
+    FROM chat_messages
+    WHERE id = ? AND conversation_id = ? AND deleted_at IS NULL
+    UNION ALL
+    SELECT m.*, a._depth + 1
+    FROM chat_messages m
+    INNER JOIN ancestors a ON m.id = a.parent_message_id
+    WHERE a.parent_message_id IS NOT NULL
+      AND a._depth < ?
+      AND a.id <> ?
+      AND m.conversation_id = ?
+      AND m.deleted_at IS NULL
+)
+SELECT id, conversation_id, user_id, public_id, parent_message_id, run_id,
+       role, content_type, content, branch_reason, source_message_id,
+       token_usage, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, reasoning_tokens,
+       latency_ms, billed_currency, billed_nanousd, pricing_snapshot,
+       status, error_code, error_message, is_compacted, edited_at,
+       created_at, updated_at, deleted_at
+FROM ancestors
+ORDER BY id ASC`
+
+	path := make([]models.Message, 0, maxDepth)
+	if err := r.db.WithContext(ctx).Raw(cteSQL, leafMessageID, conversationID, maxDepth, stopMessageID, conversationID).Scan(&path).Error; err != nil {
+		return nil, false, translateError(err)
+	}
+
+	found := false
+	for _, item := range path {
+		if item.ID == stopMessageID {
+			found = true
+			break
+		}
+	}
+	if err := r.hydrateMessageRefs(ctx, path); err != nil {
+		return nil, false, err
+	}
+	if err := r.hydrateMessageAttachments(ctx, path); err != nil {
+		return nil, false, err
+	}
+	return toMessageDomains(path), found, nil
 }
 
 // ListRecentMessages 查询会话最近消息窗口（按时间升序返回）。
@@ -3180,6 +3308,43 @@ func toConversationRunDomains(items []models.ConversationRun) []domainconversati
 	return results
 }
 
+func toConversationEventLogDomains(items []models.ChatRunEvent) []domainconversation.EventLog {
+	results := make([]domainconversation.EventLog, 0, len(items))
+	for _, item := range items {
+		results = append(results, domainconversation.EventLog{
+			ID:              item.ID,
+			MessageID:       item.MessageID,
+			ConversationID:  item.ConversationID,
+			UserID:          item.UserID,
+			RunID:           item.RunID,
+			EventScope:      item.EventScope,
+			EventID:         item.EventID,
+			EventType:       item.EventType,
+			Phase:           item.Phase,
+			Stage:           item.Stage,
+			RoundID:         item.RoundID,
+			ParentEventID:   item.ParentEventID,
+			Status:          item.Status,
+			Title:           item.Title,
+			Summary:         item.Summary,
+			ContentMarkdown: item.ContentMarkdown,
+			PayloadJSON:     item.PayloadJSON,
+			Seq:             item.Seq,
+			ToolCallID:      item.ToolCallID,
+			ToolName:        item.ToolName,
+			LatencyMS:       item.LatencyMS,
+			InputJSON:       item.InputJSON,
+			OutputJSON:      item.OutputJSON,
+			ErrorJSON:       item.ErrorJSON,
+			StartedAt:       item.StartedAt,
+			EndedAt:         item.EndedAt,
+			CreatedAt:       item.CreatedAt,
+			UpdatedAt:       item.UpdatedAt,
+		})
+	}
+	return results
+}
+
 func toConversationRunModel(item *domainconversation.Run) models.ConversationRun {
 	if item == nil {
 		return models.ConversationRun{}
@@ -3371,19 +3536,23 @@ func toConversationToolCallModel(item *domainconversation.ToolCall) models.ChatR
 
 func toContextSnapshotDomain(item models.ChatContextRecord) domainconversation.ContextSnapshot {
 	return domainconversation.ContextSnapshot{
-		ID:             item.ID,
-		ConversationID: item.ConversationID,
-		MessageID:      item.MessageID,
-		UserID:         item.UserID,
-		RunID:          item.RunID,
-		FromTurn:       item.FromTurn,
-		ToTurn:         item.ToTurn,
-		SourceTokens:   item.SourceTokens,
-		SummaryTokens:  item.SummaryTokens,
-		SummaryText:    item.SummaryText,
-		Strategy:       item.Strategy,
-		CreatedAt:      item.CreatedAt,
-		UpdatedAt:      item.UpdatedAt,
+		ID:                    item.ID,
+		ConversationID:        item.ConversationID,
+		MessageID:             item.MessageID,
+		UserID:                item.UserID,
+		RunID:                 item.RunID,
+		FromTurn:              item.FromTurn,
+		ToTurn:                item.ToTurn,
+		CoveredUntilMessageID: item.CoveredUntilMessageID,
+		CoveredUntilPublicID:  item.CoveredUntilPublicID,
+		CoveragePathHash:      item.CoveragePathHash,
+		CoveredMessageCount:   item.CoveredMessageCount,
+		SourceTokens:          item.SourceTokens,
+		SummaryTokens:         item.SummaryTokens,
+		SummaryText:           item.SummaryText,
+		Strategy:              item.Strategy,
+		CreatedAt:             item.CreatedAt,
+		UpdatedAt:             item.UpdatedAt,
 	}
 }
 
@@ -3392,17 +3561,21 @@ func toContextSnapshotModel(item *domainconversation.ContextSnapshot) models.Cha
 		return models.ChatContextRecord{}
 	}
 	return models.ChatContextRecord{
-		RecordType:     chatContextRecordSnapshot,
-		ConversationID: item.ConversationID,
-		MessageID:      item.MessageID,
-		UserID:         item.UserID,
-		RunID:          item.RunID,
-		FromTurn:       item.FromTurn,
-		ToTurn:         item.ToTurn,
-		SourceTokens:   item.SourceTokens,
-		SummaryTokens:  item.SummaryTokens,
-		SummaryText:    item.SummaryText,
-		Strategy:       item.Strategy,
+		RecordType:            chatContextRecordSnapshot,
+		ConversationID:        item.ConversationID,
+		MessageID:             item.MessageID,
+		UserID:                item.UserID,
+		RunID:                 item.RunID,
+		FromTurn:              item.FromTurn,
+		ToTurn:                item.ToTurn,
+		CoveredUntilMessageID: item.CoveredUntilMessageID,
+		CoveredUntilPublicID:  item.CoveredUntilPublicID,
+		CoveragePathHash:      item.CoveragePathHash,
+		CoveredMessageCount:   item.CoveredMessageCount,
+		SourceTokens:          item.SourceTokens,
+		SummaryTokens:         item.SummaryTokens,
+		SummaryText:           item.SummaryText,
+		Strategy:              item.Strategy,
 	}
 }
 
