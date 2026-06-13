@@ -899,7 +899,7 @@ export function AppChatArea() {
   const isConversationLoadFailed = Boolean(conversationID) && !loading && errorMsg.trim().length > 0 && visibleMessageCount === 0;
   const shouldUseCenteredComposer =
     !isConversationLoading && !isConversationLoadFailed && !isConversationMode && messagesWithInlineError.length === 0;
-  const dragUploadDisabled = loading || generating || uploading || isConversationLoadFailed;
+  const dragUploadDisabled = loading || generating || isConversationLoadFailed;
   const { isDraggingFiles } = useChatWindowFileDrop({
     disabled: dragUploadDisabled,
     onDropFiles: onUploadFiles,

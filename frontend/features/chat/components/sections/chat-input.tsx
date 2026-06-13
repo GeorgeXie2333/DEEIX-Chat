@@ -776,7 +776,7 @@ function ChatInputComponent({
         <InputGroupTextarea
           ref={textareaRef}
           value={draft}
-          disabled={sending || loading || uploading}
+          disabled={sending || loading}
           readOnly={speechInput.active}
           placeholder={speechInput.placeholder}
           rows={1}
@@ -836,7 +836,7 @@ function ChatInputComponent({
                   variant="ghost"
                   size="icon-sm"
                   className="relative size-7 rounded-md text-muted-foreground hover:text-foreground sm:size-8"
-                  disabled={sending || loading || uploading}
+                  disabled={sending || loading}
                   aria-label={tComposer("openTools")}
                 >
                   <PlusIcon
@@ -918,6 +918,7 @@ function ChatInputComponent({
                                 label={tNativeToolLabels(tool.labelKey)}
                                 description={tNativeToolDescriptions(tool.descriptionKey)}
                                 selected={checked}
+                                disabled={uploading}
                                 renderIcon={(hovered) => nativeToolIcon(tool, hovered)}
                                 onClick={() => onToggleNativeTool(tool, !checked)}
                               />
@@ -932,7 +933,7 @@ function ChatInputComponent({
                         <div className="my-1 h-px bg-border/70" />
                         <CompactToolMenuItem
                           label={tComposer("mcpTools")}
-                          disabled={toolsLoading}
+                          disabled={toolsLoading || uploading}
                           renderIcon={(hovered) => (
                             <Wrench
                               className={cn(

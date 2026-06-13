@@ -7,10 +7,12 @@ import { toast } from "sonner";
 import { resolveUploadPolicyRejection } from "@/features/chat/utils/attachments";
 import { captureScreenshotFile } from "@/features/chat/utils/browser-media";
 import { resolveMaxFilesPerMessage } from "@/features/chat/utils/chat-runtime";
-import type {
-  PendingAttachment,
-  UploadingAttachment,
-} from "@/features/chat/types/chat-runtime";
+import {
+  releaseUploadBatch,
+  reserveUploadBatch,
+  type UploadReservationState,
+} from "@/features/chat/model/upload-reservations";
+import type { PendingAttachment } from "@/features/chat/types/chat-runtime";
 import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import {
@@ -39,12 +41,14 @@ export function useChatAttachments({
 }) {
   const t = useTranslations("chat.attachments");
   const resolveErrorMessage = useLocalizedErrorMessage();
-  const [uploadingByKey, setUploadingByKey] = React.useState<Record<string, UploadingAttachment[]>>({});
+  const [uploadingByKey, setUploadingByKey] = React.useState<UploadReservationState>({});
   const [maxFilesPerMessage, setMaxFilesPerMessage] = React.useState(() => resolveMaxFilesPerMessage());
   const [chatFilePolicy, setChatFilePolicy] = React.useState<ChatFilePolicyDTO | null>(null);
   const attachmentsRef = React.useRef<PendingAttachment[]>(attachments);
   const previousAttachmentsRef = React.useRef<PendingAttachment[]>(attachments);
   const currentConversationKeyRef = React.useRef(conversationKey);
+  const uploadingByKeyRef = React.useRef<UploadReservationState>({});
+  const settledFileIDsByKeyRef = React.useRef<Record<string, Set<string>>>({});
   const uploadingAttachments = uploadingByKey[conversationKey] ?? [];
   const uploading = uploadingAttachments.length > 0;
 
@@ -68,7 +72,17 @@ export function useChatAttachments({
 
   React.useEffect(() => {
     attachmentsRef.current = attachments;
-  }, [attachments]);
+    const settledFileIDs = settledFileIDsByKeyRef.current[conversationKey];
+    if (!settledFileIDs) {
+      return;
+    }
+    for (const item of attachments) {
+      settledFileIDs.delete(item.fileID);
+    }
+    if (settledFileIDs.size === 0) {
+      delete settledFileIDsByKeyRef.current[conversationKey];
+    }
+  }, [attachments, conversationKey]);
 
   React.useEffect(() => {
     currentConversationKeyRef.current = conversationKey;
@@ -165,20 +179,11 @@ export function useChatAttachments({
 
   const onUploadFiles = React.useCallback(
     async (files: File[]) => {
-      if (files.length === 0 || uploading) {
+      if (files.length === 0) {
         return;
       }
       const targetConversationKey = conversationKey;
-      const targetUploadingCount = uploadingByKey[targetConversationKey]?.length ?? 0;
-      const remainingSlots = maxFilesPerMessage - attachments.length - targetUploadingCount;
-      if (remainingSlots <= 0) {
-        toast.error(t("limitReached"), {
-          description: t("maxUploadFiles", { count: maxFilesPerMessage }),
-        });
-        return;
-      }
       const policyAcceptedFiles: File[] = [];
-      let overflowCount = 0;
       const policyLabels = {
         mimeNotAllowed: t("policy.mimeNotAllowed"),
         fullContextLimitExceeded: (limitKB: number) => t("policy.fullContextLimitExceeded", { limit: limitKB }),
@@ -192,31 +197,48 @@ export function useChatAttachments({
           });
           continue;
         }
-        if (policyAcceptedFiles.length >= remainingSlots) {
-          overflowCount += 1;
-          continue;
-        }
         policyAcceptedFiles.push(file);
-      }
-      if (overflowCount > 0) {
-        toast(t("autoTruncated"), {
-          description: t("autoTruncatedDescription", { max: maxFilesPerMessage, count: overflowCount }),
-        });
       }
       if (policyAcceptedFiles.length === 0) {
         return;
       }
 
+      const currentAttachmentIDs = new Set(attachments.map((item) => item.fileID));
+      const settledFileIDs = settledFileIDsByKeyRef.current[targetConversationKey];
+      let unsettledAttachmentCount = 0;
+      for (const fileID of settledFileIDs ?? []) {
+        if (!currentAttachmentIDs.has(fileID)) {
+          unsettledAttachmentCount += 1;
+        }
+      }
       const batchPrefix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      const placeholders = policyAcceptedFiles.map((file, index) => ({
-        tempID: `${batchPrefix}-${index}`,
-        fileName: file.name,
-        sizeBytes: file.size,
-      }));
-      setUploadingByKey((prev) => ({
-        ...prev,
-        [targetConversationKey]: [...(prev[targetConversationKey] ?? []), ...placeholders],
-      }));
+      const reservation = reserveUploadBatch({
+        uploadingByKey: uploadingByKeyRef.current,
+        conversationKey: targetConversationKey,
+        files: policyAcceptedFiles,
+        occupiedAttachmentCount: attachments.length + unsettledAttachmentCount,
+        maxFilesPerMessage,
+        batchPrefix,
+      });
+      if (reservation.acceptedFiles.length === 0) {
+        toast.error(t("limitReached"), {
+          description: t("maxUploadFiles", { count: maxFilesPerMessage }),
+        });
+        return;
+      }
+      if (reservation.overflowCount > 0) {
+        toast(t("autoTruncated"), {
+          description: t("autoTruncatedDescription", {
+            max: maxFilesPerMessage,
+            count: reservation.overflowCount,
+          }),
+        });
+      }
+
+      const acceptedFiles = reservation.acceptedFiles;
+      const placeholders = reservation.placeholders;
+      uploadingByKeyRef.current = reservation.nextUploadingByKey;
+      setUploadingByKey(reservation.nextUploadingByKey);
 
       try {
         const token = await resolveAccessToken();
@@ -226,7 +248,7 @@ export function useChatAttachments({
         }
 
         const results = await Promise.allSettled(
-          policyAcceptedFiles.map((file) =>
+          acceptedFiles.map((file) =>
             uploadFile(token, file, {
               purpose: "conversation_attachment",
             }),
@@ -238,7 +260,7 @@ export function useChatAttachments({
           if (result.status !== "fulfilled") {
             return [];
           }
-          const sourceFile = policyAcceptedFiles[index];
+          const sourceFile = acceptedFiles[index];
           const previewURL = sourceFile.type.startsWith("image/") ? URL.createObjectURL(sourceFile) : undefined;
           return [
             {
@@ -263,19 +285,29 @@ export function useChatAttachments({
           ];
         });
         if (uploaded.length > 0) {
+          const settledIDs =
+            settledFileIDsByKeyRef.current[targetConversationKey] ??
+            new Set<string>();
           const existingIDs = new Set(
             currentConversationKeyRef.current === targetConversationKey
               ? attachmentsRef.current.map((item) => item.fileID)
               : [],
           );
+          for (const fileID of settledIDs) {
+            existingIDs.add(fileID);
+          }
           const nextUploaded = uploaded.filter((item) => {
             if (existingIDs.has(item.fileID)) {
               revokeAttachmentPreview(item);
               return false;
             }
             existingIDs.add(item.fileID);
+            settledIDs.add(item.fileID);
             return true;
           });
+          if (settledIDs.size > 0) {
+            settledFileIDsByKeyRef.current[targetConversationKey] = settledIDs;
+          }
           appendAttachmentsForKey(targetConversationKey, nextUploaded);
           if (currentConversationKeyRef.current !== targetConversationKey) {
             releaseAttachments(uploaded);
@@ -284,38 +316,37 @@ export function useChatAttachments({
         if (reusedCount > 0) {
           toast.success(t("duplicateReused"));
         }
-        if (uploaded.length < policyAcceptedFiles.length) {
+        if (uploaded.length < acceptedFiles.length) {
           toast.error(t("partialUploadFailed"), { description: t("retryFailedFiles") });
         }
       } catch (error) {
         const description = resolveErrorMessage(error, t("retryLater"));
         toast.error(t("uploadFailed"), { description });
       } finally {
-        setUploadingByKey((prev) => {
-          const tempIDs = new Set(placeholders.map((item) => item.tempID));
-          const nextItems = (prev[targetConversationKey] ?? []).filter((item) => !tempIDs.has(item.tempID));
-          if (nextItems.length === 0) {
-            const { [targetConversationKey]: _removed, ...rest } = prev;
-            return rest;
-          }
-          return {
-            ...prev,
-            [targetConversationKey]: nextItems,
-          };
-        });
+        const nextUploadingByKey = releaseUploadBatch(
+          uploadingByKeyRef.current,
+          targetConversationKey,
+          placeholders.map((item) => item.tempID),
+        );
+        uploadingByKeyRef.current = nextUploadingByKey;
+        setUploadingByKey(nextUploadingByKey);
+        if (
+          currentConversationKeyRef.current !== targetConversationKey &&
+          (nextUploadingByKey[targetConversationKey]?.length ?? 0) === 0
+        ) {
+          delete settledFileIDsByKeyRef.current[targetConversationKey];
+        }
       }
     },
     [
       appendAttachmentsForKey,
-      attachments.length,
+      attachments,
       chatFilePolicy,
       conversationKey,
       maxFilesPerMessage,
       releaseAttachments,
       resolveErrorMessage,
       t,
-      uploading,
-      uploadingByKey,
     ],
   );
 

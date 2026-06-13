@@ -597,10 +597,10 @@
       }
     },
     "think": {
-      "titleActive": "正在生成思考摘要",
-      "titleDone": "思考摘要完成",
-      "subtitleActive": "模型正在整理可展示的推理摘要",
-      "subtitleDone": "已生成可展示的思考过程摘要"
+      "titleActive": "正在思考",
+      "titleDone": "思考完成",
+      "subtitleActive": "正在解析问题并梳理关键信息",
+      "subtitleDone": "已理解并完成相关信息整合与推理"
     },
     "promptTrace": {
       "modes": {

@@ -47,6 +47,105 @@ func TestUpstreamUsageSnapshotReturnsEmptyObjectWhenRawUsageIsMissing(t *testing
 	}
 }
 
+func TestBuildUsageLedgerSnapshotsCanceledAccounting(t *testing.T) {
+	repo := &billingRepositoryStub{
+		mode: "usage",
+		pricing: &domainbilling.ModelPricing{
+			PlatformModelName:          "gpt-4o",
+			Currency:                   "USD",
+			PricingMode:                domainbilling.PricingModeToken,
+			InputNanousdPerMTokens:     1_000_000_000,
+			OutputNanousdPerMTokens:    2_000_000_000,
+			CacheReadNanousdPerMTokens: 200_000_000,
+		},
+	}
+	service := NewService(repo)
+
+	ledger, err := service.BuildUsageLedger(context.Background(), UsagePricingInput{
+		UserID:             1,
+		PlatformModelName:  "gpt-4o",
+		InputTokens:        10,
+		OutputTokens:       2,
+		RunStatus:          "canceled",
+		CanceledBy:         "user",
+		UpstreamDispatched: true,
+		InputTokenSource:   "upstream",
+		OutputTokenSource:  "calculated",
+	})
+	if err != nil {
+		t.Fatalf("BuildUsageLedger() error = %v", err)
+	}
+
+	var snapshot map[string]interface{}
+	if err := json.Unmarshal([]byte(ledger.PricingSnapshotJSON), &snapshot); err != nil {
+		t.Fatalf("unmarshal pricing snapshot: %v", err)
+	}
+	if snapshot["run_status"] != "canceled" || snapshot["canceled_by"] != "user" {
+		t.Fatalf("unexpected canceled snapshot: %#v", snapshot)
+	}
+	if snapshot["upstream_dispatched"] != true {
+		t.Fatalf("expected upstream_dispatched=true, got %#v", snapshot["upstream_dispatched"])
+	}
+	sources, ok := snapshot["usage_sources"].(map[string]interface{})
+	if !ok || sources["input_tokens"] != "upstream" || sources["output_tokens"] != "calculated" {
+		t.Fatalf("unexpected usage sources: %#v", snapshot["usage_sources"])
+	}
+}
+
+func TestBuildUsageLedgerCanceledCallPricingChargesSingleRequest(t *testing.T) {
+	repo := &billingRepositoryStub{
+		mode: "usage",
+		pricing: &domainbilling.ModelPricing{
+			PlatformModelName:  "image-model",
+			Currency:           "USD",
+			PricingMode:        domainbilling.PricingModeCall,
+			CallNanousdPerCall: 75_000,
+		},
+	}
+
+	ledger, err := NewService(repo).BuildUsageLedger(context.Background(), UsagePricingInput{
+		UserID:             1,
+		PlatformModelName:  "image-model",
+		CallCount:          1,
+		RunStatus:          "canceled",
+		CanceledBy:         "user",
+		UpstreamDispatched: true,
+	})
+	if err != nil {
+		t.Fatalf("BuildUsageLedger() error = %v", err)
+	}
+	if ledger.CallCount != 1 || ledger.BilledNanousd != 75_000 {
+		t.Fatalf("unexpected canceled call billing: count=%d billed=%d", ledger.CallCount, ledger.BilledNanousd)
+	}
+}
+
+func TestBuildUsageLedgerCanceledDurationPricingUsesRequestedSeconds(t *testing.T) {
+	repo := &billingRepositoryStub{
+		mode: "usage",
+		pricing: &domainbilling.ModelPricing{
+			PlatformModelName:        "video-model",
+			Currency:                 "USD",
+			PricingMode:              domainbilling.PricingModeDuration,
+			DurationNanousdPerSecond: 9_000,
+		},
+	}
+
+	ledger, err := NewService(repo).BuildUsageLedger(context.Background(), UsagePricingInput{
+		UserID:             1,
+		PlatformModelName:  "video-model",
+		DurationSeconds:    8,
+		RunStatus:          "canceled",
+		CanceledBy:         "user",
+		UpstreamDispatched: true,
+	})
+	if err != nil {
+		t.Fatalf("BuildUsageLedger() error = %v", err)
+	}
+	if ledger.DurationSeconds != 8 || ledger.BilledNanousd != 72_000 {
+		t.Fatalf("unexpected canceled duration billing: seconds=%d billed=%d", ledger.DurationSeconds, ledger.BilledNanousd)
+	}
+}
+
 type billingRepositoryStub struct {
 	mode                       string
 	pricing                    *domainbilling.ModelPricing

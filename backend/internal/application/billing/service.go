@@ -104,6 +104,11 @@ type UsagePricingInput struct {
 	ServerSideToolUsage map[string]int64
 	ServiceItems        []ServiceUsageInput
 	RawUsageJSON        string
+	RunStatus           string
+	CanceledBy          string
+	UpstreamDispatched  bool
+	InputTokenSource    string
+	OutputTokenSource   string
 }
 
 func upstreamUsageSnapshot(input UsagePricingInput) interface{} {
@@ -1621,6 +1626,15 @@ func (s *Service) BuildUsageLedger(ctx context.Context, input UsagePricingInput)
 		"native_tool_billed_nanousd":               nativeToolBilledNanousd,
 		"base_service_billed_nanousd":              serviceBilledNanousd,
 		"service_items":                            usageServiceItemSnapshots(serviceItems),
+	}
+	if runStatus := strings.TrimSpace(input.RunStatus); runStatus != "" {
+		snapshot["run_status"] = runStatus
+		snapshot["canceled_by"] = strings.TrimSpace(input.CanceledBy)
+		snapshot["upstream_dispatched"] = input.UpstreamDispatched
+		snapshot["usage_sources"] = map[string]interface{}{
+			"input_tokens":  strings.TrimSpace(input.InputTokenSource),
+			"output_tokens": strings.TrimSpace(input.OutputTokenSource),
+		}
 	}
 	snapshotJSON := "{}"
 	if raw, marshalErr := json.Marshal(snapshot); marshalErr == nil {

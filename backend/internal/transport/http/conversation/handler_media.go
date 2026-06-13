@@ -113,6 +113,31 @@ func (h *Handler) streamMediaImage(c *gin.Context, taskType appconversation.Medi
 		},
 	})
 	if err != nil {
+		if result != nil && result.Billable {
+			billingCtx, billingCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			usageLedger, billingErr := h.service.RecordSendMessageBilling(
+				billingCtx,
+				mediaImageBillingInput(userID, conversation, &req, result),
+				reservation,
+			)
+			billingCancel()
+			if billingErr != nil {
+				if shouldReleaseReservationAfterBillingError(billingErr) {
+					_ = h.releaseSendMessageUsageReservation(reservation, "计费失败退回预扣")
+				}
+				payload := billingStreamErrorPayload(billingErr)
+				payload["data"] = toSendMessageResponse(result)
+				_ = flushStreamEvent(payload)
+				h.service.FinishMessageGeneration(req.ClientRunID)
+				return
+			}
+			appconversation.ApplyUsageBilling(&result.AssistantMessage, usageLedger)
+			payload := streamErrorPayload(err)
+			payload["data"] = toSendMessageResponse(result)
+			_ = flushStreamEvent(payload)
+			h.service.FinishMessageGeneration(req.ClientRunID)
+			return
+		}
 		if releaseErr := h.releaseSendMessageUsageReservation(reservation, mediaFailureReservationDescription(taskType)); releaseErr != nil {
 			_ = flushStreamEvent(billingStreamErrorPayload(releaseErr))
 			h.service.FinishMessageGeneration(req.ClientRunID)

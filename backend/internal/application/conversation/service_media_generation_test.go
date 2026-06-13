@@ -117,6 +117,28 @@ func TestSanitizeOpenAIVideoGenerationOptions(t *testing.T) {
 	}
 }
 
+func TestMediaVideoBillingDurationSecondsUsesEffectiveRequest(t *testing.T) {
+	tests := []struct {
+		name    string
+		options map[string]interface{}
+		want    int64
+	}{
+		{name: "default", options: nil, want: 4},
+		{name: "four seconds", options: map[string]interface{}{"seconds": "4"}, want: 4},
+		{name: "eight seconds", options: map[string]interface{}{"seconds": "8"}, want: 8},
+		{name: "twelve seconds", options: map[string]interface{}{"seconds": "12"}, want: 12},
+		{name: "invalid falls back", options: map[string]interface{}{"seconds": "20"}, want: 4},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := mediaVideoBillingDurationSeconds(tt.options); got != tt.want {
+				t.Fatalf("mediaVideoBillingDurationSeconds() = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestEmitMediaVideoStatusIncludesProgress(t *testing.T) {
 	progress := 33
 	var gotType string

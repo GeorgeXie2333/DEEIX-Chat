@@ -180,9 +180,15 @@ func (s *Service) buildSendMessageUsageLedger(ctx context.Context, input SendMes
 		OutputTokens:        result.AssistantMessage.OutputTokens,
 		ReasoningTokens:     result.AssistantMessage.ReasoningTokens,
 		CallCount:           1,
+		DurationSeconds:     result.DurationSeconds,
 		LatencyMS:           latencyMS,
 		ServerSideToolUsage: result.ServerSideToolUsage,
 		RawUsageJSON:        result.RawUsageJSON,
+		RunStatus:           result.RunStatus,
+		CanceledBy:          result.CanceledBy,
+		UpstreamDispatched:  result.UpstreamDispatched,
+		InputTokenSource:    result.InputTokenSource,
+		OutputTokenSource:   result.OutputTokenSource,
 	})
 }
 

@@ -597,10 +597,10 @@
       }
     },
     "think": {
-      "titleActive": "Generating thinking summary",
-      "titleDone": "Thinking summary complete",
-      "subtitleActive": "The model is preparing a shareable reasoning summary",
-      "subtitleDone": "The model has produced a shareable thought-process summary"
+      "titleActive": "Thinking",
+      "titleDone": "Thinking complete",
+      "subtitleActive": "Parsing the request and organizing key context",
+      "subtitleDone": "Reasoning and context integration complete"
     },
     "promptTrace": {
       "modes": {

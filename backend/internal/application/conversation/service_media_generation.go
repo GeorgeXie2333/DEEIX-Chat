@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	"io"
@@ -41,6 +42,18 @@ type mediaImageCapabilities struct {
 	Image struct {
 		Stream *bool `json:"stream"`
 	} `json:"image"`
+}
+
+type canceledMediaGenerationInput struct {
+	Input                MediaImageInput
+	UserMessage          *model.Message
+	AssistantMessage     *model.Message
+	Route                *channel.ResolvedRoute
+	EffectiveOptions     map[string]interface{}
+	Usage                llm.Usage
+	EstimatedInputTokens int64
+	UpstreamDispatched   bool
+	StartedAt            time.Time
 }
 
 // MediaImageInput 定义媒体图片任务的应用层入参。
@@ -222,6 +235,10 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		run.TotalLatencyMS = endedAt.Sub(startedAt).Milliseconds()
 		if retErr == nil {
 			run.Status = "success"
+		} else if errors.Is(retErr, ErrMessageGenerationCanceled) {
+			run.Status = "canceled"
+			run.ErrorCode = classifyRunErrorCode(retErr)
+			run.ErrorMessage = truncateError(messageErrorSummary(retErr), 255)
 		} else {
 			run.Status = "error"
 			run.ErrorCode = classifyRunErrorCode(retErr)
@@ -359,10 +376,20 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		}}
 	}
 	var output *llm.GenerateOutput
+	var streamUsage llm.Usage
+	upstreamDispatched := false
 	useMediaImageStream := mediaImageStreamEnabled(routeConfig.Protocol, routeConfig.UpstreamModel, route.ModelCapabilitiesJSON) &&
 		shouldUseUpstreamMediaImageStream(routeConfig.Protocol, routeConfig.UpstreamModel, filteredOptions)
+	if s.isMessageGenerationCanceled(context.Background(), runID) {
+		retErr = ErrMessageGenerationCanceled
+		return nil, retErr
+	}
 	if input.TaskType == MediaVideoTaskGeneration || useMediaImageStream {
+		upstreamDispatched = true
 		output, err = s.llmClient.GenerateStream(ctx, routeConfig, generateInput, func(event llm.GenerateStreamEvent) error {
+			if event.Usage != (llm.Usage{}) {
+				streamUsage = event.Usage
+			}
 			if event.Usage != (llm.Usage{}) && input.OnEvent != nil {
 				if streamErr := input.OnEvent("usage", map[string]interface{}{
 					"input_tokens":       event.Usage.InputTokens,
@@ -383,9 +410,36 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 			return nil
 		})
 	} else {
+		upstreamDispatched = true
 		output, err = s.llmClient.Generate(ctx, routeConfig, generateInput)
 	}
 	if err != nil {
+		if s.isMessageGenerationCanceled(context.Background(), runID) {
+			if output != nil && output.Usage != (llm.Usage{}) {
+				streamUsage = output.Usage
+			}
+			canceledResult := buildCanceledMediaGenerationResult(canceledMediaGenerationInput{
+				Input:                input,
+				UserMessage:          userMessage,
+				AssistantMessage:     assistantMessage,
+				Route:                route,
+				EffectiveOptions:     filteredOptions,
+				Usage:                streamUsage,
+				EstimatedInputTokens: estimatePromptTokens(generateInput.Messages),
+				UpstreamDispatched:   upstreamDispatched,
+				StartedAt:            startedAt,
+			})
+			if canceledResult != nil {
+				s.persistCanceledMediaGeneration(userMessage, assistantMessage)
+				run.InputTokens = canceledResult.UserMessage.InputTokens
+				run.OutputTokens = canceledResult.AssistantMessage.OutputTokens
+				run.CacheReadTokens = canceledResult.UserMessage.CacheReadTokens
+				run.CacheWriteTokens = canceledResult.UserMessage.CacheWriteTokens
+				run.ReasoningTokens = canceledResult.AssistantMessage.ReasoningTokens
+			}
+			retErr = ErrMessageGenerationCanceled
+			return canceledResult, retErr
+		}
 		s.routeResolver.MarkRouteFailure(ctx, route, err)
 		retErr = wrapUpstreamRequestError(err)
 		_ = s.repo.UpdateMessageState(ctx, assistantMessage.ID, "error", classifyRunErrorCode(retErr), truncateError(messageErrorSummary(retErr), 255))
@@ -530,6 +584,35 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		CacheWrite1hTokens: usage.CacheWrite1hTokens,
 		LatencyMS:          latencyMS,
 	}, nil
+}
+
+func (s *Service) persistCanceledMediaGeneration(userMessage *model.Message, assistantMessage *model.Message) {
+	if s == nil || s.repo == nil || userMessage == nil || assistantMessage == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = s.repo.UpdateMessageUsage(
+		ctx,
+		userMessage.ID,
+		userMessage.InputTokens,
+		0,
+		userMessage.CacheReadTokens,
+		userMessage.CacheWriteTokens,
+		0,
+	)
+	_ = s.repo.UpdateMessageState(ctx, userMessage.ID, "success", "", "")
+	_ = s.repo.UpdateAssistantMessageCompletion(
+		ctx,
+		assistantMessage.ID,
+		assistantMessage.Content,
+		assistantMessage.OutputTokens,
+		assistantMessage.ReasoningTokens,
+		assistantMessage.LatencyMS,
+		"canceled",
+		assistantMessage.ErrorCode,
+		assistantMessage.ErrorMessage,
+	)
 }
 
 func mediaUserContentType(taskType MediaImageTaskType, hasAttachments bool) string {
@@ -732,6 +815,78 @@ func sanitizeOpenAIVideoGenerationOptions(modelName string, options map[string]i
 		return nil
 	}
 	return options
+}
+
+func mediaVideoBillingDurationSeconds(options map[string]interface{}) int64 {
+	switch strings.TrimSpace(modelOptionStringValue(options["seconds"])) {
+	case "8":
+		return 8
+	case "12":
+		return 12
+	default:
+		return 4
+	}
+}
+
+func buildCanceledMediaGenerationResult(input canceledMediaGenerationInput) *SendMessageResult {
+	if !input.UpstreamDispatched || input.UserMessage == nil || input.AssistantMessage == nil {
+		return nil
+	}
+	estimatedInputTokens := input.EstimatedInputTokens
+	if estimatedInputTokens <= 0 {
+		estimatedInputTokens = estimateTokens(input.Input.Prompt)
+	}
+	var canceledUsage canceledGenerationUsageAccumulator
+	canceledUsage.addAttempt(input.Usage, estimatedInputTokens, 0)
+	usage := canceledUsage.Usage
+	latencyMS := time.Since(input.StartedAt).Milliseconds()
+	if input.StartedAt.IsZero() || latencyMS < 0 {
+		latencyMS = 0
+	}
+
+	input.UserMessage.InputTokens = usage.InputTokens
+	input.UserMessage.CacheReadTokens = usage.CacheReadTokens
+	input.UserMessage.CacheWriteTokens = usage.CacheWriteTokens
+	input.UserMessage.TokenUsage = usage.InputTokens + usage.CacheReadTokens + usage.CacheWriteTokens
+	input.UserMessage.Status = "success"
+
+	input.AssistantMessage.OutputTokens = usage.OutputTokens
+	input.AssistantMessage.ReasoningTokens = usage.ReasoningTokens
+	input.AssistantMessage.TokenUsage = usage.OutputTokens + usage.ReasoningTokens
+	input.AssistantMessage.LatencyMS = latencyMS
+	input.AssistantMessage.Status = "canceled"
+	input.AssistantMessage.ErrorCode = classifyRunErrorCode(ErrMessageGenerationCanceled)
+	input.AssistantMessage.ErrorMessage = ErrMessageGenerationCanceled.Error()
+
+	result := &SendMessageResult{
+		UserMessage:        *input.UserMessage,
+		AssistantMessage:   *input.AssistantMessage,
+		Billable:           true,
+		EffectiveOptions:   input.EffectiveOptions,
+		UsageSpeed:         usage.Speed,
+		UsageServiceTier:   usage.ServiceTier,
+		RawUsageJSON:       usage.RawUsageJSON,
+		CacheWrite5mTokens: usage.CacheWrite5mTokens,
+		CacheWrite1hTokens: usage.CacheWrite1hTokens,
+		RunStatus:          "canceled",
+		CanceledBy:         "user",
+		UpstreamDispatched: input.UpstreamDispatched,
+		InputTokenSource:   canceledUsage.InputTokenSource,
+		OutputTokenSource:  canceledUsage.OutputTokenSource,
+		LatencyMS:          latencyMS,
+	}
+	if input.Input.TaskType == MediaVideoTaskGeneration {
+		result.DurationSeconds = mediaVideoBillingDurationSeconds(input.EffectiveOptions)
+	}
+	if input.Route != nil {
+		result.UpstreamID = input.Route.UpstreamID
+		result.UpstreamName = input.Route.UpstreamName
+		result.PlatformModelName = input.Route.PlatformModelName
+		result.RoutedBindingCode = input.Route.BindingCode
+		result.UpstreamModelName = input.Route.UpstreamModel
+		result.UpstreamProtocol = input.Route.Protocol
+	}
+	return result
 }
 
 func resolveMediaVideoSize(modelName string, options map[string]interface{}) string {
@@ -1100,6 +1255,7 @@ func (s *Service) completeMediaVideoGeneration(ctx context.Context, input mediaV
 		UsageServiceTier:   usage.ServiceTier,
 		CacheWrite5mTokens: usage.CacheWrite5mTokens,
 		CacheWrite1hTokens: usage.CacheWrite1hTokens,
+		DurationSeconds:    mediaVideoBillingDurationSeconds(input.FilteredOptions),
 		LatencyMS:          latencyMS,
 	}, nil
 }

@@ -39,6 +39,13 @@ func (s *Service) StreamMessage(
 	return s.sendMessageInternal(ctx, input, onDelta, true)
 }
 
+func normalizeCanceledMessageGenerationError(err error, canceled bool) error {
+	if err != nil && canceled {
+		return ErrMessageGenerationCanceled
+	}
+	return err
+}
+
 // emitEvent 统一处理可选事件回调，调用方无需重复判断 nil。
 func emitEvent(onEvent func(string, map[string]interface{}) error, eventType string, payload map[string]interface{}) {
 	if onEvent == nil {
@@ -205,18 +212,35 @@ func (s *Service) sendMessageInternal(
 	var filteredOptions map[string]interface{}
 	var totalServerSideToolUsage map[string]int64
 	estimatedInputTokens := int64(0)
+	var canceledUsage canceledGenerationUsageAccumulator
+	upstreamDispatched := false
 	runState := newMessageSendRunState(s, input, conversation, startedAt, runID)
 	run := runState.run
 	runState.bind(&userMessage, &assistantMessage, &traceRecorder, &result, ctx)
 	defer func() {
+		retErr = normalizeCanceledMessageGenerationError(
+			retErr,
+			input.Cancelable && (ctx.Err() != nil || s.isMessageGenerationCanceled(context.Background(), runID)),
+		)
 		if retErr != nil {
+			interruptedUsage := streamUsageTotal
+			interruptedInputSource := ""
+			interruptedOutputSource := ""
+			if errors.Is(retErr, ErrMessageGenerationCanceled) {
+				interruptedUsage = canceledUsage.Usage
+				interruptedInputSource = canceledUsage.InputTokenSource
+				interruptedOutputSource = canceledUsage.OutputTokenSource
+			}
 			if retained := s.persistInterruptedMessageGeneration(ctx, persistInterruptedMessageGenerationInput{
 				SendInput:            input,
 				UserMessage:          userMessage,
 				AssistantMessage:     assistantMessage,
 				AssistantText:        streamedText.String(),
 				EstimatedInputTokens: estimatedInputTokens,
-				Usage:                streamUsageTotal,
+				UpstreamDispatched:   upstreamDispatched,
+				InputTokenSource:     interruptedInputSource,
+				OutputTokenSource:    interruptedOutputSource,
+				Usage:                interruptedUsage,
 				AssistantLatency:     time.Since(startedAt).Milliseconds(),
 				Error:                retErr,
 				ToolCallRows:         toolCallRows,
@@ -784,6 +808,27 @@ func (s *Service) sendMessageInternal(
 			}, promptShapeTraceAttributes("llm.prompt", callPromptShape)...)...),
 		)
 		var generateErr error
+		estimatedCallInputTokens := estimatePromptTokens(currentInput.Messages)
+		markUpstreamDispatched := func() {
+			upstreamDispatched = true
+		}
+		checkCanceledBeforeDispatch := func() error {
+			if s.isMessageGenerationCanceled(generationCtx, runID) {
+				return ErrMessageGenerationCanceled
+			}
+			return nil
+		}
+		recordCanceledUsageAttempt := func(output *llm.GenerateOutput, usage llm.Usage, fallbackOutput string) {
+			if output != nil {
+				if output.Usage != (llm.Usage{}) {
+					usage = output.Usage
+				}
+				if strings.TrimSpace(output.Text) != "" {
+					fallbackOutput = output.Text
+				}
+			}
+			canceledUsage.addAttempt(usage, estimatedCallInputTokens, estimateTokens(fallbackOutput))
+		}
 		defer func() {
 			platformtracing.RecordError(generationSpan, generateErr)
 			generationSpan.End()
@@ -823,8 +868,13 @@ func (s *Service) sendMessageInternal(
 		}
 
 		if !streamRequested || !streamSupported {
+			if generateErr = checkCanceledBeforeDispatch(); generateErr != nil {
+				return nil, generateErr
+			}
+			markUpstreamDispatched()
 			output, err := s.llmClient.Generate(generationCtx, routeConfig, currentInput)
 			generateErr = err
+			recordCanceledUsageAttempt(output, llm.Usage{}, "")
 			if err == nil && streamRequested {
 				generateErr = emitNonStreamingOutput(output)
 				if generateErr != nil {
@@ -835,16 +885,22 @@ func (s *Service) sendMessageInternal(
 		}
 		thinkingRouter := &thinkingDeltaRouter{}
 		callStreamUsage := llm.Usage{}
+		if generateErr = checkCanceledBeforeDispatch(); generateErr != nil {
+			return nil, generateErr
+		}
+		markUpstreamDispatched()
 		output, streamErr := s.llmClient.GenerateStream(generationCtx, routeConfig, currentInput, func(event llm.GenerateStreamEvent) error {
 			if s.isMessageGenerationCanceled(generationCtx, runID) {
 				return ErrMessageGenerationCanceled
 			}
-			if event.Usage != (llm.Usage{}) && input.OnEvent != nil {
+			if event.Usage != (llm.Usage{}) {
 				// 上游流式 usage 通常是“本次 LLM 调用累计值”，但一条消息可能包含多轮 LLM 调用。
 				// 这里先换算成本次调用内增量，再累加成本轮消息总量，保证实时展示和最终账单口径一致。
 				usageDelta := diffLLMUsage(event.Usage, callStreamUsage)
 				callStreamUsage = event.Usage
 				streamUsageTotal = addLLMUsage(streamUsageTotal, usageDelta)
+			}
+			if event.Usage != (llm.Usage{}) && input.OnEvent != nil {
 				if err := emitLLMUsageEvent(input.OnEvent, streamUsageTotal); err != nil {
 					return err
 				}
@@ -912,8 +968,14 @@ func (s *Service) sendMessageInternal(
 				output.Text = callVisibleText.String()
 			}
 		}
+		recordCanceledUsageAttempt(output, callStreamUsage, callVisibleText.String())
 		if generateErr != nil && shouldFallbackToNonStreaming(generateErr) {
+			if generateErr = checkCanceledBeforeDispatch(); generateErr != nil {
+				return output, generateErr
+			}
+			markUpstreamDispatched()
 			output, generateErr = s.llmClient.Generate(generationCtx, routeConfig, currentInput)
+			recordCanceledUsageAttempt(output, llm.Usage{}, "")
 			if generateErr == nil {
 				generateErr = emitNonStreamingOutput(output)
 			}

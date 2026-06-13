@@ -599,10 +599,10 @@
       }
     },
     "think": {
-      "titleActive": "思考サマリーを生成中",
-      "titleDone": "思考サマリー完了",
-      "subtitleActive": "モデルが表示可能な推論サマリーを整理しています",
-      "subtitleDone": "表示可能な思考プロセスのサマリーを生成しました"
+      "titleActive": "思考中",
+      "titleDone": "思考完了",
+      "subtitleActive": "リクエストを解析し、重要なコンテキストを整理しています",
+      "subtitleDone": "推論とコンテキストの統合が完了しました"
     },
     "promptTrace": {
       "modes": {

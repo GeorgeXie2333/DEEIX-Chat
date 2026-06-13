@@ -161,6 +161,12 @@ type SendMessageResult struct {
 	CacheWrite5mTokens  int64
 	CacheWrite1hTokens  int64
 	ServerSideToolUsage map[string]int64
+	DurationSeconds     int64
+	RunStatus           string
+	CanceledBy          string
+	UpstreamDispatched  bool
+	InputTokenSource    string
+	OutputTokenSource   string
 	LatencyMS           int64
 }
 
