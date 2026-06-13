@@ -26,7 +26,7 @@ function Table({
   const {
     contentRef,
     heightStyle,
-    viewportRef: measuredViewportRef,
+    viewportRef: resolvedViewportRef,
   } = useTableViewportHeight({
     disabled: viewportStyle?.height !== undefined,
     externalRef: viewportRef,
@@ -38,7 +38,7 @@ function Table({
       className={cn("min-w-0 overflow-hidden rounded-lg border border-border/60 bg-background", shellClassName)}
     >
       <div
-        ref={measuredViewportRef}
+        ref={resolvedViewportRef}
         className={cn("data-table-viewport w-full overflow-x-auto", viewportClassName)}
         style={{
           ...viewportStyle,

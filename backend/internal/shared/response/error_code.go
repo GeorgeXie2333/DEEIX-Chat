@@ -142,6 +142,7 @@ var exactErrorSpecs = map[string]errorSpec{
 	"empty admin user patch":                  {Code: "user.empty_patch", Message: "at least one user field is required"},
 
 	"invalid conversation title":                                {Code: "conversation.invalid_title", Message: "invalid conversation title"},
+	"conversation has no titleable content":                     {Code: "conversation.no_titleable_content", Message: "conversation has no titleable content"},
 	"invalid conversation share":                                {Code: "conversation_share.invalid", Message: "invalid conversation share"},
 	"conversation archive too large":                            {Code: "conversation_archive.too_large", Message: "conversation archive too large"},
 	"conversation share schema outdated":                        {Code: "conversation_share.schema_outdated", Message: "conversation share schema is outdated"},
@@ -534,6 +535,7 @@ var fallbackMessages = map[string]string{
 	"conversation.invalid_id":                         "invalid conversation id",
 	"conversation.not_found":                          "conversation not found",
 	"conversation.invalid_title":                      "invalid conversation title",
+	"conversation.no_titleable_content":               "conversation has no titleable content",
 	"conversation_share.invalid":                      "invalid conversation share",
 	"conversation_share.not_found":                    "conversation share not found",
 	"conversation_share.invalid_id":                   "invalid share id",

@@ -1,0 +1,37 @@
+{
+  "title": "提示词库",
+  "create": "新建",
+  "edit": "编辑",
+  "delete": "删除",
+  "enable": "启用",
+  "disable": "停用",
+  "cancel": "取消",
+  "save": "保存",
+  "saving": "保存中",
+  "searchPlaceholder": "搜索名称或内容",
+  "createTitle": "新建内置提示词",
+  "editTitle": "编辑内置提示词",
+  "dialogDescription": "平台内部维护的一份提示词，可在对话中快速插入，用户仅供查阅，无法编辑。",
+  "deleteTitle": "删除内置提示词",
+  "deleteDescription": "删除后该内置提示词不再对用户展示，不影响用户自己的自定义提示词。",
+  "empty": "暂无内置提示词",
+  "fields": {
+    "name": "名称",
+    "description": "说明",
+    "content": "内容",
+    "enabled": "启用",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间"
+  },
+  "toast": {
+    "loadFailed": "提示词加载失败",
+    "invalid": "请填写名称和内容。",
+    "tooLong": "名称最多 16 个字符，说明最多 64 个字符，内容最多 16384 个字符。",
+    "created": "提示词已创建",
+    "createFailed": "创建提示词失败",
+    "updated": "提示词已更新",
+    "updateFailed": "更新提示词失败",
+    "deleted": "提示词已删除",
+    "deleteFailed": "删除提示词失败"
+  }
+}

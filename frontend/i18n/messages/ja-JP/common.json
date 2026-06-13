@@ -47,6 +47,7 @@
     "search": "検索",
     "recent": "最近",
     "files": "ファイル",
+    "skillsPrompt": "スキルとプロンプト",
     "searchTitle": "検索",
     "searchDescription": "会話ID、タイトル、ラベル、モデルで検索",
     "searchPlaceholder": "ID、タイトル、ラベル、モデルで検索",

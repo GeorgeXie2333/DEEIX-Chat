@@ -78,6 +78,7 @@ export function NavStarred() {
     transferringStarPublicID,
     setStarByPublicID,
     renameByPublicID,
+    regenerateTitleByPublicID,
     loadAllStarred,
     archiveByPublicID,
     deleteByPublicID,
@@ -94,6 +95,7 @@ export function NavStarred() {
   const [renameTarget, setRenameTarget] = React.useState<SidebarConversationRenameTarget>(null)
   const [shareTarget, setShareTarget] = React.useState<{ publicID: string; title: string } | null>(null)
   const [renameValue, setRenameValue] = React.useState("")
+  const [autoRenamingPublicID, setAutoRenamingPublicID] = React.useState<string | null>(null)
   const listContainerRef = React.useRef<HTMLDivElement | null>(null)
   const deleteFilesID = React.useId()
 
@@ -176,6 +178,26 @@ export function NavStarred() {
       onRenameCancel()
     },
     [onRenameCancel, renameByPublicID, renameValue],
+  )
+
+  const onAutoRename = React.useCallback(
+    async (publicID: string) => {
+      if (autoRenamingPublicID) {
+        return
+      }
+      setAutoRenamingPublicID(publicID)
+      try {
+        const updated = await regenerateTitleByPublicID(publicID)
+        if (updated) {
+          onRenameCancel()
+        }
+      } catch {
+        // Keep the current rename input open so the user can retry or edit manually.
+      } finally {
+        setAutoRenamingPublicID(null)
+      }
+    },
+    [autoRenamingPublicID, onRenameCancel, regenerateTitleByPublicID],
   )
 
   const onUnstar = React.useCallback(
@@ -299,6 +321,8 @@ export function NavStarred() {
                     onRenameValueChange={setRenameValue}
                     onRenameCommit={onRenameCommit}
                     onRenameCancel={onRenameCancel}
+                    onAutoRename={onAutoRename}
+                    isAutoRenaming={autoRenamingPublicID === item.publicID}
                     onArchive={onArchive}
                     onShare={onShare}
                     onExport={onExport}

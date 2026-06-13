@@ -7,6 +7,7 @@ import { ArrowRight } from "@/components/animate-ui/icons/arrow-right"
 import { MessageCircleMore } from "@/components/animate-ui/icons/message-circle-more"
 import { Search } from "@/components/animate-ui/icons/search"
 import { AnimatedText } from "@/components/ui/animated-text"
+import { SpinnerLabel } from "@/components/ui/spinner"
 import {
   CommandDialog,
   CommandEmpty,
@@ -119,19 +120,30 @@ export function NavigationSearch({
         icon={<Search size={18} strokeWidth={1.2} />}
       />
 
-      <CommandList scrollContainerClassName="max-h-[280px]" className="px-2 py-2">
-        <CommandEmpty className="py-24 text-center text-sm text-muted-foreground">
-          {loading ? loadingText : emptyText}
-        </CommandEmpty>
+      <CommandList
+        scrollContainerClassName="max-h-[280px] overflow-x-hidden overscroll-contain"
+        className="px-2 py-2"
+      >
+        <div>
+          <CommandEmpty className="flex min-h-32 items-center justify-center py-8 text-sm text-muted-foreground">
+            {loading ? (
+              <SpinnerLabel className="justify-center">
+                {loadingText}
+              </SpinnerLabel>
+            ) : (
+              emptyText
+            )}
+          </CommandEmpty>
 
-        <div className="space-y-0.5">
-          {results.map((item) => (
-            <NavigationSearchResultItem
-              key={item.publicID}
-              item={item}
-              onSelect={onSelect}
-            />
-          ))}
+          <div className="space-y-0.5">
+            {results.map((item) => (
+              <NavigationSearchResultItem
+                key={item.publicID}
+                item={item}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>
         </div>
       </CommandList>
     </CommandDialog>

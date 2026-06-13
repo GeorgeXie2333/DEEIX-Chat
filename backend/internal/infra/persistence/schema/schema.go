@@ -50,6 +50,7 @@ func Models() []interface{} {
 		&model.SystemEvent{},
 		&model.Announcement{},
 		&model.AnnouncementUserState{},
+		&model.PromptPreset{},
 		&model.SystemSetting{},
 		&model.UserSetting{},
 		&model.FileChunk{},
@@ -68,6 +69,22 @@ func Migrate(db *gorm.DB) error {
 		}
 	}
 	return db.AutoMigrate(Models()...)
+}
+
+// CleanupRemovedColumns drops columns that were removed from the Gorm models.
+func CleanupRemovedColumns(db *gorm.DB) error {
+	if !db.Migrator().HasTable(&model.PromptPreset{}) {
+		return nil
+	}
+	for _, column := range []string{"use_count", "last_used_at", "category", "tags_json"} {
+		if !db.Migrator().HasColumn(&model.PromptPreset{}, column) {
+			continue
+		}
+		if err := db.Migrator().DropColumn(&model.PromptPreset{}, column); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SeedLLMSettings inserts default LLM runtime settings if they do not exist.

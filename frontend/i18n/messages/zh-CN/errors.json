@@ -108,6 +108,7 @@
   "conversation": {
     "invalidId": "对话 ID 无效。",
     "invalidTitle": "对话标题无效。",
+    "noTitleableContent": "当前对话没有可用于生成标题的内容。",
     "notFound": "对话不存在。"
   },
   "conversationRun": {

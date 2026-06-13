@@ -4858,6 +4858,118 @@ definitions:
       error:
         $ref: '#/definitions/internal_transport_http_openapi.openAIError'
     type: object
+  internal_transport_http_promptpreset.ErrorDoc:
+    properties:
+      errorMsg:
+        type: string
+    type: object
+  internal_transport_http_promptpreset.PatchPromptPresetRequest:
+    properties:
+      content:
+        maxLength: 16384
+        type: string
+      description:
+        maxLength: 64
+        type: string
+      enabled:
+        type: boolean
+      sortOrder:
+        type: integer
+      title:
+        maxLength: 16
+        type: string
+      trigger:
+        maxLength: 16
+        type: string
+    type: object
+  internal_transport_http_promptpreset.PromptPresetDataResponse:
+    properties:
+      promptPreset:
+        $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetResponse'
+    type: object
+  internal_transport_http_promptpreset.PromptPresetDeleteDataResponse:
+    properties:
+      deleted:
+        type: boolean
+    type: object
+  internal_transport_http_promptpreset.PromptPresetDeleteResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetDeleteDataResponse'
+      errorMsg:
+        type: string
+    type: object
+  internal_transport_http_promptpreset.PromptPresetPageResponseDoc:
+    properties:
+      data:
+        properties:
+          results:
+            items:
+              $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetResponse'
+            type: array
+          total:
+            type: integer
+        type: object
+      errorMsg:
+        type: string
+    type: object
+  internal_transport_http_promptpreset.PromptPresetResponse:
+    properties:
+      content:
+        type: string
+      createdAt:
+        type: string
+      createdByUserID:
+        type: integer
+      description:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: integer
+      scope:
+        type: string
+      sortOrder:
+        type: integer
+      title:
+        type: string
+      trigger:
+        type: string
+      updatedAt:
+        type: string
+      updatedByUserID:
+        type: integer
+    type: object
+  internal_transport_http_promptpreset.PromptPresetResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetDataResponse'
+      errorMsg:
+        type: string
+    type: object
+  internal_transport_http_promptpreset.WritePromptPresetRequest:
+    properties:
+      content:
+        maxLength: 16384
+        type: string
+      description:
+        maxLength: 64
+        type: string
+      enabled:
+        type: boolean
+      sortOrder:
+        type: integer
+      title:
+        maxLength: 16
+        type: string
+      trigger:
+        maxLength: 16
+        type: string
+    required:
+    - content
+    - title
+    - trigger
+    type: object
   internal_transport_http_settings.PatchItem:
     properties:
       clear:
@@ -4909,7 +5021,7 @@ info:
   contact: {}
   description: DEEIX Chat 后端 API 文档
   title: DEEIX Chat API
-  version: "0.2.3"
+  version: "0.2.4"
 paths:
   /admin/announcements:
     get:
@@ -5672,6 +5784,10 @@ paths:
       - description: 仅查询启用模型
         in: query
         name: only_active
+        type: boolean
+      - description: 仅查询公开且可路由模型
+        in: query
+        name: only_available
         type: boolean
       - description: 搜索关键词
         in: query
@@ -6984,6 +7100,154 @@ paths:
       summary: 管理员查询支付订单记录
       tags:
       - admin
+  /admin/prompt-presets:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 搜索关键词
+        in: query
+        name: q
+        type: string
+      - description: 是否启用
+        in: query
+        name: enabled
+        type: boolean
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetPageResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 管理员查询内置提示词
+      tags:
+      - admin-prompt-presets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 提示词配置
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_promptpreset.WritePromptPresetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 管理员创建内置提示词
+      tags:
+      - admin-prompt-presets
+  /admin/prompt-presets/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 提示词ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetDeleteResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 管理员删除内置提示词
+      tags:
+      - admin-prompt-presets
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: 提示词ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新字段
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_promptpreset.PatchPromptPresetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 管理员更新内置提示词
+      tags:
+      - admin-prompt-presets
   /admin/settings:
     get:
       description: 按 namespace 分组返回全部动态配置项
@@ -8568,6 +8832,10 @@ paths:
         in: query
         name: project
         type: string
+      - description: 搜索关键词，匹配会话元数据、项目名称和消息正文
+        in: query
+        name: q
+        type: string
       produces:
       - application/json
       responses:
@@ -9200,6 +9468,41 @@ paths:
       security:
       - BearerAuth: []
       summary: 重命名会话
+      tags:
+      - chat
+  /conversations/{id}/title/regenerate:
+    post:
+      consumes:
+      - application/json
+      description: 根据指定会话已有内容重新生成标题
+      parameters:
+      - description: 会话 public_id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_conversation.ErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_transport_http_conversation.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_conversation.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 自动重新命名会话
       tags:
       - chat
   /conversations/import:
@@ -9887,6 +10190,189 @@ paths:
       summary: 查询可用模型目录
       tags:
       - llm
+  /prompt-presets:
+    get:
+      consumes:
+      - application/json
+      description: 返回管理员内置和当前用户自定义的已启用提示词，用于 slash 选择器
+      parameters:
+      - description: 搜索关键词
+        in: query
+        name: q
+        type: string
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetPageResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 查询当前用户可用预制提示词
+      tags:
+      - prompt-presets
+  /prompt-presets/mine:
+    get:
+      consumes:
+      - application/json
+      description: 分页查询当前用户自定义提示词
+      parameters:
+      - description: 搜索关键词
+        in: query
+        name: q
+        type: string
+      - description: 是否启用
+        in: query
+        name: enabled
+        type: boolean
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetPageResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 查询我的自定义提示词
+      tags:
+      - prompt-presets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 提示词配置
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_promptpreset.WritePromptPresetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 创建我的自定义提示词
+      tags:
+      - prompt-presets
+  /prompt-presets/mine/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 提示词ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetDeleteResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 删除我的自定义提示词
+      tags:
+      - prompt-presets
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: 提示词ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新字段
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_promptpreset.PatchPromptPresetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.PromptPresetResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_promptpreset.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 更新我的自定义提示词
+      tags:
+      - prompt-presets
   /settings/chat-context-policy:
     get:
       produces:

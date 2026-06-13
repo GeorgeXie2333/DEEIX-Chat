@@ -85,6 +85,8 @@
     "rename": "重新命名",
     "renameDescription": "请输入新的会话名称",
     "renamePlaceholder": "请输入新的会话名称",
+    "autoRename": "自动命名",
+    "autoRenameFailed": "自动命名失败",
     "moveToProject": "移至项目",
     "unassignedProject": "默认",
     "shareAndExport": "分享 & 导出",
@@ -321,9 +323,6 @@
   "composer": {
     "addPhotosAndFiles": "添加照片和文件",
     "uploadFile": "上传文件",
-    "dragUploadTitle": "松开以上传文件",
-    "dragUploadDescription": "文件将作为当前消息附件上传。",
-    "dragUploadUnavailable": "当前对话忙碌中，暂不能上传文件。",
     "screenshot": "屏幕截图",
     "openTools": "打开工具菜单",
     "advancedSettings": "高级设置",
@@ -400,7 +399,8 @@
       "sections": {
         "file": "文件",
         "tool": "MCP",
-        "model": "模型"
+        "model": "模型",
+        "prompt": "提示词"
       }
     },
     "mediaMode": {

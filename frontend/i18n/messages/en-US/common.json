@@ -47,6 +47,7 @@
     "search": "Search",
     "recent": "Recent",
     "files": "Files",
+    "skillsPrompt": "Skills & Prompt",
     "searchTitle": "Search",
     "searchDescription": "Search by conversation ID, title, label, or model",
     "searchPlaceholder": "Search by ID, title, label, or model",

@@ -18,6 +18,21 @@ import {
 } from "@/features/admin/model/update-check";
 import { cn } from "@/lib/utils";
 
+const ADMIN_SECTION_LABEL_KEYS: Record<AdminSection, string> = {
+  accounts: "sections.accounts",
+  channels: "sections.channels",
+  models: "sections.models",
+  "tool-settings": "sections.toolSettings",
+  billing: "sections.billing",
+  "open-api": "sections.openAPI",
+  announcements: "sections.announcements",
+  logs: "sections.logs",
+  "login-settings": "sections.loginSettings",
+  "conversation-settings": "sections.conversationSettings",
+  "chat-files": "sections.chatFiles",
+  about: "sections.about",
+};
+
 function resolveActiveSectionFromPath(pathname: string, basePath: string): AdminSection {
   const normalizedBasePath = basePath.replace(/\/$/, "");
   const section = ADMIN_SECTIONS.find((item) => {
@@ -46,21 +61,7 @@ export function AdminSidebar({
   const updateRelease = resolveAvailableRelease(packageMeta.version, cachedLatestRelease);
   const sectionLabel = React.useCallback(
     (id: AdminSection, fallback: string) => {
-      const keyByID: Record<AdminSection, string> = {
-        accounts: "sections.accounts",
-        channels: "sections.channels",
-        models: "sections.models",
-        "tool-settings": "sections.toolSettings",
-        billing: "sections.billing",
-        "open-api": "sections.openAPI",
-        announcements: "sections.announcements",
-        logs: "sections.logs",
-        "login-settings": "sections.loginSettings",
-        "conversation-settings": "sections.conversationSettings",
-        "chat-files": "sections.chatFiles",
-        about: "sections.about",
-      };
-      return t(keyByID[id]) || fallback;
+      return t(ADMIN_SECTION_LABEL_KEYS[id]) || fallback;
     },
     [t],
   );

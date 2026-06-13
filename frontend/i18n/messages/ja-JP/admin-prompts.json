@@ -1,0 +1,37 @@
+{
+  "title": "プロンプトライブラリ",
+  "create": "新規作成",
+  "edit": "編集",
+  "delete": "削除",
+  "enable": "有効化",
+  "disable": "無効化",
+  "cancel": "キャンセル",
+  "save": "保存",
+  "saving": "保存中",
+  "searchPlaceholder": "名前または内容を検索",
+  "createTitle": "組み込みプロンプトを作成",
+  "editTitle": "組み込みプロンプトを編集",
+  "dialogDescription": "チャットですばやく挿入できる、プラットフォーム管理のプロンプトです。ユーザーは閲覧のみ可能で、編集はできません。",
+  "deleteTitle": "組み込みプロンプトを削除",
+  "deleteDescription": "この組み込みプロンプトはユーザーに表示されなくなります。ユーザーのカスタムプロンプトには影響しません。",
+  "empty": "組み込みプロンプトはありません",
+  "fields": {
+    "name": "名前",
+    "description": "説明",
+    "content": "内容",
+    "enabled": "有効",
+    "createdAt": "作成日時",
+    "updatedAt": "更新日時"
+  },
+  "toast": {
+    "loadFailed": "プロンプトの読み込みに失敗しました",
+    "invalid": "名前と内容を入力してください。",
+    "tooLong": "名前は16文字以内、説明は64文字以内、内容は16384文字以内で入力してください。",
+    "created": "プロンプトを作成しました",
+    "createFailed": "プロンプトの作成に失敗しました",
+    "updated": "プロンプトを更新しました",
+    "updateFailed": "プロンプトの更新に失敗しました",
+    "deleted": "プロンプトを削除しました",
+    "deleteFailed": "プロンプトの削除に失敗しました"
+  }
+}

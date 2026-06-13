@@ -1,0 +1,37 @@
+{
+  "title": "Prompt Library",
+  "create": "New",
+  "edit": "Edit",
+  "delete": "Delete",
+  "enable": "Enable",
+  "disable": "Disable",
+  "cancel": "Cancel",
+  "save": "Save",
+  "saving": "Saving",
+  "searchPlaceholder": "Search name or content",
+  "createTitle": "New Built-in Prompt",
+  "editTitle": "Edit Built-in Prompt",
+  "dialogDescription": "A prompt maintained by the platform for quick insertion in chat. Users can view it only and cannot edit it.",
+  "deleteTitle": "Delete Built-in Prompt",
+  "deleteDescription": "The built-in prompt will no longer be shown to users. User custom prompts are not affected.",
+  "empty": "No built-in prompts",
+  "fields": {
+    "name": "Name",
+    "description": "Description",
+    "content": "Content",
+    "enabled": "Enabled",
+    "createdAt": "Created",
+    "updatedAt": "Updated"
+  },
+  "toast": {
+    "loadFailed": "Failed to load prompts",
+    "invalid": "Enter a name and content.",
+    "tooLong": "Name can be up to 16 characters, description up to 64 characters, and content up to 16384 characters.",
+    "created": "Prompt created",
+    "createFailed": "Failed to create prompt",
+    "updated": "Prompt updated",
+    "updateFailed": "Failed to update prompt",
+    "deleted": "Prompt deleted",
+    "deleteFailed": "Failed to delete prompt"
+  }
+}

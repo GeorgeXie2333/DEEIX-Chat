@@ -15,6 +15,10 @@
     "inactive": "無効",
     "circuitOpen": "遮断中"
   },
+  "availability": {
+    "notEnabled": "未有効",
+    "noSource": "上流なし"
+  },
   "accessScope": {
     "public": "全体公開",
     "internal": "内部タスク"
@@ -152,6 +156,7 @@
     "deletingSource": "削除中",
     "circuitUntil": "復旧予定: {time}",
     "empty": "上流ソースはありません",
+    "protocolUpdated": "プロトコルを更新しました",
     "priorityMustBePositive": "優先度は 0 より大きい必要があります",
     "weightMustBePositive": "重みは 0 より大きい必要があります",
     "priorityUpdated": "優先度を更新しました",

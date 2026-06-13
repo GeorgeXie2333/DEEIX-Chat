@@ -40,6 +40,7 @@ export type SidebarRecentsControllerValue = {
   upsertConversation: (item: ConversationDTO) => void;
   touchByPublicID: (publicID: string, patch: Partial<ConversationDTO>) => void;
   renameByPublicID: (publicID: string, title: string) => Promise<ConversationDTO | null>;
+  regenerateTitleByPublicID: (publicID: string) => Promise<ConversationDTO | null>;
   createProject: (payload: CreateConversationProjectRequest) => Promise<ConversationProjectDTO | null>;
   updateProject: (projectID: string, payload: UpdateConversationProjectRequest) => Promise<ConversationProjectDTO | null>;
   deleteProject: (projectID: string, options?: DeleteConversationProjectOptions) => Promise<boolean>;

@@ -32,7 +32,7 @@ type AssistantMessageCompletionUpdate struct {
 // ConversationMetadataRepository 封装会话元信息与用户访问能力。
 type ConversationMetadataRepository interface {
 	CreateConversation(ctx context.Context, item *domainconversation.Conversation) error
-	ListConversationsByUser(ctx context.Context, userID uint, offset int, limit int, statusFilter string, starredFilter string, shareFilter string, projectFilter string) ([]domainconversation.Conversation, int64, error)
+	ListConversationsByUser(ctx context.Context, userID uint, offset int, limit int, statusFilter string, starredFilter string, shareFilter string, projectFilter string, searchQuery string) ([]domainconversation.Conversation, int64, error)
 	GetConversationByUser(ctx context.Context, conversationID uint, userID uint) (*domainconversation.Conversation, error)
 	GetConversationByPublicID(ctx context.Context, publicID string, userID uint) (*domainconversation.Conversation, error)
 	CreateConversationProject(ctx context.Context, item *domainconversation.ConversationProject) error

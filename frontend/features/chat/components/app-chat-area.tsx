@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { UploadCloud } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -18,7 +17,6 @@ import { useChatModelOptions } from "@/features/chat/hooks/use-chat-model-option
 import { useChatRuntime } from "@/features/chat/hooks/use-chat-runtime";
 import { useChatScrollController } from "@/features/chat/hooks/use-chat-scroll-controller";
 import { useChatViewerProfile } from "@/features/chat/hooks/use-chat-viewer-profile";
-import { useChatWindowFileDrop } from "@/features/chat/hooks/use-chat-window-file-drop";
 import { useHTMLVisualPrompt } from "@/features/chat/hooks/use-visual-prompt";
 import { ChatInput } from "@/features/chat/components/sections/chat-input";
 import {
@@ -59,6 +57,14 @@ import { cn } from "@/lib/utils";
 const MODEL_OPTIONS_STORAGE_PREFIX = "deeix-chat:chat-model-options:";
 const DEFAULT_MCP_TOOLS_SETTING_KEY = "chat.default_mcp_tool_ids";
 const EMPTY_CONVERSATION_OPTIONS: ConversationOptions = {};
+
+function dragEventContainsFiles(event: React.DragEvent<HTMLElement>): boolean {
+  return Array.from(event.dataTransfer.types ?? []).includes("Files");
+}
+
+function droppedFiles(event: React.DragEvent<HTMLElement>): File[] {
+  return Array.from(event.dataTransfer.files ?? []).filter((file) => file.name.trim() || file.size > 0);
+}
 
 function modelOptionsStorageKey(platformModelName: string): string {
   return `${MODEL_OPTIONS_STORAGE_PREFIX}${encodeURIComponent(platformModelName)}`;
@@ -204,6 +210,7 @@ export function AppChatArea() {
     prependNewConversation,
     touchByPublicID,
     renameByPublicID,
+    regenerateTitleByPublicID,
     setStarByPublicID,
     setProjectByPublicID,
     deleteByPublicID,
@@ -331,6 +338,8 @@ export function AppChatArea() {
   const { resolvedTheme } = useTheme();
   const initializedOptionsModelRef = React.useRef("");
   const selectedModelDefaultOptionsRef = React.useRef<ConversationOptions>({});
+  const fileDragDepthRef = React.useRef(0);
+  const [fileDragActive, setFileDragActive] = React.useState(false);
 
   React.useEffect(() => {
     setSelectedToolIDs((current) => {
@@ -552,6 +561,7 @@ export function AppChatArea() {
     resumingRunID,
   });
   const generating = sending || Boolean(resumingRunID);
+  const uploadDropDisabled = generating || loading || uploading;
   const showLiveAssistant = showPendingAssistant || Boolean(resumingRunID);
   const latestMessageKey = visibleMessages.at(-1)?.key ?? "";
   const onStopActiveMessage = React.useCallback(() => {
@@ -718,6 +728,21 @@ export function AppChatArea() {
     },
     [actionConversationID, canOperateConversation, renameByPublicID],
   );
+
+  const onAutoRenameActiveConversation = React.useCallback(async () => {
+    if (!canOperateConversation) {
+      return;
+    }
+    try {
+      const updated = await regenerateTitleByPublicID(actionConversationID);
+      if (updated?.title?.trim()) {
+        setManualConversationTitle(updated.title.trim());
+      }
+    } catch (error) {
+      toast.error(t("labelMenu.autoRenameFailed"));
+      throw error;
+    }
+  }, [actionConversationID, canOperateConversation, regenerateTitleByPublicID, t]);
 
   const onRequestDeleteActiveConversation = React.useCallback(() => {
     if (!canOperateConversation) {
@@ -895,15 +920,64 @@ export function AppChatArea() {
   const selectedModelDefaultOptions = modelOptionPolicyDisabled
     ? EMPTY_CONVERSATION_OPTIONS
     : (selectedModel?.defaultOptions ?? EMPTY_CONVERSATION_OPTIONS);
+  const resetFileDragState = React.useCallback(() => {
+    fileDragDepthRef.current = 0;
+    setFileDragActive(false);
+  }, []);
+  const onFileDragEnter = React.useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    if (!dragEventContainsFiles(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (uploadDropDisabled) {
+      return;
+    }
+    fileDragDepthRef.current += 1;
+    setFileDragActive(true);
+  }, [uploadDropDisabled]);
+  const onFileDragOver = React.useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    if (!dragEventContainsFiles(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = uploadDropDisabled ? "none" : "copy";
+  }, [uploadDropDisabled]);
+  const onFileDragLeave = React.useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    if (!dragEventContainsFiles(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    fileDragDepthRef.current = Math.max(0, fileDragDepthRef.current - 1);
+    if (fileDragDepthRef.current === 0) {
+      setFileDragActive(false);
+    }
+  }, []);
+  const onFileDrop = React.useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    if (!dragEventContainsFiles(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const files = droppedFiles(event);
+    resetFileDragState();
+    if (uploadDropDisabled || files.length === 0) {
+      return;
+    }
+    void onUploadFiles(files);
+  }, [onUploadFiles, resetFileDragState, uploadDropDisabled]);
+  React.useEffect(() => {
+    if (uploadDropDisabled) {
+      resetFileDragState();
+    }
+  }, [resetFileDragState, uploadDropDisabled]);
+
   const isConversationLoading = Boolean(conversationID) && loading && visibleMessageCount === 0 && messagesWithInlineError.length === 0;
   const isConversationLoadFailed = Boolean(conversationID) && !loading && errorMsg.trim().length > 0 && visibleMessageCount === 0;
   const shouldUseCenteredComposer =
     !isConversationLoading && !isConversationLoadFailed && !isConversationMode && messagesWithInlineError.length === 0;
-  const dragUploadDisabled = loading || generating || isConversationLoadFailed;
-  const { isDraggingFiles } = useChatWindowFileDrop({
-    disabled: dragUploadDisabled,
-    onDropFiles: onUploadFiles,
-  });
 
   const chatInputProps = {
     draft,
@@ -929,6 +1003,7 @@ export function AppChatArea() {
     defaultOptions: selectedModelDefaultOptions,
     modelOptionPolicy,
     modelLoading: modelsLoading,
+    dropActive: fileDragActive,
     onDraftChange: setDraft,
     onModelChange: setSelectedPlatformModelName,
     onModelCatalogRefresh: refreshModelCatalogForComposer,
@@ -947,39 +1022,13 @@ export function AppChatArea() {
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden md:overflow-visible">
-      {isDraggingFiles ? (
-        <div
-          className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/75 p-6 backdrop-blur-sm"
-          role="status"
-          aria-live="polite"
-        >
-          <div
-            className={cn(
-              "flex w-full max-w-sm flex-col items-center gap-3 rounded-lg border px-5 py-6 text-center shadow-lg",
-              dragUploadDisabled
-                ? "border-destructive/25 bg-destructive/10 text-destructive"
-                : "border-primary/25 bg-background/95 text-foreground",
-            )}
-          >
-            <span
-              className={cn(
-                "flex size-11 items-center justify-center rounded-full",
-                dragUploadDisabled ? "bg-destructive/10" : "bg-primary/10 text-primary",
-              )}
-              aria-hidden="true"
-            >
-              <UploadCloud className="size-5" strokeWidth={1.7} />
-            </span>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">{t("composer.dragUploadTitle")}</p>
-              <p className="text-xs leading-5 text-muted-foreground">
-                {dragUploadDisabled ? t("composer.dragUploadUnavailable") : t("composer.dragUploadDescription")}
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : null}
+    <div
+      className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden md:overflow-visible"
+      onDragEnter={onFileDragEnter}
+      onDragOver={onFileDragOver}
+      onDragLeave={onFileDragLeave}
+      onDrop={onFileDrop}
+    >
       {shouldUseCenteredComposer ? (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <ChatEmptyState
@@ -1026,11 +1075,16 @@ export function AppChatArea() {
                   onContinueAssistantMessage={onContinueAssistantMessage}
                   onEditAssistantMessage={onEditAssistantMessage}
                   onEditUserMessage={onEditUserMessage}
+                  modelOptions={modelOptions}
+                  selectedPlatformModelName={selectedPlatformModelName}
+                  onModelChange={setSelectedPlatformModelName}
+                  onModelCatalogRefresh={refreshModelCatalogForComposer}
                   onEditImageAttachment={onEditGeneratedImageAttachment}
                   onOpenCodeArtifact={artifactWorkspace.openArtifact}
                   onCycleMessageBranch={onCycleMessageBranch}
                   onToggleStar={onToggleActiveConversationStar}
                   onRename={onRenameActiveConversation}
+                  onAutoRename={onAutoRenameActiveConversation}
                   projectMenu={{
                     label: t("labelMenu.moveToProject"),
                     unassignedLabel: t("labelMenu.unassignedProject"),

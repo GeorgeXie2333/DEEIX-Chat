@@ -144,6 +144,7 @@ func migrate(db *gorm.DB, cfg config.Config) error {
 		"system_events":                  "后台系统事件表",
 		"system_announcements":           "站点公告表",
 		"announcement_user_states":       "用户公告展示状态表",
+		"prompt_presets":                 "内置与用户自定义预制提示词表",
 		"system_settings":                "系统动态配置表",
 		"user_settings":                  "用户个人偏好配置表",
 		"file_chunks":                    "RAG文件分片表",
@@ -179,6 +180,9 @@ func migrate(db *gorm.DB, cfg config.Config) error {
 		return err
 	}
 	if err := applyAnnouncementBaseline(db); err != nil {
+		return err
+	}
+	if err := schema.CleanupRemovedColumns(db); err != nil {
 		return err
 	}
 	if err := applyVectorBaseline(db, vectorBaselineRequired(cfg)); err != nil {

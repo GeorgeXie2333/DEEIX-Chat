@@ -108,6 +108,7 @@
   "conversation": {
     "invalidId": "会話 ID が無効です。",
     "invalidTitle": "会話タイトルが無効です。",
+    "noTitleableContent": "この会話にはタイトル生成に利用できる内容がありません。",
     "notFound": "会話が見つかりません。"
   },
   "conversationRun": {

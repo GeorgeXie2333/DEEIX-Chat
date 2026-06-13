@@ -111,6 +111,7 @@ func (r *Repo) ListConversationsByUser(
 	starredFilter string,
 	shareFilter string,
 	projectFilter string,
+	searchQuery string,
 ) ([]domainconversation.Conversation, int64, error) {
 	items := make([]models.Conversation, 0)
 	var total int64
@@ -162,6 +163,8 @@ func (r *Repo) ListConversationsByUser(
 		query = query.Where("project_id = ?", project.ID)
 	}
 
+	query = applyConversationSearchFilter(query, searchQuery)
+
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, translateError(err)
 	}
@@ -188,6 +191,51 @@ func (r *Repo) ListConversationsByUser(
 		return nil, 0, err
 	}
 	return results, total, nil
+}
+
+func applyConversationSearchFilter(query *gorm.DB, searchQuery string) *gorm.DB {
+	keyword := strings.TrimSpace(searchQuery)
+	if keyword == "" {
+		return query
+	}
+
+	like := "%" + strings.ToLower(keyword) + "%"
+	return query.Where(
+		`(LOWER(title) LIKE ?
+			OR LOWER(public_id) LIKE ?
+			OR LOWER(labels_json) LIKE ?
+			OR LOWER(model) LIKE ?
+			OR LOWER(provider) LIKE ?
+			OR EXISTS (
+				SELECT 1
+				FROM chat_conversation_projects AS projects
+				WHERE projects.id = chat_conversations.project_id
+					AND projects.user_id = chat_conversations.user_id
+					AND projects.deleted_at IS NULL
+					AND (
+						LOWER(projects.name) LIKE ?
+						OR LOWER(projects.public_id) LIKE ?
+						OR LOWER(projects.description) LIKE ?
+					)
+			)
+			OR EXISTS (
+				SELECT 1
+				FROM chat_messages AS messages
+				WHERE messages.conversation_id = chat_conversations.id
+					AND messages.user_id = chat_conversations.user_id
+					AND messages.deleted_at IS NULL
+					AND LOWER(messages.content) LIKE ?
+			))`,
+		like,
+		like,
+		like,
+		like,
+		like,
+		like,
+		like,
+		like,
+		like,
+	)
 }
 
 func (r *Repo) hydrateConversationShareSummaries(ctx context.Context, items []domainconversation.Conversation) error {

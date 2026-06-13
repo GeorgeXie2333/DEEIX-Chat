@@ -281,6 +281,7 @@ export function NavProjects() {
     updateProject,
     deleteProject,
     renameByPublicID,
+    regenerateTitleByPublicID,
     setStarByPublicID,
     setProjectByPublicID,
     archiveByPublicID,
@@ -296,6 +297,7 @@ export function NavProjects() {
   const [deleteConversationFiles, setDeleteConversationFiles] = React.useState(false)
   const [shareTarget, setShareTarget] = React.useState<{ publicID: string; title: string } | null>(null)
   const [renameValue, setRenameValue] = React.useState("")
+  const [autoRenamingConversationID, setAutoRenamingConversationID] = React.useState<string | null>(null)
   const [expandedProjectIDs, setExpandedProjectIDs] = React.useState<Set<string>>(() => new Set())
   const [projectConversationState, setProjectConversationState] = React.useState<ProjectConversationStateMap>({})
   const [openProjectMenuID, setOpenProjectMenuID] = React.useState<string | null>(null)
@@ -350,6 +352,26 @@ export function NavProjects() {
       onRenameConversationCancel()
     },
     [onRenameConversationCancel, renameByPublicID, renameValue],
+  )
+
+  const onAutoRenameConversation = React.useCallback(
+    async (publicID: string) => {
+      if (autoRenamingConversationID) {
+        return
+      }
+      setAutoRenamingConversationID(publicID)
+      try {
+        const updated = await regenerateTitleByPublicID(publicID)
+        if (updated) {
+          onRenameConversationCancel()
+        }
+      } catch {
+        // Keep the current rename input open so the user can retry or edit manually.
+      } finally {
+        setAutoRenamingConversationID(null)
+      }
+    },
+    [autoRenamingConversationID, onRenameConversationCancel, regenerateTitleByPublicID],
   )
 
   const onArchiveConversation = React.useCallback(
@@ -836,6 +858,8 @@ export function NavProjects() {
                                 onRenameValueChange={setRenameValue}
                                 onRenameCommit={onRenameConversationCommit}
                                 onRenameCancel={onRenameConversationCancel}
+                                onAutoRename={onAutoRenameConversation}
+                                isAutoRenaming={autoRenamingConversationID === conversation.publicID}
                                 onRename={onRenameConversation}
                                 onArchive={onArchiveConversation}
                                 onShare={(publicID, shareTitle) => setShareTarget({ publicID, title: shareTitle })}

@@ -88,9 +88,10 @@ func (s *Service) ListConversations(
 	starredFilter string,
 	shareFilter string,
 	projectFilter string,
+	searchQuery string,
 ) ([]model.Conversation, int64, error) {
 	offset, limit := normalizePage(page, pageSize)
-	return s.repo.ListConversationsByUser(ctx, userID, offset, limit, statusFilter, starredFilter, shareFilter, normalizeConversationProjectFilter(projectFilter))
+	return s.repo.ListConversationsByUser(ctx, userID, offset, limit, statusFilter, starredFilter, shareFilter, normalizeConversationProjectFilter(projectFilter), searchQuery)
 }
 
 // ListMessages 查询会话消息（分页）。

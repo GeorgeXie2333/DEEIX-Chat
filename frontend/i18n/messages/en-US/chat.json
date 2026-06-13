@@ -85,6 +85,8 @@
     "rename": "Rename",
     "renameDescription": "Enter a new conversation name.",
     "renamePlaceholder": "Enter a new conversation name",
+    "autoRename": "Auto rename",
+    "autoRenameFailed": "Auto rename failed",
     "moveToProject": "Move",
     "unassignedProject": "Default",
     "shareAndExport": "Share & Export",
@@ -321,9 +323,6 @@
   "composer": {
     "addPhotosAndFiles": "Add photos and files",
     "uploadFile": "Upload file",
-    "dragUploadTitle": "Drop files to upload",
-    "dragUploadDescription": "Release to attach them to the current message.",
-    "dragUploadUnavailable": "File upload is unavailable while this chat is busy.",
     "screenshot": "Screenshot",
     "openTools": "Open tools",
     "advancedSettings": "Advanced settings",
@@ -400,7 +399,8 @@
       "sections": {
         "file": "Files",
         "tool": "MCP",
-        "model": "Models"
+        "model": "Models",
+        "prompt": "Prompts"
       }
     },
     "mediaMode": {

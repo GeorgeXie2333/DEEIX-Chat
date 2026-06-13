@@ -108,6 +108,7 @@
   "conversation": {
     "invalidId": "Invalid conversation ID.",
     "invalidTitle": "Invalid conversation title.",
+    "noTitleableContent": "This conversation has no content that can be used to generate a title.",
     "notFound": "Conversation not found."
   },
   "conversationRun": {

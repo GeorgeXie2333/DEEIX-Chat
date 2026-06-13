@@ -28,5 +28,8 @@ test("chat composer keeps upload entry points available while sending stays bloc
     inputSource,
     /id="chat-tools-menu-trigger"[^]*?disabled=\{sending \|\| loading\}/,
   );
-  assert.match(areaSource, /const dragUploadDisabled = loading \|\| generating \|\| isConversationLoadFailed/);
+  assert.match(areaSource, /const uploadDropDisabled = generating \|\| loading \|\| uploading/);
+  assert.match(areaSource, /onDragEnter=\{onFileDragEnter\}/);
+  assert.match(areaSource, /dropActive: fileDragActive/);
+  assert.doesNotMatch(areaSource, /useChatWindowFileDrop|dragUploadTitle|UploadCloud/);
 });

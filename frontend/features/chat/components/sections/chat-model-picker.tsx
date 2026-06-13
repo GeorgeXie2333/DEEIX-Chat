@@ -14,7 +14,7 @@ import { useIsMobile } from "@/shared/hooks/use-mobile";
 import { LobeHubIcon } from "@/shared/components/lobehub-icon";
 import { cacheWritePricingLabel, cacheWritePricingNote, resolveCacheWritePricingUSD } from "@/shared/lib/billing-display";
 import type { BillingDisplayLabels } from "@/shared/lib/billing-display";
-import { resolveLobeHubIconURL, resolveModelIdentity } from "@/shared/lib/model-identity";
+import { resolveLobeHubIconURL, resolveModelIdentity, resolveVendorIdentity } from "@/shared/lib/model-identity";
 import { cn } from "@/lib/utils";
 
 const MODEL_MENU_MAX_HEIGHT = 400;
@@ -96,22 +96,21 @@ function resolveAdaptiveMenuWidth(labels: string[], minWidth: number, maxWidth: 
 function resolveVendorGroups(modelOptions: ChatModelOption[]) {
   const groupMap = new Map<string, ChatModelOption[]>();
   for (const item of modelOptions) {
-    const identity = resolveModelIdentity({
-      code: item.platformModelName,
-      vendor: item.vendor,
-      icon: item.icon,
-    });
+    const identity = resolveVendorIdentity(item.vendor);
     const group = groupMap.get(identity.vendorKey) ?? [];
     group.push(item);
     groupMap.set(identity.vendorKey, group);
   }
 
-  return Array.from(groupMap.entries()).map(([vendor, items]) => ({
-    vendor,
-    label: resolveModelIdentity({ vendor }).vendorLabel,
-    icon: resolveModelIdentity({ vendor }).vendorIcon,
-    items,
-  }));
+  return Array.from(groupMap.entries()).map(([vendor, items]) => {
+    const identity = resolveVendorIdentity(vendor);
+    return {
+      vendor,
+      label: identity.vendorLabel,
+      icon: identity.vendorIcon,
+      items,
+    };
+  });
 }
 
 function resolveDesktopModelPanelLayout({
@@ -621,21 +620,13 @@ export function ChatModelPicker({
     if (!selectedModel) {
       return "";
     }
-    return resolveModelIdentity({
-      code: selectedModel.platformModelName,
-      vendor: selectedModel.vendor,
-      icon: selectedModel.icon,
-    }).vendorKey;
+    return resolveVendorIdentity(selectedModel.vendor).vendorKey;
   }, [selectedModel]);
   const selectedVendorLabel = React.useMemo(() => {
     if (!selectedModel) {
       return "none";
     }
-    return resolveModelIdentity({
-      code: selectedModel.platformModelName,
-      vendor: selectedModel.vendor,
-      icon: selectedModel.icon,
-    }).vendorLabel;
+    return resolveVendorIdentity(selectedModel.vendor).vendorLabel;
   }, [selectedModel]);
   const vendorGroups = React.useMemo(() => resolveVendorGroups(modelOptions), [modelOptions]);
   const vendorMenuMaxHeight = React.useMemo(

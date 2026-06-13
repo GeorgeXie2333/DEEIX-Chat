@@ -86,7 +86,6 @@ export function AdminUpstreamsPage() {
       <TableToolbar
         query={upstreams.query}
         onQueryChange={upstreams.setQuery}
-        queryDebounceMs={0}
         queryPlaceholder={t("table.searchPlaceholder")}
         filters={[
           {

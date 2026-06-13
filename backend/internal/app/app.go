@@ -24,6 +24,7 @@ import (
 	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
 	appopenapi "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/openapi"
 	appprocessing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/processing"
+	apppromptpreset "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/promptpreset"
 	apprag "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/rag"
 	appruntime "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/runtime"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/settings"
@@ -45,6 +46,7 @@ import (
 	mcprepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/mcp"
 	memoryrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/memory"
 	openapirepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/openapi"
+	promptpresetrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/promptpreset"
 	settingsrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/settings"
 	systemeventrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/systemevent"
 	userrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/user"
@@ -60,6 +62,7 @@ import (
 	mcphttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/mcp"
 	memoryhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/memory"
 	openapihttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/openapi"
+	promptpresethttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/promptpreset"
 	settingshttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/settings"
 	usersettingshttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/usersettings"
 	"github.com/gin-gonic/gin"
@@ -259,6 +262,11 @@ func NewApp() (*App, error) {
 	announcementService := announcement.NewService(announcementRepo)
 	announcementHandler := announcementhttp.NewHandler(announcementService)
 	announcementModule := announcementhttp.NewModule(announcementHandler)
+	promptPresetRepo := promptpresetrepo.NewRepo(db)
+	promptPresetService := apppromptpreset.NewService(promptPresetRepo)
+	promptPresetService.SetAuditWriter(auditService)
+	promptPresetHandler := promptpresethttp.NewHandler(promptPresetService)
+	promptPresetModule := promptpresethttp.NewModule(promptPresetHandler)
 
 	hc := newHealthChecker(db, cfg.CacheDriver, redisClient)
 	engine, err := platformhttp.NewEngine(runtimeCfg, log, platformhttp.Modules{
@@ -271,6 +279,7 @@ func NewApp() (*App, error) {
 		Billing:      billingModule,
 		Admin:        adminModule,
 		Announcement: announcementModule,
+		PromptPreset: promptPresetModule,
 		Settings:     settingsModule,
 		UserSettings: userSettingsModule,
 		OpenAPI:      openAPIModule,

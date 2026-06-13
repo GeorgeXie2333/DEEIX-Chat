@@ -901,6 +901,7 @@ func (h *Handler) ImportUpstreamModels(c *gin.Context) {
 // @Param page query int false "页码"
 // @Param page_size query int false "每页数量"
 // @Param only_active query bool false "仅查询启用模型"
+// @Param only_available query bool false "仅查询公开且可路由模型"
 // @Param q query string false "搜索关键词"
 // @Param status query string false "状态：active/inactive"
 // @Param vendor query string false "模型厂商"
@@ -912,12 +913,15 @@ func (h *Handler) ImportUpstreamModels(c *gin.Context) {
 func (h *Handler) ListModels(c *gin.Context) {
 	page, pageSize := pageParams(c)
 	onlyActive := c.Query("only_active") == "true"
-	items, total, err := h.service.ListModels(c.Request.Context(), page, pageSize, onlyActive, appchannel.ListModelsInput{
-		Query:    c.Query("q"),
-		Status:   c.Query("status"),
-		Vendor:   c.Query("vendor"),
-		Protocol: c.Query("protocol"),
-		Sort:     c.Query("sort"),
+	onlyAvailable := c.Query("only_available") == "true"
+	items, total, err := h.service.ListModels(c.Request.Context(), page, pageSize, appchannel.ListModelsInput{
+		OnlyActive:    onlyActive,
+		OnlyAvailable: onlyAvailable,
+		Query:         c.Query("q"),
+		Status:        c.Query("status"),
+		Vendor:        c.Query("vendor"),
+		Protocol:      c.Query("protocol"),
+		Sort:          c.Query("sort"),
 	})
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "list models failed")

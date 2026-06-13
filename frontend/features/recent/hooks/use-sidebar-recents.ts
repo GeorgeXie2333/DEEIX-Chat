@@ -15,6 +15,7 @@ import {
   deleteConversationProject,
   listConversationProjects,
   listConversations,
+  regenerateConversationTitle,
   renameConversation,
   reorderConversationProjects,
   setConversationProject,
@@ -266,6 +267,19 @@ export function useSidebarRecentsController(): SidebarRecentsControllerValue {
     );
   }, []);
 
+  const applyConversationUpdate = React.useCallback((publicID: string, incoming: ConversationDTO) => {
+    const updated = preserveKnownShareState(currentConversationSnapshot(publicID), incoming);
+    if (updated.isStarred) {
+      setRecentItems((prev) => removeByPublicID(prev, publicID));
+      setStarredItems((prev) => upsertByPublicID(prev, updated, sortByStarredAtDesc));
+    } else {
+      setRecentItems((prev) => upsertByPublicID(prev, updated, sortByUpdatedAtDesc));
+      setStarredItems((prev) => removeByPublicID(prev, publicID));
+    }
+    publishChange({ type: "upsert", publicID, item: updated });
+    return updated;
+  }, [currentConversationSnapshot, publishChange]);
+
   const refreshStarredWindow = React.useCallback(async (accessTokenOverride?: string) => {
     starredWindowRequestVersionRef.current += 1;
     const requestVersion = starredWindowRequestVersionRef.current;
@@ -453,21 +467,21 @@ export function useSidebarRecentsController(): SidebarRecentsControllerValue {
         return null;
       }
 
-      const updated = preserveKnownShareState(
-        currentConversationSnapshot(publicID),
-        await renameConversation(token, publicID, { title }),
-      );
-      if (updated.isStarred) {
-        setRecentItems((prev) => removeByPublicID(prev, publicID));
-        setStarredItems((prev) => upsertByPublicID(prev, updated, sortByStarredAtDesc));
-      } else {
-        setRecentItems((prev) => upsertByPublicID(prev, updated, sortByUpdatedAtDesc));
-        setStarredItems((prev) => removeByPublicID(prev, publicID));
-      }
-      publishChange({ type: "upsert", publicID, item: updated });
-      return updated;
+      return applyConversationUpdate(publicID, await renameConversation(token, publicID, { title }));
     },
-    [currentConversationSnapshot, publishChange],
+    [applyConversationUpdate],
+  );
+
+  const regenerateTitleByPublicID = React.useCallback(
+    async (publicID: string): Promise<ConversationDTO | null> => {
+      const token = await resolveAccessToken();
+      if (!token) {
+        return null;
+      }
+
+      return applyConversationUpdate(publicID, await regenerateConversationTitle(token, publicID));
+    },
+    [applyConversationUpdate],
   );
 
   const touchByPublicID = React.useCallback((publicID: string, patch: Partial<ConversationDTO>) => {
@@ -821,6 +835,7 @@ export function useSidebarRecentsController(): SidebarRecentsControllerValue {
       upsertConversation,
       touchByPublicID,
       renameByPublicID,
+      regenerateTitleByPublicID,
       createProject,
       updateProject,
       deleteProject,
@@ -848,6 +863,7 @@ export function useSidebarRecentsController(): SidebarRecentsControllerValue {
       loadMoreFailed,
       prependNewConversation,
       projects,
+      regenerateTitleByPublicID,
       recentItems,
       reorderProjects,
       retryLoadMore,

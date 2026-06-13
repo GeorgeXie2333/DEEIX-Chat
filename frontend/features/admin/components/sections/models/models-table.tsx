@@ -69,7 +69,7 @@ import {
   updateAdminLLMModelUpstreamSource,
 } from "@/features/admin/api";
 import { LobeHubIcon } from "@/shared/components/lobehub-icon";
-import { resolveLobeHubIconURL, resolveModelIdentity } from "@/shared/lib/model-identity";
+import { resolveLobeHubIconURL, resolveModelIdentity, resolveVendorIdentity } from "@/shared/lib/model-identity";
 import type {
   AdminLLMModelAccessScope,
   AdminLLMModelDTO,
@@ -172,6 +172,38 @@ function KindsBadges({ kindsJson }: { kindsJson: string | null | undefined }) {
         </Badge>
       ))}
     </div>
+  );
+}
+
+type ModelAvailability = "available" | "notEnabled" | "noSource";
+
+function resolveModelAvailability(item: AdminLLMModelDTO): ModelAvailability {
+  if (item.sourceCount <= 0) {
+    return "noSource";
+  }
+  if (item.status !== "active") {
+    return "notEnabled";
+  }
+  return item.activeSourceCount > 0 ? "available" : "notEnabled";
+}
+
+function ModelAvailabilityBadge({ availability }: { availability: ModelAvailability }) {
+  const t = useTranslations("adminModels");
+  if (availability === "available") {
+    return null;
+  }
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "h-5 rounded-md px-1.5 py-0 text-[10px]",
+        "shrink-0",
+        availability === "noSource" && "border-border/70 text-muted-foreground",
+        availability === "notEnabled" && "border-border/50 text-muted-foreground/80",
+      )}
+    >
+      {availability === "noSource" ? t("availability.noSource") : t("availability.notEnabled")}
+    </Badge>
   );
 }
 
@@ -297,14 +329,18 @@ const ModelTableRow = React.memo(function ModelTableRow({
     icon: item.icon,
   });
   const iconURL = resolveLobeHubIconURL(identity.modelIcon);
-  const vendorIconURL = resolveLobeHubIconURL(identity.vendorIcon);
+  const vendorIdentity = resolveVendorIdentity(item.vendor);
+  const vendorIconURL = resolveLobeHubIconURL(vendorIdentity.vendorIcon);
   const titleText = item.platformModelName.trim();
   const protocols = resolveModelProtocols(item);
+  const availability = resolveModelAvailability(item);
+  const muted = availability !== "available";
 
   return (
     <React.Fragment>
       <TableRow
-        className="cursor-pointer"
+        className={cn("cursor-pointer", muted && "text-muted-foreground")}
+        tone={muted ? "muted" : undefined}
         selected={selected}
         aria-expanded={expanded && !collapsing}
         onClick={() => onToggleRow(item)}
@@ -321,12 +357,11 @@ const ModelTableRow = React.memo(function ModelTableRow({
 
         <TableCell className="py-1.5">
           <div className="flex min-w-0 items-center gap-2">
+            <ModelAvailabilityBadge availability={availability} />
             <LobeHubIcon iconUrl={iconURL} label={titleText} />
-            <div className="flex min-w-0 flex-1">
-              <span className="truncate text-xs font-medium leading-5 text-foreground">
-                {titleText}
-              </span>
-            </div>
+            <span className={cn("min-w-0 flex-1 truncate text-xs font-medium leading-5", muted ? "text-muted-foreground" : "text-foreground")}>
+              {titleText}
+            </span>
           </div>
         </TableCell>
 
@@ -339,11 +374,11 @@ const ModelTableRow = React.memo(function ModelTableRow({
         </TableCell>
 
         <TableCell className="w-[120px] py-1.5">
-          {identity.vendorKey !== "unknown" ? (
+          {vendorIdentity.vendorKey !== "unknown" ? (
             <div className="flex min-w-0 items-center gap-1.5">
-              {vendorIconURL ? <LobeHubIcon iconUrl={vendorIconURL} label={identity.vendorLabel} size={14} /> : null}
+              {vendorIconURL ? <LobeHubIcon iconUrl={vendorIconURL} label={vendorIdentity.vendorLabel} size={14} /> : null}
               <span className="block max-w-[92px] truncate text-xs text-muted-foreground">
-                {identity.vendorLabel}
+                {vendorIdentity.vendorLabel}
               </span>
             </div>
           ) : (
@@ -352,7 +387,10 @@ const ModelTableRow = React.memo(function ModelTableRow({
         </TableCell>
 
         <TableCell className="whitespace-nowrap py-1.5 text-center">
-          <span className="text-xs text-muted-foreground">
+          <span className={cn(
+            "text-xs",
+            item.activeSourceCount > 0 ? "text-muted-foreground" : "text-muted-foreground/75",
+          )}>
             {item.activeSourceCount}/{item.sourceCount}
           </span>
         </TableCell>

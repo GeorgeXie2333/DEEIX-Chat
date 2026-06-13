@@ -85,6 +85,8 @@
     "rename": "名前を変更",
     "renameDescription": "新しい会話名を入力してください",
     "renamePlaceholder": "新しい会話名を入力してください",
+    "autoRename": "自動命名",
+    "autoRenameFailed": "自動命名に失敗しました",
     "moveToProject": "プロジェクトへ移動",
     "unassignedProject": "既定",
     "shareAndExport": "共有とエクスポート",
@@ -321,9 +323,6 @@
   "composer": {
     "addPhotosAndFiles": "写真とファイルを追加",
     "uploadFile": "ファイルをアップロード",
-    "dragUploadTitle": "離すとファイルをアップロードします",
-    "dragUploadDescription": "ファイルは現在のメッセージ添付としてアップロードされます。",
-    "dragUploadUnavailable": "現在の会話は処理中のため、ファイルをアップロードできません。",
     "screenshot": "スクリーンショット",
     "openTools": "ツールメニューを開く",
     "advancedSettings": "詳細設定",
@@ -432,7 +431,8 @@
       "sections": {
         "file": "ファイル",
         "tool": "MCP",
-        "model": "モデル"
+        "model": "モデル",
+        "prompt": "プロンプト"
       }
     }
   },

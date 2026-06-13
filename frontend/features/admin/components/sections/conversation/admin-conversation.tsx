@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { TaskModelField, type ModelOption } from "../shared/model-field";
 import { SettingsFieldEditor } from "../shared/settings-runtime-panel";
+import { AdminPromptsSection } from "@/features/admin/components/sections/conversation/admin-prompts";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -548,6 +549,10 @@ export function AdminConversationSettingsPage() {
           {contextCompressionFields.map((field, index) => renderField(field, index, { inset: Boolean(field.subgroupKey) }))}
         </SettingsFieldList>
       </SettingsSection>
+
+      <SettingsSectionSeparator />
+
+      <AdminPromptsSection />
 
       <SettingsSectionSeparator />
 

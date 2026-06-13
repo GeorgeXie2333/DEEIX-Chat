@@ -34,6 +34,9 @@ func New(cfg config.Config) (*gorm.DB, error) {
 	if err = schema.Migrate(db); err != nil {
 		return nil, err
 	}
+	if err = schema.CleanupRemovedColumns(db); err != nil {
+		return nil, err
+	}
 	if err = sqlitevec.Migrate(db); err != nil {
 		return nil, err
 	}
