@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SpinnerLabel } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
 import type {
   ImportOpenWebUIUsersData,
   ImportOpenWebUIUsersRequest,
@@ -49,6 +50,7 @@ export function AccountOpenWebUIImportDialog({
   const t = useTranslations("adminUsers.importOpenWebUI");
   const [dsn, setDsn] = React.useState("");
   const [creditMultiplier, setCreditMultiplier] = React.useState("1");
+  const [importPasswords, setImportPasswords] = React.useState(false);
   const previewReady = result !== null;
 
   React.useEffect(() => {
@@ -57,6 +59,7 @@ export function AccountOpenWebUIImportDialog({
     }
     setDsn("");
     setCreditMultiplier("1");
+    setImportPasswords(false);
   }, [open]);
 
   function handleDSNChange(value: string) {
@@ -73,6 +76,13 @@ export function AccountOpenWebUIImportDialog({
     }
   }
 
+  function handleImportPasswordsChange(value: boolean) {
+    setImportPasswords(value);
+    if (result) {
+      onPreviewReset();
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsedMultiplier = Number(creditMultiplier);
@@ -83,6 +93,7 @@ export function AccountOpenWebUIImportDialog({
       dsn: dsn.trim(),
       creditMultiplier: parsedMultiplier,
       dryRun: !previewReady,
+      importPasswords,
     });
   }
 
@@ -134,6 +145,22 @@ export function AccountOpenWebUIImportDialog({
               />
             </div>
 
+            <div className="flex items-start justify-between gap-3 rounded-md border border-border/70 px-3 py-2">
+              <div className="min-w-0 space-y-0.5">
+                <Label htmlFor="openwebui-import-passwords" className="text-xs font-medium text-foreground">
+                  {t("passwordImportLabel")}
+                </Label>
+                <p className="text-xs leading-5 text-muted-foreground">{t("passwordImportDescription")}</p>
+              </div>
+              <Switch
+                id="openwebui-import-passwords"
+                checked={importPasswords}
+                onCheckedChange={handleImportPasswordsChange}
+                disabled={pending}
+                aria-label={t("passwordImportLabel")}
+              />
+            </div>
+
             {result ? (
               <div className="grid grid-cols-2 gap-2 rounded-md bg-muted/45 p-3 text-xs text-muted-foreground">
                 <span>{t("summary.scanned", { count: result.scanned })}</span>
@@ -142,6 +169,10 @@ export function AccountOpenWebUIImportDialog({
                 <span>{t("summary.skippedDuplicateSourceEmail", { count: result.skippedDuplicateSourceEmail })}</span>
                 <span>{t("summary.skippedInvalidEmail", { count: result.skippedInvalidEmail })}</span>
                 <span>{t("summary.skippedInvalidRow", { count: result.skippedInvalidRow })}</span>
+                <span>{t("summary.passwordsImported", { count: result.passwordsImported })}</span>
+                <span>{t("summary.passwordsGenerated", { count: result.passwordsGenerated })}</span>
+                <span>{t("summary.passwordsUnavailable", { count: result.passwordsUnavailable })}</span>
+                <span>{t("summary.passwordsInvalidHash", { count: result.passwordsInvalidHash })}</span>
               </div>
             ) : null}
           </div>

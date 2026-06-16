@@ -46,6 +46,7 @@ export type ImportOpenWebUIUsersRequest = {
   dsn: string;
   creditMultiplier: number;
   dryRun?: boolean;
+  importPasswords?: boolean;
 };
 
 export type AdminUserData = {
@@ -78,6 +79,10 @@ export type ImportOpenWebUIUsersData = {
   skippedDuplicateSourceEmail: number;
   skippedInvalidEmail: number;
   skippedInvalidRow: number;
+  passwordsImported: number;
+  passwordsGenerated: number;
+  passwordsUnavailable: number;
+  passwordsInvalidHash: number;
 };
 
 export type AdminUserAuthEventDTO = {

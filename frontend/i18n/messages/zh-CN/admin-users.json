@@ -68,6 +68,8 @@
     "dsnLabel": "DB 连接地址",
     "dsnPlaceholder": "postgres://... 或 /data/openwebui.db",
     "creditMultiplierLabel": "积分转换比例",
+    "passwordImportLabel": "导入 OpenWebUI 密码",
+    "passwordImportDescription": "为新导入用户复用 OpenWebUI 中启用的 bcrypt 密码哈希；已存在用户不会被修改。",
     "cancel": "取消",
     "preview": "预览",
     "submit": "导入",
@@ -82,7 +84,11 @@
       "skippedExistingEmail": "已存在邮箱 {count}",
       "skippedDuplicateSourceEmail": "源库重复邮箱 {count}",
       "skippedInvalidEmail": "无效邮箱 {count}",
-      "skippedInvalidRow": "无效行 {count}"
+      "skippedInvalidRow": "无效行 {count}",
+      "passwordsImported": "已导入密码 {count}",
+      "passwordsGenerated": "已生成密码 {count}",
+      "passwordsUnavailable": "不可用密码 {count}",
+      "passwordsInvalidHash": "无效密码哈希 {count}"
     }
   },
   "edit": "编辑用户",

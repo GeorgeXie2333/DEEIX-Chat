@@ -30,6 +30,7 @@ type OpenWebUIImportInput struct {
 	DSN              string
 	CreditMultiplier float64
 	DryRun           bool
+	ImportPasswords  bool
 }
 
 // OpenWebUIImportResult 描述 OpenWebUI 用户导入结果。
@@ -43,6 +44,10 @@ type OpenWebUIImportResult struct {
 	SkippedDuplicateSourceEmail int
 	SkippedInvalidEmail         int
 	SkippedInvalidRow           int
+	PasswordsImported           int
+	PasswordsGenerated          int
+	PasswordsUnavailable        int
+	PasswordsInvalidHash        int
 }
 
 // UserResult 用户响应数据（内部传输，不携带序列化标记）。

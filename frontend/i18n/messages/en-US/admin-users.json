@@ -68,6 +68,8 @@
     "dsnLabel": "DB connection string",
     "dsnPlaceholder": "postgres://... or /data/openwebui.db",
     "creditMultiplierLabel": "Credit multiplier",
+    "passwordImportLabel": "Import OpenWebUI passwords",
+    "passwordImportDescription": "Reuse active OpenWebUI bcrypt password hashes for newly imported users. Existing users are not changed.",
     "cancel": "Cancel",
     "preview": "Preview",
     "submit": "Import",
@@ -82,7 +84,11 @@
       "skippedExistingEmail": "Existing emails {count}",
       "skippedDuplicateSourceEmail": "Duplicate source emails {count}",
       "skippedInvalidEmail": "Invalid emails {count}",
-      "skippedInvalidRow": "Invalid rows {count}"
+      "skippedInvalidRow": "Invalid rows {count}",
+      "passwordsImported": "Passwords imported {count}",
+      "passwordsGenerated": "Passwords generated {count}",
+      "passwordsUnavailable": "Passwords unavailable {count}",
+      "passwordsInvalidHash": "Invalid password hashes {count}"
     }
   },
   "edit": "Edit user",

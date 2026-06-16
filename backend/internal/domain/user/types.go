@@ -187,6 +187,7 @@ const (
 	PasswordOriginLocalRegister  = "local_register"
 	PasswordOriginAdminCreated   = "admin_created"
 	PasswordOriginAdminReset     = "admin_reset"
+	PasswordOriginOpenWebUIImport = "openwebui_import"
 	PasswordOriginUserSet        = "user_set"
 	PasswordOriginSSOPlaceholder = "sso_placeholder"
 )

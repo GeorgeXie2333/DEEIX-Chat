@@ -9415,6 +9415,9 @@
                 "dsn": {
                     "type": "string",
                     "maxLength": 2048
+                },
+                "importPasswords": {
+                    "type": "boolean"
                 }
             }
         },
@@ -9428,6 +9431,18 @@
                     "type": "string"
                 },
                 "imported": {
+                    "type": "integer"
+                },
+                "passwordsGenerated": {
+                    "type": "integer"
+                },
+                "passwordsImported": {
+                    "type": "integer"
+                },
+                "passwordsInvalidHash": {
+                    "type": "integer"
+                },
+                "passwordsUnavailable": {
                     "type": "integer"
                 },
                 "scanned": {

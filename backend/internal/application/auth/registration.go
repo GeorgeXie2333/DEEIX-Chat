@@ -361,7 +361,7 @@ func (s *Service) ChangePassword(ctx context.Context, userID uint, currentPasswo
 		return fmt.Errorf("new password must be different from the bootstrap password")
 	}
 	if credential.PasswordEnabled && !initialReset {
-		if err = bcrypt.CompareHashAndPassword([]byte(credential.PasswordHash), []byte(currentPassword)); err != nil {
+		if err = compareCredentialPassword(credential, currentPassword); err != nil {
 			return ErrInvalidCredentials
 		}
 	}

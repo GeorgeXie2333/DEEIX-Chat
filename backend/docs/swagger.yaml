@@ -259,6 +259,8 @@ definitions:
       dsn:
         maxLength: 2048
         type: string
+      importPasswords:
+        type: boolean
     required:
     - creditMultiplier
     - dsn
@@ -270,6 +272,14 @@ definitions:
       dedupeRule:
         type: string
       imported:
+        type: integer
+      passwordsGenerated:
+        type: integer
+      passwordsImported:
+        type: integer
+      passwordsInvalidHash:
+        type: integer
+      passwordsUnavailable:
         type: integer
       scanned:
         type: integer

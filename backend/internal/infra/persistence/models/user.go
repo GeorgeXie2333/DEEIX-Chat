@@ -102,7 +102,7 @@ type UserCredential struct {
 	PasswordEnabled   bool       `gorm:"not null;default:true;comment:是否允许本地密码登录"`
 	PasswordUpdatedAt *time.Time `gorm:"comment:密码更新时间"`
 	PasswordSetAt     *time.Time `gorm:"comment:用户可用密码设置时间"`
-	PasswordOrigin    string     `gorm:"size:32;not null;default:'local_register';comment:密码来源(local_register/admin_created/admin_reset/user_set/sso_placeholder)"`
+	PasswordOrigin    string     `gorm:"size:32;not null;default:'local_register';comment:密码来源(local_register/admin_created/admin_reset/openwebui_import/user_set/sso_placeholder)"`
 	MustResetPassword bool       `gorm:"not null;default:false;comment:是否强制重置密码"`
 	FailedLoginCount  int        `gorm:"not null;default:0;comment:连续失败登录次数"`
 	LockedUntil       *time.Time `gorm:"index:idx_identity_credentials_locked_until;comment:锁定截止时间"`

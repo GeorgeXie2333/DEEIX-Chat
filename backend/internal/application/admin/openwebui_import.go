@@ -26,11 +26,13 @@ const (
 )
 
 type openWebUIImportCandidate struct {
-	sourceKey      string
-	email          string
-	lowerEmail     string
-	displayName    string
-	balanceNanousd int64
+	sourceKey         string
+	email             string
+	lowerEmail        string
+	displayName       string
+	balanceNanousd    int64
+	passwordHash      string
+	passwordAvailable bool
 }
 
 type openWebUIImportUserService interface {
@@ -105,6 +107,9 @@ func (s *Service) ImportOpenWebUIUsers(
 				result.SkippedExistingEmail++
 				continue
 			}
+			if _, _, err = resolveOpenWebUIPassword(candidate, input.ImportPasswords, result, false); err != nil {
+				return nil, err
+			}
 			result.Imported++
 		}
 		return result, nil
@@ -130,7 +135,7 @@ func (s *Service) ImportOpenWebUIUsers(
 			continue
 		}
 
-		passwordHash, hashErr := bcrypt.GenerateFromPassword([]byte(randomImportPassword()), openWebUIPasswordHashCost)
+		passwordHash, passwordOrigin, hashErr := resolveOpenWebUIPassword(candidate, input.ImportPasswords, result, true)
 		if hashErr != nil {
 			return nil, hashErr
 		}
@@ -149,12 +154,12 @@ func (s *Service) ImportOpenWebUIUsers(
 				AppearancePreferences: openWebUIAppearanceDefaults,
 			},
 			Credential: domainuser.Credential{
-				PasswordHash:      string(passwordHash),
+				PasswordHash:      passwordHash,
 				PasswordAlgo:      "bcrypt",
 				PasswordEnabled:   true,
 				PasswordUpdatedAt: &now,
 				PasswordSetAt:     &now,
-				PasswordOrigin:    domainuser.PasswordOriginAdminCreated,
+				PasswordOrigin:    passwordOrigin,
 			},
 			BillingBalanceNanousd:     candidate.balanceNanousd,
 			BillingBalanceRefNo:       "openwebui_import",
@@ -194,15 +199,59 @@ func (s *Service) buildOpenWebUIImportCandidates(rows []repository.OpenWebUIUser
 			continue
 		}
 		candidates = append(candidates, openWebUIImportCandidate{
-			sourceKey:      sourceKey,
-			email:          email,
-			lowerEmail:     lowerEmail,
-			displayName:    userapp.NormalizeGeneratedDisplayName(row.DisplayName),
-			balanceNanousd: openWebUICreditToNanousd(row.Balance, multiplier),
+			sourceKey:         sourceKey,
+			email:             email,
+			lowerEmail:        lowerEmail,
+			displayName:       userapp.NormalizeGeneratedDisplayName(row.DisplayName),
+			balanceNanousd:    openWebUICreditToNanousd(row.Balance, multiplier),
+			passwordHash:      row.PasswordHash,
+			passwordAvailable: row.PasswordAvailable,
 		})
 		emailKeys = append(emailKeys, lowerEmail)
 	}
 	return candidates, emailKeys
+}
+
+func resolveOpenWebUIPassword(
+	candidate openWebUIImportCandidate,
+	importPasswords bool,
+	result *OpenWebUIImportResult,
+	generate bool,
+) (string, string, error) {
+	if importPasswords {
+		passwordHash := strings.TrimSpace(candidate.passwordHash)
+		switch {
+		case !candidate.passwordAvailable || passwordHash == "":
+			result.PasswordsUnavailable++
+		case validOpenWebUIBcryptHash(passwordHash):
+			result.PasswordsImported++
+			return passwordHash, domainuser.PasswordOriginOpenWebUIImport, nil
+		default:
+			result.PasswordsInvalidHash++
+		}
+	}
+
+	result.PasswordsGenerated++
+	if !generate {
+		return "", domainuser.PasswordOriginAdminCreated, nil
+	}
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(randomImportPassword()), openWebUIPasswordHashCost)
+	if err != nil {
+		return "", "", err
+	}
+	return string(passwordHash), domainuser.PasswordOriginAdminCreated, nil
+}
+
+func validOpenWebUIBcryptHash(passwordHash string) bool {
+	if strings.TrimSpace(passwordHash) == "" {
+		return false
+	}
+	_, err := bcrypt.Cost([]byte(passwordHash))
+	if err != nil {
+		return false
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte("openwebui-import-validation-probe"))
+	return err == nil || errors.Is(err, bcrypt.ErrMismatchedHashAndPassword)
 }
 
 func validCreditMultiplier(value float64) bool {
@@ -349,6 +398,11 @@ func (s *Service) writeOpenWebUIImportAudit(
 			"skipped_duplicate_source_email": result.SkippedDuplicateSourceEmail,
 			"skipped_invalid_email":          result.SkippedInvalidEmail,
 			"skipped_invalid_row":            result.SkippedInvalidRow,
+			"import_passwords":               result.PasswordsImported > 0 || result.PasswordsUnavailable > 0 || result.PasswordsInvalidHash > 0,
+			"passwords_imported":             result.PasswordsImported,
+			"passwords_generated":            result.PasswordsGenerated,
+			"passwords_unavailable":          result.PasswordsUnavailable,
+			"passwords_invalid_hash":         result.PasswordsInvalidHash,
 		},
 	)
 }

@@ -61,6 +61,7 @@ type ImportOpenWebUIUsersRequest struct {
 	DSN              string   `json:"dsn" binding:"required,max=2048"`
 	CreditMultiplier *float64 `json:"creditMultiplier" binding:"required"`
 	DryRun           bool     `json:"dryRun"`
+	ImportPasswords  bool     `json:"importPasswords"`
 }
 
 // ── 响应 DTO ────────────────────────────────────────────────────────────────
@@ -135,6 +136,10 @@ type ImportOpenWebUIUsersResponse struct {
 	SkippedDuplicateSourceEmail int    `json:"skippedDuplicateSourceEmail"`
 	SkippedInvalidEmail         int    `json:"skippedInvalidEmail"`
 	SkippedInvalidRow           int    `json:"skippedInvalidRow"`
+	PasswordsImported           int    `json:"passwordsImported"`
+	PasswordsGenerated          int    `json:"passwordsGenerated"`
+	PasswordsUnavailable        int    `json:"passwordsUnavailable"`
+	PasswordsInvalidHash        int    `json:"passwordsInvalidHash"`
 }
 
 // AuthEventResponse 认证事件响应。
@@ -454,6 +459,10 @@ func toImportOpenWebUIUsersResponse(result *appadmin.OpenWebUIImportResult) Impo
 		SkippedDuplicateSourceEmail: result.SkippedDuplicateSourceEmail,
 		SkippedInvalidEmail:         result.SkippedInvalidEmail,
 		SkippedInvalidRow:           result.SkippedInvalidRow,
+		PasswordsImported:           result.PasswordsImported,
+		PasswordsGenerated:          result.PasswordsGenerated,
+		PasswordsUnavailable:        result.PasswordsUnavailable,
+		PasswordsInvalidHash:        result.PasswordsInvalidHash,
 	}
 }
 

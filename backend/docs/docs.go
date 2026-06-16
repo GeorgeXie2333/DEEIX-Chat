@@ -9422,6 +9422,9 @@ const docTemplate = `{
                 "dsn": {
                     "type": "string",
                     "maxLength": 2048
+                },
+                "importPasswords": {
+                    "type": "boolean"
                 }
             }
         },
@@ -9435,6 +9438,18 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "imported": {
+                    "type": "integer"
+                },
+                "passwordsGenerated": {
+                    "type": "integer"
+                },
+                "passwordsImported": {
+                    "type": "integer"
+                },
+                "passwordsInvalidHash": {
+                    "type": "integer"
+                },
+                "passwordsUnavailable": {
                     "type": "integer"
                 },
                 "scanned": {

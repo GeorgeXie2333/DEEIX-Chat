@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
 	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
@@ -351,7 +352,7 @@ func (s *Service) doLogin(
 		return nil, ErrAccountLocked
 	}
 
-	if err = bcrypt.CompareHashAndPassword([]byte(credential.PasswordHash), []byte(password)); err != nil {
+	if err = compareCredentialPassword(credential, password); err != nil {
 		lockUntil := now.Add(s.loginLockDuration())
 		updatedCredential, markErr := s.repo.MarkLoginFailure(ctx, item.ID, s.loginLockThreshold(), lockUntil)
 		if markErr != nil {
@@ -608,7 +609,41 @@ func passwordMatchesCredential(password string, credential *domainuser.Credentia
 	if credential == nil || strings.TrimSpace(credential.PasswordHash) == "" {
 		return false
 	}
-	return bcrypt.CompareHashAndPassword([]byte(credential.PasswordHash), []byte(password)) == nil
+	return compareCredentialPassword(credential, password) == nil
+}
+
+func compareCredentialPassword(credential *domainuser.Credential, password string) error {
+	passwordHash := ""
+	if credential != nil {
+		passwordHash = strings.TrimSpace(credential.PasswordHash)
+	}
+	err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
+	if err == nil {
+		return nil
+	}
+	if credential == nil || credential.PasswordOrigin != domainuser.PasswordOriginOpenWebUIImport {
+		return err
+	}
+	truncated, ok := openWebUITruncatedPassword(password)
+	if !ok {
+		return err
+	}
+	if fallbackErr := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(truncated)); fallbackErr == nil {
+		return nil
+	}
+	return err
+}
+
+func openWebUITruncatedPassword(password string) (string, bool) {
+	passwordBytes := []byte(password)
+	if len(passwordBytes) <= 72 {
+		return "", false
+	}
+	passwordBytes = passwordBytes[:72]
+	for len(passwordBytes) > 0 && !utf8.Valid(passwordBytes) {
+		passwordBytes = passwordBytes[:len(passwordBytes)-1]
+	}
+	return string(passwordBytes), true
 }
 
 func (s *Service) applyTwoFactorView(ctx context.Context, view *userview.UserView) error {

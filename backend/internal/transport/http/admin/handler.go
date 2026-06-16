@@ -169,6 +169,7 @@ func (h *Handler) ImportOpenWebUIUsers(c *gin.Context) {
 			DSN:              req.DSN,
 			CreditMultiplier: *req.CreditMultiplier,
 			DryRun:           req.DryRun,
+			ImportPasswords:  req.ImportPasswords,
 		},
 		c.ClientIP(),
 		c.Request.UserAgent(),
