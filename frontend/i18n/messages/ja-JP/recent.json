@@ -1,5 +1,9 @@
 {
   "title": "最近",
+  "collapseSection": "最近の会話を折りたたむ",
+  "expandSection": "最近の会話を展開",
+  "collapseStarredSection": "スター付き会話を折りたたむ",
+  "expandStarredSection": "スター付き会話を展開",
   "allConversations": "すべての会話",
   "allConversationsDescription": "Comi AI とのすべての会話",
   "newChat": "新規チャット",
@@ -15,6 +19,8 @@
   "share": "共有",
   "projects": {
     "title": "プロジェクト",
+    "collapseSection": "プロジェクトを折りたたむ",
+    "expandSection": "プロジェクトを展開",
     "create": "プロジェクトを新規作成",
     "newChatInProject": "プロジェクト内で新規チャット",
     "menu": "プロジェクトメニュー",
