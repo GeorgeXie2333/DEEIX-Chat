@@ -10,6 +10,7 @@ import (
 
 	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 	"gorm.io/gorm"
@@ -21,29 +22,13 @@ func translateError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	if dberror.IsRecordNotFound(err) {
 		return repository.ErrNotFound
 	}
-	if isUniqueConstraintError(err) {
+	if dberror.IsUniqueConstraint(err) {
 		return translateUniqueConstraint(err)
 	}
 	return err
-}
-
-type sqlStateError interface {
-	SQLState() string
-}
-
-func isUniqueConstraintError(err error) bool {
-	if errors.Is(err, gorm.ErrDuplicatedKey) {
-		return true
-	}
-	var stateErr sqlStateError
-	if errors.As(err, &stateErr) && stateErr.SQLState() == "23505" {
-		return true
-	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "duplicate key") || strings.Contains(msg, "unique constraint")
 }
 
 func translateUniqueConstraint(err error) error {
@@ -86,6 +71,58 @@ func (r *Repo) GetByEmail(ctx context.Context, email string) (*domainuser.User, 
 		return nil, translateError(err)
 	}
 	return toDomainUser(item), nil
+}
+
+// GetByPublicID 按公开 ID 查询用户。
+func (r *Repo) GetByPublicID(ctx context.Context, publicID string) (*domainuser.User, error) {
+	var item model.User
+	if err := r.db.WithContext(ctx).Where("public_id = ?", publicID).First(&item).Error; err != nil {
+		return nil, translateError(err)
+	}
+	return toDomainUser(item), nil
+}
+
+// ListUsersByLowerEmails 按小写邮箱批量查询用户。
+func (r *Repo) ListUsersByLowerEmails(ctx context.Context, emails []string) (map[string]domainuser.User, error) {
+	results := make(map[string]domainuser.User)
+	normalized := make([]string, 0, len(emails))
+	seen := make(map[string]struct{}, len(emails))
+	for _, email := range emails {
+		value := strings.ToLower(strings.TrimSpace(email))
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		normalized = append(normalized, value)
+	}
+	if len(normalized) == 0 {
+		return results, nil
+	}
+
+	items := make([]model.User, 0)
+	if err := r.db.WithContext(ctx).
+		Where("LOWER(email) IN ?", normalized).
+		Find(&items).Error; err != nil {
+		return nil, translateError(err)
+	}
+	for _, item := range items {
+		results[strings.ToLower(strings.TrimSpace(item.Email))] = *toDomainUser(item)
+	}
+	return results, nil
+}
+
+// ListAllUsernames 查询当前全部用户名，用于导入时规避唯一约束冲突。
+func (r *Repo) ListAllUsernames(ctx context.Context) ([]string, error) {
+	var usernames []string
+	if err := r.db.WithContext(ctx).
+		Model(&model.User{}).
+		Pluck("username", &usernames).Error; err != nil {
+		return nil, translateError(err)
+	}
+	return usernames, nil
 }
 
 // GetByID 按 ID 查询用户。
@@ -154,36 +191,54 @@ func (r *Repo) updateUserFields(ctx context.Context, userID uint, input reposito
 	}
 
 	if input.Role != nil && *input.Role != model.RoleSuperAdmin {
-		return r.updateUserFieldsWithSuperAdminGuard(ctx, userID, updates)
+		return r.updateUserFieldsInTransaction(ctx, userID, updates, true)
 	}
 
-	return r.applyUserFieldUpdates(ctx, userID, updates)
+	return r.updateUserFieldsInTransaction(ctx, userID, updates, false)
 }
 
-func (r *Repo) updateUserFieldsWithSuperAdminGuard(
+func (r *Repo) updateUserFieldsInTransaction(
 	ctx context.Context,
 	userID uint,
 	updates map[string]interface{},
+	withSuperAdminGuard bool,
 ) (*domainuser.User, error) {
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var superAdmins []model.User
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Select("id").
-			Where("role = ?", model.RoleSuperAdmin).
-			Order("id ASC").
-			Find(&superAdmins).Error; err != nil {
-			return translateError(err)
-		}
+		if withSuperAdminGuard {
+			var superAdmins []model.User
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+				Select("id").
+				Where("role = ?", model.RoleSuperAdmin).
+				Order("id ASC").
+				Find(&superAdmins).Error; err != nil {
+				return translateError(err)
+			}
 
-		targetIsSuperAdmin := false
-		for _, item := range superAdmins {
-			if item.ID == userID {
-				targetIsSuperAdmin = true
-				break
+			targetIsSuperAdmin := false
+			for _, item := range superAdmins {
+				if item.ID == userID {
+					targetIsSuperAdmin = true
+					break
+				}
+			}
+			if targetIsSuperAdmin && len(superAdmins) <= 1 {
+				return repository.ErrLastSuperAdminRoleChange
 			}
 		}
-		if targetIsSuperAdmin && len(superAdmins) <= 1 {
-			return repository.ErrLastSuperAdminRoleChange
+
+		if rawAvatarURL, ok := updates["avatar_url"].(string); ok {
+			if fileID, isFileAvatar := domainuser.ParseFileAvatarURL(rawAvatarURL); isFileAvatar {
+				var fileObject model.FileObject
+				if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+					Select("id").
+					Where("user_id = ? AND file_id = ? AND status = ?", userID, fileID, "active").
+					First(&fileObject).Error; err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						return repository.ErrNotFound
+					}
+					return translateError(err)
+				}
+			}
 		}
 
 		result := tx.Model(&model.User{}).
@@ -200,25 +255,6 @@ func (r *Repo) updateUserFieldsWithSuperAdminGuard(
 	if err != nil {
 		return nil, err
 	}
-	return r.GetByID(ctx, userID)
-}
-
-func (r *Repo) applyUserFieldUpdates(
-	ctx context.Context,
-	userID uint,
-	updates map[string]interface{},
-) (*domainuser.User, error) {
-	result := r.db.WithContext(ctx).
-		Model(&model.User{}).
-		Where("id = ?", userID).
-		Updates(updates)
-	if result.Error != nil {
-		return nil, translateError(result.Error)
-	}
-	if result.RowsAffected == 0 {
-		return nil, repository.ErrNotFound
-	}
-
 	return r.GetByID(ctx, userID)
 }
 
@@ -364,6 +400,98 @@ func (r *Repo) CreateWithCredentialAndIdentity(
 		identity.UpdatedAt = dbIdentity.UpdatedAt
 		return nil
 	}))
+}
+
+// ImportUsersWithCredentialsAndBalances 在同一事务中导入用户、凭据与初始余额账户。
+func (r *Repo) ImportUsersWithCredentialsAndBalances(ctx context.Context, records []repository.UserImportRecord) ([]domainuser.User, error) {
+	results := make([]domainuser.User, 0, len(records))
+	if len(records) == 0 {
+		return results, nil
+	}
+
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, record := range records {
+			dbUser := toModelUser(&record.User)
+			if err := tx.Create(dbUser).Error; err != nil {
+				return translateError(err)
+			}
+
+			now := time.Now()
+			passwordAlgo := record.Credential.PasswordAlgo
+			if passwordAlgo == "" {
+				passwordAlgo = "bcrypt"
+			}
+			passwordOrigin := record.Credential.PasswordOrigin
+			if passwordOrigin == "" {
+				passwordOrigin = domainuser.PasswordOriginAdminCreated
+			}
+			passwordUpdatedAt := record.Credential.PasswordUpdatedAt
+			if passwordUpdatedAt == nil {
+				passwordUpdatedAt = &now
+			}
+			passwordSetAt := record.Credential.PasswordSetAt
+			if passwordSetAt == nil {
+				passwordSetAt = &now
+			}
+
+			dbCredential := &model.UserCredential{
+				UserID:            dbUser.ID,
+				PasswordHash:      record.Credential.PasswordHash,
+				PasswordAlgo:      passwordAlgo,
+				PasswordEnabled:   record.Credential.PasswordEnabled,
+				PasswordUpdatedAt: passwordUpdatedAt,
+				PasswordSetAt:     passwordSetAt,
+				PasswordOrigin:    passwordOrigin,
+				MustResetPassword: record.Credential.MustResetPassword,
+				FailedLoginCount:  record.Credential.FailedLoginCount,
+			}
+			if err := tx.Create(dbCredential).Error; err != nil {
+				return translateError(err)
+			}
+
+			balanceNanousd := record.BillingBalanceNanousd
+			if balanceNanousd < 0 {
+				balanceNanousd = 0
+			}
+			account := &model.BillingAccount{
+				UserID:         dbUser.ID,
+				Currency:       "USD",
+				BalanceNanousd: balanceNanousd,
+				Status:         "active",
+			}
+			if err := tx.Create(account).Error; err != nil {
+				return translateError(err)
+			}
+			if balanceNanousd > 0 {
+				transaction := &model.BalanceTransaction{
+					AccountID:           account.ID,
+					UserID:              dbUser.ID,
+					Type:                domainbilling.BalanceTransactionTypeAdminSet,
+					AmountNanousd:       balanceNanousd,
+					BalanceAfterNanousd: balanceNanousd,
+					RefType:             "admin_import",
+					RefNo:               strings.TrimSpace(record.BillingBalanceRefNo),
+					Description:         strings.TrimSpace(record.BillingBalanceDescription),
+				}
+				if transaction.Description == "" {
+					transaction.Description = "OpenWebUI import"
+				}
+				if err := tx.Create(transaction).Error; err != nil {
+					return translateError(err)
+				}
+			}
+
+			record.User.ID = dbUser.ID
+			record.User.CreatedAt = dbUser.CreatedAt
+			record.User.UpdatedAt = dbUser.UpdatedAt
+			results = append(results, record.User)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 func (r *Repo) createWithCredentialTx(

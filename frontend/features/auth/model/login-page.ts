@@ -1,12 +1,13 @@
 import type { LoginOptionsData, LoginPageSettings } from "@/shared/api/auth.types";
 import { ApiError } from "@/shared/api/http-client";
+import { DEFAULT_AUTH_NEXT_PATH } from "@/shared/auth/local-path";
 
-export type LoginMode = "login" | "register";
+export type LoginMode = "login" | "register" | "reset-password";
 export type ProviderAuthIntent = "login" | "register";
 
 export const DEFAULT_LOGIN_SETTINGS: LoginPageSettings = {
   title: "Sign in to Comi AI",
-  defaultNextPath: "/chat",
+  defaultNextPath: DEFAULT_AUTH_NEXT_PATH,
 };
 
 export const DEFAULT_LOGIN_OPTIONS: LoginOptionsData = {
@@ -14,6 +15,7 @@ export const DEFAULT_LOGIN_OPTIONS: LoginOptionsData = {
   emailEnabled: true,
   emailRegistrationEnabled: true,
   emailVerificationEnabled: false,
+  passwordResetEnabled: false,
   turnstileRegistrationEnabled: false,
   turnstileSiteKey: "",
   providers: [],

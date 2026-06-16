@@ -432,7 +432,9 @@
       "openai": "OpenAI native tools",
       "claude": "Claude native tools",
       "google": "Google native tools"
-    }
+    },
+    "mcpSelectServerTools": "Select all",
+    "mcpClearServerTools": "Clear"
   },
   "modelPicker": {
     "selectModel": "Select model",

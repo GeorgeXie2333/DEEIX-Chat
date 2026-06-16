@@ -356,6 +356,8 @@ docker compose logs app
 | Redis | `REDIS_USERNAME` | Redis ACL 用户名；使用仅密码或默认用户 Redis 时留空。 |
 | Redis | `REDIS_PASSWORD` | Redis 密码。 |
 | Redis | `REDIS_DB` | Redis DB 编号。 |
+| Redis | `REDIS_TLS_ENABLED` | 启用 Redis TLS 连接，例如 Upstash Redis。 |
+| Redis | `REDIS_TLS_INSECURE_SKIP_VERIFY` | 跳过 Redis TLS 证书校验；除非非标准端点确实要求，否则保持 `false`。 |
 | 存储 | `STORAGE_BACKEND` | `local` 或 `s3`。 |
 | 本地存储 | `STORAGE_ROOT_DIR` | 本地文件存储目录。 |
 | S3 存储 | `STORAGE_S3_ENDPOINT` | S3 兼容服务 endpoint。 |
@@ -374,9 +376,10 @@ docker compose logs app
 | GeoIP | `GEOIP_DATABASE_MAX_BYTES` | MMDB 最大下载字节数。 |
 | GeoIP | `GEOIP_REFRESH_INTERVAL_HOURS` | MMDB 刷新间隔。 |
 | OpenTelemetry | `OTEL_ENABLED` | 是否启用 Trace；未显式设置时，配置 endpoint 会自动启用。 |
-| OpenTelemetry | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP gRPC Collector 地址。 |
+| OpenTelemetry | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP Collector 地址。 |
 | OpenTelemetry | `OTEL_EXPORTER_OTLP_HEADERS` | OTLP 请求头，格式为 `key=value,key2=value2`。 |
-| OpenTelemetry | `OTEL_EXPORTER_OTLP_INSECURE` | 是否使用明文 gRPC 连接。 |
+| OpenTelemetry | `OTEL_EXPORTER_OTLP_INSECURE` | 是否使用明文传输。 |
+| OpenTelemetry | `OTEL_EXPORTER_OTLP_PROTOCOL` | OTLP exporter 协议：`grpc`、`http` 或 `http/protobuf`；默认 `grpc`。 |
 | OpenTelemetry | `OTEL_TRACES_SAMPLER_ARG` / `OTEL_SAMPLING_RATE` | Trace 采样率，范围 `0~1`；`OTEL_TRACES_SAMPLER_ARG` 优先。 |
 
 认证、注册、会话配置、模型参数策略、文件处理、RAG、Embedding、MCP、计费、支付和公告等运行时业务配置不属于静态 YAML 配置，默认值由后端种子初始化，并在后台管理中维护。

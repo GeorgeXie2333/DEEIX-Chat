@@ -1,5 +1,4 @@
 import type { SettingsGrouped } from "@/shared/api/settings.types";
-import { resolveLocalizedErrorMessage } from "@/i18n/resolve-error-message";
 
 export type ConversationFieldType = "int" | "bool" | "string" | "password" | "textarea" | "json" | "select" | "tabs" | "button";
 
@@ -455,10 +454,6 @@ function normalizeConversationPromptValue(value: string): string {
   const normalized = value.trim();
   if (!normalized) return "";
   return value;
-}
-
-export function resolveErrorMessage(error: unknown): string {
-  return resolveLocalizedErrorMessage(error);
 }
 
 export function toEditorField(field: ConversationSettingsField) {

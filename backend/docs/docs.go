@@ -4199,6 +4199,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/users/import/openwebui": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "从 OpenWebUI SQLite 或 PostgreSQL 数据库读取用户，按 email 去重导入；已存在用户不会修改",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理员导入 OpenWebUI 用户",
+                "parameters": [
+                    {
+                        "description": "OpenWebUI 导入参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_admin.ImportOpenWebUIUsersRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_admin.ImportOpenWebUIUsersResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/users/{id}": {
             "delete": {
                 "security": [
@@ -4836,6 +4893,98 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/password/reset/complete": {
+            "post": {
+                "description": "使用邮箱、验证码和新密码完成密码重置；失败时返回通用错误，避免暴露账号状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "完成密码重置",
+                "parameters": [
+                    {
+                        "description": "密码重置完成请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.PasswordResetCompleteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.PasswordResetCompleteResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/password/reset/start": {
+            "post": {
+                "description": "SMTP 配置可用时，向已验证邮箱发送密码重置验证码；失败时返回通用错误，避免暴露账号状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "发送密码重置验证码",
+                "parameters": [
+                    {
+                        "description": "密码重置验证码请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.PasswordResetStartRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.PasswordResetStartResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
                         }
@@ -9257,6 +9406,68 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_transport_http_admin.ImportOpenWebUIUsersRequest": {
+            "type": "object",
+            "required": [
+                "creditMultiplier",
+                "dsn"
+            ],
+            "properties": {
+                "creditMultiplier": {
+                    "type": "number"
+                },
+                "dryRun": {
+                    "type": "boolean"
+                },
+                "dsn": {
+                    "type": "string",
+                    "maxLength": 2048
+                }
+            }
+        },
+        "internal_transport_http_admin.ImportOpenWebUIUsersResponse": {
+            "type": "object",
+            "properties": {
+                "dedupeField": {
+                    "type": "string"
+                },
+                "dedupeRule": {
+                    "type": "string"
+                },
+                "imported": {
+                    "type": "integer"
+                },
+                "scanned": {
+                    "type": "integer"
+                },
+                "skippedDuplicateSourceEmail": {
+                    "type": "integer"
+                },
+                "skippedExistingEmail": {
+                    "type": "integer"
+                },
+                "skippedInvalidEmail": {
+                    "type": "integer"
+                },
+                "skippedInvalidRow": {
+                    "type": "integer"
+                },
+                "source": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_admin.ImportOpenWebUIUsersResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_transport_http_admin.ImportOpenWebUIUsersResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_transport_http_admin.PatchUserRequest": {
             "type": "object",
             "properties": {
@@ -10457,6 +10668,9 @@ const docTemplate = `{
                 "emailVerificationEnabled": {
                     "type": "boolean"
                 },
+                "passwordResetEnabled": {
+                    "type": "boolean"
+                },
                 "providers": {
                     "type": "array",
                     "items": {
@@ -10579,6 +10793,81 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_transport_http_auth.MeResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_auth.PasswordResetCompleteRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "email",
+                "newPassword"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "newPassword": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 8
+                }
+            }
+        },
+        "internal_transport_http_auth.PasswordResetCompleteResponse": {
+            "type": "object",
+            "properties": {
+                "changed": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_transport_http_auth.PasswordResetCompleteResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_transport_http_auth.PasswordResetCompleteResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_auth.PasswordResetStartRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 128
+                }
+            }
+        },
+        "internal_transport_http_auth.PasswordResetStartResponse": {
+            "type": "object",
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "sent": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_transport_http_auth.PasswordResetStartResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_transport_http_auth.PasswordResetStartResponse"
                 },
                 "errorMsg": {
                     "type": "string"
@@ -15655,6 +15944,9 @@ const docTemplate = `{
                 "assistantMessage": {
                     "$ref": "#/definitions/internal_transport_http_conversation.MessageResponse"
                 },
+                "metadataRefreshHint": {
+                    "type": "string"
+                },
                 "userMessage": {
                     "$ref": "#/definitions/internal_transport_http_conversation.MessageResponse"
                 }
@@ -16413,12 +16705,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "0.2.4",
+	Version:          "0.2.5",
 	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "DEEIX Chat API",
-	Description:      "DEEIX Chat 后端 API 文档",
+	Title:            "Comi AI API",
+	Description:      "Comi AI backend API documentation.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

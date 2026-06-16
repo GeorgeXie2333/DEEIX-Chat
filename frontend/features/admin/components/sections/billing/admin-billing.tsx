@@ -74,7 +74,7 @@ import {
 import { listAllAdminPages } from "@/features/admin/api/shared";
 import type { AdminBillingMode, AdminBillingPlanDTO, AdminModelPricingDTO, AdminRedemptionCodeDTO, NativeToolPricingDTO, NativeToolPricingUpdateDTO } from "@/features/admin/api/billing.types";
 import type { AdminLLMModelDTO } from "@/features/admin/api/llm.types";
-import { resolveErrorMessage } from "@/features/admin/types/llm";
+import { resolveAdminErrorMessage } from "@/features/admin/utils/admin-error";
 import {
   mergeBatchResultData,
   runBulkActionInChunks,
@@ -108,7 +108,7 @@ import {
   type PlanFormState,
   type PricingFormState,
   type TieredPricingTierForm,
-} from "@/features/admin/model/billing-page";
+} from "@/features/admin/model/billing-settings";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { resolveApiBaseURL } from "@/shared/api/http-client";
 import { LobeHubIcon } from "@/shared/components/lobehub-icon";
@@ -447,7 +447,7 @@ export function AdminBillingPage() {
       setSavedPaymentSettings(nextPaymentSettings);
       setPaymentConfiguredMap(nextPaymentConfiguredMap);
     } catch (error) {
-      toast.error(t("toast.loadFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.loadFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setLoading(false);
     }
@@ -484,7 +484,7 @@ export function AdminBillingPage() {
       setRedemptionTotal(result.total ?? 0);
     } catch (error) {
       if (showError) {
-        toast.error(t("toast.redemptionLoadFailed"), { description: resolveErrorMessage(error) });
+        toast.error(t("toast.redemptionLoadFailed"), { description: resolveAdminErrorMessage(error) });
       }
     } finally {
       if (showLoading) {
@@ -505,7 +505,7 @@ export function AdminBillingPage() {
       setPricingItems(items);
       invalidateAdminReferenceDataCache();
     } catch (error) {
-      toast.error(t("toast.loadFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.loadFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setModelPricingRefreshing(false);
     }
@@ -519,7 +519,7 @@ export function AdminBillingPage() {
     void loadRedemptionCodes();
   }, [loadRedemptionCodes]);
 
-  const rows = React.useMemo(() => buildPricingRows(models, pricingItems), [models, pricingItems]);
+  const rows = React.useMemo<BillingModelPricingRow[]>(() => buildPricingRows(models, pricingItems), [models, pricingItems]);
   const vendorFilterOptions = React.useMemo(() => {
     const options = new Map(KNOWN_VENDOR_OPTIONS.map((item) => [item.value, item.label]));
     for (const row of rows) {
@@ -536,7 +536,7 @@ export function AdminBillingPage() {
     }
     return Array.from(options.entries()).map(([value, label]) => ({ value, label }));
   }, [rows]);
-  const filteredRows = React.useMemo(() => {
+  const filteredRows = React.useMemo<BillingModelPricingRow[]>(() => {
     const keyword = query.trim().toLowerCase();
     return rows.filter((row) => {
       const matchesQuery =
@@ -597,7 +597,7 @@ export function AdminBillingPage() {
   }, [redemptionVisibleIDs]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
-  const pageRows = React.useMemo(() => {
+  const pageRows = React.useMemo<BillingModelPricingRow[]>(() => {
     const start = (page - 1) * pageSize;
     return filteredRows.slice(start, start + pageSize);
   }, [filteredRows, page, pageSize]);
@@ -607,7 +607,7 @@ export function AdminBillingPage() {
     enabled: redemptionCodes.length > 100,
     estimateSize: 40,
   });
-  const modelPricingVirtualRows = useVirtualTableRows(pageRows, {
+  const modelPricingVirtualRows = useVirtualTableRows<BillingModelPricingRow>(pageRows, {
     enabled: pageRows.length > 100,
     estimateSize: 40,
   });
@@ -811,7 +811,7 @@ export function AdminBillingPage() {
         return;
       }
     } catch (error) {
-      toast.error(t("toast.redemptionBulkCopyFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.redemptionBulkCopyFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setRedemptionBulkPending(false);
     }
@@ -849,7 +849,7 @@ export function AdminBillingPage() {
         description: failedCount > 0 ? t("toast.redemptionBulkRevealSkipped", { count: failedCount }) : undefined,
       });
     } catch (error) {
-      toast.error(t("toast.redemptionBulkExportFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.redemptionBulkExportFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setRedemptionBulkPending(false);
     }
@@ -892,7 +892,7 @@ export function AdminBillingPage() {
       void loadRedemptionCodes({}, { showLoading: false });
     } catch (error) {
       setRedemptionCodes(previousRedemptionCodes);
-      toast.error(t("toast.redemptionBulkFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.redemptionBulkFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setRedemptionBulkPending(false);
     }
@@ -920,7 +920,7 @@ export function AdminBillingPage() {
       void loadRedemptionCodes({}, { showLoading: false });
     } catch (error) {
       setRedemptionCodes(previousRedemptionCodes);
-      toast.error(t("toast.redemptionUpdateFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.redemptionUpdateFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setRedemptionStatusPendingID(null);
     }
@@ -974,7 +974,7 @@ export function AdminBillingPage() {
     } catch (error) {
       setRedemptionCodes(previousRedemptionCodes);
       setRedemptionTotal(previousRedemptionTotal);
-      toast.error(t("toast.redemptionDeleteFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.redemptionDeleteFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setRedemptionBulkPending(false);
     }
@@ -1009,7 +1009,7 @@ export function AdminBillingPage() {
     } catch (error) {
       setRedemptionCodes(previousRedemptionCodes);
       setRedemptionTotal(previousRedemptionTotal);
-      toast.error(t("toast.redemptionDeleteFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.redemptionDeleteFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setRedemptionBulkPending(false);
     }
@@ -1134,7 +1134,7 @@ export function AdminBillingPage() {
       toast.success(t("toast.redemptionCreated", { count: created.length }));
       void loadRedemptionCodes({}, { showLoading: false });
     } catch (error) {
-      toast.error(redemptionForm.id ? t("toast.redemptionUpdateFailed") : t("toast.redemptionCreateFailed"), { description: resolveErrorMessage(error) });
+      toast.error(redemptionForm.id ? t("toast.redemptionUpdateFailed") : t("toast.redemptionCreateFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setRedemptionSaving(false);
     }
@@ -1208,7 +1208,7 @@ export function AdminBillingPage() {
       setSavedPaymentSettings(next);
       toast.success(t("toast.paymentSaved"));
     } catch (error) {
-      toast.error(t("toast.paymentSaveFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.paymentSaveFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setSaving(false);
     }
@@ -1235,7 +1235,7 @@ export function AdminBillingPage() {
       }
     } catch (error) {
       setBillingMode(previous);
-      toast.error(t("toast.billingModeFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.billingModeFailed"), { description: resolveAdminErrorMessage(error) });
     }
   }
 
@@ -1284,7 +1284,7 @@ export function AdminBillingPage() {
       invalidateAdminReferenceDataCache();
       toast.success(t("toast.nativeToolBillingSaved"));
     } catch (error) {
-      toast.error(t("toast.nativeToolBillingSaveFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.nativeToolBillingSaveFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setNativeToolBillingSaving(false);
     }
@@ -1328,7 +1328,7 @@ export function AdminBillingPage() {
       invalidateAdminReferenceDataCache();
       toast.success(t("toast.billingConfigSaved"));
     } catch (error) {
-      toast.error(t("toast.billingConfigSaveFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.billingConfigSaveFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setSaving(false);
     }
@@ -1364,7 +1364,7 @@ export function AdminBillingPage() {
       setEditRow(null);
       setForm(null);
     } catch (error) {
-      toast.error(t("toast.pricingSaveFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.pricingSaveFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setSaving(false);
     }
@@ -1434,7 +1434,7 @@ export function AdminBillingPage() {
       invalidateAdminReferenceDataCache();
       toast.success(t("toast.imported", { count: parsed.items.length }));
     } catch (error) {
-      toast.error(t("toast.importFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.importFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setSaving(false);
     }
@@ -1473,7 +1473,7 @@ export function AdminBillingPage() {
       toast.success(checked ? t("toast.freeEnabled") : t("toast.freeDisabled"));
     } catch (error) {
       setPricingItems(previousPricingItems);
-      toast.error(t("toast.freeSaveFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.freeSaveFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setFreeSwitchPendingModel("");
     }
@@ -1504,7 +1504,7 @@ export function AdminBillingPage() {
       setEditPlan(null);
       setPlanForm(null);
     } catch (error) {
-      toast.error(t("toast.planSaveFailed"), { description: resolveErrorMessage(error) });
+      toast.error(t("toast.planSaveFailed"), { description: resolveAdminErrorMessage(error) });
     } finally {
       setSaving(false);
     }
@@ -1967,7 +1967,7 @@ export function AdminBillingPage() {
                             className="h-6 w-6 text-muted-foreground shadow-none"
                             messages={{ copied: tActions("copied"), failed: t("toast.redemptionCopyFailed") }}
                             resolveValue={() => fetchRedemptionCodePlaintext(item)}
-                            onResolveError={(error) => toast.error(t("toast.redemptionCopyFailed"), { description: resolveErrorMessage(error) })}
+                            onResolveError={(error) => toast.error(t("toast.redemptionCopyFailed"), { description: resolveAdminErrorMessage(error) })}
                             iconClassName="size-3.5 stroke-1.5"
                             aria-label={tActions("copy")}
                           />

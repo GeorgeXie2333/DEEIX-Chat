@@ -65,7 +65,8 @@
     "usernameChangeRequired": "初期ユーザー名を変更してください。",
     "verificationCodeAttemptsExceeded": "認証の試行回数が多すぎます。新しいコードをリクエストしてください。",
     "verificationCodeInvalid": "認証コードが無効、または期限切れです。",
-    "verificationCodeRecent": "認証コードは最近送信されています。しばらくしてからもう一度お試しください。"
+    "verificationCodeRecent": "認証コードは最近送信されています。しばらくしてからもう一度お試しください。",
+    "passwordResetFailed": "???????????????????????????????????????????"
   },
   "billing": {
     "insufficientBalance": "残高が不足しています。",
@@ -145,7 +146,8 @@
     "required": "ファイルが必要です。",
     "tooLarge": "ファイルが大きすぎます。",
     "tooLargeForContext": "全文コンテキスト注入にはファイルが大きすぎます。",
-    "typeBlocked": "このファイル形式は許可されていません。"
+    "typeBlocked": "このファイル形式は許可されていません。",
+    "inUse": "?????????????????????"
   },
   "identityProvider": {
     "deleteConflict": "この ID プロバイダーを削除すると、一部ユーザーの唯一のログイン方法が削除されます。"

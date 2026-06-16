@@ -25,18 +25,18 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { LoadingReveal } from "@/features/layouts/components/sections/loading-reveal"
+import { LoadingReveal } from "@/shared/components/loading-reveal"
 import { NavigationSearch } from "@/features/layouts/components/navigation/navigation-search"
 import { SidebarConversationItem } from "@/features/layouts/components/navigation/sidebar-conversation-item"
 import { SidebarConversationSkeleton } from "@/features/layouts/components/navigation/sidebar-conversation-skeleton"
 import {
   ConversationShareDialog,
   sharePatchFromDTO,
-} from "@/features/chat/components/sections/conversation-share-dialog"
-import { DeleteFilesOption } from "@/features/recent/components/delete-files-option"
-import { useChatPreferences } from "@/features/settings/hooks/use-chat-preferences"
-import { useActiveSidebarConversation } from "@/features/layouts/hooks/use-active-sidebar-conversation"
-import { useSidebarListFlip } from "@/features/layouts/hooks/use-sidebar-list-flip"
+} from "@/features/chat/components/sections/chat-share-dialog"
+import { DeleteFilesOption } from "@/shared/components/delete-files-option"
+import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences"
+import { useLayoutActiveConversation } from "@/features/layouts/hooks/use-layout-active-conversation"
+import { useLayoutSidebarListFlip } from "@/features/layouts/hooks/use-layout-sidebar-list-flip"
 import { SIDEBAR_OVERFLOW_ROW_TRANSITION } from "@/features/layouts/model/sidebar-motion"
 import type {
   SidebarConversationDeleteTarget,
@@ -67,8 +67,8 @@ export function NavStarred() {
   const t = useTranslations("recent")
   const { isMobile, setOpenMobile } = useSidebar()
   const router = useRouter()
-  const activeConversationID = useActiveSidebarConversation()
-  const { deleteFilesByDefault } = useChatPreferences()
+  const activeConversationID = useLayoutActiveConversation()
+  const { deleteFilesByDefault } = useSettingsChatPreferences()
 
   const {
     starredItems,
@@ -118,7 +118,7 @@ export function NavStarred() {
   )
   const showInitialSkeleton = loadingInitial && starredConversationItems.length === 0
 
-  useSidebarListFlip(listContainerRef, {
+  useLayoutSidebarListFlip(listContainerRef, {
     enabled: Boolean(transferringStarPublicID),
     signature: visibleStarredSignature,
     excludeKey: transferringStarPublicID,

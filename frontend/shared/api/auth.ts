@@ -18,6 +18,8 @@ import type {
   MeData,
   PatchMePayload,
   PatchUsernamePayload,
+  PasswordResetCompleteData,
+  PasswordResetStartData,
   PasswordChangeVerificationStartData,
   SecurityVerificationMethod,
   TwoFactorDisableData,
@@ -139,6 +141,20 @@ export async function completeEmailRegistration(email: string, password: string,
   return apiRequest<LoginData>("/api/v1/auth/register/email/complete", {
     method: "POST",
     body: { email, password, code, turnstileToken, locale },
+  });
+}
+
+export async function startPasswordReset(email: string): Promise<PasswordResetStartData> {
+  return apiRequest<PasswordResetStartData>("/api/v1/auth/password/reset/start", {
+    method: "POST",
+    body: { email },
+  });
+}
+
+export async function completePasswordReset(email: string, code: string, newPassword: string): Promise<PasswordResetCompleteData> {
+  return apiRequest<PasswordResetCompleteData>("/api/v1/auth/password/reset/complete", {
+    method: "POST",
+    body: { email, code, newPassword },
   });
 }
 

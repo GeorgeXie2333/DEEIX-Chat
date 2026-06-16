@@ -27,7 +27,7 @@
     "finishNavigation": "Finish onboarding navigation"
   },
   "bootstrapTitle": "Admin setup",
-  "adminWelcomeTitle": "Welcome to DEEIX Chat Admin",
+  "adminWelcomeTitle": "Welcome to Comi AI Admin",
   "userWelcomeTitle": "Welcome to Comi AI",
   "adminWelcomeDescription": "Finish admin account security first, then configure upstreams, platform models, billing, logs, identity providers, and system policies.",
   "userWelcomeDescription": "Finish your profile and security setup before using chats, files, tools, memory, and sharing.",

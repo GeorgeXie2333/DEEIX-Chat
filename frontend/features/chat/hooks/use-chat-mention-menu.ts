@@ -85,7 +85,8 @@ export type ChatMentionMenuLayout = {
   width: number;
 };
 
-type ChatMentionMenuPlacementPreference = "auto" | "bottom";
+type ChatMentionMenuPlacementPreference = "auto" | "bottom" | "top";
+type ChatMentionMenuPlacementAnchor = "caret" | "container";
 
 type ChatMentionMenuControllerArgs = {
   availableTools: MCPToolDTO[];
@@ -104,6 +105,7 @@ type ChatMentionMenuControllerArgs = {
   enabledKinds?: readonly ChatMentionMenuKind[];
   onFileSelect: (file: FileObjectDTO) => void | Promise<void>;
   onModelChange: (platformModelName: string) => void;
+  placementAnchor?: ChatMentionMenuPlacementAnchor;
   placementPreference?: ChatMentionMenuPlacementPreference;
   onModelCatalogRefresh?: () => void | Promise<void>;
   onSelectedToolsChange: (toolIDs: number[]) => void;
@@ -205,6 +207,16 @@ function resolveTextareaCaretAnchor(
     left: fallbackRect.left,
     top: Math.min(Math.max(markerTop, textareaRect.top), textareaRect.bottom),
     width: fallbackRect.width,
+  };
+}
+
+function resolveContainerAnchor(anchor: HTMLElement): ChatMentionMenuAnchor {
+  const rect = anchor.getBoundingClientRect();
+  return {
+    height: rect.height,
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
   };
 }
 
@@ -417,11 +429,14 @@ function resolveMentionMenuLayout(
   const availableBelow = viewportHeight - preferredTop - MENTION_MENU_VIEWPORT_GUTTER;
   const availableAbove = preferredBottom - MENTION_MENU_VIEWPORT_GUTTER;
   const anchorInLowerHalf = anchor.top + anchor.height / 2 > viewportHeight / 2;
+  const hasUsableAbove = availableAbove >= Math.min(desiredHeight, MENTION_MENU_MIN_HEIGHT);
   const openBelow =
     placementPreference === "bottom" ||
-    !anchorInLowerHalf ||
-    availableBelow >= Math.min(desiredHeight, MENTION_MENU_MIN_HEIGHT) ||
-    availableBelow >= availableAbove;
+    (placementPreference === "top"
+      ? !hasUsableAbove
+      : !anchorInLowerHalf ||
+        availableBelow >= Math.min(desiredHeight, MENTION_MENU_MIN_HEIGHT) ||
+        availableBelow >= availableAbove);
   const availableHeight = Math.max(0, openBelow ? availableBelow : availableAbove);
   const maxHeight = Math.max(
     Math.min(MENTION_MENU_MIN_HEIGHT, availableHeight),
@@ -484,6 +499,7 @@ export function useChatMentionMenu({
   enabledKinds = DEFAULT_MENTION_MENU_KINDS,
   onFileSelect,
   onModelChange,
+  placementAnchor = "caret",
   placementPreference = "auto",
   onModelCatalogRefresh,
   onSelectedToolsChange,
@@ -689,10 +705,13 @@ export function useChatMentionMenu({
       return;
     }
 
-    const menuAnchor = resolveTextareaCaretAnchor(textareaRef.current, anchor, triggerQuery?.range.start ?? draft.length);
+    const menuAnchor =
+      placementAnchor === "container"
+        ? resolveContainerAnchor(anchor)
+        : resolveTextareaCaretAnchor(textareaRef.current, anchor, triggerQuery?.range.start ?? draft.length);
     const nextLayout = resolveMentionMenuLayout(menuAnchor, sections, window.innerWidth, window.innerHeight, placementPreference);
     setMenuLayout((current) => (mentionMenuLayoutsEqual(current, nextLayout) ? current : nextLayout));
-  }, [anchorRef, draft.length, open, placementPreference, sections, textareaRef, triggerQuery?.range.start]);
+  }, [anchorRef, draft.length, open, placementAnchor, placementPreference, sections, textareaRef, triggerQuery?.range.start]);
 
   React.useLayoutEffect(() => {
     if (!open) {

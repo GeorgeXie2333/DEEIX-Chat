@@ -16,7 +16,7 @@ import (
 
 const (
 	openRouterDefaultAttributionReferer = "https://deeix.com"
-	openRouterDefaultAttributionTitle   = "DEEIX Chat"
+	openRouterDefaultAttributionTitle   = "Comi AI"
 	openRouterDefaultCategories         = "general-chat"
 )
 

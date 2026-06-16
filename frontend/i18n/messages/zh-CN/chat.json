@@ -432,7 +432,9 @@
       "openai": "OpenAI 原生工具",
       "claude": "Claude 原生工具",
       "google": "Google 原生工具"
-    }
+    },
+    "mcpSelectServerTools": "????",
+    "mcpClearServerTools": "??"
   },
   "modelPicker": {
     "selectModel": "选择模型",

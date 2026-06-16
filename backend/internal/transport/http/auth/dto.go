@@ -80,6 +80,25 @@ type EmailRegistrationCompleteRequest struct {
 	TurnstileToken string `json:"turnstileToken" binding:"omitempty,max=2048"`
 }
 
+type PasswordResetStartRequest struct {
+	Email string `json:"email" binding:"required,max=128,email"`
+}
+
+type PasswordResetCompleteRequest struct {
+	Email       string `json:"email" binding:"required,max=128,email"`
+	Code        string `json:"code" binding:"required,len=6"`
+	NewPassword string `json:"newPassword" binding:"required,min=8,max=128"`
+}
+
+type PasswordResetStartResponse struct {
+	Sent      bool      `json:"sent"`
+	ExpiresAt time.Time `json:"expiresAt"`
+}
+
+type PasswordResetCompleteResponse struct {
+	Changed bool `json:"changed"`
+}
+
 type ChangePasswordRequest struct {
 	CurrentPassword    string `json:"currentPassword" binding:"omitempty,max=128"`
 	NewPassword        string `json:"newPassword" binding:"required,min=8,max=128"`
@@ -197,6 +216,7 @@ type LoginOptionsResponse struct {
 	EmailEnabled                 bool                       `json:"emailEnabled"`
 	EmailRegistrationEnabled     bool                       `json:"emailRegistrationEnabled"`
 	EmailVerificationEnabled     bool                       `json:"emailVerificationEnabled"`
+	PasswordResetEnabled         bool                       `json:"passwordResetEnabled"`
 	TurnstileRegistrationEnabled bool                       `json:"turnstileRegistrationEnabled"`
 	TurnstileSiteKey             string                     `json:"turnstileSiteKey"`
 	Providers                    []IdentityProviderResponse `json:"providers"`
@@ -394,6 +414,16 @@ type EmailRegistrationStartResponseDoc struct {
 	Data     EmailRegistrationStartResponse `json:"data"`
 }
 
+type PasswordResetStartResponseDoc struct {
+	ErrorMsg string                     `json:"errorMsg"`
+	Data     PasswordResetStartResponse `json:"data"`
+}
+
+type PasswordResetCompleteResponseDoc struct {
+	ErrorMsg string                        `json:"errorMsg"`
+	Data     PasswordResetCompleteResponse `json:"data"`
+}
+
 // MeResponseDoc 当前用户信息响应（Swagger 用）。
 type MeResponseDoc struct {
 	ErrorMsg string     `json:"errorMsg"`
@@ -534,6 +564,13 @@ func toEmailRegistrationStartResponse(d *appauth.EmailRegistrationStartResult) E
 	}
 }
 
+func toPasswordResetStartResponse(d *appauth.PasswordResetStartResult) PasswordResetStartResponse {
+	return PasswordResetStartResponse{
+		Sent:      d.Sent,
+		ExpiresAt: d.ExpiresAt,
+	}
+}
+
 func toSecurityVerificationMethods(methods []appauth.SecurityVerificationMethod) []string {
 	result := make([]string, 0, len(methods))
 	for _, method := range methods {
@@ -566,6 +603,7 @@ func toLoginOptionsResponse(d *appauth.LoginOptions) LoginOptionsResponse {
 		EmailEnabled:                 d.EmailEnabled,
 		EmailRegistrationEnabled:     d.EmailRegistrationEnabled,
 		EmailVerificationEnabled:     d.EmailVerificationEnabled,
+		PasswordResetEnabled:         d.PasswordResetEnabled,
 		TurnstileRegistrationEnabled: d.TurnstileRegistrationEnabled,
 		TurnstileSiteKey:             d.TurnstileSiteKey,
 		Providers:                    toIdentityProviderResponses(d.Providers),

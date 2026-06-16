@@ -226,24 +226,6 @@
     "units": {
       "call": "回",
       "search": "検索"
-    },
-    "tools": {
-      "openaiWebSearchReasoning": "Web 検索（推理モデル）",
-      "openaiWebSearchStandard": "Web 検索（非推理モデル）",
-      "openaiShell": "Shell",
-      "openaiImageGeneration": "画像生成",
-      "openaiCodeInterpreter": "コードインタープリター",
-      "anthropicWebSearch": "Web 検索",
-      "anthropicWebFetch": "Web 取得",
-      "anthropicCodeExecution": "コード実行",
-      "anthropicAdvisor": "Advisor",
-      "anthropicToolSearch": "ツール検索",
-      "xaiWebSearch": "Web Search",
-      "xaiXSearch": "X Search",
-      "xaiCodeExecution": "Code Execution",
-      "xaiAttachmentSearch": "File Attachments Search",
-      "xaiCollectionsSearch": "Collections Search / RAG",
-      "googleGoogleSearch": "Google Search"
     }
   },
   "pricingModes": {

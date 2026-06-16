@@ -25,7 +25,7 @@
     "loginPageTitle": {
       "label": "Browser title",
       "description": "Shown in the browser tab for the sign-in page.",
-      "placeholder": "Sign in to DEEIX Chat"
+      "placeholder": "Sign in to Comi AI"
     },
     "loginDefaultNextPath": {
       "label": "Default redirect path",
@@ -38,6 +38,10 @@
     "emailRegistrationEnabled": {
       "label": "Email registration",
       "description": "Allow users to create accounts with email."
+    },
+    "passwordResetEnabled": {
+      "label": "Password reset",
+      "description": "Allow users to reset passwords from the sign-in page. Requires email verification."
     },
     "usernameLoginEnabled": {
       "label": "Username login",

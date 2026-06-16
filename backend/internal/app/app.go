@@ -38,6 +38,7 @@ import (
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/mcp"
 	platformlogger "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/logger"
 	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
+	openwebuisource "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/openwebui"
 	announcementrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/announcement"
 	auditrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/audit"
 	billingrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/billing"
@@ -64,6 +65,7 @@ import (
 	openapihttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/openapi"
 	promptpresethttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/promptpreset"
 	settingshttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/settings"
+	userhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/user"
 	usersettingshttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/usersettings"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -82,6 +84,24 @@ type App struct {
 	backgroundCancel context.CancelFunc
 }
 
+type avatarContentOpener struct {
+	conversationService *conversation.Service
+}
+
+func (o avatarContentOpener) OpenAvatarFileContent(ctx context.Context, userID uint, fileID string) (*user.AvatarFileContent, error) {
+	content, err := o.conversationService.OpenFileContent(ctx, userID, fileID)
+	if err != nil {
+		return nil, err
+	}
+	return &user.AvatarFileContent{
+		Reader:      content.Reader,
+		ContentType: content.ContentType,
+		SizeBytes:   content.SizeBytes,
+		ModTime:     content.ModTime,
+		FileName:    content.File.FileName,
+	}, nil
+}
+
 // NewApp 创建应用。
 func NewApp() (*App, error) {
 	cfg := config.Load()
@@ -96,6 +116,7 @@ func NewApp() (*App, error) {
 		Endpoint:     cfg.OTelExporterOTLPEndpoint,
 		Headers:      cfg.OTelExporterOTLPHeaders,
 		Insecure:     cfg.OTelExporterOTLPInsecure,
+		Protocol:     cfg.OTelExporterOTLPProtocol,
 		SamplingRate: cfg.OTelSamplingRate,
 	}); err != nil {
 		return nil, fmt.Errorf("init tracing: %w", err)
@@ -225,9 +246,14 @@ func NewApp() (*App, error) {
 	conversationService.SetAuditWriter(auditService)
 	conversationService.SetObjectStoreProvider(objectStoreProvider)
 	conversationService.SetMCPRepository(mcpRepo)
+	userService.SetAvatarContentOpener(avatarContentOpener{conversationService: conversationService})
+	userService.SetAvatarFileValidator(conversationService)
+	authService.SetAvatarFileValidator(conversationService)
 	memoryService.SetCacheInvalidator(conversationService.InvalidateMemoryCache)
 	conversationHandler := conversationhttp.NewHandler(conversationService, runtimeCfg)
 	conversationModule := conversationhttp.NewModule(conversationHandler)
+	userHandler := userhttp.NewHandler(userService)
+	userModule := userhttp.NewModule(userHandler)
 	mcpService := appmcp.NewServiceWithRuntime(runtimeCfg, mcpRepo, mcpClient)
 	mcpService.SetSystemEventWriter(systemEventService)
 	mcpHandler := mcphttp.NewHandler(mcpService)
@@ -239,6 +265,7 @@ func NewApp() (*App, error) {
 	adminService.SetOrderLogService(billingService)
 	adminService.SetConversationEventService(conversationService)
 	adminService.SetSubscriptionResolver(billingService)
+	adminService.SetOpenWebUIUserSource(openwebuisource.NewSource())
 	adminHandler := adminhttp.NewHandler(adminService)
 	adminModule := adminhttp.NewModule(adminHandler)
 	userSettingsRepo := usersettingsrepo.NewRepo(db)
@@ -283,6 +310,7 @@ func NewApp() (*App, error) {
 		Settings:     settingsModule,
 		UserSettings: userSettingsModule,
 		OpenAPI:      openAPIModule,
+		User:         userModule,
 		StartupLog: func(log *zap.Logger) {
 			if log == nil || bootstrapSuperAdmin == nil {
 				return

@@ -2,7 +2,6 @@
   "adminTitle": "管理",
   "sections": {
     "accounts": "アカウント",
-    "channels": "上流",
     "models": "モデル",
     "toolSettings": "ツール",
     "billing": "課金",
@@ -12,11 +11,12 @@
     "loginSettings": "ログイン認証",
     "conversationSettings": "会話設定",
     "chatFiles": "ファイルと検索",
-    "about": "概要"
+    "about": "概要",
+    "upstreams": "??"
   },
   "aboutPage": {
     "title": "概要",
-    "description": "DEEIX Chat は、複数ユーザー向け AI アプリケーションのためのモデル接続と会話運用プラットフォームです。モデルカタログ、複数上流ルーティング、パラメーター管理、ファイルと RAG、MCP ツール、利用量課金、ID セキュリティ、監査、運用設定を 1 つの制御面に統合します。",
+    "description": "Comi AI は、複数ユーザー向け AI アプリケーションのためのモデル接続と会話運用プラットフォームです。モデルカタログ、複数上流ルーティング、パラメーター管理、ファイルと RAG、MCP ツール、利用量課金、ID セキュリティ、監査、運用設定を 1 つの制御面に統合します。",
     "details": "製品情報",
     "product": "製品",
     "version": "バージョン",
@@ -51,7 +51,7 @@
     "social": "X",
     "blog": "ブログ",
     "contact": "お問い合わせとサポート",
-    "copyright": "© 2026 DEEIX. DEEIX Chat.",
+    "copyright": "© 2026 Comi AI.",
     "license": "コードは Apache License 2.0 に基づいてライセンスされています。"
   },
   "accessDeniedTitle": "サービスの読み込みに失敗しました",
@@ -260,5 +260,31 @@
     "bulkBalanceUpdated": "{count} 人のユーザー残高を更新しました",
     "bulkBalanceAdjustmentDescription": "管理者がユーザー管理で残高を一括設定",
     "bulkDeleting": "ユーザーを削除中"
+  },
+  "importOpenWebUI": {
+    "cancel": "?????",
+    "creditMultiplierLabel": "?????????",
+    "dedupeDescription": "?????????????????????????????????????",
+    "dedupeTitle": "???????",
+    "description": "OpenWebUI ??????????????????????????????",
+    "dsnLabel": "DB ?????",
+    "dsnPlaceholder": "postgres://... ??? /data/openwebui.db",
+    "import": "?????",
+    "importing": "??????",
+    "preview": "?????",
+    "previewing": "??????",
+    "submit": "?????",
+    "summary": {
+      "imported": "???? {count}",
+      "scanned": "?????? {count}",
+      "skippedDuplicateSourceEmail": "?????????? {count}",
+      "skippedExistingEmail": "????? {count}",
+      "skippedInvalidEmail": "?????? {count}",
+      "skippedInvalidRow": "???? {count}"
+    },
+    "title": "OpenWebUI ??????????",
+    "toastFailed": "OpenWebUI ????????????",
+    "toastPreviewSucceeded": "OpenWebUI ???????: ???? {imported} ?????? {skipped} ?",
+    "toastSucceeded": "OpenWebUI ???????: ?? {imported} ?????? {skipped} ?"
   }
 }

@@ -29,6 +29,7 @@ const (
 	CodeBillingPricingRequired   = "billing.pricing_required"
 	CodeRateLimitExceeded        = "rate_limit.exceeded"
 	CodeQuotaExceeded            = "quota.exceeded"
+	CodeFileInUse                = "file.in_use"
 	CodeFileTooLarge             = "file.too_large"
 	CodeFileNotReady             = "file.not_ready"
 	CodeFileTypeBlocked          = "file.type_blocked"
@@ -65,6 +66,7 @@ var exactErrorSpecs = map[string]errorSpec{
 	"two factor authentication is already enabled":               {Code: "auth.two_factor_already_enabled", Message: "two factor authentication is already enabled"},
 	"two factor authentication is required":                      {Code: "auth.two_factor_required", Message: "two factor authentication is required"},
 	"password reset required":                                    {Code: "auth.password_reset_required", Message: "password reset required"},
+	"password reset failed":                                      {Code: "auth.password_reset_failed", Message: "password reset failed"},
 	"username change required":                                   {Code: "auth.username_change_required", Message: "username change required"},
 	"password length must be between 6 and 128":                  {Code: "auth.invalid_password", Message: "password length must be between 6 and 128"},
 	"invalid password":                                           {Code: "auth.invalid_password", Message: "password must be at least 8 characters and not digits only"},
@@ -75,7 +77,6 @@ var exactErrorSpecs = map[string]errorSpec{
 	"email registration is disabled":                                        {Code: "auth.email_registration_disabled", Message: "email registration is disabled"},
 	"email verification is disabled":                                        {Code: "auth.email_verification_disabled", Message: "email verification is disabled"},
 	"email already exists":                                                  {Code: "auth.email_already_exists", Message: "email already exists"},
-	"email already exists; bind the provider before login":                  {Code: "auth.provider_email_conflict", Message: "email already exists; bind the provider before login"},
 	"user email is invalid":                                                 {Code: "auth.invalid_email", Message: "invalid email"},
 	"admin email is invalid":                                                {Code: "auth.invalid_email", Message: "invalid email"},
 	"invalid email":                                                         {Code: "auth.invalid_email", Message: "invalid email"},
@@ -180,6 +181,7 @@ var exactErrorSpecs = map[string]errorSpec{
 	"embedding unavailable":                                {Code: "file.embedding_unavailable", Message: "embedding is unavailable"},
 	"embedding unavailable for this file size":             {Code: "file.embedding_unavailable", Message: "embedding is unavailable for this file size"},
 	"embedding unavailable for current file capability":    {Code: "file.embedding_unavailable", Message: "embedding is unavailable for current file capability"},
+	"file is in use":                                       {Code: CodeFileInUse, Message: "file is in use"},
 	"file too large":                                       {Code: CodeFileTooLarge, Message: "file too large"},
 	"file processing not ready":                            {Code: CodeFileNotReady, Message: "file processing is not ready"},
 	"file extract not ready":                               {Code: "file.extract_not_ready", Message: "file extract is not ready"},
@@ -475,6 +477,7 @@ var fallbackMessages = map[string]string{
 	"auth.admin_required":                             "admin permission required",
 	"auth.superadmin_required":                        "superadmin permission required",
 	"auth.password_reset_required":                    "password reset required",
+	"auth.password_reset_failed":                      "password reset failed",
 	"auth.username_change_required":                   "username change required",
 	"auth.invalid_password":                           "invalid password",
 	"auth.password_reuse_not_allowed":                 "new password must be different",

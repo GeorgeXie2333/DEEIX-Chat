@@ -27,7 +27,7 @@
     "finishNavigation": "ガイド完了ステップナビゲーション"
   },
   "bootstrapTitle": "管理者アカウントを初期化",
-  "adminWelcomeTitle": "DEEIX Chat 管理画面へようこそ",
+  "adminWelcomeTitle": "Comi AI 管理画面へようこそ",
   "userWelcomeTitle": "Comi AI へようこそ",
   "adminWelcomeDescription": "まず管理アカウントのセキュリティ設定を完了し、その後バックエンドで上流、プラットフォームモデル、課金、ログ、ID プロバイダー、システムポリシーを設定します。",
   "userWelcomeDescription": "まずプロフィールとセキュリティ設定を完了し、その後チャット、ファイル、ツール、記憶、共有機能を使い始めます。",

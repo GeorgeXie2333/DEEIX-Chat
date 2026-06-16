@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import { useLoadMoreSentinel } from "@/shared/hooks/use-load-more-sentinel";
 import { useSidebarRecents } from "@/features/recent/context/sidebar-recents-context";
-import { useChatPreferences } from "@/features/settings/hooks/use-chat-preferences";
+import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { runBulkActionInChunks } from "@/shared/lib/bulk-action";
 import {
@@ -135,7 +135,7 @@ export function useRecentPage() {
   const [renamingAutomatically, setRenamingAutomatically] = React.useState(false);
   const [deleteTarget, setDeleteTarget] = React.useState<RecentDeleteTarget>(null);
   const [deleteFiles, setDeleteFiles] = React.useState(false);
-  const { deleteFilesByDefault } = useChatPreferences();
+  const { deleteFilesByDefault } = useSettingsChatPreferences();
   const [shareTarget, setShareTarget] = React.useState<ConversationDTO | null>(null);
   const [importingArchive, setImportingArchive] = React.useState(false);
   const loadMoreRef = React.useRef<HTMLDivElement | null>(null);

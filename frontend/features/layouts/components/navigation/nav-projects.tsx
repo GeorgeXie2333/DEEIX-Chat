@@ -55,11 +55,11 @@ import {
 import {
   ConversationShareDialog,
   sharePatchFromDTO,
-} from "@/features/chat/components/sections/conversation-share-dialog"
+} from "@/features/chat/components/sections/chat-share-dialog"
 import { useChatSession } from "@/features/chat/context/chat-session-context"
-import { DeleteFilesOption } from "@/features/recent/components/delete-files-option"
-import { useChatPreferences } from "@/features/settings/hooks/use-chat-preferences"
-import { useActiveSidebarConversation } from "@/features/layouts/hooks/use-active-sidebar-conversation"
+import { DeleteFilesOption } from "@/shared/components/delete-files-option"
+import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences"
+import { useLayoutActiveConversation } from "@/features/layouts/hooks/use-layout-active-conversation"
 import { SidebarConversationItem } from "@/features/layouts/components/navigation/sidebar-conversation-item"
 import type {
   SidebarConversationDeleteTarget,
@@ -270,8 +270,8 @@ export function NavProjects() {
   const activeRecentProjectID = searchParams.get("project") ?? ""
   const activeChatProjectID = searchParams.get("project_id") ?? ""
   const activeProjectID = pathname === "/chat" ? activeChatProjectID : activeRecentProjectID
-  const activeConversationID = useActiveSidebarConversation()
-  const { deleteFilesByDefault: deleteConversationFilesByDefault } = useChatPreferences()
+  const activeConversationID = useLayoutActiveConversation()
+  const { deleteFilesByDefault: deleteConversationFilesByDefault } = useSettingsChatPreferences()
   const { requestNewConversation } = useChatSession()
   const {
     items,

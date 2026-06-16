@@ -107,7 +107,7 @@ func (h *Handler) GetLoginPageSettings(c *gin.Context) {
 		return
 	}
 	values := map[string]string{
-		"login_page_title":        "Sign in to DEEIX Chat",
+		"login_page_title":        "Sign in to Comi AI",
 		"login_default_next_path": "/chat",
 	}
 	for _, item := range items {
@@ -116,7 +116,7 @@ func (h *Handler) GetLoginPageSettings(c *gin.Context) {
 		}
 	}
 	if strings.TrimSpace(values["login_page_title"]) == "" {
-		values["login_page_title"] = "Sign in to DEEIX Chat"
+		values["login_page_title"] = "Sign in to Comi AI"
 	}
 	if strings.TrimSpace(values["login_default_next_path"]) == "" ||
 		!strings.HasPrefix(values["login_default_next_path"], "/") ||

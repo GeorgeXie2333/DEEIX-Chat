@@ -14,8 +14,8 @@ import type {
   ChatInlineAlert,
   MessageAttachment,
 } from "@/features/chat/types/messages";
-import { MarkdownImage, type MarkdownArtifactActions } from "@/features/chat/components/markdown/streamdown-components";
-import { StreamdownRender } from "@/features/chat/components/markdown/streamdown-render";
+import { MarkdownImage, type MarkdownArtifactActions } from "@/shared/components/markdown/streamdown-components";
+import { StreamdownRender } from "@/shared/components/markdown/streamdown-render";
 import {
   Accordion,
   AccordionContent,
@@ -32,7 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { isUpstreamStreamingDebugBody, summarizeUpstreamError } from "@/features/chat/utils/chat-runtime";
 import type { FileContentResult } from "@/shared/api/file";
-import type { PreviewDialogFile } from "@/features/files/components/preview/file-preview-dialog";
+import type { PreviewDialogFile } from "@/shared/components/file-preview/file-preview-dialog";
 import { resolveLeadingImagePreview } from "@/features/chat/model/media-image-preview";
 
 const EMPTY_TRACE_EVENTS: NonNullable<ChatAreaMessage["processTrace"]>["events"] = [];
@@ -103,6 +103,7 @@ type ChatMessageBotProps = {
   onEditImageAttachment?: (attachment: MessageAttachment, sourceModelName?: string) => void;
   artifactActions?: MarkdownArtifactActions;
   showBranchNavigator?: boolean;
+  contentWidthClassName?: string;
 };
 
 export function ChatMessageBot({
@@ -126,6 +127,7 @@ export function ChatMessageBot({
   onEditImageAttachment,
   artifactActions,
   showBranchNavigator = true,
+  contentWidthClassName = "max-w-[1080px]",
 }: ChatMessageBotProps) {
   const tCommon = useTranslations("common.actions");
   const submitT = useTranslations("chat.submit");
@@ -224,7 +226,7 @@ export function ChatMessageBot({
 
     return (
       <div className="flex justify-start">
-        <div className="w-full max-w-[760px] rounded-lg bg-muted/40 p-3 text-foreground">
+        <div className={cn("w-full rounded-lg bg-muted/40 p-3 text-foreground", contentWidthClassName)}>
           <Textarea
             autoFocus
             value={editingValue}

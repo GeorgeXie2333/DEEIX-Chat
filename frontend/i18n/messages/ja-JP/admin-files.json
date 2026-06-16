@@ -1,29 +1,29 @@
 {
   "groups": {
     "uploadLimits": {
-      "title": "アップロード制限"
+      "title": "アップロード制限",
+      "description": "??????????????MIME ??????????????????????"
     },
     "extraction": {
-      "title": "内容抽出"
+      "title": "内容抽出",
+      "description": "???????????????????? OCR ?????OCR ????????????"
     },
     "fullContext": {
-      "title": "全文注入"
+      "title": "全文注入",
+      "description": "????????????? RAG ??????????????????????????"
     },
     "embedding": {
-      "title": "ベクトル検索"
+      "title": "ベクトル検索",
+      "description": "?? Embedding ???????????????????????????????????????????????"
     },
     "semantic": {
-      "title": "セマンティック強化"
+      "title": "セマンティック強化",
+      "description": "???????????????????????????????????????????????????"
     },
     "rag": {
-      "title": "RAG"
-    },
-    "contextCompression": {
-      "title": "コンテキスト圧縮強化"
+      "title": "RAG",
+      "description": "????????????????????????????????"
     }
-  },
-  "model": {
-    "followCurrent": "現在のモデルに従う"
   },
   "runtime": {
     "address": "URL",
@@ -109,11 +109,7 @@
       },
       "full_context_limit_enabled": {
         "label": "全文注入制限",
-        "description": "有効にすると、サイズ、Token、PDF ページ数に基づいて全文注入を制限します。無効にすると全文注入しきい値は制限されません。",
-        "options": {
-          "false": "オフ",
-          "true": "オン"
-        }
+        "description": "有効にすると、サイズ、Token、PDF ページ数に基づいて全文注入を制限します。無効にすると全文注入しきい値は制限されません。"
       },
       "file_full_context_max_bytes": {
         "label": "全文サイズ上限",
@@ -132,11 +128,7 @@
       },
       "embedding_enabled": {
         "label": "Embedding スイッチ",
-        "description": "有効にすると、ファイルのベクトル化とベクトル検索を使用できます。無効にすると関連処理は停止します。",
-        "options": {
-          "false": "オフ",
-          "true": "オン"
-        }
+        "description": "有効にすると、ファイルのベクトル化とベクトル検索を使用できます。無効にすると関連処理は停止します。"
       },
       "embedding_host": {
         "label": "Embedding サービス URL *",
@@ -443,70 +435,6 @@
       "rag_hybrid_enabled": {
         "label": "ハイブリッド検索（BM25+ベクトル）",
         "description": "有効にすると、ベクトル検索と全文検索を並列実行し、RRF で結果を統合します。"
-      },
-      "context_token_budget_enabled": {
-        "label": "Token 予算による切り詰め",
-        "description": "有効にすると、現在のモデルのコンテキストウィンドウに基づいて予算を自動計算し、送信可能な履歴メッセージを切り詰めます。"
-      },
-      "context_max_turns": {
-        "label": "圧縮トリガーターン数",
-        "description": "ターン数に基づいてコンテキスト圧縮を開始するしきい値を設定します。",
-        "placeholder": "トリガーターン数"
-      },
-      "context_compact_trigger_tokens": {
-        "label": "圧縮 Token しきい値",
-        "description": "Token 規模に基づいてコンテキスト圧縮を開始するしきい値を設定します。",
-        "placeholder": "Token しきい値"
-      },
-      "context_compact_preserve_recent_turns": {
-        "label": "原文保持ターン数",
-        "description": "圧縮時に保持する直近の元ターン数を設定します。それ以前の内容は要約に書き込まれます。",
-        "placeholder": "保持ターン数"
-      },
-      "context_compact_highlights_per_role": {
-        "label": "ロールごとの要約件数",
-        "description": "テンプレート圧縮時に、ユーザーとアシスタントそれぞれで最大何件の要約情報を保持するかを設定します。",
-        "placeholder": "要約件数"
-      },
-      "context_compact_snippet_chars": {
-        "label": "断片文字数上限",
-        "description": "テンプレート圧縮時に、1 件のメッセージ断片で保持できる最大文字数を設定します。",
-        "placeholder": "文字数上限"
-      },
-      "context_artifact_retention_days": {
-        "label": "証拠保持日数",
-        "description": "コンテキスト証拠の保持期間を設定します。RAG 結果、履歴証拠、ツール結果を含みます。`0` は自動期限切れなしを表します。",
-        "placeholder": "保持日数"
-      },
-      "compact_llm_enabled": {
-        "label": "LLM 圧縮",
-        "description": "有効にすると、モデルを呼び出して意味的な要約を生成します。無効の場合はテンプレート要約のみ使用します。"
-      },
-      "compact_async_enabled": {
-        "label": "非同期圧縮",
-        "description": "有効にすると、現在の返信処理のブロックを減らすため、バックグラウンドで圧縮タスクを非同期実行します。"
-      },
-      "compact_task_model": {
-        "label": "圧縮モデル",
-        "description": "圧縮要約生成に使用するモデルを指定します。`follow` を選択すると現在の会話モデルを再利用します。",
-        "options": {
-          "follow": "現在のモデルに従う"
-        }
-      },
-      "compact_max_failures": {
-        "label": "遮断しきい値",
-        "description": "LLM 圧縮の連続失敗しきい値を設定します。到達すると自動的にテンプレート要約へ降格します。",
-        "placeholder": "遮断しきい値"
-      },
-      "compact_system_prompt": {
-        "label": "全量要約プロンプト",
-        "description": "全量圧縮時に LLM へ送信する指示をカスタマイズします。空欄の場合は組み込み既定値を使用します。",
-        "placeholder": "空欄の場合は既定プロンプトを使用"
-      },
-      "compact_light_prompt": {
-        "label": "軽量要約プロンプト",
-        "description": "軽量圧縮時に LLM へ送信する指示をカスタマイズします。空欄の場合は組み込み既定値を使用します。",
-        "placeholder": "空欄の場合は既定プロンプトを使用"
       }
     }
   }

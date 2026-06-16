@@ -39,10 +39,6 @@
       "label": "モデルパラメーター拒否リスト",
       "description": "JSON オブジェクトです。拒否リストモードでのみ有効です。システム上危険なフィールドは、未記載でも遮断されます。"
     },
-    "nativeToolTypes": {
-      "label": "公式ツール制御",
-      "description": "モデルパラメーター許可リストとは独立して、プロトコルごとに利用可能な公式ネイティブツールを制御します。空配列は該当プロトコルの公式ツールを無効にします。"
-    },
     "titlePrompt": {
       "label": "タイトル生成プロンプト",
       "description": "モデルは JSON: '{' \"title\": \"要約したタイトル\" '}' を返す必要があります。'{{MESSAGES}}' プレースホルダーに対応しています。"
@@ -127,11 +123,6 @@
     "hitAllowlist": "許可リストに一致",
     "otherFields": "その他のフィールド",
     "notInDenylist": "拒否リスト外"
-  },
-  "nativeTools": {
-    "enabledCount": "{enabled}/{total} 有効",
-    "enableAll": "すべて有効",
-    "disableAll": "オフ"
   },
   "guide": {
     "button": "ガイド",

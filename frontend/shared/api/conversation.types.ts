@@ -510,6 +510,7 @@ export type MediaVideoRequest = MediaImageRequest;
 export type SendMessageResult = {
   userMessage: MessageDTO;
   assistantMessage: MessageDTO;
+  metadataRefreshHint?: "pending" | "not_needed" | "skipped_no_titleable_content" | string;
 };
 
 export type StreamMessageEvent =

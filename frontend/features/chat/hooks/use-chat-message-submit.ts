@@ -175,6 +175,20 @@ function hasGeneratedConversationMetadataChanged(
   return normalizeLabelsJSON(next.labelsJSON) !== normalizeLabelsJSON(previous?.labelsJSON);
 }
 
+function shouldPollGeneratedConversationMetadata(
+  item: ConversationDTO | null,
+  result: SendMessageResult | null | undefined,
+): boolean {
+  if (!hasPendingGeneratedConversationMetadata(item)) {
+    return false;
+  }
+  const hint = result?.metadataRefreshHint?.trim();
+  if (!hint) {
+    return true;
+  }
+  return hint === "pending";
+}
+
 async function refreshGeneratedConversationMetadata(
   accessToken: string,
   conversationPublicID: string,
@@ -508,8 +522,6 @@ export function useChatMessageSubmit({
           window.history.replaceState(null, "", `/chat?conversation_id=${created.publicID}`);
           onConversationCreated?.(created.publicID);
         }
-        const shouldRefreshConversationMetadata = hasPendingGeneratedConversationMetadata(targetConversation);
-
         const commonStreamPayload = {
           model: requestPlatformModelName,
           options: Object.keys(sanitizedOptions).length > 0 ? sanitizedOptions : undefined,
@@ -747,7 +759,7 @@ export function useChatMessageSubmit({
           targetConversationID,
           toConversationPatch(targetConversation, requestPlatformModelName),
         );
-        if (assistantMessageSucceeded && shouldRefreshConversationMetadata) {
+        if (assistantMessageSucceeded && shouldPollGeneratedConversationMetadata(targetConversation, completed)) {
           void refreshGeneratedConversationMetadata(
             token,
             targetConversationID,

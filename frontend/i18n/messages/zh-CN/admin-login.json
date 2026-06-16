@@ -25,7 +25,7 @@
     "loginPageTitle": {
       "label": "标签页标题",
       "description": "显示在浏览器标签页中的标题。",
-      "placeholder": "Sign in to DEEIX Chat"
+      "placeholder": "Sign in to Comi AI"
     },
     "loginDefaultNextPath": {
       "label": "默认跳转路径",
@@ -38,6 +38,10 @@
     "emailRegistrationEnabled": {
       "label": "邮箱注册",
       "description": "允许用户通过邮箱创建账号。"
+    },
+    "passwordResetEnabled": {
+      "label": "重置密码",
+      "description": "允许用户登录页重置密码（需开启邮箱验证）。"
     },
     "usernameLoginEnabled": {
       "label": "用户名登录",

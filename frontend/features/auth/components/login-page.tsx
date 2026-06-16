@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SpinnerLabel } from "@/components/ui/spinner";
 import { PASSWORD_MIN_LENGTH } from "@/shared/auth/account-policy";
-import { useLoginPage } from "@/features/auth/hooks/use-login-page";
+import { useLoginPage } from "@/features/auth/hooks/use-auth-login-page";
+import type { LoginMode } from "@/features/auth/model/login-page";
 import { AppLogo } from "@/shared/components/app-logo";
 import { IdentityProviderIcon } from "@/shared/components/identity-provider-icon";
 import { TurnstileWidget } from "@/features/auth/components/turnstile-widget";
@@ -142,14 +143,23 @@ function LoginProductPreview({ t, motionProps }: { t: LoginMessages; motionProps
   );
 }
 
-function LoginAuthPanelHeader({ t, mode }: { t: LoginMessages; mode: "login" | "register" }) {
+function LoginAuthPanelHeader({ t, mode }: { t: LoginMessages; mode: LoginMode }) {
+  const title = mode === "register"
+    ? t("landing.registerTitle")
+    : mode === "reset-password"
+      ? t("resetPassword")
+      : t("landing.authTitle");
+  const description = mode === "register"
+    ? t("landing.registerDescription")
+    : t("landing.authDescription");
+
   return (
     <div className="space-y-2 text-left">
       <h2 className="text-2xl font-semibold leading-8 tracking-normal text-foreground">
-        {mode === "register" ? t("landing.registerTitle") : t("landing.authTitle")}
+        {title}
       </h2>
       <p className="text-sm leading-6 text-muted-foreground">
-        {mode === "register" ? t("landing.registerDescription") : t("landing.authDescription")}
+        {description}
       </p>
     </div>
   );

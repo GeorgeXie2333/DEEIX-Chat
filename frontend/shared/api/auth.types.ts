@@ -84,6 +84,15 @@ export type EmailRegistrationStartData = {
   debugCode?: string;
 };
 
+export type PasswordResetStartData = {
+  sent: boolean;
+  expiresAt: string;
+};
+
+export type PasswordResetCompleteData = {
+  changed: boolean;
+};
+
 export type PasswordChangeVerificationStartData = {
   sent: boolean;
   expiresAt: string;
@@ -150,6 +159,7 @@ export type LoginOptionsData = {
   emailEnabled: boolean;
   emailRegistrationEnabled: boolean;
   emailVerificationEnabled: boolean;
+  passwordResetEnabled: boolean;
   turnstileRegistrationEnabled: boolean;
   turnstileSiteKey: string;
   providers: IdentityProviderDTO[];

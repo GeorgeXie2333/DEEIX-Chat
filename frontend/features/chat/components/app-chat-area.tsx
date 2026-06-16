@@ -11,20 +11,21 @@ import { ChatEmptyState } from "@/features/chat/components/sections/chat-empty";
 import { useChatSession } from "@/features/chat/context/chat-session-context";
 import { useChatArtifacts } from "@/features/chat/hooks/use-chat-artifacts";
 import { useChatAttachments } from "@/features/chat/hooks/use-chat-attachments";
-import { useConversationComposerState } from "@/features/chat/hooks/use-conversation-composer-state";
+import { useChatComposerState } from "@/features/chat/hooks/use-chat-composer-state";
 import type { ChatAreaMessage, MessageAttachment } from "@/features/chat/types/messages";
 import { useChatModelOptions } from "@/features/chat/hooks/use-chat-model-options";
 import { useChatRuntime } from "@/features/chat/hooks/use-chat-runtime";
 import { useChatScrollController } from "@/features/chat/hooks/use-chat-scroll-controller";
 import { useChatViewerProfile } from "@/features/chat/hooks/use-chat-viewer-profile";
-import { useHTMLVisualPrompt } from "@/features/chat/hooks/use-visual-prompt";
+import { useChatVisualPrompt } from "@/features/chat/hooks/use-chat-visual-prompt";
 import { ChatInput } from "@/features/chat/components/sections/chat-input";
+import { resolveChatContentWidthClassName } from "@/shared/model/chat-content-width";
 import {
   ConversationShareDialog,
   sharePatchFromDTO,
-} from "@/features/chat/components/sections/conversation-share-dialog";
-import { DeleteFilesOption } from "@/features/recent/components/delete-files-option";
-import { useChatPreferences } from "@/features/settings/hooks/use-chat-preferences";
+} from "@/features/chat/components/sections/chat-share-dialog";
+import { DeleteFilesOption } from "@/shared/components/delete-files-option";
+import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,7 +58,6 @@ import { cn } from "@/lib/utils";
 const MODEL_OPTIONS_STORAGE_PREFIX = "deeix-chat:chat-model-options:";
 const DEFAULT_MCP_TOOLS_SETTING_KEY = "chat.default_mcp_tool_ids";
 const EMPTY_CONVERSATION_OPTIONS: ConversationOptions = {};
-
 function dragEventContainsFiles(event: React.DragEvent<HTMLElement>): boolean {
   return Array.from(event.dataTransfer.types ?? []).includes("Files");
 }
@@ -203,7 +203,7 @@ export function AppChatArea() {
   }, [requestNewConversation, routeProjectID, router]);
   const activeGenerationRunsRef = React.useRef<Set<string>>(new Set());
   const failedGenerationRunsRef = React.useRef<Set<string>>(new Set());
-  const { deleteFilesByDefault } = useChatPreferences();
+  const { deleteFilesByDefault } = useSettingsChatPreferences();
   const {
     items,
     projects,
@@ -296,6 +296,7 @@ export function AppChatArea() {
     restoreDraftOnFailure,
     preserveConversationDrafts,
     inputHeight,
+    contentWidth,
     markdownRender,
     showModelInfo,
     showLatency,
@@ -316,7 +317,7 @@ export function AppChatArea() {
     setDraft,
     setAttachments,
     appendAttachmentsForKey,
-  } = useConversationComposerState(conversationID, {
+  } = useChatComposerState(conversationID, {
     preserveDrafts: preserveConversationDrafts,
     resetToken: newConversationRevision,
   });
@@ -334,7 +335,7 @@ export function AppChatArea() {
   const [selectedToolIDs, setSelectedToolIDs] = React.useState<number[]>([]);
   const [defaultToolIDs, setDefaultToolIDs] = React.useState<number[]>([]);
   const defaultToolIDsRef = React.useRef<number[]>([]);
-  const htmlVisualPrompt = useHTMLVisualPrompt();
+  const htmlVisualPrompt = useChatVisualPrompt();
   const { resolvedTheme } = useTheme();
   const initializedOptionsModelRef = React.useRef("");
   const selectedModelDefaultOptionsRef = React.useRef<ConversationOptions>({});
@@ -974,11 +975,6 @@ export function AppChatArea() {
     }
   }, [resetFileDragState, uploadDropDisabled]);
 
-  const isConversationLoading = Boolean(conversationID) && loading && visibleMessageCount === 0 && messagesWithInlineError.length === 0;
-  const isConversationLoadFailed = Boolean(conversationID) && !loading && errorMsg.trim().length > 0 && visibleMessageCount === 0;
-  const shouldUseCenteredComposer =
-    !isConversationLoading && !isConversationLoadFailed && !isConversationMode && messagesWithInlineError.length === 0;
-
   const chatInputProps = {
     draft,
     loading,
@@ -1020,6 +1016,11 @@ export function AppChatArea() {
     onSendMessage,
     onStopMessage: onStopActiveMessage,
   };
+  const chatContentWidthClassName = resolveChatContentWidthClassName(contentWidth);
+  const isConversationLoading = Boolean(conversationID) && loading && visibleMessageCount === 0 && messagesWithInlineError.length === 0;
+  const isConversationLoadFailed = Boolean(conversationID) && !loading && errorMsg.trim().length > 0 && visibleMessageCount === 0;
+  const shouldUseCenteredComposer =
+    !isConversationLoading && !isConversationLoadFailed && !isConversationMode && messagesWithInlineError.length === 0;
 
   return (
     <div
@@ -1035,6 +1036,7 @@ export function AppChatArea() {
             greetingTitle={activeRouteProject?.name || greetingTitle}
             badgeLabel={activeRouteProject ? t("projectMode") : undefined}
             badgeTooltip={activeRouteProject ? t("projectModeTooltip") : undefined}
+            contentWidthClassName={chatContentWidthClassName}
           >
             <ChatInput {...chatInputProps} />
           </ChatEmptyState>
@@ -1102,13 +1104,14 @@ export function AppChatArea() {
                   showTokenUsage={showTokenUsage}
                   showBillingCost={showBillingCost}
                   splitRightInset={hasInlineArtifact}
+                  contentWidthClassName={chatContentWidthClassName}
                 />
               )}
             </div>
 
             {!isConversationLoadFailed ? (
               <div className="relative z-10 shrink-0 px-3 pb-3 md:px-6">
-                <div className="mx-auto w-full max-w-[800px]">
+                <div className={cn("mx-auto w-full", chatContentWidthClassName)}>
                   <ChatInput {...chatInputProps} />
                 </div>
               </div>

@@ -30,7 +30,7 @@ type Info struct {
 
 func Snapshot() Info {
 	return Info{
-		Product:   "DEEIX Chat",
+		Product:   "Comi AI",
 		Version:   ResolveVersion(),
 		Commit:    Commit,
 		BuildTime: BuildTime,

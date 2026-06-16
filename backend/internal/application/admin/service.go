@@ -115,6 +115,7 @@ type Service struct {
 	conversationEventSvc conversationEventService
 	authSecurityService  authSecurityService
 	subscriptionResolver subscriptionResolver
+	openWebUIUserSource  openWebUIUserSource
 }
 
 type subscriptionResolver interface {
@@ -157,6 +158,10 @@ func NewService(userService userService, auditService auditService) *Service {
 // SetAuthSecurityService 注入认证安全校验能力。
 func (s *Service) SetAuthSecurityService(service authSecurityService) {
 	s.authSecurityService = service
+}
+
+func (s *Service) SetOpenWebUIUserSource(source openWebUIUserSource) {
+	s.openWebUIUserSource = source
 }
 
 // SetSystemEventService 注入系统事件查询能力。

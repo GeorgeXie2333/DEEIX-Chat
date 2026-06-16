@@ -12,6 +12,7 @@ import (
 
 	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
 	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
 	models "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/sqlitevec"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
@@ -24,29 +25,13 @@ func translateError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	if dberror.IsRecordNotFound(err) {
 		return repository.ErrNotFound
 	}
-	if isUniqueConstraintError(err) {
+	if dberror.IsUniqueConstraint(err) {
 		return repository.ErrDuplicate
 	}
 	return err
-}
-
-type sqlStateError interface {
-	SQLState() string
-}
-
-func isUniqueConstraintError(err error) bool {
-	if errors.Is(err, gorm.ErrDuplicatedKey) {
-		return true
-	}
-	var stateErr sqlStateError
-	if errors.As(err, &stateErr) && stateErr.SQLState() == "23505" {
-		return true
-	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "duplicate key") || strings.Contains(msg, "unique constraint")
 }
 
 func truncateText(value string, maxChars int) string {
@@ -728,6 +713,19 @@ func ensureFileObjectUnreferencedByActiveConversations(tx *gorm.DB, userID uint,
 	if err := tx.Table("chat_attachments AS a").
 		Joins("JOIN chat_conversations AS c ON c.id = a.conversation_id AND c.user_id = a.user_id AND c.deleted_at IS NULL").
 		Where("a.user_id = ? AND a.file_id = ? AND a.status <> ?", userID, fileID, "deleted").
+		Count(&activeReferences).Error; err != nil {
+		return translateError(err)
+	}
+	if activeReferences > 0 {
+		return repository.ErrConflict
+	}
+	return nil
+}
+
+func ensureFileObjectUnreferencedByUserAvatars(tx *gorm.DB, fileID string) error {
+	var activeReferences int64
+	if err := tx.Model(&models.User{}).
+		Where("avatar_url = ?", domainuser.BuildFileAvatarURL(fileID)).
 		Count(&activeReferences).Error; err != nil {
 		return translateError(err)
 	}
@@ -2273,6 +2271,9 @@ func (r *Repo) DeleteFileObjectAndReleaseQuota(
 			if err := ensureFileObjectUnreferencedByActiveConversations(tx, userID, fileID); err != nil {
 				return err
 			}
+		}
+		if err := ensureFileObjectUnreferencedByUserAvatars(tx, fileID); err != nil {
+			return err
 		}
 
 		quota, err := getOrInitQuotaForUpdate(tx, userID, defaultQuotaBytes)
