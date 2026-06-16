@@ -307,6 +307,7 @@ type UsageLedger struct {
 	RoutedBindingCode   string
 	UpstreamModelName   string
 	IsFreeModel         bool
+	BillingAt           time.Time
 	UsageDate           time.Time
 	InputTokens         int64
 	CacheReadTokens     int64

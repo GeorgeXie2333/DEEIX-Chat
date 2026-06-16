@@ -169,6 +169,7 @@ type SendMessageResult struct {
 	InputTokenSource    string
 	OutputTokenSource   string
 	LatencyMS           int64
+	StartedAt           time.Time
 }
 
 // MessageFeedbackResult 返回反馈后的当前状态（内部传输，不携带序列化标记）。

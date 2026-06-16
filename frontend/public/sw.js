@@ -1,4 +1,4 @@
-const PWA_ASSET_VERSION = "0.2.5";
+const PWA_ASSET_VERSION = "0.2.6";
 const PWA_ASSET_CACHE_KEY = "e39f8ccca01c";
 const PWA_ASSET_MANIFEST = {
   "/pwa/icon.svg": "/pwa/generated/icon.7b6200e89318.svg",

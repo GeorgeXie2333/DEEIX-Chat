@@ -189,6 +189,7 @@ func (s *Service) buildSendMessageUsageLedger(ctx context.Context, input SendMes
 		UpstreamDispatched:  result.UpstreamDispatched,
 		InputTokenSource:    result.InputTokenSource,
 		OutputTokenSource:   result.OutputTokenSource,
+		BillingAt:           result.StartedAt,
 	})
 }
 

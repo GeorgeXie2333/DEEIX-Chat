@@ -538,6 +538,10 @@
       "used": "Used {value}",
       "total": "Total {value}"
     },
+    "periodOverage": {
+      "title": "Overage billing",
+      "balance": "Available balance {value}"
+    },
     "entitlements": {
       "title": "Subscription entitlements",
       "count": "{count} segments",

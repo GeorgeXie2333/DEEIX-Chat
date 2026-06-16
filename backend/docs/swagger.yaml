@@ -517,6 +517,8 @@ definitions:
         type: integer
       billedUSD:
         type: number
+      billingAt:
+        type: string
       cacheReadTokens:
         type: integer
       cacheWrite1hTokens:
@@ -2296,6 +2298,8 @@ definitions:
         type: integer
       billedUSD:
         type: number
+      billingAt:
+        type: string
       cacheReadTokens:
         type: integer
       cacheWrite1hTokens:
@@ -5116,7 +5120,7 @@ info:
   contact: {}
   description: Comi AI backend API documentation.
   title: Comi AI API
-  version: "0.2.5"
+  version: "0.2.6"
 paths:
   /admin/announcements:
     get:

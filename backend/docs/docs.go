@@ -9807,6 +9807,9 @@ const docTemplate = `{
                 "billedUSD": {
                     "type": "number"
                 },
+                "billingAt": {
+                    "type": "string"
+                },
                 "cacheReadTokens": {
                     "type": "integer"
                 },
@@ -12468,6 +12471,9 @@ const docTemplate = `{
                 },
                 "billedUSD": {
                     "type": "number"
+                },
+                "billingAt": {
+                    "type": "string"
                 },
                 "cacheReadTokens": {
                     "type": "integer"
@@ -16705,7 +16711,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "0.2.5",
+	Version:          "0.2.6",
 	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},

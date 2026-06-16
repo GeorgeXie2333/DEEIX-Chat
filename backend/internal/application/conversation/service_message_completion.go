@@ -431,6 +431,7 @@ func buildInterruptedSendMessageResult(input persistInterruptedMessageGeneration
 		CacheWrite1hTokens:  input.Usage.CacheWrite1hTokens,
 		ServerSideToolUsage: input.ServerSideToolUsage,
 		LatencyMS:           metrics.LatencyMS,
+		StartedAt:           input.StartedAt,
 	}
 	if errors.Is(input.Error, ErrMessageGenerationCanceled) {
 		result.CanceledBy = "user"

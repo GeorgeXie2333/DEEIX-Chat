@@ -538,6 +538,10 @@
       "used": "使用済み {value}",
       "total": "総枠 {value}"
     },
+    "periodOverage": {
+      "title": "超過分の従量課金",
+      "balance": "利用可能残高 {value}"
+    },
     "entitlements": {
       "title": "サブスクリプション権限",
       "count": "{count} 件",

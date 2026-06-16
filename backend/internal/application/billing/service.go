@@ -109,6 +109,7 @@ type UsagePricingInput struct {
 	UpstreamDispatched  bool
 	InputTokenSource    string
 	OutputTokenSource   string
+	BillingAt           time.Time
 }
 
 func upstreamUsageSnapshot(input UsagePricingInput) interface{} {
@@ -833,7 +834,7 @@ func (s *Service) CreateTopUpPaymentOrder(ctx context.Context, input TopUpPaymen
 	if err != nil {
 		return nil, err
 	}
-	if mode != "usage" {
+	if mode != "usage" && mode != "period" {
 		return nil, ErrPaymentRequired
 	}
 	provider := strings.TrimSpace(input.Provider)
@@ -995,14 +996,36 @@ func (s *Service) RecordUsage(ctx context.Context, usage *domainbilling.UsageLed
 	return s.RecordUsageWithReservation(ctx, usage, nil)
 }
 
-// RecordUsageWithReservation 记录用量，并在按量模式下结算预扣差额。
+// RecordUsageWithReservation 记录用量，并结算需要走余额的部分。
 func (s *Service) RecordUsageWithReservation(ctx context.Context, usage *domainbilling.UsageLedger, reservation *domainbilling.UsageBalanceReservation) error {
+	if usage == nil {
+		return nil
+	}
 	mode, err := s.repo.GetBillingMode(ctx)
 	if err != nil {
 		return err
 	}
-	if mode == "usage" || reservation != nil {
+	if mode == "usage" || (mode != "period" && reservation != nil) {
 		if err := s.repo.AddUsageAndSettleBalance(ctx, usage, reservation); err != nil {
+			if errors.Is(err, repository.ErrInsufficientBalance) {
+				return ErrUsageBalanceInsufficient
+			}
+			return err
+		}
+		return nil
+	}
+	if mode == "period" {
+		if usage.BillingAt.IsZero() {
+			return repository.ErrInvalidInput
+		}
+		if usage.UsageDate.IsZero() {
+			return repository.ErrInvalidInput
+		}
+		plan, startAt, endAt, planErr := s.currentPeriodPlan(ctx, usage.UserID, usage.BillingAt)
+		if planErr != nil {
+			return planErr
+		}
+		if err := s.repo.AddPeriodUsageAndSettleOverage(ctx, usage, startAt, endAt, plan.PeriodCreditNanousd, reservation); err != nil {
 			if errors.Is(err, repository.ErrInsufficientBalance) {
 				return ErrUsageBalanceInsufficient
 			}
@@ -1013,13 +1036,13 @@ func (s *Service) RecordUsageWithReservation(ctx context.Context, usage *domainb
 	return s.repo.AddUsage(ctx, usage)
 }
 
-// ReserveUsageBalance 在按量模式下按配置金额预扣余额；非按量或免费模型不预扣。
+// ReserveUsageBalance 在按量模式下预扣余额；周期模式仅对可能超出套餐额度的部分预扣。
 func (s *Service) ReserveUsageBalance(ctx context.Context, userID uint, platformModelName string, refNo string) (*domainbilling.UsageBalanceReservation, error) {
 	mode, err := s.repo.GetBillingMode(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if mode != "usage" {
+	if mode != "usage" && mode != "period" {
 		return nil, nil
 	}
 	pricing, err := s.getResolvedModelPricing(ctx, platformModelName)
@@ -1039,7 +1062,27 @@ func (s *Service) ReserveUsageBalance(ctx context.Context, userID uint, platform
 	if prepaidNanousd <= 0 {
 		return nil, nil
 	}
-	reservation, err := s.repo.ReserveUsageBalance(ctx, userID, prepaidNanousd, refNo)
+	reserveNanousd := prepaidNanousd
+	if mode == "period" {
+		// 周期模式预扣只做调用前的余额风险控制；最终超额金额仍由入账事务在账户行锁下重算并兜底。
+		plan, startAt, endAt, planErr := s.currentPeriodPlan(ctx, userID, time.Now())
+		if planErr != nil {
+			return nil, planErr
+		}
+		usedNanousd, usedErr := s.repo.SumBillableNanousd(ctx, userID, startAt, endAt)
+		if usedErr != nil {
+			return nil, usedErr
+		}
+		remainingNanousd := plan.PeriodCreditNanousd - usedNanousd
+		if remainingNanousd < 0 {
+			remainingNanousd = 0
+		}
+		reserveNanousd = prepaidNanousd - remainingNanousd
+		if reserveNanousd <= 0 {
+			return nil, nil
+		}
+	}
+	reservation, err := s.repo.ReserveUsageBalance(ctx, userID, reserveNanousd, refNo)
 	if err != nil {
 		if errors.Is(err, repository.ErrInsufficientBalance) {
 			return nil, ErrUsageBalanceInsufficient
@@ -1082,22 +1125,7 @@ func (s *Service) EnsureModelUsable(ctx context.Context, userID uint, platformMo
 		return ErrModelPricingRequired
 	}
 	if mode == "usage" {
-		account, accountErr := s.repo.GetOrCreateBillingAccount(ctx, userID)
-		if accountErr != nil {
-			return accountErr
-		}
-		prepaidNanousd, prepaidErr := s.repo.GetBillingPrepaidAmountNanousd(ctx)
-		if prepaidErr != nil {
-			return prepaidErr
-		}
-		requiredBalance := int64(1)
-		if prepaidNanousd > requiredBalance {
-			requiredBalance = prepaidNanousd
-		}
-		if account.BalanceNanousd < requiredBalance {
-			return ErrUsageBalanceInsufficient
-		}
-		return nil
+		return s.ensureUsageBalance(ctx, userID)
 	}
 	if mode != "period" {
 		return nil
@@ -1107,15 +1135,31 @@ func (s *Service) EnsureModelUsable(ctx context.Context, userID uint, platformMo
 	if err != nil {
 		return err
 	}
-	if plan.PeriodCreditNanousd <= 0 {
-		return ErrPeriodCreditExceeded
-	}
 	usedNanousd, err := s.repo.SumBillableNanousd(ctx, userID, startAt, endAt)
 	if err != nil {
 		return err
 	}
-	if usedNanousd >= plan.PeriodCreditNanousd {
-		return ErrPeriodCreditExceeded
+	if plan.PeriodCreditNanousd > 0 && usedNanousd < plan.PeriodCreditNanousd {
+		return nil
+	}
+	return s.ensureUsageBalance(ctx, userID)
+}
+
+func (s *Service) ensureUsageBalance(ctx context.Context, userID uint) error {
+	account, accountErr := s.repo.GetOrCreateBillingAccount(ctx, userID)
+	if accountErr != nil {
+		return accountErr
+	}
+	prepaidNanousd, prepaidErr := s.repo.GetBillingPrepaidAmountNanousd(ctx)
+	if prepaidErr != nil {
+		return prepaidErr
+	}
+	requiredBalance := int64(1)
+	if prepaidNanousd > requiredBalance {
+		requiredBalance = prepaidNanousd
+	}
+	if account.BalanceNanousd < requiredBalance {
+		return ErrUsageBalanceInsufficient
 	}
 	return nil
 }
@@ -1641,6 +1685,13 @@ func (s *Service) BuildUsageLedger(ctx context.Context, input UsagePricingInput)
 		snapshotJSON = string(raw)
 	}
 
+	billingAt := input.BillingAt
+	if billingAt.IsZero() {
+		billingAt = time.Now()
+	}
+	usageDateYear, usageDateMonth, usageDateDay := billingAt.Date()
+	usageDate := time.Date(usageDateYear, usageDateMonth, usageDateDay, 0, 0, 0, 0, billingAt.Location())
+
 	ledger := &domainbilling.UsageLedger{
 		UserID:              input.UserID,
 		ConversationID:      input.ConversationID,
@@ -1650,7 +1701,8 @@ func (s *Service) BuildUsageLedger(ctx context.Context, input UsagePricingInput)
 		RoutedBindingCode:   strings.TrimSpace(input.RoutedBindingCode),
 		UpstreamModelName:   strings.TrimSpace(input.UpstreamModelName),
 		IsFreeModel:         isFreeModel,
-		UsageDate:           time.Now(),
+		BillingAt:           billingAt,
+		UsageDate:           usageDate,
 		InputTokens:         input.InputTokens,
 		CacheReadTokens:     input.CacheReadTokens,
 		CacheWriteTokens:    cacheWriteTokens,
@@ -2362,6 +2414,10 @@ func (s *Service) GetBillingOverview(ctx context.Context, userID uint, now time.
 	if mode != "period" {
 		return overview, nil
 	}
+	account, accountErr := s.repo.GetOrCreateBillingAccount(ctx, userID)
+	if accountErr != nil {
+		return nil, accountErr
+	}
 
 	plan, startAt, endAt, err := s.currentPeriodPlan(ctx, userID, now)
 	if err != nil {
@@ -2407,6 +2463,7 @@ func (s *Service) GetBillingOverview(ctx context.Context, userID uint, now time.
 	}
 
 	overview.Plan = &planView
+	overview.Account = toBillingAccountView(account)
 	overview.PeriodStartAt = &startAt
 	overview.PeriodEndAt = &endAt
 	overview.PeriodCreditNanousd = plan.PeriodCreditNanousd
@@ -2430,7 +2487,7 @@ func (s *Service) SetBillingAccountBalance(ctx context.Context, input BillingAcc
 	if err != nil {
 		return nil, err
 	}
-	if mode != "usage" {
+	if mode != "usage" && mode != "period" {
 		return nil, ErrPaymentRequired
 	}
 	return s.repo.SetBillingAccountBalance(ctx, input.UserID, usdToNanousd(input.BalanceUSD), input.RefNo, input.Description)

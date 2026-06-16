@@ -4,7 +4,7 @@
         "description": "Comi AI backend API documentation.",
         "title": "Comi AI API",
         "contact": {},
-        "version": "0.2.5"
+        "version": "0.2.6"
     },
     "basePath": "/api/v1",
     "paths": {
@@ -9800,6 +9800,9 @@
                 "billedUSD": {
                     "type": "number"
                 },
+                "billingAt": {
+                    "type": "string"
+                },
                 "cacheReadTokens": {
                     "type": "integer"
                 },
@@ -12461,6 +12464,9 @@
                 },
                 "billedUSD": {
                     "type": "number"
+                },
+                "billingAt": {
+                    "type": "string"
                 },
                 "cacheReadTokens": {
                     "type": "integer"
