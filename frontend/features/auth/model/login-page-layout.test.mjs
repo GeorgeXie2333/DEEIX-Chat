@@ -25,3 +25,16 @@ test("login page owns vertical scrolling inside the fixed app shell", () => {
   assert.match(mainClassName, /\boverflow-x-hidden\b/, "login main must prevent horizontal page drift while scrolling");
 });
 
+test("login page exposes the password reset flow from the password form", () => {
+  assert.match(loginPageSource, /\bpasswordResetEnabled\b/, "login page must read the password reset feature flag");
+  assert.match(loginPageSource, /\brequestPasswordResetCode\b/, "login page must wire the reset-code request action");
+  assert.match(loginPageSource, /\bonPasswordResetSubmit\b/, "login page must wire the reset submit action");
+  assert.match(loginPageSource, /\bupdateResetEmail\b/, "login page must be able to prefill the reset email");
+  assert.match(loginPageSource, /t\("forgotPassword"\)/, "password form must show a forgot-password entry point");
+  assert.match(loginPageSource, /setMode\("reset-password"\)/, "forgot-password entry point must open reset-password mode");
+  assert.match(loginPageSource, /mode === "reset-password" && passwordResetEnabled/, "reset form must only render in reset-password mode when enabled");
+  assert.match(loginPageSource, /htmlFor="reset-email"/, "reset form must collect the account email");
+  assert.match(loginPageSource, /htmlFor="reset-password"/, "reset form must collect a new password");
+  assert.match(loginPageSource, /htmlFor="reset-code"/, "reset form must collect the verification code");
+});
+
