@@ -342,6 +342,12 @@
     "visual": "ビジュアル",
     "ignored": "無視",
     "willPass": "透過されます",
+    "locked": "変更不可",
+    "notEnabledHelp": "未有効: このオプションは左側の JSON に存在しないため、送信されません。",
+    "lockedHelp": "変更不可: このオプションは管理者によりモデル既定値に固定されています。",
+    "skillLimitTitle": "Skills の上限に達しました",
+    "skillLimitDescription": "1 つのメッセージで読み込める Skills は最大 {limit} 個です。続けるには 1 つ解除してください。",
+    "selectedSkillsLabel": "読み込み済み Skills",
     "nativeToolMayNotApply": "適用されない可能性があります",
     "nativeToolMayNotApplyHelp": "このツールは現在のリクエストプロトコル向けに適配済みのネイティブツールではありません。有効化すると JSON には書き込まれ、上流プロバイダー側の処理に委ねられます。",
     "currentProtocol": "現在のプロトコル",
@@ -414,7 +420,7 @@
       "claude": "Claude ネイティブツール",
       "google": "Google ネイティブツール"
     },
-    "inputPlaceholder": "メッセージを入力、または @ でモデル・ファイル・ツールを追加",
+    "inputPlaceholder": "メッセージを入力、または / でコンテキスト、@ でリソースを追加",
     "voiceListeningPlaceholder": "音声を入力中…",
     "defaultMCPToolsSaved": "既定の MCP ツールを保存しました",
     "defaultMCPToolsSaveFailed": "既定の MCP ツールの保存に失敗しました",
@@ -432,7 +438,8 @@
         "file": "ファイル",
         "tool": "MCP",
         "model": "モデル",
-        "prompt": "プロンプト"
+        "prompt": "プロンプト",
+        "skill": "Skills"
       }
     }
   },
@@ -631,6 +638,7 @@
       "contextPlanning": "コンテキスト計画",
       "contentRetrieval": "内容検索",
       "fileContext": "ファイルコンテキスト",
+      "skillContext": "Skill コンテキスト",
       "contextCompaction": "コンテキスト圧縮",
       "requestResult": "リクエスト結果",
       "upstreamRequestTriggered": "上流モデルリクエストを開始"

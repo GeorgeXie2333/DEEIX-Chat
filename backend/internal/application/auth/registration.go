@@ -849,7 +849,7 @@ func (s *Service) CompleteEmailChange(ctx context.Context, userID uint, newEmail
 
 func normalizeRegistrationEmail(raw string) (string, error) {
 	normalized := strings.ToLower(strings.TrimSpace(raw))
-	if normalized == "" || len(normalized) > 128 {
+	if normalized == "" || len(normalized) > 128 || containsEmailControlCharacter(normalized) {
 		return "", fmt.Errorf("invalid email")
 	}
 	parsed, err := mail.ParseAddress(normalized)
@@ -857,6 +857,12 @@ func normalizeRegistrationEmail(raw string) (string, error) {
 		return "", fmt.Errorf("invalid email")
 	}
 	return normalized, nil
+}
+
+func containsEmailControlCharacter(value string) bool {
+	return strings.ContainsFunc(value, func(r rune) bool {
+		return r == 0 || r == '\r' || r == '\n'
+	})
 }
 
 func validateEmailRegistrationPolicy(cfg config.Config, email string) error {
@@ -1204,17 +1210,21 @@ func (s *Service) sendEmailVerificationCode(to string, code string, template ver
 	if err != nil {
 		return fmt.Errorf("smtp from is invalid")
 	}
+	normalizedTo, err := normalizeRegistrationEmail(to)
+	if err != nil {
+		return err
+	}
 
 	addr := net.JoinHostPort(strings.TrimSpace(cfg.SMTPHost), fmt.Sprintf("%d", cfg.SMTPPort))
 	var auth smtp.Auth
 	if strings.TrimSpace(cfg.SMTPUsername) != "" || strings.TrimSpace(cfg.SMTPPassword) != "" {
 		auth = smtp.PlainAuth("", strings.TrimSpace(cfg.SMTPUsername), strings.TrimSpace(cfg.SMTPPassword), strings.TrimSpace(cfg.SMTPHost))
 	}
-	message := buildVerificationEmailMessage(parsedFrom.String(), to, code, template)
-	if err := sendSMTPMail(addr, strings.TrimSpace(cfg.SMTPHost), cfg.SMTPPort, auth, parsedFrom.Address, []string{to}, []byte(message)); err != nil {
+	message := buildVerificationEmailMessage(parsedFrom.String(), normalizedTo, code, template)
+	if err := sendSMTPMail(addr, strings.TrimSpace(cfg.SMTPHost), cfg.SMTPPort, auth, parsedFrom.Address, []string{normalizedTo}, []byte(message)); err != nil {
 		s.warn("email_verification_send_failed",
 			zap.String("label", strings.TrimSpace(logLabel)),
-			zap.String("email", to),
+			zap.String("email", normalizedTo),
 			zap.Error(err),
 		)
 		return err

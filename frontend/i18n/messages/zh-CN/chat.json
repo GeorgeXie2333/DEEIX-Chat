@@ -326,7 +326,7 @@
     "screenshot": "屏幕截图",
     "openTools": "打开工具菜单",
     "advancedSettings": "高级设置",
-    "inputPlaceholder": "输入消息，或用 @ 添加模型、文件和工具",
+    "inputPlaceholder": "输入消息，或用 / 添加上下文，@ 添加资源",
     "voiceListeningPlaceholder": "正在接收语音…",
     "modelOptions": "模型配置",
     "mcpTools": "MCP 工具",
@@ -344,11 +344,14 @@
     "notEnabled": "未启用",
     "ignored": "已忽略",
     "willPass": "会透传",
+    "locked": "不可修改",
     "nativeToolMayNotApply": "可能不适用",
     "nativeToolMayNotApplyHelp": "该工具不是当前请求协议的已适配原生工具，开启后仍会按配置写入 JSON 并交由上游处理。",
     "currentProtocol": "当前协议",
     "toolProtocols": "工具协议",
-    "ignoredHelp": "未启用表示该配置当前不在左侧 JSON 中，不会随请求透传。已忽略表示该配置已写入 JSON，但会被后台透传策略过滤。",
+    "notEnabledHelp": "未启用：该配置当前不在左侧 JSON 中，不会随请求透传。",
+    "ignoredHelp": "已忽略：该配置已写入 JSON，但会被后台透传策略过滤。",
+    "lockedHelp": "不可修改：该参数由管理员锁定，会使用模型默认值。",
     "noVisualFields": "暂无可视化字段",
     "saveFailed": "模型配置保存失败",
     "defaultMCPToolsSaved": "已保存默认 MCP 工具",
@@ -380,6 +383,9 @@
     "mcpServerLimitHint": "最多 {limit} 个",
     "mcpToolLimitTitle": "工具数量已达上限",
     "mcpToolLimitDescription": "单次消息最多选择 {limit} 个 MCP 工具，请减少选择后再继续。",
+    "skillLimitTitle": "Skills 数量已达上限",
+    "skillLimitDescription": "单次消息最多加载 {limit} 个 Skills，请移除一个后再继续。",
+    "selectedSkillsLabel": "已加载 Skills",
     "mcpSetDefaultTool": "新对话默认使用 {tool}",
     "mcpUnsetDefaultTool": "新对话不再默认使用 {tool}",
     "mcpDefaultToolEnabled": "新对话会默认启用",
@@ -400,7 +406,8 @@
         "file": "文件",
         "tool": "MCP",
         "model": "模型",
-        "prompt": "提示词"
+        "skill": "Skills",
+        "prompt": "Prompts"
       }
     },
     "mediaMode": {
@@ -632,6 +639,7 @@
       "contentRetrieval": "内容检索",
       "fileContext": "文件上下文",
       "contextCompaction": "上下文压缩",
+      "skillContext": "Skill 上下文",
       "requestResult": "请求结果",
       "upstreamRequestTriggered": "上游模型请求触发"
     },

@@ -21,6 +21,7 @@ export type ChatModelOption = {
   protocols: string[];
   defaultOptions: ConversationOptions;
   optionControls: ModelOptionControl[];
+  lockedOptionPaths: string[];
   nativeToolKeys: string[];
   nativeTools: ModelNativeToolConfig[];
   pricing: PublicModelPricingDTO | null;
@@ -35,6 +36,7 @@ export type ModelOptionControl = {
   type?: ModelOptionControlType;
   options?: string[];
   placeholder?: string;
+  locked?: boolean;
 };
 
 export type PendingAttachment = {

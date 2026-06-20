@@ -617,11 +617,20 @@ func compareCredentialPassword(credential *domainuser.Credential, password strin
 	if credential != nil {
 		passwordHash = strings.TrimSpace(credential.PasswordHash)
 	}
+	isOpenWebUIImport := credential != nil && credential.PasswordOrigin == domainuser.PasswordOriginOpenWebUIImport
+	// bcrypt only consumes the first 72 bytes of the password. For non-OpenWebUI
+	// credentials, reject overlong passwords up front so the silent truncation in
+	// bcrypt.CompareHashAndPassword cannot accept a password that merely shares the
+	// first 72 bytes. OpenWebUI-imported credentials intentionally allow the
+	// truncated fallback below.
+	if !isOpenWebUIImport && len(password) > 72 {
+		return bcrypt.ErrMismatchedHashAndPassword
+	}
 	err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
 	if err == nil {
 		return nil
 	}
-	if credential == nil || credential.PasswordOrigin != domainuser.PasswordOriginOpenWebUIImport {
+	if !isOpenWebUIImport {
 		return err
 	}
 	truncated, ok := openWebUITruncatedPassword(password)

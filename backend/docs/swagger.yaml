@@ -643,6 +643,8 @@ definitions:
         type: string
       id:
         type: integer
+      lastActiveAt:
+        type: string
       lastLoginAt:
         type: string
       locale:
@@ -1341,6 +1343,8 @@ definitions:
         type: boolean
       initialUsernameRequired:
         type: boolean
+      lastActiveAt:
+        type: string
       lastLoginAt:
         type: string
       locale:
@@ -4610,6 +4614,11 @@ definitions:
           type: integer
         maxItems: 128
         type: array
+      skillIDs:
+        items:
+          type: integer
+        maxItems: 128
+        type: array
       sourceMessagePublicID:
         maxLength: 32
         type: string
@@ -4975,20 +4984,20 @@ definitions:
   internal_transport_http_promptpreset.PatchPromptPresetRequest:
     properties:
       content:
-        maxLength: 16384
+        maxLength: 10000
         type: string
       description:
-        maxLength: 64
+        maxLength: 256
         type: string
       enabled:
         type: boolean
       sortOrder:
         type: integer
       title:
-        maxLength: 16
+        maxLength: 64
         type: string
       trigger:
-        maxLength: 16
+        maxLength: 64
         type: string
     type: object
   internal_transport_http_promptpreset.PromptPresetDataResponse:
@@ -5059,20 +5068,20 @@ definitions:
   internal_transport_http_promptpreset.WritePromptPresetRequest:
     properties:
       content:
-        maxLength: 16384
+        maxLength: 10000
         type: string
       description:
-        maxLength: 64
+        maxLength: 256
         type: string
       enabled:
         type: boolean
       sortOrder:
         type: integer
       title:
-        maxLength: 16
+        maxLength: 64
         type: string
       trigger:
-        maxLength: 16
+        maxLength: 64
         type: string
     required:
     - content
@@ -5103,6 +5112,153 @@ definitions:
     required:
     - items
     type: object
+  internal_transport_http_skill.ErrorDoc:
+    properties:
+      errorMsg:
+        type: string
+    type: object
+  internal_transport_http_skill.PatchSkillRequest:
+    properties:
+      description:
+        maxLength: 256
+        type: string
+      enabled:
+        type: boolean
+      markdown:
+        maxLength: 10000
+        type: string
+      sortOrder:
+        type: integer
+      title:
+        maxLength: 64
+        type: string
+      trigger:
+        maxLength: 64
+        type: string
+    type: object
+  internal_transport_http_skill.SkillDataResponse:
+    properties:
+      skill:
+        $ref: '#/definitions/internal_transport_http_skill.SkillResponse'
+    type: object
+  internal_transport_http_skill.SkillDeleteDataResponse:
+    properties:
+      deleted:
+        type: boolean
+    type: object
+  internal_transport_http_skill.SkillDeleteResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/internal_transport_http_skill.SkillDeleteDataResponse'
+      errorMsg:
+        type: string
+    type: object
+  internal_transport_http_skill.SkillPageResponseDoc:
+    properties:
+      data:
+        properties:
+          results:
+            items:
+              $ref: '#/definitions/internal_transport_http_skill.SkillResponse'
+            type: array
+          total:
+            type: integer
+        type: object
+      errorMsg:
+        type: string
+    type: object
+  internal_transport_http_skill.SkillResponse:
+    properties:
+      createdAt:
+        type: string
+      createdByUserID:
+        type: integer
+      description:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: integer
+      markdown:
+        type: string
+      scope:
+        type: string
+      sortOrder:
+        type: integer
+      title:
+        type: string
+      trigger:
+        type: string
+      updatedAt:
+        type: string
+      updatedByUserID:
+        type: integer
+    type: object
+  internal_transport_http_skill.SkillResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/internal_transport_http_skill.SkillDataResponse'
+      errorMsg:
+        type: string
+    type: object
+  internal_transport_http_skill.SkillSummaryPageResponseDoc:
+    properties:
+      data:
+        properties:
+          results:
+            items:
+              $ref: '#/definitions/internal_transport_http_skill.SkillSummaryResponse'
+            type: array
+          total:
+            type: integer
+        type: object
+      errorMsg:
+        type: string
+    type: object
+  internal_transport_http_skill.SkillSummaryResponse:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: integer
+      scope:
+        type: string
+      sortOrder:
+        type: integer
+      title:
+        type: string
+      trigger:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  internal_transport_http_skill.WriteSkillRequest:
+    properties:
+      description:
+        maxLength: 256
+        type: string
+      enabled:
+        type: boolean
+      markdown:
+        maxLength: 10000
+        type: string
+      sortOrder:
+        type: integer
+      title:
+        maxLength: 64
+        type: string
+      trigger:
+        maxLength: 64
+        type: string
+    required:
+    - markdown
+    - title
+    - trigger
+    type: object
   internal_transport_http_usersettings.PatchSettingsRequest:
     properties:
       settings:
@@ -5130,7 +5286,7 @@ info:
   contact: {}
   description: Comi AI backend API documentation.
   title: Comi AI API
-  version: "0.2.6"
+  version: 0.2.7
 paths:
   /admin/announcements:
     get:
@@ -7612,6 +7768,154 @@ paths:
       summary: 停止托管 Tika
       tags:
       - admin/settings
+  /admin/skills:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 搜索关键词
+        in: query
+        name: q
+        type: string
+      - description: 是否启用
+        in: query
+        name: enabled
+        type: boolean
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.SkillPageResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 管理员查询内置技能
+      tags:
+      - admin-skills
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 技能配置
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_skill.WriteSkillRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.SkillResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 管理员创建内置技能
+      tags:
+      - admin-skills
+  /admin/skills/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 技能ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.SkillDeleteResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 管理员删除内置技能
+      tags:
+      - admin-skills
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: 技能ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新字段
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_skill.PatchSkillRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.SkillResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 管理员更新内置技能
+      tags:
+      - admin-skills
   /admin/system-events:
     get:
       consumes:
@@ -10740,6 +11044,223 @@ paths:
       summary: 获取公开分享附件内容
       tags:
       - chat
+  /skills:
+    get:
+      consumes:
+      - application/json
+      description: 返回管理员内置和当前用户自定义的已启用技能摘要，用于会话按需选择 Skill 上下文
+      parameters:
+      - description: 搜索关键词
+        in: query
+        name: q
+        type: string
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.SkillSummaryPageResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 查询当前用户可用技能
+      tags:
+      - skills
+  /skills/{id}:
+    get:
+      consumes:
+      - application/json
+      description: 按需返回单个可用 Skill 的完整 SKILL.md 内容，用于用户查看详情
+      parameters:
+      - description: 技能ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.SkillResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 查询当前用户可用技能详情
+      tags:
+      - skills
+  /skills/mine:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 搜索关键词
+        in: query
+        name: q
+        type: string
+      - description: 是否启用
+        in: query
+        name: enabled
+        type: boolean
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.SkillPageResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 查询我的自定义技能
+      tags:
+      - skills
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 技能配置
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_skill.WriteSkillRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.SkillResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 创建我的自定义技能
+      tags:
+      - skills
+  /skills/mine/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 技能ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.SkillDeleteResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 删除我的自定义技能
+      tags:
+      - skills
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: 技能ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新字段
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_skill.PatchSkillRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.SkillResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_skill.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 更新我的自定义技能
+      tags:
+      - skills
   /user/settings:
     get:
       description: 返回当前用户全部个人偏好配置，缺失项以默认值填充

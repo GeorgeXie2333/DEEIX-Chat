@@ -303,7 +303,7 @@ export function useRecentPage() {
   }, [hasMore, loadPage, loadingInitial, resolveErrorMessage, t]);
 
   useLoadMoreSentinel({
-    enabled: hasMore && !loadingInitial && !loadMoreFailed,
+    enabled: hasMore && !loadingInitial && !loadingMore && !loadMoreFailed,
     targetRef: loadMoreRef,
     rootMargin: "160px",
     onLoadMore: loadMore,

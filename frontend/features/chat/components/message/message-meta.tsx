@@ -38,6 +38,7 @@ import { billingRateMultiplierNote, cacheWriteBillingLabel, cacheWriteBillingNot
 import type { BillingDisplayLabels } from "@/shared/lib/billing-display";
 import type { ChatBillingCost, ChatMessageBranchNavigator } from "@/features/chat/types/messages";
 import { useAppLocale } from "@/i18n/app-i18n-provider";
+import { usePointerInteraction } from "@/shared/hooks/use-pointer-interaction";
 import { cn } from "@/lib/utils";
 
 export type ChatMetaMessage = {
@@ -134,17 +135,21 @@ function MetaContainer({
   mobileStack?: boolean;
   alwaysVisible?: boolean;
 }>) {
+  const { hasTouchInput } = usePointerInteraction();
+  const actionsVisible = alwaysVisible || hasTouchInput;
+
   return (
     <div
+      data-hover-actions={!actionsVisible ? "true" : undefined}
       className={[
-        "mt-1.5 flex gap-1 text-xs text-muted-foreground opacity-100 transition-opacity duration-150",
-        alwaysVisible ? "md:pointer-events-auto md:opacity-100" : "md:pointer-events-none md:opacity-0",
+        "chat-message-meta mt-1.5 flex gap-1 text-xs text-muted-foreground opacity-100 transition-opacity duration-150",
+        actionsVisible ? "md:pointer-events-auto md:opacity-100" : "md:pointer-events-none md:opacity-0",
         mobileStack ? "flex-col items-start md:flex-row md:items-center" : "items-center",
         align === "end" ? "justify-end" : "justify-start",
-        !alwaysVisible && align === "end"
+        !actionsVisible && align === "end"
           ? "md:group-hover/user-message:pointer-events-auto md:group-hover/user-message:opacity-100 md:group-focus-within/user-message:pointer-events-auto md:group-focus-within/user-message:opacity-100"
           : "",
-        !alwaysVisible && align === "start"
+        !actionsVisible && align === "start"
           ? "md:group-hover/assistant-message:pointer-events-auto md:group-hover/assistant-message:opacity-100 md:group-focus-within/assistant-message:pointer-events-auto md:group-focus-within/assistant-message:opacity-100"
           : "",
       ].join(" ")}

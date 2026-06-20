@@ -69,7 +69,8 @@
     "subscription": "サブスクリプション",
     "balance": "残高",
     "timezone": "タイムゾーン",
-    "lastLogin": "最終ログイン"
+    "lastLogin": "最終ログイン",
+    "lastActive": "最終アクティブ"
   },
   "actions": {
     "apply": "適用",
@@ -84,6 +85,7 @@
     "idDesc": "ID 新しい順",
     "idAsc": "ID 古い順",
     "lastLoginDesc": "最近ログイン",
+    "lastActiveDesc": "最近アクティブ",
     "updatedDesc": "最近更新",
     "displayNameAsc": "表示名 A-Z"
   },

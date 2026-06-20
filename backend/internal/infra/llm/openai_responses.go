@@ -47,6 +47,9 @@ func buildResponsesRequestBody(
 		"input":  items,
 		"stream": stream,
 	}
+	if instructions := strings.TrimSpace(input.Instructions); adapter == AdapterOpenAIResponses && instructions != "" {
+		payload["instructions"] = instructions
+	}
 	if maxTokens := modelParamInt(input.Options, "max_output_tokens"); maxTokens > 0 {
 		payload["max_output_tokens"] = maxTokens
 	}
@@ -71,7 +74,7 @@ func buildResponsesRequestBody(
 	if streamOptions := responsesStreamOptions(providerStreamOptions); stream && len(streamOptions) > 0 {
 		payload["stream_options"] = streamOptions
 	}
-	applyProviderOptions(payload, input.Options, responsesProtectedProviderOptionKeys(adapter)...)
+	applyProviderOptions(payload, input.Options, responsesProtectedProviderOptionKeys(adapter, strings.TrimSpace(input.Instructions) != "")...)
 	if supportsResponsesIncludeDefaults(adapter) {
 		defaultIncludes := responsesDefaultIncludeValues(adapter, stream, nativeTools)
 		appendResponseInclude(payload, responseIncludeValues(input.Options, defaultIncludes...)...)
@@ -81,7 +84,7 @@ func buildResponsesRequestBody(
 	return payload
 }
 
-func responsesProtectedProviderOptionKeys(adapter string) []string {
+func responsesProtectedProviderOptionKeys(adapter string, hasManagedInstructions bool) []string {
 	keys := []string{
 		"contents",
 		"include",
@@ -100,6 +103,8 @@ func responsesProtectedProviderOptionKeys(adapter string) []string {
 	}
 	if adapter != AdapterOpenAIResponses {
 		keys = append(keys, "instructions", "metadata", "prompt")
+	} else if hasManagedInstructions {
+		keys = append(keys, "instructions")
 	}
 	return keys
 }
@@ -422,7 +427,7 @@ func applyResponsesStreamEvent(
 			}
 		}
 	case "response.completed":
-		output := buildGenerateOutputFromParsedForAdapter(EndpointResponses, adapter, asMap(parsed["response"]))
+		output := buildGenerateOutputFromParsedForAdapter(EndpointResponses, adapter, asMap(parsed["response"]), false)
 		if result.Reasoning == nil && output.Reasoning != nil && onEvent != nil {
 			if reasoning := responsesReasoningDeltaFromOutput(eventType, output.Reasoning); reasoning != nil {
 				if err := onEvent(GenerateStreamEvent{

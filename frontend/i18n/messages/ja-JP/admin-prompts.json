@@ -1,6 +1,11 @@
 {
   "title": "プロンプトライブラリ",
+  "types": {
+    "prompts": "プロンプト",
+    "skills": "Skills"
+  },
   "create": "新規作成",
+  "createSkill": "Skill を新規作成",
   "edit": "編集",
   "delete": "削除",
   "enable": "有効化",
@@ -9,16 +14,24 @@
   "save": "保存",
   "saving": "保存中",
   "searchPlaceholder": "名前または内容を検索",
+  "skillsSearchPlaceholder": "Skills を検索",
   "createTitle": "組み込みプロンプトを作成",
   "editTitle": "組み込みプロンプトを編集",
   "dialogDescription": "チャットですばやく挿入できる、プラットフォーム管理のプロンプトです。ユーザーは閲覧のみ可能で、編集はできません。",
+  "createSkillTitle": "組み込み Skill を作成",
+  "editSkillTitle": "組み込み Skill を編集",
+  "skillDialogDescription": "組み込み Skill は 1 つの SKILL.md で定義されます。読み込むと今回の会話のコンテキストとしてのみ使用され、コマンドは実行されません。",
   "deleteTitle": "組み込みプロンプトを削除",
   "deleteDescription": "この組み込みプロンプトはユーザーに表示されなくなります。ユーザーのカスタムプロンプトには影響しません。",
+  "deleteSkillTitle": "組み込み Skill を削除",
+  "deleteSkillDescription": "削除すると、この組み込み Skill はユーザーに表示されなくなります。ユーザー自身のカスタム Skills には影響しません。",
   "empty": "組み込みプロンプトはありません",
+  "skillsEmpty": "組み込み Skills はありません",
   "fields": {
     "name": "名前",
     "description": "説明",
     "content": "内容",
+    "skillMarkdown": "SKILL.md",
     "enabled": "有効",
     "createdAt": "作成日時",
     "updatedAt": "更新日時"
@@ -32,6 +45,15 @@
     "updated": "プロンプトを更新しました",
     "updateFailed": "プロンプトの更新に失敗しました",
     "deleted": "プロンプトを削除しました",
-    "deleteFailed": "プロンプトの削除に失敗しました"
+    "deleteFailed": "プロンプトの削除に失敗しました",
+    "skillsLoadFailed": "Skills の読み込みに失敗しました",
+    "skillInvalid": "名前と SKILL.md を入力してください。",
+    "skillTooLong": "名前は64文字以内、説明は256文字以内、SKILL.md は10000文字以内で入力してください。",
+    "skillCreated": "Skill を作成しました",
+    "skillCreateFailed": "Skill の作成に失敗しました",
+    "skillUpdated": "Skill を更新しました",
+    "skillUpdateFailed": "Skill の更新に失敗しました",
+    "skillDeleted": "Skill を削除しました",
+    "skillDeleteFailed": "Skill の削除に失敗しました"
   }
 }

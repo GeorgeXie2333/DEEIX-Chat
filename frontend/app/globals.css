@@ -1139,6 +1139,13 @@
 }
 
 @layer utilities {
+  @media (hover: none), (pointer: coarse), (any-hover: none), (any-pointer: coarse) {
+    .chat-message-meta[data-hover-actions="true"] {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
   .text-\[8px\] {
     font-size: calc(8px * var(--ui-font-scale));
   }

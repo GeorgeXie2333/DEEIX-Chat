@@ -491,7 +491,7 @@ func (h *Handler) DeleteCurrentUserIdentity(c *gin.Context) {
 		return
 	}
 	rawID := c.Param("identity_id")
-	parsedID, err := strconv.ParseUint(rawID, 10, 64)
+	parsedID, err := strconv.ParseUint(rawID, 10, strconv.IntSize)
 	if err != nil || parsedID == 0 {
 		response.Error(c, http.StatusBadRequest, "invalid identity id")
 		return

@@ -115,10 +115,47 @@ const PROJECT_TREE_ACCORDION_MASK_STYLE = {
 const PROJECT_CREATE_ACTION_CLASS =
   "static size-7 shrink-0 opacity-0 transition-[background-color,color,opacity,transform] duration-150 group-hover/project-create:opacity-100 group-focus-within/project-create:opacity-100"
 const PROJECTS_OPEN_STORAGE_KEY = "deeix.sidebar.projects.open"
+const PROJECT_EXPANDED_IDS_STORAGE_KEY = "deeix.sidebar.projects.expanded"
 
 type ProjectFolderIconHandle = {
   startAnimation: () => void
   stopAnimation: () => void
+}
+
+function readStoredProjectIDSet(storageKey: string): Set<string> {
+  if (typeof window === "undefined") {
+    return new Set()
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(storageKey) ?? "[]") as unknown
+    if (!Array.isArray(parsed)) {
+      return new Set()
+    }
+    return new Set(parsed.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean))
+  } catch {
+    return new Set()
+  }
+}
+
+function hasStoredProjectIDSet(storageKey: string): boolean {
+  if (typeof window === "undefined") {
+    return false
+  }
+
+  try {
+    return window.localStorage.getItem(storageKey) !== null
+  } catch {
+    return false
+  }
+}
+
+function writeStoredProjectIDSet(storageKey: string, value: Set<string>) {
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(Array.from(value)))
+  } catch {
+    // localStorage can be unavailable in private browsing or strict environments.
+  }
 }
 
 function ProjectGroupHeader({
@@ -330,7 +367,7 @@ export function NavProjects() {
   const [shareTarget, setShareTarget] = React.useState<{ publicID: string; title: string } | null>(null)
   const [renameValue, setRenameValue] = React.useState("")
   const [autoRenamingConversationID, setAutoRenamingConversationID] = React.useState<string | null>(null)
-  const [expandedProjectIDs, setExpandedProjectIDs] = React.useState<Set<string>>(() => new Set())
+  const [expandedProjectIDs, setExpandedProjectIDs] = React.useState<Set<string>>(() => readStoredProjectIDSet(PROJECT_EXPANDED_IDS_STORAGE_KEY))
   const [projectConversationState, setProjectConversationState] = React.useState<ProjectConversationStateMap>({})
   const [openProjectMenuID, setOpenProjectMenuID] = React.useState<string | null>(null)
   const [hoveredProjectMenuID, setHoveredProjectMenuID] = React.useState<string | null>(null)
@@ -340,6 +377,8 @@ export function NavProjects() {
   const [projectsOpen, setProjectsOpen] = useStoredBoolean(PROJECTS_OPEN_STORAGE_KEY, true)
   const projectConversationStateRef = React.useRef(projectConversationState)
   const expandedProjectIDsRef = React.useRef(expandedProjectIDs)
+  const activeRevealedProjectIDsRef = React.useRef(new Set<string>())
+  const hasStoredExpandedProjectIDsRef = React.useRef(hasStoredProjectIDSet(PROJECT_EXPANDED_IDS_STORAGE_KEY))
   const activeConversationProjectID = React.useMemo(
     () => items.find((item) => item.publicID === activeConversationID)?.projectID ?? "",
     [activeConversationID, items],
@@ -359,10 +398,17 @@ export function NavProjects() {
     setProjectConversationState(next)
   }, [])
 
-  const updateExpandedProjectIDs = React.useCallback((updater: (prev: Set<string>) => Set<string>) => {
+  const updateExpandedProjectIDs = React.useCallback((updater: (prev: Set<string>) => Set<string>, persist = false) => {
     const next = updater(expandedProjectIDsRef.current)
     expandedProjectIDsRef.current = next
     setExpandedProjectIDs(next)
+    if (persist) {
+      hasStoredExpandedProjectIDsRef.current = true
+      writeStoredProjectIDSet(
+        PROJECT_EXPANDED_IDS_STORAGE_KEY,
+        new Set(Array.from(next).filter((projectID) => !activeRevealedProjectIDsRef.current.has(projectID))),
+      )
+    }
   }, [])
 
   const closeDraft = React.useCallback(() => {
@@ -499,9 +545,22 @@ export function NavProjects() {
     }
   }, [updateProjectConversationState])
 
+  React.useEffect(() => {
+    const visibleProjectIDs = new Set(projects.map((project) => project.publicID))
+    expandedProjectIDs.forEach((projectID) => {
+      if (!visibleProjectIDs.has(projectID)) {
+        return
+      }
+      void loadProjectConversations(projectID)
+    })
+  }, [expandedProjectIDs, loadProjectConversations, projects])
+
   const ensureProjectExpanded = React.useCallback(
-    (projectID: string) => {
+    (projectID: string, persist = false) => {
       const shouldLoad = !projectConversationStateRef.current[projectID]?.loaded
+      if (persist) {
+        activeRevealedProjectIDsRef.current.delete(projectID)
+      }
       updateExpandedProjectIDs((prev) => {
         if (prev.has(projectID)) {
           return prev
@@ -509,7 +568,7 @@ export function NavProjects() {
         const next = new Set(prev)
         next.add(projectID)
         return next
-      })
+      }, persist)
       if (shouldLoad) {
         void loadProjectConversations(projectID)
       }
@@ -521,6 +580,7 @@ export function NavProjects() {
     (projectID: string) => {
       const shouldLoad = !projectConversationStateRef.current[projectID]?.loaded
       const expandedNext = !expandedProjectIDsRef.current.has(projectID)
+      activeRevealedProjectIDsRef.current.delete(projectID)
       updateExpandedProjectIDs((prev) => {
         const next = new Set(prev)
         if (next.has(projectID)) {
@@ -529,7 +589,7 @@ export function NavProjects() {
           next.add(projectID)
         }
         return next
-      })
+      }, true)
       if (expandedNext && shouldLoad) {
         void loadProjectConversations(projectID)
       }
@@ -539,7 +599,7 @@ export function NavProjects() {
 
   const startProjectConversation = React.useCallback(
     (projectID: string) => {
-      ensureProjectExpanded(projectID)
+      ensureProjectExpanded(projectID, true)
       requestNewConversation({ projectID })
       router.push(`/chat?project_id=${encodeURIComponent(projectID)}`)
       if (isMobile) {
@@ -550,9 +610,11 @@ export function NavProjects() {
   )
 
   React.useEffect(() => {
-    if (activeProjectID) {
-      ensureProjectExpanded(activeProjectID)
+    if (!activeProjectID || hasStoredExpandedProjectIDsRef.current || activeRevealedProjectIDsRef.current.has(activeProjectID)) {
+      return
     }
+    activeRevealedProjectIDsRef.current.add(activeProjectID)
+    ensureProjectExpanded(activeProjectID, false)
   }, [activeProjectID, ensureProjectExpanded])
 
   React.useEffect(() => {
@@ -649,7 +711,7 @@ export function NavProjects() {
         const next = new Set(prev)
         next.delete(deletingProjectID)
         return next
-      })
+      }, true)
       updateProjectConversationState((prev) => {
         const { [deletingProjectID]: _deleted, ...next } = prev
         return next

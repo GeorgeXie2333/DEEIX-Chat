@@ -13,6 +13,7 @@ const videoModel: ChatModelOption = {
   protocols: ["openai_video_generations"],
   defaultOptions: {},
   optionControls: [],
+  lockedOptionPaths: [],
   nativeToolKeys: [],
   nativeTools: [],
   pricing: null,

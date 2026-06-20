@@ -55,6 +55,7 @@ import type {
   StreamMessageEvent,
 } from "@/shared/api/conversation.types";
 import { ApiError } from "@/shared/api/http-client";
+import type { SkillSummaryDTO } from "@/shared/api/skills.types";
 
 const CONVERSATION_METADATA_REFRESH_MAX_WAIT_MS = 45_000;
 const CONVERSATION_METADATA_REFRESH_INITIAL_DELAY_MS = 800;
@@ -228,6 +229,7 @@ export function useChatMessageSubmit({
   selectedPlatformModelName,
   modelOptions,
   selectedToolIDs,
+  selectedSkills,
   htmlVisualPromptEnabled,
   htmlVisualColorMode,
   options,
@@ -243,6 +245,7 @@ export function useChatMessageSubmit({
   replaceMessage,
   setDraft,
   setAttachments,
+  setSelectedSkills,
   releaseAttachments,
   pendingExchange,
   setPendingExchange,
@@ -267,6 +270,7 @@ export function useChatMessageSubmit({
   selectedPlatformModelName: string;
   modelOptions: ChatModelOption[];
   selectedToolIDs: number[];
+  selectedSkills: SkillSummaryDTO[];
   htmlVisualPromptEnabled: boolean;
   htmlVisualColorMode: "light" | "dark";
   options: ConversationOptions;
@@ -282,6 +286,7 @@ export function useChatMessageSubmit({
   replaceMessage: (message: MessageDTO) => void;
   setDraft: React.Dispatch<React.SetStateAction<string>>;
   setAttachments: React.Dispatch<React.SetStateAction<PendingAttachment[]>>;
+  setSelectedSkills: React.Dispatch<React.SetStateAction<SkillSummaryDTO[]>>;
   releaseAttachments: (items: PendingAttachment[]) => void;
   pendingExchange: PendingExchange | null;
   setPendingExchange: React.Dispatch<React.SetStateAction<PendingExchange | null>>;
@@ -643,6 +648,7 @@ export function useChatMessageSubmit({
             contentType: effectiveAttachments.length > 0 ? "mixed" : "text",
             content: payloadContent,
             selectedToolIDs: selectedToolIDs.length > 0 ? selectedToolIDs : undefined,
+            skillIDs: selectedSkills.length > 0 ? selectedSkills.map((skill) => skill.id) : undefined,
             htmlVisualPrompt: htmlVisualPromptEnabled || undefined,
             htmlVisualColorMode: htmlVisualPromptEnabled ? htmlVisualColorMode : undefined,
           };
@@ -665,6 +671,7 @@ export function useChatMessageSubmit({
         sentSuccessfully = true;
         flushStreamTextNow();
         resetStreamBuffer();
+        setSelectedSkills([]);
         const assistantMessageStatus = completed.assistantMessage.status || "success";
         const assistantMessageSucceeded = assistantMessageStatus === "success";
         setPendingExchange((prev) => {
@@ -860,11 +867,13 @@ export function useChatMessageSubmit({
       restoreDraftOnFailure,
       modelOptions,
       selectedToolIDs,
+      selectedSkills,
       htmlVisualPromptEnabled,
       htmlVisualColorMode,
       selectedPlatformModelName,
       sending,
       setAttachments,
+      setSelectedSkills,
       setBranchSelections,
       setDraft,
       setPendingExchange,

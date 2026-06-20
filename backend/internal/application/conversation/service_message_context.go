@@ -180,6 +180,8 @@ func classifyRunErrorCode(err error) string {
 		return "upstream_empty_response"
 	case errors.Is(err, ErrSensitivePromptBlocked):
 		return "sensitive_prompt_blocked"
+	case errors.Is(err, ErrToolRunFinalAnswerMissing):
+		return "tool_run_final_answer_missing"
 	case errors.Is(err, ErrMessageGenerationCanceled):
 		return "generation_canceled"
 	case errors.Is(err, ErrMediaImagePromptRequired):

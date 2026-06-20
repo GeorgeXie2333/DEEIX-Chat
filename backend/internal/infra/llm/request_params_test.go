@@ -575,6 +575,30 @@ func TestBuildOpenAIResponsesNestedProviderOptionsMergeAndOfficialFields(t *test
 	}
 }
 
+func TestBuildOpenAIResponsesUsesManagedInstructions(t *testing.T) {
+	payload := mustBuildRequestBody(t, AdapterOpenAIResponses, "gpt-5", EndpointResponses, GenerateInput{
+		Messages:     []Message{{Role: "user", Content: "hello"}},
+		Instructions: "managed developer instructions",
+		Options: map[string]interface{}{
+			"instructions": "provider override",
+			"metadata":     map[string]interface{}{"trace": "ok"},
+			"prompt":       map[string]interface{}{"id": "pmpt_123"},
+		},
+	}, true)
+
+	if payload["instructions"] != "managed developer instructions" {
+		t.Fatalf("expected managed instructions, got %#v", payload["instructions"])
+	}
+	metadata, ok := payload["metadata"].(map[string]interface{})
+	if !ok || metadata["trace"] != "ok" {
+		t.Fatalf("expected metadata to remain available, got %#v", payload["metadata"])
+	}
+	prompt, ok := payload["prompt"].(map[string]interface{})
+	if !ok || prompt["id"] != "pmpt_123" {
+		t.Fatalf("expected prompt to remain available, got %#v", payload["prompt"])
+	}
+}
+
 func TestBuildXAIResponsesOmitsUnsupportedSystemMetadata(t *testing.T) {
 	payload := mustBuildRequestBody(t, AdapterXAIResponses, "grok-4.3", EndpointResponses, GenerateInput{
 		RequestID:      "req-123",

@@ -33,7 +33,8 @@ const SIDEBAR_WIDTH = "17.96875rem"
 const SIDEBAR_WIDTH_MOBILE = "17.96875rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
-const SIDEBAR_AUTO_COLLAPSE_BREAKPOINT = 1280
+const SIDEBAR_AUTO_COLLAPSE_AT = 1180
+const SIDEBAR_AUTO_RESTORE_AT = 1360
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
@@ -56,8 +57,12 @@ function useSidebar() {
   return context
 }
 
-function isCompactSidebarViewport() {
-  return typeof window !== "undefined" && window.innerWidth < SIDEBAR_AUTO_COLLAPSE_BREAKPOINT
+function shouldAutoCollapseSidebar() {
+  return typeof window !== "undefined" && window.innerWidth < SIDEBAR_AUTO_COLLAPSE_AT
+}
+
+function shouldAutoRestoreSidebar() {
+  return typeof window !== "undefined" && window.innerWidth >= SIDEBAR_AUTO_RESTORE_AT
 }
 
 function readSidebarInitialOpen(defaultOpen: boolean) {
@@ -83,19 +88,32 @@ function readSidebarInitialOpen(defaultOpen: boolean) {
   return defaultOpen
 }
 
-function useCompactSidebarViewport() {
-  const [isCompact, setIsCompact] = React.useState(isCompactSidebarViewport)
+function useSidebarAutoViewport() {
+  const [autoViewport, setAutoViewport] = React.useState(() => ({
+    shouldCollapse: shouldAutoCollapseSidebar(),
+    shouldRestore: shouldAutoRestoreSidebar(),
+  }))
 
   React.useEffect(() => {
-    const mediaQuery = window.matchMedia(`(max-width: ${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT - 1}px)`)
-    const sync = () => setIsCompact(mediaQuery.matches)
+    const collapseQuery = window.matchMedia(`(max-width: ${SIDEBAR_AUTO_COLLAPSE_AT - 1}px)`)
+    const restoreQuery = window.matchMedia(`(min-width: ${SIDEBAR_AUTO_RESTORE_AT}px)`)
+    const sync = () => {
+      setAutoViewport({
+        shouldCollapse: collapseQuery.matches,
+        shouldRestore: restoreQuery.matches,
+      })
+    }
 
     sync()
-    mediaQuery.addEventListener("change", sync)
-    return () => mediaQuery.removeEventListener("change", sync)
+    collapseQuery.addEventListener("change", sync)
+    restoreQuery.addEventListener("change", sync)
+    return () => {
+      collapseQuery.removeEventListener("change", sync)
+      restoreQuery.removeEventListener("change", sync)
+    }
   }, [])
 
-  return isCompact
+  return autoViewport
 }
 
 function SidebarProvider({
@@ -112,14 +130,15 @@ function SidebarProvider({
   onOpenChange?: (open: boolean) => void
 }) {
   const isMobile = useIsMobile()
-  const isCompactViewport = useCompactSidebarViewport()
+  const { shouldCollapse, shouldRestore } = useSidebarAutoViewport()
   const [openMobile, setOpenMobile] = React.useState(false)
-  const wasCompactViewportRef = React.useRef(isCompactSidebarViewport())
-  const autoCollapsedRef = React.useRef(readSidebarInitialOpen(defaultOpen) && isCompactSidebarViewport())
+  const autoCollapsedRef = React.useRef(readSidebarInitialOpen(defaultOpen) && shouldAutoCollapseSidebar())
+  const wasAutoCollapseViewportRef = React.useRef(shouldAutoCollapseSidebar())
+  const wasAutoRestoreViewportRef = React.useRef(shouldAutoRestoreSidebar())
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(() => readSidebarInitialOpen(defaultOpen) && !isCompactSidebarViewport())
+  const [_open, _setOpen] = React.useState(() => readSidebarInitialOpen(defaultOpen) && !shouldAutoCollapseSidebar())
   const open = openProp ?? _open
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
@@ -143,11 +162,12 @@ function SidebarProvider({
   )
 
   React.useEffect(() => {
-    const leftCompactViewport = !isCompactViewport && wasCompactViewportRef.current
-    const enteredCompactViewport = isCompactViewport && !wasCompactViewportRef.current
-    wasCompactViewportRef.current = isCompactViewport
+    const enteredAutoCollapseViewport = shouldCollapse && !wasAutoCollapseViewportRef.current
+    const enteredAutoRestoreViewport = shouldRestore && !wasAutoRestoreViewportRef.current
+    wasAutoCollapseViewportRef.current = shouldCollapse
+    wasAutoRestoreViewportRef.current = shouldRestore
 
-    if (enteredCompactViewport) {
+    if (enteredAutoCollapseViewport) {
       autoCollapsedRef.current = open
       if (!open) {
         return
@@ -162,7 +182,7 @@ function SidebarProvider({
       return
     }
 
-    if (!leftCompactViewport || !autoCollapsedRef.current) {
+    if (!enteredAutoRestoreViewport || !autoCollapsedRef.current) {
       return
     }
 
@@ -173,7 +193,7 @@ function SidebarProvider({
     }
 
     _setOpen(true)
-  }, [isCompactViewport, open, setOpenProp])
+  }, [open, setOpenProp, shouldCollapse, shouldRestore])
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {

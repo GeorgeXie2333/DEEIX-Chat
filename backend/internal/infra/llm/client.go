@@ -128,13 +128,16 @@ type GenerateInput struct {
 	RequestID      string
 	ConversationID uint
 	Messages       []Message
-	Tools          []ToolDefinition
+	// Instructions 承载可映射到上游原生指令字段的系统/开发者指令。
+	// 不支持原生指令字段的 adapter 应继续通过 messages 承载系统提示。
+	Instructions string
+	Tools        []ToolDefinition
 	// DisableTools 表示本轮调用必须只生成文本，adapter 不再声明 MCP 或厂商原生工具。
 	DisableTools bool
 	// Options 承载本次调用的自由 JSON 参数。系统字段（model/messages/input/stream）
 	// 由 adapter 固定构造；Options 只表达采样、推理、工具、缓存和厂商原生扩展。
 	Options map[string]interface{}
-	// PreviousResponseID 供 OpenAI/xAI Responses API 实现有状态会话。
+	// PreviousResponseID 供 OpenAI Responses API 实现有状态会话。
 	// 非空时：仅在 input 中发送本轮新消息，服务端从存储状态续接历史。
 	// 空串时：退回全量发送模式，适用于所有 adapter。
 	PreviousResponseID string
@@ -649,6 +652,8 @@ type GenerateOutput struct {
 	GeneratedVideos     []GeneratedVideo
 	RawJSON             string
 	Debug               *UpstreamDebugSnapshot `json:"-"`
+
+	chatTextBuffer string
 }
 
 // GeneratedImage 表示图片生成/编辑接口返回的一张图片。

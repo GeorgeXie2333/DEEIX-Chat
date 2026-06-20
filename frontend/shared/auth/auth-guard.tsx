@@ -10,50 +10,64 @@ import { normalizeAuthNextPath } from "@/shared/auth/local-path";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { readAccessToken, SESSION_SNAPSHOT_CHANGED_EVENT, type SessionSnapshot } from "@/shared/auth/session";
 
+type AuthGuardStatus = "checking" | "ready";
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const common = useTranslations("common");
   const router = useRouter();
   const [accessToken, setAccessToken] = React.useState<string | null>(() => readAccessToken() || null);
+  const [status, setStatus] = React.useState<AuthGuardStatus>(() => readAccessToken() ? "ready" : "checking");
+  const mountedRef = React.useRef(false);
 
-  React.useEffect(() => {
-    let cancelled = false;
+  const redirectToLogin = React.useCallback(() => {
+    const nextPath = normalizeAuthNextPath(`${window.location.pathname}${window.location.search}`);
+    router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
+  }, [router]);
 
-    async function checkSession() {
-      try {
-        const token = await resolveAccessToken();
-        if (cancelled) {
-          return;
-        }
-        if (token) {
-          setAccessToken(token);
-          return;
-        }
-      } catch {
-        if (cancelled) {
-          return;
-        }
-      }
-
-      if (!cancelled) {
-        const nextPath = normalizeAuthNextPath(`${window.location.pathname}${window.location.search}`);
-        router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
-      }
+  const checkSession = React.useCallback(async () => {
+    const cachedToken = readAccessToken();
+    if (cachedToken) {
+      setAccessToken(cachedToken);
+      setStatus("ready");
+      return;
     }
 
+    setStatus("checking");
+    try {
+      const token = await resolveAccessToken();
+      if (!mountedRef.current) {
+        return;
+      }
+      if (token) {
+        setAccessToken(token);
+        setStatus("ready");
+        return;
+      }
+    } catch {
+      return;
+    }
+
+    if (mountedRef.current) {
+      redirectToLogin();
+    }
+  }, [redirectToLogin]);
+
+  React.useEffect(() => {
+    mountedRef.current = true;
     void checkSession();
     return () => {
-      cancelled = true;
+      mountedRef.current = false;
     };
-  }, [router]);
+  }, [checkSession]);
 
   React.useEffect(() => {
     function handleSessionChanged(event: Event) {
       const snapshot = (event as CustomEvent<SessionSnapshot>).detail;
       const nextToken = snapshot?.accessToken ?? "";
       setAccessToken(nextToken || null);
+      setStatus(nextToken ? "ready" : "checking");
       if (!nextToken) {
-        const nextPath = normalizeAuthNextPath(`${window.location.pathname}${window.location.search}`);
-        router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
+        redirectToLogin();
       }
     }
 
@@ -61,9 +75,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return () => {
       window.removeEventListener(SESSION_SNAPSHOT_CHANGED_EVENT, handleSessionChanged as EventListener);
     };
-  }, [router]);
+  }, [redirectToLogin]);
 
-  if (!accessToken) {
+  if (!accessToken || status === "checking") {
     return (
       <main className="flex h-svh w-full items-center justify-center px-4 text-sm text-muted-foreground">
         <SpinnerLabel>{common("states.loading")}</SpinnerLabel>

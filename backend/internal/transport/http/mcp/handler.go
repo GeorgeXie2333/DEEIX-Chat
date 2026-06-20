@@ -186,7 +186,7 @@ func (h *Handler) UpdateServerToolsStatus(c *gin.Context) {
 
 func parseIDParam(c *gin.Context, key string, resource string) (uint, bool) {
 	raw := c.Param(key)
-	parsed, err := strconv.ParseUint(raw, 10, 64)
+	parsed, err := strconv.ParseUint(raw, 10, strconv.IntSize)
 	if err != nil || parsed == 0 {
 		response.Error(c, http.StatusBadRequest, "invalid "+resource+" id")
 		return 0, false

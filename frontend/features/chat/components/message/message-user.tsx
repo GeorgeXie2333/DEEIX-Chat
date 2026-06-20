@@ -150,6 +150,7 @@ export function ChatMessageUser({
     handleChange: handleMentionChange,
     handleFocus: handleMentionFocus,
     handleKeyDown: handleMentionKeyDown,
+    handleSelectionChange: handleMentionSelectionChange,
     menuID: mentionMenuID,
     menuLayout: mentionMenuLayout,
     menuRef: mentionMenuRef,
@@ -164,8 +165,10 @@ export function ChatMessageUser({
     disabled: busy || readOnly || !isEditing,
     draft: editingValue,
     enabledKinds: EDIT_MESSAGE_MENTION_KINDS,
+    maxSelectedSkills: 0,
     maxSelectedTools: 0,
     modelOptions,
+    selectedSkills: [],
     selectedPlatformModelName,
     selectedToolIDs: EDIT_MESSAGE_EMPTY_TOOL_IDS,
     anchorRef: editInputGroupRef,
@@ -218,7 +221,10 @@ export function ChatMessageUser({
               aria-expanded={showMentionMenu}
               onBlur={handleMentionBlur}
               onChange={(event) => handleMentionChange(event.target.value)}
+              onClick={handleMentionSelectionChange}
               onFocus={handleMentionFocus}
+              onKeyUp={handleMentionSelectionChange}
+              onSelect={handleMentionSelectionChange}
               onKeyDown={(event) => {
                 if (handleMentionKeyDown(event)) {
                   return;

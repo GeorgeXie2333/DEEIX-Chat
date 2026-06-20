@@ -132,6 +132,15 @@ func mapStreamError(err error) streamError {
 	case errors.Is(err, appconversation.ErrSensitivePromptBlocked):
 		status = http.StatusBadRequest
 		message = "sensitive prompt blocked"
+	case errors.Is(err, appconversation.ErrTooManySelectedSkills):
+		status = http.StatusBadRequest
+		message = "too many selected skills"
+	case errors.Is(err, appconversation.ErrSkillNotFound):
+		status = http.StatusNotFound
+		message = "skill not found"
+	case errors.Is(err, appconversation.ErrInvalidSkillUse):
+		status = http.StatusBadRequest
+		message = "invalid skill use"
 	case errors.Is(err, appconversation.ErrFileProcessingNotReady):
 		status = http.StatusBadRequest
 		message = "file processing not ready"

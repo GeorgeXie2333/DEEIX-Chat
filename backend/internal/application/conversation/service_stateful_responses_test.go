@@ -50,6 +50,27 @@ func TestResolvePreviousResponseIDOnlyEnablesKnownSafeRoutes(t *testing.T) {
 	})
 }
 
+func TestSupportsPreviousResponseIDRouteOnlyAllowsOfficialOpenAIResponses(t *testing.T) {
+	if !supportsPreviousResponseIDRoute(&channel.ResolvedRoute{
+		Protocol: llm.AdapterOpenAIResponses,
+		BaseURL:  "https://api.openai.com/v1",
+	}) {
+		t.Fatalf("expected official OpenAI Responses route to support previous_response_id")
+	}
+	if supportsPreviousResponseIDRoute(&channel.ResolvedRoute{
+		Protocol: llm.AdapterOpenAIResponses,
+		BaseURL:  "http://host.docker.internal:42113/v1",
+	}) {
+		t.Fatalf("expected custom Responses-compatible route to disable previous_response_id")
+	}
+	if supportsPreviousResponseIDRoute(&channel.ResolvedRoute{
+		Protocol: llm.AdapterOpenAIChatCompletions,
+		BaseURL:  "https://api.openai.com/v1",
+	}) {
+		t.Fatalf("expected non-Responses route to disable previous_response_id")
+	}
+}
+
 func TestBuildStatefulResponseMessagesKeepsLatestUserOnly(t *testing.T) {
 	messages := []llm.Message{
 		{Role: "system", Content: "behavior"},
@@ -65,6 +86,40 @@ func TestBuildStatefulResponseMessagesKeepsLatestUserOnly(t *testing.T) {
 	}
 	if got[0].Role != "user" || got[0].Content != "<ctx>files</ctx><q>Q2</q>" {
 		t.Fatalf("expected latest user message, got %#v", got[0])
+	}
+}
+
+func TestApplyOpenAIResponsesInstructionsOnlyForOfficialRoute(t *testing.T) {
+	official := &channel.ResolvedRoute{
+		Protocol: llm.AdapterOpenAIResponses,
+		BaseURL:  "https://api.openai.com/v1",
+	}
+	input := llm.GenerateInput{
+		Messages: []llm.Message{
+			{Role: "system", Content: "platform policy"},
+			{Role: "user", Content: "hello"},
+			{Role: "system", Content: "final synthesis only"},
+			{Role: "tool", ToolResults: []llm.ToolResult{{ToolCallID: "call_1", OutputJSON: `{"ok":true}`}}},
+		},
+	}
+
+	applyOpenAIResponsesInstructions(official, llm.EndpointResponses, &input)
+
+	if input.Instructions != "platform policy\n\nfinal synthesis only" {
+		t.Fatalf("expected extracted instructions, got %q", input.Instructions)
+	}
+	if len(input.Messages) != 2 || input.Messages[0].Role != "user" || input.Messages[1].Role != "tool" {
+		t.Fatalf("expected system messages removed from input, got %#v", input.Messages)
+	}
+
+	custom := &channel.ResolvedRoute{
+		Protocol: llm.AdapterOpenAIResponses,
+		BaseURL:  "https://reverse.example.com/v1",
+	}
+	compatInput := llm.GenerateInput{Messages: []llm.Message{{Role: "system", Content: "policy"}, {Role: "user", Content: "hello"}}}
+	applyOpenAIResponsesInstructions(custom, llm.EndpointResponses, &compatInput)
+	if compatInput.Instructions != "" || len(compatInput.Messages) != 2 {
+		t.Fatalf("expected custom route to keep system messages, got %#v", compatInput)
 	}
 }
 

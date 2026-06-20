@@ -41,10 +41,6 @@ type modelOptionPolicyConfig struct {
 }
 
 func filterModelOptions(options map[string]interface{}, protocol string, cfg modelOptionPolicyConfig) map[string]interface{} {
-	if len(options) == 0 {
-		return nil
-	}
-
 	mode := strings.TrimSpace(cfg.Mode)
 	if mode == "" {
 		mode = modelOptionPolicyAllowlist
@@ -54,8 +50,16 @@ func filterModelOptions(options map[string]interface{}, protocol string, cfg mod
 	}
 
 	protocolKey := modelOptionPolicyProtocolKey(protocol)
-	nativeTools := nativeProviderToolsFromOption(protocolKey, options["tools"], cfg.ModelCapabilitiesJSON, cfg.NativeToolAllowedTypesJSON)
-	policyOptions := cloneModelOptionMap(options)
+	defaultOptions := modelCapabilityDefaultOptions(cfg.ModelCapabilitiesJSON)
+	policyOptions := mergeModelOptionDefaults(
+		defaultOptions,
+		options,
+		modelCapabilityLockedOptionPaths(cfg.ModelCapabilitiesJSON),
+	)
+	if len(policyOptions) == 0 {
+		return nil
+	}
+	nativeTools := nativeProviderToolsFromOption(protocolKey, policyOptions["tools"], cfg.ModelCapabilitiesJSON, cfg.NativeToolAllowedTypesJSON)
 	delete(policyOptions, "tools")
 	denied := append([][]string{}, hardDeniedModelOptionPaths...)
 
@@ -85,6 +89,59 @@ func filterModelOptions(options map[string]interface{}, protocol string, cfg mod
 		return nil
 	}
 	return filtered
+}
+
+// modelCapabilityDefaultOptions 提取管理员在模型能力 JSON 中声明的默认请求参数。
+func modelCapabilityDefaultOptions(raw string) map[string]interface{} {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return nil
+	}
+	var config struct {
+		DefaultOptions map[string]interface{} `json:"defaultOptions"`
+	}
+	if err := json.Unmarshal([]byte(value), &config); err != nil {
+		return nil
+	}
+	return cloneModelOptionMap(config.DefaultOptions)
+}
+
+func modelCapabilityLockedOptionPaths(raw string) [][]string {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return nil
+	}
+	var config struct {
+		LockedOptionPaths []string `json:"lockedOptionPaths"`
+	}
+	if err := json.Unmarshal([]byte(value), &config); err != nil {
+		return nil
+	}
+	paths := make([][]string, 0, len(config.LockedOptionPaths))
+	for _, value := range config.LockedOptionPaths {
+		if path := splitModelOptionPath(value); len(path) > 0 {
+			paths = append(paths, path)
+		}
+	}
+	return paths
+}
+
+// mergeModelOptionDefaults 以能力默认值为基础合并本次显式参数，并对锁定路径恢复默认值。
+func mergeModelOptionDefaults(defaults map[string]interface{}, options map[string]interface{}, lockedPaths [][]string) map[string]interface{} {
+	merged := cloneModelOptionMap(defaults)
+	if merged == nil {
+		merged = make(map[string]interface{}, len(options))
+	}
+	mergeModelOptionMap(merged, options)
+	for _, path := range lockedPaths {
+		if value, ok := readModelOptionPath(defaults, path); ok {
+			writeModelOptionPath(merged, path, cloneModelOptionValue(value))
+		}
+	}
+	if len(merged) == 0 {
+		return nil
+	}
+	return merged
 }
 
 // nativeProviderToolsFromOption 将用户 options.tools 收敛为当前协议允许的官方原生工具。
