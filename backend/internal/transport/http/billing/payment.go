@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"sort"
@@ -35,6 +36,7 @@ var stripeHTTPClient = &http.Client{Timeout: 15 * time.Second}
 type billingPaymentSettings struct {
 	Providers            []string
 	USDToCNYRate         float64
+	DisplayCurrency      string
 	StripePublishableKey string
 	StripeSecretKey      string
 	StripeWebhookSecret  string
@@ -80,19 +82,23 @@ func (h *Handler) CreateCheckout(c *gin.Context) {
 	var price *domainbilling.Price
 	switch orderType {
 	case domainbilling.PaymentOrderTypeTopUp:
+		amountMinorUnits, amountCurrency := resolveTopUpCheckoutAmount(req, settings)
 		order, err = h.service.CreateTopUpPaymentOrder(c.Request.Context(), appbilling.TopUpPaymentOrderInput{
-			UserID:       userID,
-			AmountCents:  usdToCents(req.AmountUSD),
-			Provider:     provider,
-			USDToCNYRate: settings.USDToCNYRate,
+			UserID:               userID,
+			AmountMinorUnits:     amountMinorUnits,
+			AmountCurrency:       amountCurrency,
+			Provider:             provider,
+			USDToCNYRate:         settings.USDToCNYRate,
+			PreferredPayCurrency: settings.DisplayCurrency,
 		})
 	default:
 		order, plan, price, err = h.service.CreatePaymentOrder(c.Request.Context(), appbilling.PaymentOrderInput{
-			UserID:       userID,
-			PriceID:      req.PriceID,
-			Cycles:       req.Cycles,
-			Provider:     provider,
-			USDToCNYRate: settings.USDToCNYRate,
+			UserID:               userID,
+			PriceID:              req.PriceID,
+			Cycles:               req.Cycles,
+			Provider:             provider,
+			USDToCNYRate:         settings.USDToCNYRate,
+			PreferredPayCurrency: settings.DisplayCurrency,
 		})
 	}
 	if err != nil {
@@ -270,6 +276,7 @@ func (h *Handler) resolvePaymentSettings(ctx context.Context) (billingPaymentSet
 	return billingPaymentSettings{
 		Providers:            normalizePaymentProviders(values["payment_providers"]),
 		USDToCNYRate:         parsePositiveFloat(values["usd_to_cny_rate"], 7.2),
+		DisplayCurrency:      normalizePaymentDisplayCurrency(values["display_currency"]),
 		StripePublishableKey: values["stripe_publishable_key"],
 		StripeSecretKey:      values["stripe_secret_key"],
 		StripeWebhookSecret:  values["stripe_webhook_secret"],
@@ -278,6 +285,13 @@ func (h *Handler) resolvePaymentSettings(ctx context.Context) (billingPaymentSet
 		EPayPID:              values["epay_pid"],
 		EPayKey:              values["epay_key"],
 	}, nil
+}
+
+func normalizePaymentDisplayCurrency(value string) string {
+	if strings.EqualFold(strings.TrimSpace(value), "CNY") {
+		return "CNY"
+	}
+	return "USD"
 }
 
 type stripeCheckoutSession struct {
@@ -684,11 +698,21 @@ func resolveCheckoutOrderType(req CreateCheckoutRequest) string {
 	case domainbilling.PaymentOrderTypeSubscription:
 		return domainbilling.PaymentOrderTypeSubscription
 	default:
-		if req.PriceID == 0 && req.AmountUSD > 0 {
+		if req.PriceID == 0 && (req.AmountMinorUnits > 0 || req.AmountUSD > 0) {
 			return domainbilling.PaymentOrderTypeTopUp
 		}
 		return domainbilling.PaymentOrderTypeSubscription
 	}
+}
+
+func resolveTopUpCheckoutAmount(req CreateCheckoutRequest, settings billingPaymentSettings) (int64, string) {
+	if req.AmountMinorUnits > 0 {
+		return req.AmountMinorUnits, settings.DisplayCurrency
+	}
+	if req.AmountUSD > 0 {
+		return int64(math.Round(req.AmountUSD * 100)), "USD"
+	}
+	return 0, settings.DisplayCurrency
 }
 
 func paymentProductName(order *domainbilling.PaymentOrder, plan *domainbilling.Plan) string {
@@ -703,7 +727,11 @@ func paymentProductName(order *domainbilling.PaymentOrder, plan *domainbilling.P
 
 func paymentProductDescription(order *domainbilling.PaymentOrder, plan *domainbilling.Plan) string {
 	if order != nil && order.OrderType == domainbilling.PaymentOrderTypeTopUp {
-		return fmt.Sprintf("充值 $%.2f 至按量余额", float64(order.BaseAmountCents)/100)
+		amountCents := order.PayAmountCents
+		if amountCents <= 0 {
+			amountCents = order.BaseAmountCents
+		}
+		return fmt.Sprintf("充值 %s %.2f 至按量余额", firstNonEmpty(order.PayCurrency, order.BaseCurrency, "USD"), float64(amountCents)/100)
 	}
 	if plan != nil {
 		return firstNonEmpty(plan.Description, plan.Code)

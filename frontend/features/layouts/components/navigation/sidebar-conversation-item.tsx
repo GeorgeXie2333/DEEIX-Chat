@@ -49,7 +49,7 @@ type SidebarConversationItemProps = {
   onShare?: (publicID: string, title: string) => void
   onExport?: (publicID: string, title: string) => void | Promise<void>
   onDelete: (publicID: string, title: string) => void
-  onNavigate?: () => void
+  onNavigate?: (url: string, event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 export function SidebarConversationItem({
@@ -147,7 +147,7 @@ export function SidebarConversationItem({
             href={item.url}
             prefetch={false}
             className={cn("flex h-full min-w-0 flex-1 items-center pl-2 pr-9", linkClassName)}
-            onClick={onNavigate}
+            onClick={(event) => onNavigate?.(item.url, event)}
           >
             <AnimatedText
               text={item.title}

@@ -76,6 +76,7 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 	freeModelRateLimitExemptModels := []string{}
 	paymentProviders := []string{}
 	usdToCNYRate := 7.2
+	displayCurrency := "USD"
 	epayTypes := defaultEPayTypes()
 	if h.settings != nil {
 		items, err := h.settings.ListByNamespace(ctx, "billing")
@@ -115,6 +116,10 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 				if parsed, parseErr := strconv.ParseFloat(value, 64); parseErr == nil && parsed > 0 {
 					usdToCNYRate = parsed
 				}
+			case "display_currency":
+				if value == "USD" || value == "CNY" {
+					displayCurrency = value
+				}
 			case "epay_types":
 				epayTypes = normalizeEPayTypes(value)
 			}
@@ -135,6 +140,7 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 		FreeModelRateLimitExemptModels: freeModelRateLimitExemptModels,
 		PaymentProviders:               paymentProviders,
 		USDToCNYRate:                   usdToCNYRate,
+		DisplayCurrency:                displayCurrency,
 		EPayTypes:                      epayTypes,
 	}, nil
 }
@@ -170,6 +176,20 @@ func (h *Handler) PatchBillingConfig(c *gin.Context) {
 			Namespace: "billing",
 			Key:       "prepaid_amount_usd",
 			Value:     strconv.FormatFloat(*req.PrepaidAmountUSD, 'f', -1, 64),
+		})
+	}
+	if req.USDToCNYRate != nil {
+		patches = append(patches, appsettings.PatchItem{
+			Namespace: "billing",
+			Key:       "usd_to_cny_rate",
+			Value:     strconv.FormatFloat(*req.USDToCNYRate, 'f', -1, 64),
+		})
+	}
+	if req.DisplayCurrency != nil {
+		patches = append(patches, appsettings.PatchItem{
+			Namespace: "billing",
+			Key:       "display_currency",
+			Value:     strings.TrimSpace(*req.DisplayCurrency),
 		})
 	}
 	if req.NativeToolBillingEnabled != nil {
@@ -232,6 +252,8 @@ func (h *Handler) PatchBillingConfig(c *gin.Context) {
 		map[string]interface{}{
 			"mode":                                mode,
 			"prepaid_amount_usd":                  req.PrepaidAmountUSD,
+			"usd_to_cny_rate":                     req.USDToCNYRate,
+			"display_currency":                    req.DisplayCurrency,
 			"native_tool_billing_enabled":         req.NativeToolBillingEnabled,
 			"native_tool_pricing_updated":         req.NativeToolPricing != nil,
 			"free_model_rate_limit_rpm":           req.FreeModelRateLimitRPM,

@@ -1270,7 +1270,6 @@ func (s *Service) sendMessageInternal(
 		}
 	}
 
-
 	if strings.TrimSpace(assistantText) == "" {
 		retErr = ErrUpstreamEmptyResponse
 		return nil, retErr

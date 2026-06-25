@@ -1473,6 +1473,11 @@ definitions:
     type: object
   internal_transport_http_billing.BillingConfigRequest:
     properties:
+      displayCurrency:
+        enum:
+        - USD
+        - CNY
+        type: string
       freeModelDailyLimit:
         minimum: 0
         type: integer
@@ -1498,11 +1503,15 @@ definitions:
       prepaidAmountUSD:
         minimum: 0
         type: number
+      usdToCNYRate:
+        type: number
     required:
     - mode
     type: object
   internal_transport_http_billing.BillingConfigResponse:
     properties:
+      displayCurrency:
+        type: string
       epayTypes:
         items:
           $ref: '#/definitions/internal_transport_http_billing.PaymentTypeResponse'
@@ -3807,6 +3816,22 @@ definitions:
       errorMsg:
         type: string
     type: object
+  internal_transport_http_conversation.ConversationDefaultModelCandidateResponse:
+    properties:
+      platformModelName:
+        type: string
+      source:
+        type: string
+      usedAt:
+        type: string
+    type: object
+  internal_transport_http_conversation.ConversationDefaultModelCandidateResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/internal_transport_http_conversation.ConversationDefaultModelCandidateResponse'
+      errorMsg:
+        type: string
+    type: object
   internal_transport_http_conversation.ConversationDeleteResponse:
     properties:
       deleted:
@@ -5286,7 +5311,7 @@ info:
   contact: {}
   description: Comi AI backend API documentation.
   title: Comi AI API
-  version: 0.2.7
+  version: "0.2.8"
 paths:
   /admin/announcements:
     get:
@@ -8038,6 +8063,10 @@ paths:
         in: query
         name: page_size
         type: integer
+      - description: 搜索用户名、昵称、邮箱或公开ID
+        in: query
+        name: q
+        type: string
       produces:
       - application/json
       responses:
@@ -10012,6 +10041,27 @@ paths:
       security:
       - BearerAuth: []
       summary: 自动重新命名会话
+      tags:
+      - chat
+  /conversations/default-model-candidate:
+    get:
+      consumes:
+      - application/json
+      description: 返回当前用户最近一次真实运行使用的模型，用于系统默认的新会话模型选择
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_conversation.ConversationDefaultModelCandidateResponseDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_conversation.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 查询新会话默认模型候选
       tags:
       - chat
   /conversations/import:

@@ -115,12 +115,15 @@ export type AdminBillingConfigDTO = {
   freeModelRateLimitExemptModels: string[];
   paymentProviders: Array<"stripe" | "epay" | string>;
   usdToCNYRate: number;
+  displayCurrency: "USD" | "CNY" | string;
   epayTypes: Array<{ name: string; type: string }>;
 };
 
 export type UpdateAdminBillingConfigRequest = {
   mode: AdminBillingMode;
   prepaidAmountUSD?: number;
+  usdToCNYRate?: number;
+  displayCurrency?: "USD" | "CNY";
   nativeToolBillingEnabled?: boolean;
   nativeToolPricing?: NativeToolPricingUpdateDTO[];
   freeModelRateLimitRPM?: number;

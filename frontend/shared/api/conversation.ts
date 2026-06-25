@@ -4,6 +4,7 @@ import type { PagePayload } from "@/shared/api/common.types";
 import type {
   ConversationDTO,
   ConversationArchiveDTO,
+  ConversationDefaultModelCandidateDTO,
   ConversationProjectDTO,
   ConversationProjectFilter,
   ConversationProjectStatusFilter,
@@ -366,6 +367,18 @@ export async function listConversations(
     total: data.total ?? 0,
     results: data.results ?? [],
   };
+}
+
+export async function getConversationDefaultModelCandidate(
+  accessToken: string,
+): Promise<ConversationDefaultModelCandidateDTO> {
+  return authedRequest<ConversationDefaultModelCandidateDTO>(
+    "/api/v1/conversations/default-model-candidate",
+    {
+      accessToken,
+    },
+    true,
+  );
 }
 
 export async function listConversationProjects(

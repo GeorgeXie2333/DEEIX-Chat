@@ -204,7 +204,11 @@ export function AppChatArea() {
   }, [requestNewConversation, routeProjectID, router]);
   const activeGenerationRunsRef = React.useRef<Set<string>>(new Set());
   const failedGenerationRunsRef = React.useRef<Set<string>>(new Set());
-  const { deleteFilesByDefault } = useSettingsChatPreferences();
+  const {
+    deleteFilesByDefault,
+    loaded: chatPreferencesLoaded,
+    reuseModelOptions,
+  } = useSettingsChatPreferences();
   const {
     items,
     projects,
@@ -303,6 +307,8 @@ export function AppChatArea() {
     showLatency,
     showTokenUsage,
     showBillingCost,
+    billingDisplayCurrency,
+    billingDisplayUsdToCnyRate,
     modelOptionPolicy,
     mcpMaxSelectedTools,
     selectedPlatformModelName,
@@ -310,6 +316,7 @@ export function AppChatArea() {
   } = useChatModelOptions({
     conversationPublicID: conversationID,
     conversationModel: currentConversation?.model ?? null,
+    resetToken: newConversationRevision,
   });
   const {
     conversationKey,
@@ -361,12 +368,15 @@ export function AppChatArea() {
       setOptions({});
       return;
     }
+    if (!chatPreferencesLoaded) {
+      return;
+    }
     const nextDefaultOptions = cloneConversationOptions(selectedModel.defaultOptions);
     const previousDefaultOptions = selectedModelDefaultOptionsRef.current;
     if (initializedOptionsModelRef.current !== platformModelName) {
       initializedOptionsModelRef.current = platformModelName;
       selectedModelDefaultOptionsRef.current = nextDefaultOptions;
-      const cachedOptions = readCachedModelOptions(platformModelName);
+      const cachedOptions = reuseModelOptions ? readCachedModelOptions(platformModelName) : null;
       setOptions(cloneConversationOptions(cachedOptions ?? nextDefaultOptions));
       return;
     }
@@ -382,7 +392,7 @@ export function AppChatArea() {
       removeCachedModelOptions(platformModelName);
       return cloneConversationOptions(nextDefaultOptions);
     });
-  }, [selectedModel]);
+  }, [chatPreferencesLoaded, reuseModelOptions, selectedModel]);
 
   const setModelOptions = React.useCallback(
     (action: React.SetStateAction<ConversationOptions>) => {
@@ -528,6 +538,10 @@ export function AppChatArea() {
     onRetryUserMessage,
     onSendMessage,
     onStopMessage,
+    onDeleteQueuedMessage,
+    onEditQueuedMessage,
+    onGuideQueuedMessage,
+    queuedMessages,
     sending,
     showPendingAssistant,
     streamingText,
@@ -566,7 +580,7 @@ export function AppChatArea() {
     resumingRunID,
   });
   const generating = sending || Boolean(resumingRunID);
-  const uploadDropDisabled = generating || loading || uploading;
+  const uploadDropDisabled = loading || uploading;
   const showLiveAssistant = showPendingAssistant || Boolean(resumingRunID);
   const latestMessageKey = visibleMessages.at(-1)?.key ?? "";
   const onStopActiveMessage = React.useCallback(() => {
@@ -992,11 +1006,14 @@ export function AppChatArea() {
     attachments,
     uploadingAttachments,
     modelOptions,
+    billingDisplayCurrency,
+    billingDisplayUsdToCnyRate,
     selectedPlatformModelName,
     availableTools,
     selectedToolIDs,
     selectedSkills,
     defaultToolIDs,
+    queuedMessages,
     htmlVisualPromptEnabled: htmlVisualPrompt.enabled,
     maxSelectedTools: mcpMaxSelectedTools,
     toolsLoading,
@@ -1022,6 +1039,9 @@ export function AppChatArea() {
     onRemoveAttachment,
     onSendMessage,
     onStopMessage: onStopActiveMessage,
+    onDeleteQueuedMessage,
+    onEditQueuedMessage,
+    onGuideQueuedMessage,
   };
   const chatContentWidthClassName = resolveChatContentWidthClassName(contentWidth);
   const isConversationLoading = Boolean(conversationID) && loading && visibleMessageCount === 0 && messagesWithInlineError.length === 0;
@@ -1110,6 +1130,8 @@ export function AppChatArea() {
                   showLatency={showLatency}
                   showTokenUsage={showTokenUsage}
                   showBillingCost={showBillingCost}
+                  billingDisplayCurrency={billingDisplayCurrency}
+                  billingDisplayUsdToCnyRate={billingDisplayUsdToCnyRate}
                   splitRightInset={hasInlineArtifact}
                   contentWidthClassName={chatContentWidthClassName}
                 />

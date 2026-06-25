@@ -49,6 +49,7 @@ import type {
   ConversationDTO,
   ConversationOptions,
   MediaImageRequest,
+  MediaVideoRequest,
   MessageDTO,
   SendMessageRequest,
   SendMessageResult,
@@ -126,6 +127,18 @@ type ActiveStream = {
   controller: AbortController;
   runID: string;
   accessToken: string | null;
+};
+
+type QueuedChatSubmission = {
+  id: string;
+  content: string;
+  attachments: PendingAttachment[];
+  platformModelName: string;
+  options: ConversationOptions;
+  selectedToolIDs: number[];
+  selectedSkills: SkillSummaryDTO[];
+  htmlVisualPromptEnabled: boolean;
+  htmlVisualColorMode: "light" | "dark";
 };
 
 function sleep(ms: number): Promise<void> {
@@ -263,6 +276,7 @@ export function useChatMessageSubmit({
   startStream,
   activeGenerationRunsRef,
   failedGenerationRunsRef,
+  resumeGenerationActive = false,
 }: {
   conversationID: string | null;
   resetToken: number;
@@ -304,12 +318,31 @@ export function useChatMessageSubmit({
   startStream: (exchangeKey: string) => void;
   activeGenerationRunsRef?: React.RefObject<Set<string>>;
   failedGenerationRunsRef?: React.RefObject<Set<string>>;
+  resumeGenerationActive?: boolean;
 }) {
   const t = useTranslations("chat.submit");
   const [sending, setSending] = React.useState(false);
   const activeStreamRef = React.useRef<ActiveStream | null>(null);
   const activeGenerationRunsRefRef = React.useRef(activeGenerationRunsRef);
   const previousResetTokenRef = React.useRef(resetToken);
+  const conversationIDRef = React.useRef(conversationID);
+  const activeConversationRef = React.useRef(activeConversation);
+  const lastCompletedAssistantPublicIDRef = React.useRef<string | null>(null);
+  const sendQueuedAfterCurrentRef = React.useRef(false);
+  const [queuedSubmissions, setQueuedSubmissions] = React.useState<QueuedChatSubmission[]>([]);
+  const queuedSubmissionsRef = React.useRef<QueuedChatSubmission[]>([]);
+
+  React.useEffect(() => {
+    conversationIDRef.current = conversationID;
+  }, [conversationID]);
+
+  React.useEffect(() => {
+    activeConversationRef.current = activeConversation;
+  }, [activeConversation]);
+
+  React.useEffect(() => {
+    queuedSubmissionsRef.current = queuedSubmissions;
+  }, [queuedSubmissions]);
 
   React.useEffect(() => {
     activeGenerationRunsRefRef.current = activeGenerationRunsRef;
@@ -333,7 +366,11 @@ export function useChatMessageSubmit({
     resetStreamBuffer();
     setPendingExchange(null);
     setSending(false);
-  }, [resetStreamBuffer, resetToken, setPendingExchange]);
+    lastCompletedAssistantPublicIDRef.current = null;
+    sendQueuedAfterCurrentRef.current = false;
+    releaseAttachments(queuedSubmissionsRef.current.flatMap((item) => item.attachments));
+    setQueuedSubmissions([]);
+  }, [releaseAttachments, resetStreamBuffer, resetToken, setPendingExchange]);
 
   React.useEffect(() => {
     if (!pendingExchange) {
@@ -393,6 +430,7 @@ export function useChatMessageSubmit({
       parentMessagePublicID,
       sourceMessagePublicID,
       branchReason,
+      queuedSubmission,
     }: {
       content: string;
       currentAttachments: PendingAttachment[];
@@ -400,11 +438,17 @@ export function useChatMessageSubmit({
       parentMessagePublicID?: string | null;
       sourceMessagePublicID?: string | null;
       branchReason?: "default" | "retry" | "edit";
+      queuedSubmission?: QueuedChatSubmission;
     }) => {
       const payloadContent = content || t("attachmentOnlyContent");
-      const requestPlatformModelName = selectedPlatformModelName.trim();
+      const requestPlatformModelName = (queuedSubmission?.platformModelName ?? selectedPlatformModelName).trim();
+      const requestOptions = queuedSubmission?.options ?? options;
+      const requestSelectedToolIDs = queuedSubmission?.selectedToolIDs ?? selectedToolIDs;
+      const requestSelectedSkills = queuedSubmission?.selectedSkills ?? selectedSkills;
+      const requestHTMLVisualPromptEnabled = queuedSubmission?.htmlVisualPromptEnabled ?? htmlVisualPromptEnabled;
+      const requestHTMLVisualColorMode = queuedSubmission?.htmlVisualColorMode ?? htmlVisualColorMode;
       const selectedModel = modelOptions.find((item) => item.platformModelName === requestPlatformModelName) ?? null;
-      if ((!content && currentAttachments.length === 0) || sending || uploading || activeStreamRef.current) {
+      if ((!content && currentAttachments.length === 0) || uploading || activeStreamRef.current) {
         return false;
       }
       const effectiveAttachments =
@@ -441,12 +485,11 @@ export function useChatMessageSubmit({
       let shouldKeepConversationLayout = false;
       const streamAbortController = new AbortController();
       const clientRunID = createClientRunID();
-      const sanitizedOptions = sanitizeConversationOptions(options);
+      const sanitizedOptions = sanitizeConversationOptions(requestOptions);
       const assistantImageAspectRatio =
         submitTask === "chat" ? undefined : resolveImageLoadingAspectRatio(sanitizedOptions);
-      const assistantContentType = submitTask === "chat" ? "markdown" : submitTask === "video_generation" ? "video" : "image";
-      let targetConversationID = conversationID;
-      let targetConversation = activeConversation;
+      let targetConversationID = conversationIDRef.current;
+      let targetConversation = activeConversationRef.current;
 
       activeGenerationRunsRef?.current.add(clientRunID);
       setShowConversationLayout(true);
@@ -459,11 +502,12 @@ export function useChatMessageSubmit({
       if (resetComposer) {
         setDraft("");
         setAttachments([]);
+        setSelectedSkills([]);
       }
       startStream(exchangeKey);
       setPendingExchange({
         key: exchangeKey,
-        conversationPublicID: conversationID?.trim() || null,
+        conversationPublicID: targetConversationID?.trim() || null,
         tempUserPublicID,
         tempAssistantPublicID,
         runID: clientRunID,
@@ -477,7 +521,7 @@ export function useChatMessageSubmit({
         assistantText: "",
         assistantPending: true,
         assistantStreaming: true,
-        assistantContentType,
+        assistantContentType: submitTask === "chat" ? "markdown" : submitTask === "video_generation" ? "video" : "image",
         assistantImageAspectRatio,
         assistantInlineAlert: undefined,
         assistantCreatedAt: createdAt,
@@ -515,6 +559,8 @@ export function useChatMessageSubmit({
           }
           targetConversationID = created.publicID;
           targetConversation = created;
+          conversationIDRef.current = created.publicID;
+          activeConversationRef.current = created;
           setPendingExchange((prev) =>
             prev && prev.key === exchangeKey
               ? {
@@ -558,10 +604,18 @@ export function useChatMessageSubmit({
           },
           onMediaStatus: (event) => {
             const activityLabel = resolveMediaStatusLabel(event.status, event.message, t);
-            const activityProgress = resolveMediaStatusProgress(event.progress);
             setPendingExchange((prev) =>
               prev && prev.key === exchangeKey
-                ? { ...prev, assistantFileProc: true, assistantActivityLabel: activityLabel, assistantActivityProgress: activityProgress }
+                ? {
+                    ...prev,
+                    assistantFileProc: true,
+                    assistantActivityLabel: activityLabel,
+                    assistantMediaStatus: {
+                      status: event.status,
+                      message: activityLabel,
+                      progress: resolveMediaStatusProgress(event.progress),
+                    },
+                  }
                 : prev,
             );
           },
@@ -578,7 +632,6 @@ export function useChatMessageSubmit({
                     assistantStreaming: true,
                     assistantFileProc: false,
                     assistantActivityLabel: undefined,
-                    assistantActivityProgress: undefined,
                     assistantText: previewMarkdown,
                   }
                 : prev,
@@ -598,7 +651,6 @@ export function useChatMessageSubmit({
                     ...prev,
                     assistantFileProc: false,
                     assistantActivityLabel: undefined,
-                    assistantActivityProgress: undefined,
                     assistantProcessTrace: event.trace ? toPendingProcessTrace(event.trace) : prev.assistantProcessTrace,
                   }
                 : prev,
@@ -618,7 +670,7 @@ export function useChatMessageSubmit({
             // Always clear assistantFileProc so batched React updates cannot keep the file_proc spinner alive.
             setPendingExchange((prev) =>
               prev && prev.key === exchangeKey && prev.assistantFileProc
-                ? { ...prev, assistantFileProc: false, assistantActivityLabel: undefined, assistantActivityProgress: undefined }
+                ? { ...prev, assistantFileProc: false, assistantActivityLabel: undefined }
                 : prev,
             );
             enqueueStreamText(delta);
@@ -647,10 +699,10 @@ export function useChatMessageSubmit({
             ...commonStreamPayload,
             contentType: effectiveAttachments.length > 0 ? "mixed" : "text",
             content: payloadContent,
-            selectedToolIDs: selectedToolIDs.length > 0 ? selectedToolIDs : undefined,
-            skillIDs: selectedSkills.length > 0 ? selectedSkills.map((skill) => skill.id) : undefined,
-            htmlVisualPrompt: htmlVisualPromptEnabled || undefined,
-            htmlVisualColorMode: htmlVisualPromptEnabled ? htmlVisualColorMode : undefined,
+            selectedToolIDs: requestSelectedToolIDs.length > 0 ? requestSelectedToolIDs : undefined,
+            skillIDs: requestSelectedSkills.length > 0 ? requestSelectedSkills.map((skill) => skill.id) : undefined,
+            htmlVisualPrompt: requestHTMLVisualPromptEnabled || undefined,
+            htmlVisualColorMode: requestHTMLVisualPromptEnabled ? requestHTMLVisualColorMode : undefined,
           };
           completed = await streamConversationMessage(token, targetConversationID, chatPayload, streamOptions);
         } else {
@@ -663,15 +715,15 @@ export function useChatMessageSubmit({
           } else if (submitTask === "image_edit") {
             completed = await streamImageEdit(token, targetConversationID, mediaPayload, streamOptions);
           } else {
-            completed = await streamVideoGeneration(token, targetConversationID, mediaPayload, streamOptions);
+            completed = await streamVideoGeneration(token, targetConversationID, mediaPayload as MediaVideoRequest, streamOptions);
           }
         }
 
         failedGenerationRunsRef?.current.delete(clientRunID);
         sentSuccessfully = true;
+        lastCompletedAssistantPublicIDRef.current = completed.assistantMessage.publicID;
         flushStreamTextNow();
         resetStreamBuffer();
-        setSelectedSkills([]);
         const assistantMessageStatus = completed.assistantMessage.status || "success";
         const assistantMessageSucceeded = assistantMessageStatus === "success";
         setPendingExchange((prev) => {
@@ -705,7 +757,6 @@ export function useChatMessageSubmit({
             assistantStreaming: false,
             assistantFileProc: false,
             assistantActivityLabel: undefined,
-            assistantActivityProgress: undefined,
             assistantServerMessageID: completed.assistantMessage.id,
             assistantCreatedAt: completed.assistantMessage.createdAt,
             assistantUpdatedAt: completed.assistantMessage.updatedAt,
@@ -799,7 +850,6 @@ export function useChatMessageSubmit({
                   assistantStreaming: false,
                   assistantFileProc: false,
                   assistantActivityLabel: undefined,
-                  assistantActivityProgress: undefined,
                   assistantInlineAlert: undefined,
                 }
               : prev,
@@ -814,6 +864,7 @@ export function useChatMessageSubmit({
         if (resetComposer && restoreDraftOnFailure) {
           setDraft(content);
           setAttachments(currentAttachments);
+          setSelectedSkills(requestSelectedSkills);
         }
         setPendingExchange((prev) =>
           prev && prev.key === exchangeKey
@@ -823,7 +874,6 @@ export function useChatMessageSubmit({
                 assistantStreaming: false,
                 assistantFileProc: false,
                 assistantActivityLabel: undefined,
-                assistantActivityProgress: undefined,
                 assistantStatus: "error",
                 assistantErrorMessage: errorMessage,
                 assistantInlineAlert: {
@@ -852,10 +902,8 @@ export function useChatMessageSubmit({
       return true;
     },
     [
-      activeConversation,
       activeGenerationRunsRef,
       failedGenerationRunsRef,
-      conversationID,
       enqueueStreamText,
       flushStreamTextNow,
       options,
@@ -871,7 +919,6 @@ export function useChatMessageSubmit({
       htmlVisualPromptEnabled,
       htmlVisualColorMode,
       selectedPlatformModelName,
-      sending,
       setAttachments,
       setSelectedSkills,
       setBranchSelections,
@@ -888,6 +935,43 @@ export function useChatMessageSubmit({
     ],
   );
 
+  const enqueueSubmission = React.useCallback(() => {
+    const content = draft.trim();
+    const currentAttachments = attachments.slice();
+    if ((!content && currentAttachments.length === 0) || uploading) {
+      return false;
+    }
+    setQueuedSubmissions((current) => [
+      ...current,
+      {
+        id: createClientRunID().replace("run_", "queue_"),
+        content,
+        attachments: currentAttachments,
+        platformModelName: selectedPlatformModelName,
+        options: sanitizeConversationOptions(options),
+        selectedToolIDs: selectedToolIDs.slice(),
+        selectedSkills: selectedSkills.slice(),
+        htmlVisualPromptEnabled,
+        htmlVisualColorMode,
+      },
+    ]);
+    setDraft("");
+    setAttachments([]);
+    return true;
+  }, [
+    attachments,
+    draft,
+    htmlVisualColorMode,
+    htmlVisualPromptEnabled,
+    options,
+    selectedPlatformModelName,
+    selectedSkills,
+    selectedToolIDs,
+    setAttachments,
+    setDraft,
+    uploading,
+  ]);
+
   const onStopMessage = React.useCallback(() => {
     const active = activeStreamRef.current;
     if (!active) {
@@ -899,7 +983,36 @@ export function useChatMessageSubmit({
     active.controller.abort();
   }, []);
 
+  const onDeleteQueuedMessage = React.useCallback((id: string) => {
+    const target = queuedSubmissionsRef.current.find((item) => item.id === id);
+    if (target) {
+      releaseAttachments(target.attachments);
+    }
+    setQueuedSubmissions((current) => current.filter((item) => item.id !== id));
+  }, [releaseAttachments]);
+
+  const onEditQueuedMessage = React.useCallback((id: string, content: string) => {
+    setQueuedSubmissions((current) =>
+      current.map((item) => (item.id === id ? { ...item, content: content.trim() } : item)),
+    );
+  }, []);
+
+  const onGuideQueuedMessage = React.useCallback((id: string) => {
+    setQueuedSubmissions((current) => {
+      const target = current.find((item) => item.id === id);
+      if (!target) {
+        return current;
+      }
+      return [target, ...current.filter((item) => item.id !== id)];
+    });
+    sendQueuedAfterCurrentRef.current = true;
+  }, []);
+
   const onSendMessage = React.useCallback(async () => {
+    if (activeStreamRef.current || sending || resumeGenerationActive) {
+      enqueueSubmission();
+      return;
+    }
     const content = draft.trim();
     const parentMessagePublicID =
       resolvePersistedPublicID(currentLeafMessage?.publicID) ??
@@ -912,7 +1025,39 @@ export function useChatMessageSubmit({
       parentMessagePublicID,
       branchReason: "default",
     });
-  }, [attachments, currentLeafMessage?.publicID, draft, submitMessage, visibleMessages]);
+  }, [attachments, currentLeafMessage?.publicID, draft, enqueueSubmission, resumeGenerationActive, sending, submitMessage, visibleMessages]);
+
+  React.useEffect(() => {
+    if (
+      sending ||
+      resumeGenerationActive ||
+      activeStreamRef.current ||
+      (pendingExchange && !sendQueuedAfterCurrentRef.current) ||
+      queuedSubmissions.length === 0 ||
+      uploading
+    ) {
+      return;
+    }
+    const queuedSubmission = queuedSubmissions[0];
+    if (!queuedSubmission) {
+      return;
+    }
+    sendQueuedAfterCurrentRef.current = false;
+    setQueuedSubmissions((current) => current.filter((item) => item.id !== queuedSubmission.id));
+    const parentMessagePublicID =
+      lastCompletedAssistantPublicIDRef.current ??
+      resolvePersistedPublicID(currentLeafMessage?.publicID) ??
+      resolveDefaultSubmissionParentMessage(visibleMessages)?.publicID ??
+      null;
+    void submitMessage({
+      content: queuedSubmission.content,
+      currentAttachments: queuedSubmission.attachments,
+      resetComposer: false,
+      parentMessagePublicID,
+      branchReason: "default",
+      queuedSubmission,
+    });
+  }, [currentLeafMessage?.publicID, pendingExchange, queuedSubmissions, resumeGenerationActive, sending, submitMessage, uploading, visibleMessages]);
 
   const onRetryUserMessage = React.useCallback(
     async (message: ChatAreaMessage) => {
@@ -1056,6 +1201,14 @@ export function useChatMessageSubmit({
     onRetryUserMessage,
     onSendMessage,
     onStopMessage,
+    onDeleteQueuedMessage,
+    onEditQueuedMessage,
+    onGuideQueuedMessage,
+    queuedMessages: queuedSubmissions.map((item) => ({
+      id: item.id,
+      content: item.content,
+      attachmentCount: item.attachments.length,
+    })),
     sending,
   };
 }

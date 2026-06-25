@@ -428,6 +428,8 @@
       "restoreDraftDescription": "Controls whether failed sends automatically restore the text and attachments from that attempt.",
       "preserveDraftTitle": "Preserve conversation drafts",
       "preserveDraftDescription": "Controls whether unsent content is kept and restored when switching conversations.",
+      "reuseModelOptionsTitle": "Reuse model configuration",
+      "reuseModelOptionsDescription": "When enabled, new chats using the same model automatically fill the model parameters used last time.",
       "deleteFilesDefaultTitle": "Delete files by default when deleting chats",
       "deleteFilesDefaultDescription": "When enabled, delete confirmations select file deletion by default. Files still referenced by other conversations are kept."
     },
@@ -673,10 +675,10 @@
     },
     "topUp": {
       "title": "Top up",
-      "description": "Enter a USD amount and confirm the payment method.",
+      "description": "Enter a top-up amount and confirm the payment method.",
       "currentBalance": "Current balance {value}",
       "amount": "Top-up amount",
-      "amountAria": "Top-up amount in USD",
+      "amountAria": "Top-up amount",
       "confirm": "Top up"
     },
     "redemption": {

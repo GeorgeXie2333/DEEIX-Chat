@@ -66,7 +66,7 @@
     "verificationCodeAttemptsExceeded": "認証の試行回数が多すぎます。新しいコードをリクエストしてください。",
     "verificationCodeInvalid": "認証コードが無効、または期限切れです。",
     "verificationCodeRecent": "認証コードは最近送信されています。しばらくしてからもう一度お試しください。",
-    "passwordResetFailed": "???????????????????????????????????????????"
+    "passwordResetFailed": "パスワードのリセットに失敗しました。メール、認証コード、新しいパスワードを確認してください。"
   },
   "billing": {
     "insufficientBalance": "残高が不足しています。",
@@ -147,7 +147,7 @@
     "tooLarge": "ファイルが大きすぎます。",
     "tooLargeForContext": "全文コンテキスト注入にはファイルが大きすぎます。",
     "typeBlocked": "このファイル形式は許可されていません。",
-    "inUse": "?????????????????????"
+    "inUse": "このファイルは使用中のため削除できません。"
   },
   "identityProvider": {
     "deleteConflict": "この ID プロバイダーを削除すると、一部ユーザーの唯一のログイン方法が削除されます。"

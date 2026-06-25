@@ -52,6 +52,7 @@ func defaultSettings() []domainsettings.SystemSetting {
 		{Namespace: "billing", Key: "free_model_daily_limit", Value: "0", ValueType: "int", Description: "免费模型每用户每日请求数，0表示不限"},
 		{Namespace: "billing", Key: "free_model_rate_limit_exempt_models", Value: "", ValueType: "string", Description: "免费模型限流豁免平台模型名，逗号或换行分隔"},
 		{Namespace: "billing", Key: "usd_to_cny_rate", Value: "7.2", ValueType: "string", Description: "易支付美元兑人民币汇率"},
+		{Namespace: "billing", Key: "display_currency", Value: "USD", ValueType: "string", Description: "用户端费用展示币种：USD 或 CNY"},
 		{Namespace: "billing", Key: "payment_providers", Value: "disabled", ValueType: "string", Description: "启用支付渠道，多个用英文逗号分隔：stripe,epay"},
 		{Namespace: "billing", Key: "stripe_publishable_key", Value: "", ValueType: "string", Description: "Stripe Publishable Key"},
 		{Namespace: "billing", Key: "stripe_secret_key", Value: "", ValueType: "string", Description: "Stripe Secret Key"},

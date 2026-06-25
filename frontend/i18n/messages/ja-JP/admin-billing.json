@@ -26,6 +26,14 @@
       "self": "自用モード",
       "period": "周期課金",
       "usage": "従量課金"
+    },
+    "displayCurrency": "表示通貨",
+    "displayCurrencyDescription": "ユーザー向けの費用表示を全体で制御します。会計、差し引き、API フィールドは USD / nanousd のまま記録されます。",
+    "usdToCnyRate": "USD -> CNY レート",
+    "usdToCnyRateDescription": "費用表示と CNY 支払い金額に使うプラットフォーム共通の換算レートです。",
+    "displayCurrencies": {
+      "usd": "米ドル ($)",
+      "cny": "中国元 (¥)"
     }
   },
   "payment": {
@@ -304,7 +312,11 @@
     "redemptionDeleted": "{count} 件の引き換えコードを削除しました",
     "redemptionDeleteFailed": "引き換えコードの削除に失敗しました",
     "redemptionDeletePartialFailed": "一部の引き換えコードを削除できませんでした",
-    "redemptionDeleteSummary": "削除 {successCount} 件、未検出 {notFoundCount} 件、失敗 {failedCount} 件。"
+    "redemptionDeleteSummary": "削除 {successCount} 件、未検出 {notFoundCount} 件、失敗 {failedCount} 件。",
+    "usdToCnyRateInvalid": "為替レートが無効です",
+    "usdToCnyRateInvalidDescription": "0 より大きい USD -> CNY レートを入力してください。",
+    "displayCurrencySaved": "表示通貨を保存しました",
+    "displayCurrencySaveFailed": "表示通貨の保存に失敗しました"
   },
   "importErrors": {
     "invalidJSON": "ファイル内容は有効な JSON ではありません",

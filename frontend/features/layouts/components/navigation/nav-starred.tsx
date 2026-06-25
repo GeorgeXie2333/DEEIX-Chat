@@ -41,6 +41,7 @@ import { DeleteFilesOption } from "@/shared/components/delete-files-option"
 import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences"
 import { useLayoutActiveConversation } from "@/features/layouts/hooks/use-layout-active-conversation"
 import { useLayoutSidebarListFlip } from "@/features/layouts/hooks/use-layout-sidebar-list-flip"
+import { useMobileSidebarNavigation } from "@/features/layouts/hooks/use-mobile-sidebar-navigation"
 import { SIDEBAR_OVERFLOW_ROW_TRANSITION } from "@/features/layouts/model/sidebar-motion"
 import type {
   SidebarConversationDeleteTarget,
@@ -70,6 +71,7 @@ export function NavStarred() {
   const t = useTranslations("recent")
   const { isMobile, setOpenMobile } = useSidebar()
   const router = useRouter()
+  const onNavigate = useMobileSidebarNavigation()
   const activeConversationID = useLayoutActiveConversation()
   const { deleteFilesByDefault } = useSettingsChatPreferences()
 
@@ -339,7 +341,7 @@ export function NavStarred() {
                         onShare={onShare}
                         onExport={onExport}
                         onDelete={onDelete}
-                        onNavigate={isMobile ? () => setOpenMobile(false) : undefined}
+                        onNavigate={onNavigate}
                         menuTriggerID={`starred-item-menu-trigger-${item.publicID}`}
                       />
                     ))}

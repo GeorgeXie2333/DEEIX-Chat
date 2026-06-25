@@ -24,10 +24,15 @@ import { getUserSettings } from "@/shared/api/user-settings";
 import type { PublicModelDTO } from "@/shared/api/model.types";
 import type { ModelNativeToolConfig, ModelOptionPolicy } from "@/shared/lib/model-option-policy";
 import { parseKindsJSON } from "@/shared/model/llm-schema";
+import { resolveConversationDefaultModel } from "@/shared/model/conversation-default-model";
 import type { ConversationOptions } from "@/shared/api/conversation.types";
 import type { SendShortcut } from "@/features/settings/types/settings";
 import { parseSendShortcut } from "@/features/settings/utils/chat-settings";
 import { USER_SETTINGS_UPDATED_EVENT } from "@/features/settings/events/user-settings-events";
+import {
+  normalizeBillingDisplayCurrency,
+  type BillingDisplayCurrency,
+} from "@/shared/lib/billing-display";
 
 type ModelCatalogRefreshResult = {
   models: PublicModelDTO[];
@@ -319,9 +324,11 @@ function toChatModelOption(item: PublicModelDTO): ChatModelOption {
 export function useChatModelOptions({
   conversationPublicID,
   conversationModel,
+  resetToken,
 }: {
   conversationPublicID: string | null;
   conversationModel?: string | null;
+  resetToken?: number;
 }) {
   const t = useTranslations("chat.models");
   const [availableModels, setAvailableModels] = React.useState<PublicModelDTO[]>([]);
@@ -339,6 +346,8 @@ export function useChatModelOptions({
   const [showLatency, setShowLatency] = React.useState(true);
   const [showTokenUsage, setShowTokenUsage] = React.useState(true);
   const [showBillingCost, setShowBillingCost] = React.useState(false);
+  const [billingDisplayCurrency, setBillingDisplayCurrency] = React.useState<BillingDisplayCurrency>("USD");
+  const [billingDisplayUsdToCnyRate, setBillingDisplayUsdToCnyRate] = React.useState<number | null>(null);
   const [modelOptionPolicy, setModelOptionPolicy] = React.useState<ModelOptionPolicy | null>(null);
   const [mcpMaxSelectedTools, setMCPMaxSelectedTools] = React.useState(32);
   const activeConversationRef = React.useRef<string | null>(null);
@@ -433,6 +442,8 @@ export function useChatModelOptions({
         setShowLatency(settings["chat.show_latency"] !== "false");
         setShowTokenUsage(settings["chat.show_token_usage"] !== "false");
         setShowBillingCost((billingConfig?.config.mode ?? "self") !== "self" && settings["chat.show_billing_cost"] !== "false");
+        setBillingDisplayCurrency(normalizeBillingDisplayCurrency(billingConfig?.config.displayCurrency));
+        setBillingDisplayUsdToCnyRate(billingConfig?.config.usdToCNYRate ?? null);
         setInputHeight(
           settings["chat.input_height"] === "compact" || settings["chat.input_height"] === "loose"
             ? settings["chat.input_height"]
@@ -475,6 +486,7 @@ export function useChatModelOptions({
     const normalizedConversationID = conversationPublicID?.trim() || null;
     if (!normalizedConversationID) {
       activeConversationRef.current = null;
+      userSelectedModelRef.current = false;
       return;
     }
 
@@ -513,7 +525,7 @@ export function useChatModelOptions({
     return () => {
       cancelled = true;
     };
-  }, [conversationModel, conversationPublicID]);
+  }, [conversationModel, conversationPublicID, resetToken]);
 
   React.useEffect(() => {
     if (availableModels.length === 0) {
@@ -523,20 +535,31 @@ export function useChatModelOptions({
       return;
     }
 
-    setSelectedPlatformModelName((current) => {
-      const normalizedCurrent = current.trim();
-      if (normalizedCurrent && availableModels.some((item) => item.platformModelName === normalizedCurrent)) {
-        return normalizedCurrent;
+    let cancelled = false;
+    async function applyDefaultModel() {
+      const token = await resolveAccessToken();
+      if (!token || cancelled || userSelectedModelRef.current) {
+        return;
       }
-
-      // User default model for new conversations.
-      if (userDefaultModel && availableModels.some((item) => item.platformModelName === userDefaultModel)) {
-        return userDefaultModel;
+      const result = await resolveConversationDefaultModel({
+        accessToken: token,
+        availableModels,
+        userDefaultModel,
+      });
+      if (!cancelled && !userSelectedModelRef.current) {
+        setSelectedPlatformModelName(result.platformModelName);
       }
+    }
 
-      return availableModels[0].platformModelName;
+    void applyDefaultModel().catch(() => {
+      if (!cancelled && !userSelectedModelRef.current) {
+        setSelectedPlatformModelName(availableModels[0]?.platformModelName ?? "");
+      }
     });
-  }, [availableModels, conversationPublicID, userDefaultModel]);
+    return () => {
+      cancelled = true;
+    };
+  }, [availableModels, conversationPublicID, resetToken, userDefaultModel]);
 
   const modelOptions = React.useMemo<ChatModelOption[]>(
     () =>
@@ -560,6 +583,8 @@ export function useChatModelOptions({
     showLatency,
     showTokenUsage,
     showBillingCost,
+    billingDisplayCurrency,
+    billingDisplayUsdToCnyRate,
     modelOptionPolicy,
     mcpMaxSelectedTools,
     selectedPlatformModelName,

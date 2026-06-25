@@ -64,6 +64,7 @@ import { useChatSession } from "@/features/chat/context/chat-session-context"
 import { DeleteFilesOption } from "@/shared/components/delete-files-option"
 import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences"
 import { useLayoutActiveConversation } from "@/features/layouts/hooks/use-layout-active-conversation"
+import { useMobileSidebarNavigation } from "@/features/layouts/hooks/use-mobile-sidebar-navigation"
 import { SidebarConversationItem } from "@/features/layouts/components/navigation/sidebar-conversation-item"
 import type {
   SidebarConversationDeleteTarget,
@@ -334,6 +335,7 @@ export function NavProjects() {
   const tRecent = useTranslations("recent")
   const { isMobile, setOpenMobile } = useSidebar()
   const router = useRouter()
+  const onNavigate = useMobileSidebarNavigation()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const activeRecentProjectID = searchParams.get("project") ?? ""
@@ -961,7 +963,7 @@ export function NavProjects() {
                                 onShare={(publicID, shareTitle) => setShareTarget({ publicID, title: shareTitle })}
                                 onExport={onExportConversation}
                                 onDelete={onDeleteConversation}
-                                onNavigate={isMobile ? () => setOpenMobile(false) : undefined}
+                                onNavigate={onNavigate}
                                 menuTriggerID={`project-conversation-menu-trigger-${conversation.publicID}`}
                               />
                             )

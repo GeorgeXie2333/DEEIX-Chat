@@ -40,6 +40,7 @@ type persistInterruptedMessageGenerationInput struct {
 	AssistantText        string
 	EstimatedInputTokens int64
 	UpstreamDispatched   bool
+	UpstreamCallStarted  bool
 	InputTokenSource     string
 	OutputTokenSource    string
 	Usage                llm.Usage
@@ -305,16 +306,26 @@ func (s *Service) persistInterruptedMessageGeneration(ctx context.Context, input
 	return buildInterruptedSendMessageResult(input, metrics)
 }
 
-// shouldPersistInterruptedMessageGeneration 只在已有可展示内容或可追踪工具结果时保留中断消息。
+// shouldPersistInterruptedMessageGeneration 只在已有可计费用量、可展示内容或可追踪工具结果时保留中断消息。
 func shouldPersistInterruptedMessageGeneration(input persistInterruptedMessageGenerationInput) bool {
 	if input.Error == nil || input.UserMessage == nil || input.AssistantMessage == nil {
 		return false
 	}
-	if errors.Is(input.Error, ErrMessageGenerationCanceled) {
-		return input.UpstreamDispatched
-	}
 	hasRetainedToolTrace := len(input.ToolCallRows) > 0 || len(input.ServerSideToolUsage) > 0
-	return strings.TrimSpace(input.AssistantText) != "" || hasRetainedToolTrace
+	hasObservedUsage := input.Usage.InputTokens > 0 ||
+		input.Usage.OutputTokens > 0 ||
+		input.Usage.CacheReadTokens > 0 ||
+		input.Usage.CacheWriteTokens > 0 ||
+		input.Usage.ReasoningTokens > 0
+	hasVisibleContent := strings.TrimSpace(input.AssistantText) != ""
+	if errors.Is(input.Error, ErrMessageGenerationCanceled) {
+		return upstreamGenerationDispatched(input) || hasVisibleContent || hasRetainedToolTrace || hasObservedUsage
+	}
+	return hasVisibleContent || hasRetainedToolTrace || hasObservedUsage
+}
+
+func upstreamGenerationDispatched(input persistInterruptedMessageGenerationInput) bool {
+	return input.UpstreamDispatched || input.UpstreamCallStarted
 }
 
 // resolveInterruptedMessageGenerationMetrics 统一处理中断消息的真实 usage 与估算兜底。
@@ -385,6 +396,10 @@ func interruptedMessageGenerationStatus(err error) string {
 	return "interrupted"
 }
 
+func retainedGenerationStatus(err error) string {
+	return interruptedMessageGenerationStatus(err)
+}
+
 func (accumulator *canceledGenerationUsageAccumulator) addAttempt(
 	usage llm.Usage,
 	estimatedInputTokens int64,
@@ -436,7 +451,7 @@ func buildInterruptedSendMessageResult(input persistInterruptedMessageGeneration
 	if errors.Is(input.Error, ErrMessageGenerationCanceled) {
 		result.CanceledBy = "user"
 		result.RunStatus = "canceled"
-		result.UpstreamDispatched = input.UpstreamDispatched
+		result.UpstreamDispatched = upstreamGenerationDispatched(input)
 		result.InputTokenSource = metrics.InputTokenSource
 		result.OutputTokenSource = metrics.OutputTokenSource
 	}

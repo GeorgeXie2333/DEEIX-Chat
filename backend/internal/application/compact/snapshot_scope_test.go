@@ -321,10 +321,17 @@ func TestMaybeCompactConversationKeepsFullHistoryWhenPreserveCoversAllTurns(t *t
 
 func TestBuildCompactionSummaryLiteFallbackKeepsPreviousSummary(t *testing.T) {
 	svc := NewService(config.Config{CompactLLMEnabled: true}, nil, nil)
-	var calls [][]domainconversation.Message
+	type summarizerCall struct {
+		messages []domainconversation.Message
+		prompt   string
+	}
+	var calls []summarizerCall
 	svc.SetLLMSummarizer(func(ctx context.Context, platformModelName string, messages []domainconversation.Message, prompt string) (string, error) {
 		cloned := append([]domainconversation.Message(nil), messages...)
-		calls = append(calls, cloned)
+		calls = append(calls, summarizerCall{
+			messages: cloned,
+			prompt:   prompt,
+		})
 		if len(calls) == 1 {
 			return "", errors.New("force full summary fallback")
 		}
@@ -351,8 +358,20 @@ func TestBuildCompactionSummaryLiteFallbackKeepsPreviousSummary(t *testing.T) {
 	if len(calls) != 2 {
 		t.Fatalf("expected full and lite summarizer calls, got %d", len(calls))
 	}
-	if len(calls[1]) == 0 || !strings.Contains(calls[1][0].Content, "previous summary") {
-		t.Fatalf("expected lite fallback to keep previous summary, got %#v", calls[1])
+	if len(calls[0].messages) == 0 || len(calls[1].messages) == 0 {
+		t.Fatalf("expected LLM messages, got %#v", calls)
+	}
+	if calls[0].messages[0].Role != "user" || calls[1].messages[0].Role != "user" {
+		t.Fatalf("expected previous summary to be carried as source material, got %#v", calls)
+	}
+	if !strings.Contains(calls[0].messages[0].Content, "previous summary") || !strings.Contains(calls[1].messages[0].Content, "previous summary") {
+		t.Fatalf("expected both LLM calls to carry previous summary, got %#v", calls)
+	}
+	if !strings.Contains(calls[1].prompt, "standalone rolling summary") {
+		t.Fatalf("expected lite fallback to require rolling summary, got %q", calls[1].prompt)
+	}
+	if !strings.Contains(calls[1].prompt, "untrusted source material") {
+		t.Fatalf("expected lite fallback to keep source material untrusted, got %q", calls[1].prompt)
 	}
 }
 

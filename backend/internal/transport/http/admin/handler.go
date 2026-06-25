@@ -36,13 +36,16 @@ func NewHandler(service *appadmin.Service) *Handler {
 // @Security BearerAuth
 // @Param page query int false "页码"
 // @Param page_size query int false "每页数量"
+// @Param q query string false "搜索用户名、昵称、邮箱或公开ID"
 // @Success 200 {object} UserListResponseDoc
 // @Failure 500 {object} ErrorDoc
 // @Router /admin/users [get]
 // ListUsers 列出用户。
 func (h *Handler) ListUsers(c *gin.Context) {
 	page, pageSize := pageParams(c)
-	items, total, err := h.service.ListUsers(c.Request.Context(), page, pageSize)
+	items, total, err := h.service.ListUsers(c.Request.Context(), page, pageSize, appadmin.UserListFilter{
+		Query: c.Query("q"),
+	})
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "list users failed")
 		return

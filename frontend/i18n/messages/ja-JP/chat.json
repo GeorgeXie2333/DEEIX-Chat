@@ -441,7 +441,15 @@
         "prompt": "プロンプト",
         "skill": "Skills"
       }
-    }
+    },
+    "queueMessage": "メッセージをキューに追加",
+    "queuedAttachmentOnly": "添付 {count} 件",
+    "queuedAttachmentCount": "添付 {count} 件",
+    "queuedEmptyMessage": "空のメッセージ",
+    "queuedEditPlaceholder": "キュー内メッセージを編集",
+    "guideQueuedMessageTitle": "現在の生成を停止して、このキュー内メッセージを送信",
+    "editQueuedMessage": "キュー内メッセージを編集",
+    "deleteQueuedMessage": "キュー内メッセージを削除"
   },
   "modelPicker": {
     "selectModel": "モデルを選択",

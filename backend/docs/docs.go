@@ -4360,6 +4360,12 @@ const docTemplate = `{
                         "description": "每页数量",
                         "name": "page_size",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "搜索用户名、昵称、邮箱或公开ID",
+                        "name": "q",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -6470,6 +6476,40 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/conversations/default-model-candidate": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回当前用户最近一次真实运行使用的模型，用于系统默认的新会话模型选择",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "查询新会话默认模型候选",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationDefaultModelCandidateResponseDoc"
                         }
                     },
                     "500": {
@@ -11823,6 +11863,13 @@ const docTemplate = `{
                 "mode"
             ],
             "properties": {
+                "displayCurrency": {
+                    "type": "string",
+                    "enum": [
+                        "USD",
+                        "CNY"
+                    ]
+                },
                 "freeModelDailyLimit": {
                     "type": "integer",
                     "minimum": 0
@@ -11857,12 +11904,18 @@ const docTemplate = `{
                 "prepaidAmountUSD": {
                     "type": "number",
                     "minimum": 0
+                },
+                "usdToCNYRate": {
+                    "type": "number"
                 }
             }
         },
         "internal_transport_http_billing.BillingConfigResponse": {
             "type": "object",
             "properties": {
+                "displayCurrency": {
+                    "type": "string"
+                },
                 "epayTypes": {
                     "type": "array",
                     "items": {
@@ -15312,6 +15365,31 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_transport_http_conversation.ConversationDefaultModelCandidateResponse": {
+            "type": "object",
+            "properties": {
+                "platformModelName": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "usedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_conversation.ConversationDefaultModelCandidateResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationDefaultModelCandidateResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_transport_http_conversation.ConversationDeleteResponse": {
             "type": "object",
             "properties": {
@@ -17538,7 +17616,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "0.2.7",
+	Version:          "0.2.8",
 	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},

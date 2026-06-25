@@ -26,6 +26,14 @@
       "self": "Self-use",
       "period": "Subscription billing",
       "usage": "Usage billing"
+    },
+    "displayCurrency": "Display currency",
+    "displayCurrencyDescription": "Controls user-facing cost display globally. Accounting, deductions, and API fields remain recorded in USD / nanousd.",
+    "usdToCnyRate": "USD -> CNY rate",
+    "usdToCnyRateDescription": "Platform-level CNY conversion rate used for cost display and CNY payment amounts.",
+    "displayCurrencies": {
+      "usd": "US Dollar ($)",
+      "cny": "Chinese Yuan (?)"
     }
   },
   "payment": {
@@ -304,7 +312,11 @@
     "redemptionDeleted": "Deleted {count} redemption codes",
     "redemptionDeleteFailed": "Failed to delete redemption code",
     "redemptionDeletePartialFailed": "Some redemption codes were not deleted",
-    "redemptionDeleteSummary": "Deleted {successCount}, not found {notFoundCount}, failed {failedCount}."
+    "redemptionDeleteSummary": "Deleted {successCount}, not found {notFoundCount}, failed {failedCount}.",
+    "usdToCnyRateInvalid": "Invalid exchange rate",
+    "usdToCnyRateInvalidDescription": "Enter a USD to CNY rate greater than 0.",
+    "displayCurrencySaved": "Display currency saved",
+    "displayCurrencySaveFailed": "Failed to save display currency"
   },
   "importErrors": {
     "invalidJSON": "File content is not valid JSON",

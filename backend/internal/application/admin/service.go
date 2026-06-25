@@ -24,8 +24,12 @@ import (
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 )
 
+type UserListFilter struct {
+	Query string
+}
+
 type userService interface {
-	ListUsers(ctx context.Context, page int, pageSize int) ([]domainuser.User, int64, error)
+	ListUsers(ctx context.Context, page int, pageSize int, filter repository.UserListFilter) ([]domainuser.User, int64, error)
 	ListLatestSessionActivityByUserIDs(ctx context.Context, userIDs []uint) (map[uint]time.Time, error)
 	CountSuperAdmins(ctx context.Context) (int64, error)
 	CreateUser(
@@ -191,8 +195,10 @@ func (s *Service) SetSubscriptionResolver(resolver subscriptionResolver) {
 }
 
 // ListUsers 查询用户分页列表。
-func (s *Service) ListUsers(ctx context.Context, page int, pageSize int) ([]userview.UserView, int64, error) {
-	items, total, err := s.userService.ListUsers(ctx, page, pageSize)
+func (s *Service) ListUsers(ctx context.Context, page int, pageSize int, filter UserListFilter) ([]userview.UserView, int64, error) {
+	items, total, err := s.userService.ListUsers(ctx, page, pageSize, repository.UserListFilter{
+		Query: filter.Query,
+	})
 	if err != nil {
 		return nil, 0, err
 	}
@@ -223,15 +229,7 @@ func (s *Service) BuildUserView(ctx context.Context, item domainuser.User) (user
 		if accountErr != nil {
 			return userview.UserView{}, accountErr
 		}
-		account, ok := accounts[item.ID]
-		view := userview.FromUser(item, nil)
-		if ok {
-			view = userview.WithBillingAccount(view, &userview.BillingAccountState{
-				Currency:       account.Currency,
-				BalanceNanousd: account.BalanceNanousd,
-				Status:         account.Status,
-			})
-		}
+		view := userViewFromMode(item, nil, accounts[item.ID], true)
 		view, err = s.applyTwoFactorView(ctx, view)
 		if err != nil {
 			return userview.UserView{}, err
@@ -243,21 +241,26 @@ func (s *Service) BuildUserView(ctx context.Context, item domainuser.User) (user
 	if err != nil {
 		return userview.UserView{}, err
 	}
+	account := billing.UserBillingAccountSnapshot{}
+	includeAccount := false
+	if mode == "period" {
+		accounts, accountErr := s.subscriptionResolver.ListBillingAccountSnapshots(ctx, []uint{item.ID})
+		if accountErr != nil {
+			return userview.UserView{}, accountErr
+		}
+		account = accounts[item.ID]
+		includeAccount = true
+	}
 	if subscription == nil {
-		view, err := s.applyTwoFactorView(ctx, userview.FromUser(item, nil))
+		view, err := s.applyTwoFactorView(ctx, userViewFromMode(item, nil, account, includeAccount))
 		if err != nil {
 			return userview.UserView{}, err
 		}
 		return s.applyLastActiveView(ctx, view)
 	}
 
-	view, err := s.applyTwoFactorView(ctx, userview.FromUser(item, &userview.SubscriptionState{
-		PlanID:    subscription.PlanID,
-		PlanName:  subscription.PlanName,
-		Tier:      subscription.Tier,
-		Status:    subscription.Status,
-		ExpiresAt: subscription.ExpiresAt,
-	}))
+	view := userViewFromMode(item, subscription, account, includeAccount)
+	view, err = s.applyTwoFactorView(ctx, view)
 	if err != nil {
 		return userview.UserView{}, err
 	}
@@ -297,12 +300,7 @@ func (s *Service) BuildUserViews(ctx context.Context, items []domainuser.User) (
 			return nil, accountErr
 		}
 		for _, item := range items {
-			account := accounts[item.ID]
-			view, viewErr := s.applyTwoFactorView(ctx, userview.WithBillingAccount(userview.FromUser(item, nil), &userview.BillingAccountState{
-				Currency:       account.Currency,
-				BalanceNanousd: account.BalanceNanousd,
-				Status:         account.Status,
-			}))
+			view, viewErr := s.applyTwoFactorView(ctx, userViewFromMode(item, nil, accounts[item.ID], true))
 			if viewErr != nil {
 				return nil, viewErr
 			}
@@ -315,25 +313,21 @@ func (s *Service) BuildUserViews(ctx context.Context, items []domainuser.User) (
 	if err != nil {
 		return nil, err
 	}
+	accounts := map[uint]billing.UserBillingAccountSnapshot{}
+	if mode == "period" {
+		accounts, err = s.subscriptionResolver.ListBillingAccountSnapshots(ctx, userIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	for _, item := range items {
-		subscription, ok := subscriptions[item.ID]
-		if !ok {
-			view, viewErr := s.applyTwoFactorView(ctx, userview.FromUser(item, nil))
-			if viewErr != nil {
-				return nil, viewErr
-			}
-			results = append(results, view)
-			continue
+		subscription, _ := subscriptions[item.ID]
+		var snapshot *billing.UserSubscriptionSnapshot
+		if subscription.PlanID != nil || strings.TrimSpace(subscription.PlanName) != "" || strings.TrimSpace(subscription.Tier) != "" || strings.TrimSpace(subscription.Status) != "" || subscription.ExpiresAt != nil {
+			snapshot = &subscription
 		}
-
-		view, viewErr := s.applyTwoFactorView(ctx, userview.FromUser(item, &userview.SubscriptionState{
-			PlanID:    subscription.PlanID,
-			PlanName:  subscription.PlanName,
-			Tier:      subscription.Tier,
-			Status:    subscription.Status,
-			ExpiresAt: subscription.ExpiresAt,
-		}))
+		view, viewErr := s.applyTwoFactorView(ctx, userViewFromMode(item, snapshot, accounts[item.ID], mode == "period"))
 		if viewErr != nil {
 			return nil, viewErr
 		}
@@ -352,6 +346,33 @@ func (s *Service) applyLastActiveView(ctx context.Context, view userview.UserVie
 		return userview.WithLastActiveAt(view, &value), nil
 	}
 	return view, nil
+}
+
+func userViewFromMode(
+	item domainuser.User,
+	subscription *billing.UserSubscriptionSnapshot,
+	account billing.UserBillingAccountSnapshot,
+	includeAccount bool,
+) userview.UserView {
+	var subscriptionState *userview.SubscriptionState
+	if subscription != nil {
+		subscriptionState = &userview.SubscriptionState{
+			PlanID:    subscription.PlanID,
+			PlanName:  subscription.PlanName,
+			Tier:      subscription.Tier,
+			Status:    subscription.Status,
+			ExpiresAt: subscription.ExpiresAt,
+		}
+	}
+	view := userview.FromUser(item, subscriptionState)
+	if !includeAccount {
+		return view
+	}
+	return userview.WithBillingAccount(view, &userview.BillingAccountState{
+		Currency:       account.Currency,
+		BalanceNanousd: account.BalanceNanousd,
+		Status:         account.Status,
+	})
 }
 
 func (s *Service) applyLastActiveViews(ctx context.Context, views []userview.UserView) ([]userview.UserView, error) {

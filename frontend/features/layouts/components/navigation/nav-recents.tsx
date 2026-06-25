@@ -38,6 +38,7 @@ import { CollapsibleMotionContent } from "@/shared/components/collapsible-motion
 import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences"
 import { useLayoutActiveConversation } from "@/features/layouts/hooks/use-layout-active-conversation"
 import { useLayoutSidebarListFlip } from "@/features/layouts/hooks/use-layout-sidebar-list-flip"
+import { useMobileSidebarNavigation } from "@/features/layouts/hooks/use-mobile-sidebar-navigation"
 import type {
   SidebarConversationDeleteTarget,
   SidebarConversationRenameTarget,
@@ -52,7 +53,7 @@ const RECENTS_OPEN_STORAGE_KEY = "deeix.sidebar.recents.open"
 
 export function NavRecents() {
   const t = useTranslations("recent")
-  const { isMobile, setOpenMobile } = useSidebar()
+  const onNavigate = useMobileSidebarNavigation()
   const router = useRouter()
   const activeConversationID = useLayoutActiveConversation()
   const { deleteFilesByDefault } = useSettingsChatPreferences()
@@ -276,7 +277,7 @@ export function NavRecents() {
                           onShare={onShare}
                           onExport={onExport}
                           onDelete={onDelete}
-                          onNavigate={isMobile ? () => setOpenMobile(false) : undefined}
+                          onNavigate={onNavigate}
                           menuTriggerID={`recent-item-menu-trigger-${publicID}`}
                         />
                       )

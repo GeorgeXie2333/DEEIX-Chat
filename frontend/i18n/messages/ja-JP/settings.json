@@ -67,13 +67,13 @@
       "deniedHelp": "ブラウザーが通知をブロックしています。ブラウザー設定で手動で許可してください。",
       "grantedHelp": "ブラウザー通知は有効です。オンにすると、モデル返信完了時に通知が表示されます。"
     },
-      "appearance": {
-        "colorMode": "カラーモード",
-        "themePreset": "テーマ",
-        "fontSize": "文字サイズ",
-        "preset": {
-          "default": "既定",
-          "azure": "Azure",
+    "appearance": {
+      "colorMode": "カラーモード",
+      "themePreset": "テーマ",
+      "fontSize": "文字サイズ",
+      "preset": {
+        "default": "既定",
+        "azure": "Azure",
         "cobalt": "Cobalt",
         "graphite": "Graphite",
         "lagoon": "Lagoon",
@@ -86,25 +86,25 @@
         "system": "システムに従う",
         "dark": "ダーク"
       },
-        "fontSizeOption": {
-          "small": "小",
-          "standard": "標準",
-          "medium": "中",
-          "large": "大"
-        }
-      },
+      "fontSizeOption": {
+        "small": "小",
+        "standard": "標準",
+        "medium": "中",
+        "large": "大"
+      }
+    },
     "avatarDialog": {
       "title": "アバターを編集",
       "description": "アバター URL を入力するか、アバター領域をクリックしてピクセル風アバターを生成します。",
       "avatarURL": "アバター URL",
       "apply": "適用",
-        "generate": "アバターを生成",
-        "upload": "画像をアップロード",
-        "uploadFailed": "アバターのアップロードに失敗しました",
-        "uploadInvalid": "画像ファイルを選択してください",
-        "uploaded": "アバターをアップロードしました",
-        "uploading": "アップロード中"
-      }
+      "generate": "アバターを生成",
+      "upload": "画像をアップロード",
+      "uploadFailed": "アバターのアップロードに失敗しました",
+      "uploadInvalid": "画像ファイルを選択してください",
+      "uploaded": "アバターをアップロードしました",
+      "uploading": "アップロード中"
+    }
   },
   "profile": "プロフィール",
   "security": "セキュリティ",
@@ -429,7 +429,9 @@
       "preserveDraftTitle": "会話下書きを保持",
       "preserveDraftDescription": "会話を切り替えた後、現在の会話の未送信内容を保持して復元するかを制御します。",
       "deleteFilesDefaultTitle": "会話削除時に既定でファイルも削除",
-      "deleteFilesDefaultDescription": "有効にすると、会話削除の確認でファイル削除が既定で選択されます。他の会話から参照されているファイルは保持されます。"
+      "deleteFilesDefaultDescription": "有効にすると、会話削除の確認でファイル削除が既定で選択されます。他の会話から参照されているファイルは保持されます。",
+      "reuseModelOptionsTitle": "モデル設定を再利用",
+      "reuseModelOptionsDescription": "有効にすると、同じモデルを使う新しいチャットで前回使用したモデルパラメータを自動入力します。"
     },
     "display": {
       "sectionTitle": "表示とレンダリング",
@@ -441,30 +443,30 @@
       "tokenDescription": "AI 返信の下に今回のリクエストで消費した Token 使用量を表示するかを制御します。",
       "latencyTitle": "呼び出し総時間を表示",
       "latencyDescription": "AI 返信の下に今回の呼び出し総時間を表示するかを制御します。",
-        "costTitle": "呼び出し総費用を表示",
-        "costDescription": "AI 返信の下に今回の呼び出し総費用を表示するかを制御します。",
-        "costDescriptionSelfMode": "AI 返信の下に今回の呼び出し総費用を表示するかを制御します。自用モードでは表示されません。",
-        "widthTitle": "チャット領域の幅",
-        "width": {
-          "compact": "コンパクト",
-          "standard": "標準",
-          "wide": "ワイド"
-        },
-        "chatFont": "チャットフォント",
-        "chatFontWeight": "チャットの太さ",
-        "font": {
-          "default": "デフォルト",
-          "songti": "明朝",
-          "heiti": "ゴシック",
-          "mono": "等幅"
-        },
-        "fontWeight": {
-          "regular": "通常",
-          "medium": "中",
-          "semibold": "やや太字",
-          "bold": "太字"
-        }
+      "costTitle": "呼び出し総費用を表示",
+      "costDescription": "AI 返信の下に今回の呼び出し総費用を表示するかを制御します。",
+      "costDescriptionSelfMode": "AI 返信の下に今回の呼び出し総費用を表示するかを制御します。自用モードでは表示されません。",
+      "widthTitle": "チャット領域の幅",
+      "width": {
+        "compact": "コンパクト",
+        "standard": "標準",
+        "wide": "ワイド"
       },
+      "chatFont": "チャットフォント",
+      "chatFontWeight": "チャットの太さ",
+      "font": {
+        "default": "デフォルト",
+        "songti": "明朝",
+        "heiti": "ゴシック",
+        "mono": "等幅"
+      },
+      "fontWeight": {
+        "regular": "通常",
+        "medium": "中",
+        "semibold": "やや太字",
+        "bold": "太字"
+      }
+    },
     "context": {
       "sectionTitle": "コンテキスト管理",
       "autoCompactTitle": "コンテキストを自動圧縮",

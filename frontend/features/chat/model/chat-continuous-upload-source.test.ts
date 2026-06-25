@@ -21,14 +21,14 @@ test("chat attachment uploads accept another batch while uploads are active", ()
   assert.match(hookSource, /reserveUploadBatch/);
 });
 
-test("chat composer keeps upload entry points available while sending stays blocked", () => {
+test("chat composer keeps upload entry points available while queueing messages", () => {
   assert.match(inputSource, /const canSend = [^;]+!uploading/);
-  assert.match(inputSource, /disabled=\{sending \|\| loading\}\s+readOnly=/);
+  assert.match(inputSource, /disabled=\{loading \|\| uploading\}\s+readOnly=/);
   assert.match(
     inputSource,
-    /id="chat-tools-menu-trigger"[^]*?disabled=\{sending \|\| loading\}/,
+    /id="chat-tools-menu-trigger"[^]*?disabled=\{loading \|\| uploading\}/,
   );
-  assert.match(areaSource, /const uploadDropDisabled = generating \|\| loading \|\| uploading/);
+  assert.match(areaSource, /const uploadDropDisabled = loading \|\| uploading/);
   assert.match(areaSource, /onDragEnter=\{onFileDragEnter\}/);
   assert.match(areaSource, /dropActive: fileDragActive/);
   assert.doesNotMatch(areaSource, /useChatWindowFileDrop|dragUploadTitle|UploadCloud/);

@@ -26,6 +26,14 @@
       "self": "自用模式",
       "period": "周期计费",
       "usage": "按量计费"
+    },
+    "displayCurrency": "展示币种",
+    "displayCurrencyDescription": "全局控制用户侧费用展示。记账、扣费和 API 字段仍以 USD / nanousd 记录。",
+    "usdToCnyRate": "USD -> CNY 汇率",
+    "usdToCnyRateDescription": "用于费用展示和 CNY 支付金额的平台级人民币换算汇率。",
+    "displayCurrencies": {
+      "usd": "美元 ($)",
+      "cny": "人民币 (¥)"
     }
   },
   "payment": {
@@ -304,7 +312,11 @@
     "redemptionDeleted": "已删除 {count} 个兑换码",
     "redemptionDeleteFailed": "删除兑换码失败",
     "redemptionDeletePartialFailed": "部分兑换码删除失败",
-    "redemptionDeleteSummary": "成功 {successCount} 个，未找到 {notFoundCount} 个，失败 {failedCount} 个。"
+    "redemptionDeleteSummary": "成功 {successCount} 个，未找到 {notFoundCount} 个，失败 {failedCount} 个。",
+    "usdToCnyRateInvalid": "汇率无效",
+    "usdToCnyRateInvalidDescription": "请输入大于 0 的 USD -> CNY 汇率。",
+    "displayCurrencySaved": "展示币种已保存",
+    "displayCurrencySaveFailed": "展示币种保存失败"
   },
   "importErrors": {
     "invalidJSON": "文件内容不是合法 JSON",
