@@ -22,8 +22,16 @@ test("model picker renders description info before pricing without replacing sel
   assert.match(pickerSource, /import \{[^}]*Info[^}]*\} from "lucide-react"/);
   assert.match(pickerSource, /selected \? <Check/);
   const selectedCheckIndex = pickerSource.indexOf("selected ? <Check");
-  const descriptionTriggerIndex = pickerSource.indexOf("aria-label={viewDescriptionLabel}");
-  const pricingTriggerIndex = pickerSource.indexOf("aria-label={viewPricingLabel}");
+  const descriptionTriggerIndex = pickerSource.indexOf("ariaLabel={viewDescriptionLabel}");
+  const pricingTriggerIndex = pickerSource.indexOf("ariaLabel={viewPricingLabel}");
   assert.ok(descriptionTriggerIndex > selectedCheckIndex);
   assert.ok(descriptionTriggerIndex < pricingTriggerIndex);
+});
+
+test("model picker keeps desktop tooltips and adds mobile long press popovers", () => {
+  assert.match(pickerSource, /<Tooltip>/);
+  assert.match(pickerSource, /isMobile \?/);
+  assert.match(pickerSource, /data-model-menu-auxiliary-popover="true"/);
+  assert.match(pickerSource, /MODEL_MENU_AUXILIARY_LONG_PRESS_MS/);
+  assert.match(pickerSource, /shouldCancelModelMenuAuxiliaryLongPress/);
 });

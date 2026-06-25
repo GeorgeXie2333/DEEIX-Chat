@@ -10,6 +10,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { InputGroupButton } from "@/components/ui/input-group";
 import type { ChatModelOption } from "@/features/chat/types/chat-runtime";
+import {
+  MODEL_MENU_AUXILIARY_LONG_PRESS_MS,
+  shouldCancelModelMenuAuxiliaryLongPress,
+} from "@/features/chat/model/chat-model-picker-events";
 import { useIsMobile } from "@/shared/hooks/use-mobile";
 import { LobeHubIcon } from "@/shared/components/lobehub-icon";
 import {
@@ -39,6 +43,10 @@ const MODEL_MENU_COLLISION_GUTTER = 12;
 const MODEL_MENU_SCROLL_MORE_THRESHOLD = 8;
 const PRICING_TOOLTIP_TITLE_CLASS = "font-sans text-xs font-medium leading-4 text-background";
 const PRICING_TOOLTIP_BODY_CLASS = "font-sans text-[11px] leading-4 text-background/80";
+const MODEL_MENU_AUXILIARY_POPOVER_GAP = 8;
+const MODEL_MENU_AUXILIARY_POPOVER_GUTTER = 12;
+const MODEL_MENU_DESCRIPTION_POPOVER_MAX_WIDTH = 320;
+const MODEL_MENU_PRICING_POPOVER_MAX_WIDTH = 560;
 
 type FloatingModelPanelLayout = {
   key: number;
@@ -46,6 +54,23 @@ type FloatingModelPanelLayout = {
   y: number;
   width: number;
   listMaxHeight: number;
+};
+
+type MobileAuxiliaryPopoverLayout = {
+  left: number;
+  top: number;
+  width: number;
+  maxHeight: number;
+  placeAbove: boolean;
+};
+
+type LongPressState = {
+  pointerId: number;
+  start: {
+    clientX: number;
+    clientY: number;
+  };
+  activated: boolean;
 };
 
 type ChatModelPickerProps = {
@@ -98,6 +123,40 @@ function resolveAdaptiveMenuWidthValue(labels: string[], minWidth: number, maxWi
 function resolveAdaptiveMenuWidth(labels: string[], minWidth: number, maxWidth: number): string {
   const preferredWidth = resolveAdaptiveMenuWidthValue(labels, minWidth, maxWidth);
   return `min(${preferredWidth}px, calc(100vw - ${MODEL_MENU_VIEWPORT_GUTTER}px))`;
+}
+
+function resolveMobileAuxiliaryPopoverLayout(
+  trigger: HTMLElement,
+  maxWidth: number,
+): MobileAuxiliaryPopoverLayout {
+  const rect = trigger.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const width = Math.min(maxWidth, Math.max(0, viewportWidth - MODEL_MENU_AUXILIARY_POPOVER_GUTTER * 2));
+  const centeredLeft = rect.left + rect.width / 2 - width / 2;
+  const left = Math.min(
+    Math.max(centeredLeft, MODEL_MENU_AUXILIARY_POPOVER_GUTTER),
+    Math.max(MODEL_MENU_AUXILIARY_POPOVER_GUTTER, viewportWidth - width - MODEL_MENU_AUXILIARY_POPOVER_GUTTER),
+  );
+  const topBelow = rect.bottom + MODEL_MENU_AUXILIARY_POPOVER_GAP;
+  const availableBelow = viewportHeight - topBelow - MODEL_MENU_AUXILIARY_POPOVER_GUTTER;
+  const availableAbove = rect.top - MODEL_MENU_AUXILIARY_POPOVER_GAP - MODEL_MENU_AUXILIARY_POPOVER_GUTTER;
+  const placeAbove = availableBelow < 120 && availableAbove > availableBelow;
+  const top = placeAbove
+    ? Math.max(MODEL_MENU_AUXILIARY_POPOVER_GUTTER, rect.top - MODEL_MENU_AUXILIARY_POPOVER_GAP)
+    : topBelow;
+  const maxHeight = Math.max(80, Math.floor(placeAbove ? availableAbove : availableBelow));
+
+  return { left, top, width, maxHeight, placeAbove };
+}
+
+function isModelMenuAuxiliaryPopoverTarget(target: EventTarget | null): boolean {
+  const element = target instanceof Element
+    ? target
+    : target instanceof Node
+      ? target.parentElement
+      : null;
+  return Boolean(element?.closest('[data-model-menu-auxiliary-popover="true"]'));
 }
 
 function resolveVendorGroups(modelOptions: ChatModelOption[]) {
@@ -405,6 +464,251 @@ function ModelDescriptionTooltipContent({
   );
 }
 
+function ModelMenuAuxiliaryButton({
+  isMobile,
+  ariaLabel,
+  icon,
+  children,
+  contentClassName,
+  mobileMaxWidth,
+  tooltipSide,
+  onSelect,
+}: {
+  isMobile: boolean;
+  ariaLabel: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  contentClassName: string;
+  mobileMaxWidth: number;
+  tooltipSide: "right";
+  onSelect: () => void;
+}) {
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  const contentRef = React.useRef<HTMLDivElement | null>(null);
+  const longPressTimerRef = React.useRef<number | null>(null);
+  const suppressClickTimerRef = React.useRef<number | null>(null);
+  const longPressStateRef = React.useRef<LongPressState | null>(null);
+  const suppressNextClickRef = React.useRef(false);
+  const [open, setOpen] = React.useState(false);
+  const [layout, setLayout] = React.useState<MobileAuxiliaryPopoverLayout | null>(null);
+  const buttonClassName = "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:text-current focus-visible:text-current focus-visible:outline-none group-hover:text-current group-focus-within:text-current group-data-[selected=true]:text-current";
+
+  const clearLongPressTimer = React.useCallback(() => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const clearSuppressClickTimer = React.useCallback(() => {
+    if (suppressClickTimerRef.current !== null) {
+      window.clearTimeout(suppressClickTimerRef.current);
+      suppressClickTimerRef.current = null;
+    }
+  }, []);
+
+  const armSuppressNextClick = React.useCallback(() => {
+    suppressNextClickRef.current = true;
+    clearSuppressClickTimer();
+    suppressClickTimerRef.current = window.setTimeout(() => {
+      suppressNextClickRef.current = false;
+      suppressClickTimerRef.current = null;
+    }, 350);
+  }, [clearSuppressClickTimer]);
+
+  React.useEffect(() => () => {
+    clearLongPressTimer();
+    clearSuppressClickTimer();
+  }, [clearLongPressTimer, clearSuppressClickTimer]);
+
+  React.useEffect(() => {
+    if (!isMobile) {
+      clearLongPressTimer();
+      clearSuppressClickTimer();
+      longPressStateRef.current = null;
+      suppressNextClickRef.current = false;
+      setOpen(false);
+      setLayout(null);
+    }
+  }, [clearLongPressTimer, clearSuppressClickTimer, isMobile]);
+
+  React.useEffect(() => {
+    if (!open || typeof document === "undefined") {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        (triggerRef.current?.contains(target) || contentRef.current?.contains(target))
+      ) {
+        return;
+      }
+      setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    return () => document.removeEventListener("pointerdown", handlePointerDown, true);
+  }, [open]);
+
+  const releasePointerCapture = React.useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
+
+  const handlePointerDown = React.useCallback<React.PointerEventHandler<HTMLButtonElement>>(
+    (event) => {
+      if (!isMobile || event.button !== 0) {
+        return;
+      }
+
+      event.stopPropagation();
+      clearLongPressTimer();
+      longPressStateRef.current = {
+        pointerId: event.pointerId,
+        start: { clientX: event.clientX, clientY: event.clientY },
+        activated: false,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      longPressTimerRef.current = window.setTimeout(() => {
+        const trigger = triggerRef.current;
+        const state = longPressStateRef.current;
+        if (!trigger || !state) {
+          return;
+        }
+        state.activated = true;
+        armSuppressNextClick();
+        setLayout(resolveMobileAuxiliaryPopoverLayout(trigger, mobileMaxWidth));
+        setOpen(true);
+      }, MODEL_MENU_AUXILIARY_LONG_PRESS_MS);
+    },
+    [armSuppressNextClick, clearLongPressTimer, isMobile, mobileMaxWidth],
+  );
+
+  const handlePointerMove = React.useCallback<React.PointerEventHandler<HTMLButtonElement>>(
+    (event) => {
+      if (!isMobile) {
+        return;
+      }
+
+      const state = longPressStateRef.current;
+      if (!state || state.pointerId !== event.pointerId || state.activated) {
+        return;
+      }
+      if (shouldCancelModelMenuAuxiliaryLongPress(state.start, event)) {
+        clearLongPressTimer();
+        longPressStateRef.current = null;
+      }
+    },
+    [clearLongPressTimer, isMobile],
+  );
+
+  const handlePointerEnd = React.useCallback<React.PointerEventHandler<HTMLButtonElement>>(
+    (event) => {
+      if (!isMobile) {
+        return;
+      }
+
+      const state = longPressStateRef.current;
+      clearLongPressTimer();
+      releasePointerCapture(event);
+      longPressStateRef.current = null;
+      if (state?.activated) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+    [clearLongPressTimer, isMobile, releasePointerCapture],
+  );
+
+  const handleClick = React.useCallback<React.MouseEventHandler<HTMLButtonElement>>(
+    (event) => {
+      if (!isMobile) {
+        return;
+      }
+
+      event.stopPropagation();
+      if (suppressNextClickRef.current) {
+        event.preventDefault();
+        clearSuppressClickTimer();
+        suppressNextClickRef.current = false;
+        return;
+      }
+      setOpen(false);
+      onSelect();
+    },
+    [clearSuppressClickTimer, isMobile, onSelect],
+  );
+
+  return isMobile ? (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={buttonClassName}
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+        onClick={handleClick}
+        onContextMenu={(event) => event.preventDefault()}
+      >
+        {icon}
+      </button>
+      {open && layout && typeof document !== "undefined"
+        ? createPortal(
+          <div
+            ref={contentRef}
+            data-model-menu-auxiliary-popover="true"
+            role="tooltip"
+            className={cn(
+              "fixed z-[80] max-h-[calc(100vh-24px)] overflow-y-auto rounded-md bg-foreground px-3 py-1.5 text-xs text-background shadow-xs animate-in fade-in-0 zoom-in-95",
+              contentClassName,
+            )}
+            style={{
+              left: layout.left,
+              top: layout.top,
+              width: layout.width,
+              maxHeight: layout.maxHeight,
+              transform: layout.placeAbove ? "translateY(-100%)" : undefined,
+            }}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
+            {children}
+          </div>,
+          document.body,
+        )
+        : null}
+    </>
+  ) : (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className={buttonClassName}
+          aria-label={ariaLabel}
+        >
+          {icon}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent
+        side={tooltipSide}
+        align="center"
+        sideOffset={8}
+        className={contentClassName}
+      >
+        {children}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function PricingTable({
   platformModelName,
   title,
@@ -488,6 +792,7 @@ function formatTokenQuantity(value: number): string {
 function ChatModelMenuItem({
   model,
   selected,
+  isMobile,
   onSelect,
   billingDisplay,
   pricingLabels,
@@ -498,6 +803,7 @@ function ChatModelMenuItem({
 }: {
   model: ChatModelOption;
   selected: boolean;
+  isMobile: boolean;
   onSelect: () => void;
   billingDisplay: BillingDisplayOptions;
   pricingLabels: React.ComponentProps<typeof ModelPricingTooltipContent>["labels"];
@@ -536,59 +842,43 @@ function ChatModelMenuItem({
           {selected ? <Check className="size-3 text-current" strokeWidth={1.7} /> : null}
         </span>
       </button>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:text-current focus-visible:text-current focus-visible:outline-none group-hover:text-current group-focus-within:text-current group-data-[selected=true]:text-current"
-            aria-label={viewDescriptionLabel}
-          >
-            <Info className="size-3.5" strokeWidth={1.8} />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent
-          side={pricingTooltipSide}
-          align="center"
-          sideOffset={8}
-          className="z-[80] max-w-[min(92vw,20rem)] text-left font-medium"
-        >
-          <ModelDescriptionTooltipContent
-            platformModelName={model.platformModelName}
-            description={model.description}
-            noDescriptionLabel={noDescriptionLabel}
-          />
-        </TooltipContent>
-      </Tooltip>
+      <ModelMenuAuxiliaryButton
+        isMobile={isMobile}
+        ariaLabel={viewDescriptionLabel}
+        icon={<Info className="size-3.5" strokeWidth={1.8} />}
+        contentClassName="z-[80] max-w-[min(92vw,20rem)] text-left font-medium"
+        mobileMaxWidth={MODEL_MENU_DESCRIPTION_POPOVER_MAX_WIDTH}
+        tooltipSide={pricingTooltipSide}
+        onSelect={onSelect}
+      >
+        <ModelDescriptionTooltipContent
+          platformModelName={model.platformModelName}
+          description={model.description}
+          noDescriptionLabel={noDescriptionLabel}
+        />
+      </ModelMenuAuxiliaryButton>
       {model.pricing ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:text-current focus-visible:text-current focus-visible:outline-none group-hover:text-current group-focus-within:text-current group-data-[selected=true]:text-current"
-            aria-label={viewPricingLabel}
-          >
-              {model.pricing.isFree ? (
-                <TicketSlash className="size-3.5" strokeWidth={1.8} />
-              ) : (
-                <CircleDollarSign className="size-3.5" strokeWidth={1.8} />
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent
-            side={pricingTooltipSide}
-            align="center"
-            sideOffset={8}
-            className="z-[80] max-w-[min(92vw,35rem)] text-left font-medium tabular-nums"
-          >
-            <ModelPricingTooltipContent
-              platformModelName={model.platformModelName}
-              protocols={model.protocols}
-              pricing={model.pricing}
-              billingDisplay={billingDisplay}
-              labels={pricingLabels}
-            />
-          </TooltipContent>
-        </Tooltip>
+        <ModelMenuAuxiliaryButton
+          isMobile={isMobile}
+          ariaLabel={viewPricingLabel}
+          icon={model.pricing.isFree ? (
+            <TicketSlash className="size-3.5" strokeWidth={1.8} />
+          ) : (
+            <CircleDollarSign className="size-3.5" strokeWidth={1.8} />
+          )}
+          contentClassName="z-[80] max-w-[min(92vw,35rem)] text-left font-medium tabular-nums"
+          mobileMaxWidth={MODEL_MENU_PRICING_POPOVER_MAX_WIDTH}
+          tooltipSide={pricingTooltipSide}
+          onSelect={onSelect}
+        >
+          <ModelPricingTooltipContent
+            platformModelName={model.platformModelName}
+            protocols={model.protocols}
+            pricing={model.pricing}
+            billingDisplay={billingDisplay}
+            labels={pricingLabels}
+          />
+        </ModelMenuAuxiliaryButton>
       ) : null}
     </div>
   );
@@ -867,6 +1157,10 @@ export function ChatModelPicker({
             }}
             onInteractOutside={(event) => {
               const target = event.target;
+              if (isModelMenuAuxiliaryPopoverTarget(target)) {
+                event.preventDefault();
+                return;
+              }
               if (target instanceof Node && desktopModelPanelRef.current?.contains(target)) {
                 event.preventDefault();
               }
@@ -904,6 +1198,7 @@ export function ChatModelPicker({
                             key={item.platformModelName}
                             model={item}
                             selected={item.platformModelName === selectedPlatformModelName}
+                            isMobile={isMobile}
                             onSelect={() => {
                               onModelChange(item.platformModelName);
                             }}
@@ -1019,6 +1314,7 @@ export function ChatModelPicker({
                     key={item.platformModelName}
                     model={item}
                     selected={item.platformModelName === selectedPlatformModelName}
+                    isMobile={isMobile}
                     onSelect={() => {
                       onModelChange(item.platformModelName);
                     }}
