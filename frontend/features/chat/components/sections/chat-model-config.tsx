@@ -94,6 +94,10 @@ export function ChatModelConfig({
       }),
     [defaultOptions, modelOptionPolicy, options, selectedModelName, selectedProtocol],
   );
+  const visibleSettings = React.useMemo(
+    () => settings.filter((setting) => setting.kind !== "temperature"),
+    [settings],
+  );
 
   React.useEffect(() => {
     setCustomInputs({});
@@ -116,7 +120,7 @@ export function ChatModelConfig({
     onOptionsChange(nextOptions);
   }, [defaultOptions, modelOptionPolicy, onOptionsChange, onOptionsReset, options, selectedModelName, selectedProtocol]);
 
-  if (settings.length === 0) {
+  if (visibleSettings.length === 0) {
     return null;
   }
 
@@ -145,13 +149,13 @@ export function ChatModelConfig({
         side="bottom"
         align="start"
         sideOffset={8}
-        className="w-[min(calc(100vw-2rem),20rem)] p-2"
+        className="w-[min(calc(100vw-2rem),13rem)] overflow-hidden rounded-xl border-[0.5px] border-border p-1.5 shadow-xs"
       >
         <div className="space-y-3">
           <div className="px-1 text-xs font-medium text-muted-foreground">
             {tComposer("advancedSettings")}
           </div>
-          {settings.map((setting) => {
+          {visibleSettings.map((setting) => {
             const label = tOptionLabels(labelKeyForSetting(setting));
             if (setting.valueType === "number") {
               const numericValue = typeof setting.value === "number" ? setting.value : Number(setting.value);

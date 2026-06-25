@@ -16,3 +16,16 @@ test("ChatModelConfig keeps the local advanced settings popover", () => {
   assert.match(configSource, /aria-label=\{tComposer\("advancedSettings"\)\}/);
   assert.doesNotMatch(configSource, /DialogTitle[^]*tComposer\("modelOptions"\)/);
 });
+
+test("ChatModelConfig hides temperature from rendered advanced settings", () => {
+  assert.match(configSource, /settings\.filter\(\(setting\) => setting\.kind !== "temperature"\)/);
+  assert.match(configSource, /if \(visibleSettings\.length === 0\)/);
+  assert.match(configSource, /visibleSettings\.map\(\(setting\) =>/);
+});
+
+test("ChatModelConfig popover matches the compact tools menu surface", () => {
+  assert.match(
+    configSource,
+    /className="w-\[min\(calc\(100vw-2rem\),13rem\)\] overflow-hidden rounded-xl border-\[0\.5px\] border-border p-1\.5 shadow-xs"/,
+  );
+});
