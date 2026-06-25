@@ -105,7 +105,6 @@ const OPENAI_IMAGE_2_RESOLUTION: AdvancedSettingDefinition = {
   valueType: "select",
   fallbackValue: "auto",
   values: OPENAI_GPT_IMAGE_2_SIZE_VALUES,
-  customValueKind: "openaiImage2Resolution",
 };
 
 const OPENAI_VIDEO_SECONDS: AdvancedSettingDefinition = {

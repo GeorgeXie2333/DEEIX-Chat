@@ -172,7 +172,8 @@ test("resolveAdvancedSettings exposes fixed GPT Image 2 quality and resolution o
   assert.equal(isValidOpenAIImage2Resolution("2049x1152"), false);
   assert.equal(isValidOpenAIImage2Resolution("4096x1024"), false);
 
-  assert.deepEqual(setAdvancedSettingValue({}, resolution!, "1600x1024"), { size: "1600x1024" });
+  assert.equal(resolution?.customValueKind, undefined);
+  assert.deepEqual(setAdvancedSettingValue({}, resolution!, "1600x1024"), {});
   assert.deepEqual(setAdvancedSettingValue({ size: "1024x1024" }, resolution!, "1000x1000"), {
     size: "1024x1024",
   });
@@ -185,7 +186,7 @@ test("resolveAdvancedSettings exposes fixed GPT Image 2 quality and resolution o
     policy: allowAdvancedPolicy,
   }).find((item) => item.kind === "imageResolution");
   assert.deepEqual(editResolution?.values, resolution?.values);
-  assert.equal(editResolution?.customValueKind, "openaiImage2Resolution");
+  assert.equal(editResolution?.customValueKind, undefined);
 });
 
 test("resolveAdvancedSettings exposes Sora video resolution and seconds options", () => {
