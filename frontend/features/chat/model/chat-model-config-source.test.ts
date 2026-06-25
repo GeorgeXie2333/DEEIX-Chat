@@ -29,3 +29,7 @@ test("ChatModelConfig popover matches the compact tools menu surface", () => {
     /className="w-\[min\(calc\(100vw-2rem\),13rem\)\] overflow-hidden rounded-xl border-\[0\.5px\] border-border p-1\.5 shadow-xs"/,
   );
 });
+
+test("ChatModelConfig keeps select controls compact enough for labels", () => {
+  assert.match(configSource, /grid-cols-\[minmax\(0,1fr\)_6\.5rem\]/);
+});

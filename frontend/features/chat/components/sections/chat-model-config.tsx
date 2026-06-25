@@ -202,7 +202,7 @@ export function ChatModelConfig({
               !isAdvancedSettingCustomValueValid(setting, customInputValue);
             return (
               <div key={setting.key} className="space-y-2 rounded-md px-1 py-1">
-                <div className="grid grid-cols-[minmax(0,1fr)_9rem] items-center gap-3">
+                <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] items-center gap-3">
                   <span className="truncate text-xs text-foreground/85">{label}</span>
                   <Select
                     value={selectValue}
