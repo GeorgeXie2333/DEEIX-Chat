@@ -93,7 +93,7 @@ test("resolveAdvancedSettings exposes OpenRouter Responses reasoning controls", 
   );
 });
 
-test("resolveAdvancedSettings maps Anthropic effort with medium default", () => {
+test("resolveAdvancedSettings maps Anthropic effort with high default", () => {
   const effort = resolveAdvancedSettings({
     protocol: "anthropic_messages",
     options: {},
@@ -102,7 +102,7 @@ test("resolveAdvancedSettings maps Anthropic effort with medium default", () => 
   }).find((item) => item.kind === "reasoningEffort");
   assert.ok(effort);
   assert.equal(effort.key, "output_config.effort");
-  assert.equal(effort.value, "medium");
+  assert.equal(effort.value, "high");
 
   assert.deepEqual(setAdvancedSettingValue({ output_config: { format: { type: "json" } } }, effort, "max"), {
     output_config: {

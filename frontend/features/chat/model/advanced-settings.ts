@@ -59,7 +59,7 @@ const ANTHROPIC_EFFORT: AdvancedSettingDefinition = {
   kind: "reasoningEffort",
   path: ["output_config", "effort"],
   valueType: "select",
-  fallbackValue: "medium",
+  fallbackValue: "high",
   values: ["low", "medium", "high", "xhigh", "max"],
 };
 
