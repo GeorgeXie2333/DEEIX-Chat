@@ -18,7 +18,9 @@ func TestUsageQueriesUseSQLitePortableExpressions(t *testing.T) {
 	repo := NewRepo(db)
 	ctx := context.Background()
 
-	usageDate := time.Date(2026, 6, 6, 0, 0, 0, 0, time.UTC)
+	now := time.Now()
+	usageDate := time.Date(now.Year(), now.Month(), 1, 12, 0, 0, 0, now.Location())
+	expectedMonthStart := usageDate.Format("2006-01-02")
 	entries := []model.UsageLedger{
 		{
 			UserID:              1,
@@ -71,7 +73,7 @@ func TestUsageQueriesUseSQLitePortableExpressions(t *testing.T) {
 	if len(monthly) != 1 {
 		t.Fatalf("expected one monthly summary, got %d", len(monthly))
 	}
-	if monthly[0].MonthStartAt.Format("2006-01-02") != "2026-06-01" || monthly[0].BilledNanousd != 800 {
+	if monthly[0].MonthStartAt.Format("2006-01-02") != expectedMonthStart || monthly[0].BilledNanousd != 800 {
 		t.Fatalf("unexpected monthly summary: %+v", monthly[0])
 	}
 
@@ -82,7 +84,7 @@ func TestUsageQueriesUseSQLitePortableExpressions(t *testing.T) {
 	if len(daily) != 1 {
 		t.Fatalf("expected one daily summary, got %d", len(daily))
 	}
-	if daily[0].UsageDate.Format("2006-01-02") != "2026-06-06" || daily[0].BilledNanousd != 800 {
+	if daily[0].UsageDate.Format("2006-01-02") != usageDate.Format("2006-01-02") || daily[0].BilledNanousd != 800 {
 		t.Fatalf("unexpected daily summary: %+v", daily[0])
 	}
 	if len(daily[0].Models) != 2 {

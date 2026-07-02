@@ -2,7 +2,8 @@
   "sections": {
     "conversation": "会話設定",
     "optionPassthrough": "パラメーター透過",
-    "contextCompression": "コンテキスト圧縮"
+    "contextCompression": "コンテキスト圧縮",
+    "dataExport": "データエクスポート"
   },
   "taskModel": {
     "follow": "現在のモデルに従う"
@@ -147,5 +148,11 @@
     "loadFailed": "会話設定の読み込みに失敗しました",
     "saveFailed": "保存に失敗しました",
     "updated": "会話設定を更新しました"
+  },
+  "dataExport": {
+    "title": "すべての会話",
+    "description": "すべての会話、メッセージ、メタデータを JSONL ファイルとしてエクスポートします。",
+    "exportButton": "エクスポート",
+    "failed": "エクスポートに失敗しました。もう一度お試しください。"
   }
 }

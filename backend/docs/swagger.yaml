@@ -103,6 +103,32 @@ definitions:
       username:
         type: string
     type: object
+  internal_transport_http_admin.CleanupLogsRequest:
+    properties:
+      before:
+        type: string
+      type:
+        type: string
+    required:
+    - before
+    - type
+    type: object
+  internal_transport_http_admin.CleanupLogsResponse:
+    properties:
+      before:
+        type: string
+      deletedCount:
+        type: integer
+      type:
+        type: string
+    type: object
+  internal_transport_http_admin.CleanupLogsResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/internal_transport_http_admin.CleanupLogsResponse'
+      errorMsg:
+        type: string
+    type: object
   internal_transport_http_admin.ConversationEventListResponseDoc:
     properties:
       data:
@@ -1692,6 +1718,9 @@ definitions:
     type: object
   internal_transport_http_billing.CreateCheckoutRequest:
     properties:
+      amountMinorUnits:
+        minimum: 0
+        type: integer
       amountUSD:
         minimum: 0
         type: number
@@ -2457,6 +2486,15 @@ definitions:
     type: object
   internal_transport_http_channel.BindModelUpstreamSourceRequest:
     properties:
+      cbDurationMin:
+        minimum: 0
+        type: integer
+      cbFailureThreshold:
+        minimum: 0
+        type: integer
+      cbWindowMin:
+        minimum: 0
+        type: integer
       priority:
         type: integer
       protocol:
@@ -2492,6 +2530,20 @@ definitions:
       capabilitiesJSON:
         maxLength: 10000
         type: string
+      cbDurationMin:
+        minimum: 0
+        type: integer
+      cbFailureThreshold:
+        minimum: 0
+        type: integer
+      cbPolicyMode:
+        enum:
+        - default
+        - enforced
+        type: string
+      cbWindowMin:
+        minimum: 0
+        type: integer
       description:
         maxLength: 10000
         type: string
@@ -2826,6 +2878,14 @@ definitions:
         type: integer
       capabilitiesJSON:
         type: string
+      cbDurationMin:
+        type: integer
+      cbFailureThreshold:
+        type: integer
+      cbPolicyMode:
+        type: string
+      cbWindowMin:
+        type: integer
       createdAt:
         type: string
       description:
@@ -2878,8 +2938,16 @@ definitions:
         type: string
       bindingCode:
         type: string
+      cbDurationMin:
+        type: integer
+      cbFailureThreshold:
+        type: integer
+      cbWindowMin:
+        type: integer
       circuitOpen:
         type: boolean
+      circuitScope:
+        type: string
       circuitUntil:
         type: string
       createdAt:
@@ -2913,6 +2981,8 @@ definitions:
       upstreamModelVendor:
         type: string
       upstreamName:
+        type: string
+      upstreamStatus:
         type: string
       weight:
         type: integer
@@ -3038,6 +3108,20 @@ definitions:
       capabilitiesJSON:
         maxLength: 10000
         type: string
+      cbDurationMin:
+        minimum: 0
+        type: integer
+      cbFailureThreshold:
+        minimum: 0
+        type: integer
+      cbPolicyMode:
+        enum:
+        - default
+        - enforced
+        type: string
+      cbWindowMin:
+        minimum: 0
+        type: integer
       description:
         maxLength: 10000
         type: string
@@ -3072,6 +3156,15 @@ definitions:
     type: object
   internal_transport_http_channel.UpdateModelUpstreamSourceRequest:
     properties:
+      cbDurationMin:
+        minimum: 0
+        type: integer
+      cbFailureThreshold:
+        minimum: 0
+        type: integer
+      cbWindowMin:
+        minimum: 0
+        type: integer
       priority:
         type: integer
       protocol:
@@ -5311,7 +5404,7 @@ info:
   contact: {}
   description: Comi AI backend API documentation.
   title: Comi AI API
-  version: "0.2.8"
+  version: "0.3.0"
 paths:
   /admin/announcements:
     get:
@@ -6055,6 +6148,25 @@ paths:
       security:
       - BearerAuth: []
       summary: 管理员查询对话事件
+      tags:
+      - admin
+  /admin/conversations/export:
+    get:
+      description: 流式导出全量会话及消息为 NDJSON 文件，最后一行为 export_manifest 元数据
+      produces:
+      - application/x-ndjson
+      responses:
+        "200":
+          description: NDJSON stream
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_admin.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 管理员导出全量对话数据
       tags:
       - admin
   /admin/llm/models:
@@ -7324,6 +7436,38 @@ paths:
       summary: 管理员批量删除上游
       tags:
       - llm
+  /admin/logs/cleanup:
+    post:
+      consumes:
+      - application/json
+      description: 按日志类型物理删除指定时间点之前的日志；操作不可恢复
+      parameters:
+      - description: 日志清理参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_admin.CleanupLogsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_admin.CleanupLogsResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_transport_http_admin.ErrorDoc'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_transport_http_admin.ErrorDoc'
+      security:
+      - BearerAuth: []
+      summary: 管理员清理日志
+      tags:
+      - admin
   /admin/payment-orders:
     get:
       consumes:
@@ -8367,6 +8511,11 @@ paths:
       consumes:
       - application/json
       description: 登录用户获取当前可展示的站点公告列表
+      parameters:
+      - description: 是否包含今日不再显示的公告
+        in: query
+        name: include_dismissed
+        type: boolean
       produces:
       - application/json
       responses:

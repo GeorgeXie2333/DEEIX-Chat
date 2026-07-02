@@ -160,7 +160,22 @@
     "priorityMustBePositive": "優先度は 0 より大きい必要があります",
     "weightMustBePositive": "重みは 0 より大きい必要があります",
     "priorityUpdated": "優先度を更新しました",
-    "weightUpdated": "重みを更新しました"
+    "weightUpdated": "重みを更新しました",
+    "circuitSettings": "サーキット設定",
+    "circuitSettingsDescription": "ソース「{name}」のサーキットパラメータを設定します。",
+    "failureThreshold": "失敗しきい値",
+    "circuitDuration": "サーキット継続時間（分）",
+    "circuitWindow": "ローリングウィンドウ（分）",
+    "circuitScopeUpstream": "アップストリームサーキット",
+    "circuitScopeSource": "ソースサーキット",
+    "platformModelInactive": "プラットフォームモデルは無効です",
+    "upstreamInactive": "アップストリームは無効です",
+    "upstreamModelInactive": "アップストリームモデルは無効です",
+    "circuitInheritHint": "0 を指定すると親モデルのフォールバック設定を継承します。その設定も 0 の場合はシステム既定値を使用します。",
+    "circuitPolicyOverriddenHint": "親モデルはグローバル上書きを使用しています。これらの値は保存されますが、実行時には適用されません。",
+    "saveCircuitSettings": "保存",
+    "savingCircuitSettings": "保存中",
+    "circuitUpdated": "サーキット設定を更新しました"
   },
   "sort": {
     "sortOrderAsc": "表示順",
@@ -370,6 +385,14 @@
       "presetsTab": "プロトコルテンプレート",
       "protocolNotMatched": "プロトコルが一致しません",
       "title": "モデル能力をすばやく再利用"
-    }
+    },
+    "circuitBreak": "モデルサーキットブレーカー",
+    "circuitBreakDescription": "この親モデル配下のソースに対するサーキットポリシーを設定します。各ソースはアップストリーム経路ごとに分離され、0 を指定するとシステム既定値を使います。",
+    "circuitPolicyMode": "適用モード",
+    "circuitPolicyDefault": "フォールバック設定（ソースに上書きがない場合に使用）",
+    "circuitPolicyEnforced": "グローバル上書き（この親モデル配下の全ソース）",
+    "failureThreshold": "モデル失敗しきい値",
+    "circuitDuration": "モデルサーキット継続時間（分）",
+    "circuitWindow": "モデルサーキットのローリングウィンドウ（分）"
   }
 }

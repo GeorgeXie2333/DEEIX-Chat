@@ -2,9 +2,28 @@
 
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  type DragEndEvent,
+  type DragStartEvent,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import { AnimatePresence, motion, type Transition } from "motion/react"
 import { ChevronDown, PencilLine, Star, StarOff, Trash } from "lucide-react"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner"
 
 import { Ellipsis } from "@/components/animate-ui/icons/ellipsis"
 import { FolderArchiveIcon } from "@/components/ui/folder-archive"
@@ -33,6 +52,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { GripVerticalIcon, type GripVerticalIconHandle } from "@/components/ui/grip-vertical"
 import { Spinner } from "@/components/ui/spinner"
 import {
   DropdownMenu,
@@ -61,6 +81,7 @@ import {
 import { CollapsibleMotionContent } from "@/shared/components/collapsible-motion-content"
 import { useChatConversationExport } from "@/features/chat/hooks/use-chat-conversation-export"
 import { useChatSession } from "@/features/chat/context/chat-session-context"
+import { useLocalizedErrorMessage } from "@/i18n/use-localized-error"
 import { DeleteFilesOption } from "@/shared/components/delete-files-option"
 import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences"
 import { useLayoutActiveConversation } from "@/features/layouts/hooks/use-layout-active-conversation"
@@ -73,7 +94,7 @@ import type {
 import { useSidebarRecents } from "@/features/recent/context/sidebar-recents-context"
 import { sortByUpdatedAtDesc, upsertByPublicID, removeByPublicID } from "@/features/recent/utils/conversation-list"
 import { listConversations } from "@/shared/api/conversation"
-import type { ConversationDTO } from "@/shared/api/conversation.types"
+import type { ConversationDTO, ConversationProjectDTO } from "@/shared/api/conversation.types"
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token"
 import { useStoredBoolean } from "@/shared/hooks/use-stored-boolean"
 import { cn } from "@/lib/utils"
@@ -114,7 +135,7 @@ const PROJECT_TREE_ACCORDION_MASK_STYLE = {
   overflow: "hidden",
 } satisfies React.CSSProperties
 const PROJECT_CREATE_ACTION_CLASS =
-  "static size-7 shrink-0 opacity-0 transition-[background-color,color,opacity,transform] duration-150 group-hover/project-create:opacity-100 group-focus-within/project-create:opacity-100"
+  "relative top-auto right-auto size-7 shrink-0 opacity-100 transition-[background-color,color,opacity,transform] duration-150 after:pointer-events-none md:opacity-0 md:group-hover/project-create:opacity-100 md:group-focus-within/project-create:opacity-100"
 const PROJECTS_OPEN_STORAGE_KEY = "deeix.sidebar.projects.open"
 const PROJECT_EXPANDED_IDS_STORAGE_KEY = "deeix.sidebar.projects.expanded"
 
@@ -216,6 +237,7 @@ function ProjectGroupHeader({
 
 function ProjectTreeButton({
   active,
+  actionPaddingClassName = "pr-24",
   contentID,
   expanded,
   name,
@@ -223,6 +245,7 @@ function ProjectTreeButton({
   onToggleExpanded,
 }: {
   active: boolean
+  actionPaddingClassName?: string
   contentID: string
   expanded: boolean
   name: string
@@ -239,7 +262,7 @@ function ProjectTreeButton({
         active
           ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-        "pr-16",
+        actionPaddingClassName,
       )}
       aria-controls={contentID}
       aria-expanded={expanded}
@@ -330,9 +353,243 @@ const ProjectInlineAction = React.forwardRef<HTMLButtonElement, ProjectInlineAct
   )
 })
 
+type ProjectSortableRenderProps = {
+  attributes: ReturnType<typeof useSortable>["attributes"]
+  listeners: ReturnType<typeof useSortable>["listeners"]
+  isDragging: boolean
+}
+
+function ProjectSortableItem({
+  children,
+  disabled,
+  projectID,
+}: {
+  children: (props: ProjectSortableRenderProps) => React.ReactNode
+  disabled: boolean
+  projectID: string
+}) {
+  const {
+    attributes,
+    isDragging,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({
+    id: projectID,
+    disabled,
+  })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  } satisfies React.CSSProperties
+
+  return (
+    <SidebarMenuItem
+      ref={setNodeRef}
+      data-sidebar-motion-key={`project-${projectID}`}
+      style={style}
+      className={cn("transition-opacity", isDragging && "opacity-45")}
+    >
+      {children({ attributes, isDragging, listeners })}
+    </SidebarMenuItem>
+  )
+}
+
+function ProjectDragHandle({
+  attributes,
+  disabled,
+  hidden,
+  label,
+  listeners,
+  visible,
+}: {
+  attributes: ProjectSortableRenderProps["attributes"]
+  disabled: boolean
+  hidden: boolean
+  label: string
+  listeners: ProjectSortableRenderProps["listeners"]
+  visible: boolean
+}) {
+  const iconRef = React.useRef<GripVerticalIconHandle>(null)
+
+  if (hidden) {
+    return null
+  }
+
+  return (
+    <button
+      {...attributes}
+      {...listeners}
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      className={cn(
+        "absolute right-0 top-0 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-md text-sidebar-foreground opacity-0 transition-[background-color,color,opacity] duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:cursor-grabbing group-hover/project-row:opacity-100 group-focus-within/project-row:opacity-100 disabled:cursor-not-allowed disabled:text-sidebar-foreground/40",
+        visible && "opacity-100",
+      )}
+      style={{ touchAction: "none" }}
+      onMouseEnter={() => iconRef.current?.startAnimation()}
+      onMouseLeave={() => iconRef.current?.stopAnimation()}
+      onClick={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+      }}
+    >
+      <GripVerticalIcon ref={iconRef} size={14} className="size-4 text-current" />
+    </button>
+  )
+}
+
+type ProjectConversationSubmenuProps = {
+  activeConversationID: string
+  autoRenamingConversationID: string | null
+  contentID: string
+  conversationRenameTarget: SidebarConversationRenameTarget
+  conversationState?: ProjectConversationState
+  loading: boolean
+  onArchiveConversation: (publicID: string) => void | Promise<void>
+  onAutoRenameConversation: (publicID: string) => void | Promise<void>
+  onDeleteConversation: (publicID: string, title: string) => void
+  onExportConversation: (publicID: string) => void | Promise<void>
+  onLoadConversations: (projectID: string, force?: boolean) => void | Promise<void>
+  onNavigate: (url: string, event: React.MouseEvent<HTMLAnchorElement>) => void
+  onRenameConversation: (publicID: string, currentTitle: string) => void
+  onRenameConversationCancel: () => void
+  onRenameConversationCommit: (publicID: string, currentTitle: string) => void | Promise<void>
+  onRenameValueChange: (value: string) => void
+  onSetProjectByPublicID: (publicID: string, projectID?: string) => Promise<ConversationDTO | null>
+  onSetShareTarget: (target: { publicID: string; title: string }) => void
+  onSetStarByPublicID: (publicID: string, starred: boolean) => Promise<ConversationDTO | null>
+  projectID: string
+  projects: ConversationProjectDTO[]
+  renameValue: string
+}
+
+function ProjectConversationSubmenu({
+  activeConversationID,
+  autoRenamingConversationID,
+  contentID,
+  conversationRenameTarget,
+  conversationState,
+  loading,
+  onArchiveConversation,
+  onAutoRenameConversation,
+  onDeleteConversation,
+  onExportConversation,
+  onLoadConversations,
+  onNavigate,
+  onRenameConversation,
+  onRenameConversationCancel,
+  onRenameConversationCommit,
+  onRenameValueChange,
+  onSetProjectByPublicID,
+  onSetShareTarget,
+  onSetStarByPublicID,
+  projectID,
+  projects,
+  renameValue,
+}: ProjectConversationSubmenuProps) {
+  const tRecent = useTranslations("recent")
+
+  return (
+    <motion.div
+      key={`${projectID}-conversations`}
+      id={contentID}
+      initial={{ height: 0, opacity: 0, "--mask-stop": "0%", y: 6 }}
+      animate={{ height: "auto", opacity: 1, "--mask-stop": "100%", y: 0 }}
+      exit={{ height: 0, opacity: 0, "--mask-stop": "0%", y: 6 }}
+      transition={PROJECT_TREE_ACCORDION_TRANSITION}
+      style={PROJECT_TREE_ACCORDION_MASK_STYLE}
+    >
+      <SidebarMenuSub className="mx-0 w-full translate-x-0 border-l-0 px-0 py-0.5">
+        {loading ? (
+          <SidebarMenuSubItem>
+            <div className="flex h-7 w-full items-center gap-2 rounded-md pl-8 pr-2 text-xs text-muted-foreground">
+              <Spinner className="size-3.5" />
+              <span>{tRecent("loadingMore")}</span>
+            </div>
+          </SidebarMenuSubItem>
+        ) : null}
+
+        {conversationState?.error ? (
+          <SidebarMenuSubItem>
+            <button
+              type="button"
+              className="flex h-7 w-full min-w-0 items-center gap-2 rounded-md pl-8 pr-2 text-left text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              onClick={() => void onLoadConversations(projectID, true)}
+            >
+              <span className="truncate">{tRecent("loadMoreFailed")}</span>
+              <span className="ml-auto shrink-0 underline underline-offset-4">{tRecent("retry")}</span>
+            </button>
+          </SidebarMenuSubItem>
+        ) : null}
+
+        {conversationState?.loaded && conversationState.items.length === 0 ? (
+          <SidebarMenuSubItem>
+            <div className="w-full rounded-md py-1 pl-8 pr-2 text-xs text-sidebar-foreground/55">{tRecent("empty")}</div>
+          </SidebarMenuSubItem>
+        ) : null}
+
+        {conversationState?.items.map((conversation) => {
+          const title = conversation.title || tRecent("untitled")
+          return (
+            <SidebarConversationItem
+              key={conversation.publicID}
+              active={activeConversationID === conversation.publicID}
+              item={{
+                publicID: conversation.publicID,
+                title,
+                url: `/chat?conversation_id=${conversation.publicID}`,
+                starred: conversation.isStarred,
+                shareActive: conversation.shareStatus === "active" && Boolean(conversation.shareID?.trim()),
+              }}
+              starAction={{
+                label: conversation.isStarred ? tRecent("row.unstar") : tRecent("row.star"),
+                icon: conversation.isStarred ? StarOff : Star,
+                onSelect: (targetPublicID) => {
+                  void onSetStarByPublicID(targetPublicID, !conversation.isStarred)
+                },
+              }}
+              projectMenu={{
+                label: tRecent("row.moveToProject"),
+                unassignedLabel: tRecent("projects.unassigned"),
+                currentProjectID: conversation.projectID,
+                projects,
+                onSelect: (targetPublicID, targetProjectID) => {
+                  void onSetProjectByPublicID(targetPublicID, targetProjectID)
+                },
+              }}
+              isTransferring={false}
+              isRenaming={conversationRenameTarget?.publicID === conversation.publicID}
+              renameValue={conversationRenameTarget?.publicID === conversation.publicID ? renameValue : title}
+              rowClassName="w-full"
+              linkClassName="pl-8"
+              onRenameValueChange={onRenameValueChange}
+              onRenameCommit={onRenameConversationCommit}
+              onRenameCancel={onRenameConversationCancel}
+              onAutoRename={onAutoRenameConversation}
+              isAutoRenaming={autoRenamingConversationID === conversation.publicID}
+              onRename={onRenameConversation}
+              onArchive={onArchiveConversation}
+              onShare={(publicID, shareTitle) => onSetShareTarget({ publicID, title: shareTitle })}
+              onExport={onExportConversation}
+              onDelete={onDeleteConversation}
+              onNavigate={onNavigate}
+              menuTriggerID={`project-conversation-menu-trigger-${conversation.publicID}`}
+            />
+          )
+        })}
+      </SidebarMenuSub>
+    </motion.div>
+  )
+}
+
 export function NavProjects() {
   const t = useTranslations("recent.projects")
   const tRecent = useTranslations("recent")
+  const resolveErrorMessage = useLocalizedErrorMessage()
   const { isMobile, setOpenMobile } = useSidebar()
   const router = useRouter()
   const onNavigate = useMobileSidebarNavigation()
@@ -351,6 +608,7 @@ export function NavProjects() {
     createProject,
     updateProject,
     deleteProject,
+    reorderProjects,
     renameByPublicID,
     regenerateTitleByPublicID,
     setStarByPublicID,
@@ -376,6 +634,8 @@ export function NavProjects() {
   const [hoveredProjectCreateID, setHoveredProjectCreateID] = React.useState<string | null>(null)
   const [hoveredProjectRowID, setHoveredProjectRowID] = React.useState<string | null>(null)
   const [focusedProjectRowID, setFocusedProjectRowID] = React.useState<string | null>(null)
+  const [draggingProjectID, setDraggingProjectID] = React.useState<string | null>(null)
+  const [savingProjectOrder, setSavingProjectOrder] = React.useState(false)
   const [projectsOpen, setProjectsOpen] = useStoredBoolean(PROJECTS_OPEN_STORAGE_KEY, true)
   const projectConversationStateRef = React.useRef(projectConversationState)
   const expandedProjectIDsRef = React.useRef(expandedProjectIDs)
@@ -393,6 +653,17 @@ export function NavProjects() {
     successMessage: tRecent("exported"),
     failureMessage: tRecent("exportFailed"),
   })
+  const projectIDs = React.useMemo(() => projects.map((project) => project.publicID), [projects])
+  const projectSortSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 4,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
 
   const updateProjectConversationState = React.useCallback((updater: (prev: ProjectConversationStateMap) => ProjectConversationStateMap) => {
     const next = updater(projectConversationStateRef.current)
@@ -611,6 +882,43 @@ export function NavProjects() {
     [ensureProjectExpanded, isMobile, requestNewConversation, router, setOpenMobile],
   )
 
+  const onProjectDragStart = React.useCallback((event: DragStartEvent) => {
+    setDraggingProjectID(String(event.active.id))
+  }, [])
+
+  const onProjectDragEnd = React.useCallback(async (event: DragEndEvent) => {
+    setDraggingProjectID(null)
+
+    const { active, over } = event
+    if (!over || active.id === over.id || savingProjectOrder) {
+      return
+    }
+
+    const activeProjectID = String(active.id)
+    const overProjectID = String(over.id)
+    const fromIndex = projectIDs.indexOf(activeProjectID)
+    const toIndex = projectIDs.indexOf(overProjectID)
+    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+      return
+    }
+
+    const orderedProjectIDs = arrayMove(projectIDs, fromIndex, toIndex)
+    setSavingProjectOrder(true)
+    try {
+      await reorderProjects(orderedProjectIDs)
+    } catch (error) {
+      toast.error(t("reorderFailed"), {
+        description: resolveErrorMessage(error, t("reorderFailed")),
+      })
+    } finally {
+      setSavingProjectOrder(false)
+    }
+  }, [projectIDs, reorderProjects, resolveErrorMessage, savingProjectOrder, t])
+
+  const onProjectDragCancel = React.useCallback(() => {
+    setDraggingProjectID(null)
+  }, [])
+
   React.useEffect(() => {
     if (!activeProjectID || hasStoredExpandedProjectIDsRef.current || activeRevealedProjectIDsRef.current.has(activeProjectID)) {
       return
@@ -797,185 +1105,155 @@ export function NavProjects() {
               toggleLabel={projectsOpen ? t("collapseSection") : t("expandSection")}
             />
             <CollapsibleMotionContent id={projectsContentID} open={projectsOpen}>
-              <SidebarMenu>
-                {projects.map((project) => {
-                  const expanded = expandedProjectIDs.has(project.publicID)
-                  const conversationState = projectConversationState[project.publicID]
-                  const conversationLoading = expanded && (!conversationState || conversationState.loading)
-                  const hasActiveChild = Boolean(conversationState?.items.some((item) => item.publicID === activeConversationID))
-                  const active =
-                    ((pathname === "/recent" || pathname === "/chat") && activeProjectID === project.publicID) ||
-                    activeConversationProjectID === project.publicID ||
-                    hasActiveChild
-                  const rowHovered = hoveredProjectRowID === project.publicID
-                  const rowFocused = focusedProjectRowID === project.publicID
-                  const createHovered = hoveredProjectCreateID === project.publicID
-                  const menuHovered = hoveredProjectMenuID === project.publicID
-                  const menuOpen = openProjectMenuID === project.publicID
-                  const showProjectActions = rowHovered || rowFocused || menuHovered || menuOpen
-                  const projectConversationContentID = `sidebar-project-${project.publicID}-conversations`
-                  return (
-                    <SidebarMenuItem key={project.publicID}>
-                  <div
-                    className="group/project-row relative"
-                    onFocus={() => setFocusedProjectRowID(project.publicID)}
-                    onBlur={(event) => {
-                      const nextTarget = event.relatedTarget
-                      if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
-                        setFocusedProjectRowID(null)
-                      }
-                    }}
-                  >
-                    <ProjectTreeButton
-                      active={active}
-                      contentID={projectConversationContentID}
-                      expanded={expanded}
-                      name={project.name}
-                      onHoverChange={(hovered) => setHoveredProjectRowID(hovered ? project.publicID : null)}
-                      onToggleExpanded={() => toggleProjectExpanded(project.publicID)}
-                    />
-                    <ProjectInlineAction
-                      label={t("newChatInProject")}
-                      visible={showProjectActions}
-                      className="right-8"
-                      onHoverChange={(hovered) => setHoveredProjectCreateID(hovered ? project.publicID : null)}
-                      onClick={() => startProjectConversation(project.publicID)}
-                    >
-                      <PlusIcon size={16} strokeWidth={1.6} animate={createHovered ? "default" : undefined} />
-                    </ProjectInlineAction>
-                    <DropdownMenu
-                      modal={false}
-                      open={menuOpen}
-                      onOpenChange={(open) => setOpenProjectMenuID(open ? project.publicID : null)}
-                    >
-                      <DropdownMenuTrigger asChild>
-                        <ProjectInlineAction
-                          label={t("menu")}
-                          visible={showProjectActions}
-                          className="right-0"
-                          onHoverChange={(hovered) => setHoveredProjectMenuID(hovered ? project.publicID : null)}
+              <DndContext
+                sensors={projectSortSensors}
+                collisionDetection={closestCenter}
+                onDragStart={onProjectDragStart}
+                onDragEnd={(event) => void onProjectDragEnd(event)}
+                onDragCancel={onProjectDragCancel}
+              >
+                <SortableContext items={projectIDs} strategy={verticalListSortingStrategy}>
+                  <SidebarMenu>
+                    {projects.map((project) => {
+                      const expanded = expandedProjectIDs.has(project.publicID)
+                      const conversationState = projectConversationState[project.publicID]
+                      const conversationLoading = expanded && (!conversationState || conversationState.loading)
+                      const hasActiveChild = Boolean(conversationState?.items.some((item) => item.publicID === activeConversationID))
+                      const active =
+                        ((pathname === "/recent" || pathname === "/chat") && activeProjectID === project.publicID) ||
+                        activeConversationProjectID === project.publicID ||
+                        hasActiveChild
+                      const rowHovered = hoveredProjectRowID === project.publicID
+                      const rowFocused = focusedProjectRowID === project.publicID
+                      const createHovered = hoveredProjectCreateID === project.publicID
+                      const menuHovered = hoveredProjectMenuID === project.publicID
+                      const menuOpen = openProjectMenuID === project.publicID
+                      const rowDragging = draggingProjectID === project.publicID
+                      const canSortProjects = projects.length >= 2
+                      const projectActionPaddingClassName = canSortProjects ? "pr-24" : "pr-16"
+                      const projectCreateActionClassName = canSortProjects ? "right-16" : "right-8"
+                      const projectMenuActionClassName = canSortProjects ? "right-8" : "right-0"
+                      const showProjectActions = !rowDragging && (rowHovered || rowFocused || menuHovered || menuOpen)
+                      const projectConversationContentID = `sidebar-project-${project.publicID}-conversations`
+                      return (
+                        <ProjectSortableItem
+                          key={project.publicID}
+                          projectID={project.publicID}
+                          disabled={!canSortProjects || savingProjectOrder}
                         >
-                          <Ellipsis size={16} strokeWidth={1.4} animate={menuHovered ? "pulse" : undefined} />
-                        </ProjectInlineAction>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-max min-w-36 max-w-[calc(100vw-2rem)]">
-                        <DropdownMenuItem
-                          onSelect={(event) => {
-                            event.preventDefault()
-                            setDraft({ publicID: project.publicID, name: project.name, systemPrompt: project.systemPrompt ?? "" })
-                          }}
-                        >
-                          <DropdownMenuItemIcon icon={PencilLine} />
-                          {t("edit")}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onSelect={(event) => {
-                            event.preventDefault()
-                            setDeleteTarget({ publicID: project.publicID, name: project.name })
-                          }}
-                        >
-                          <DropdownMenuItemIcon icon={Trash} className="text-current" />
-                          {t("delete")}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <AnimatePresence initial={false}>
-                    {expanded ? (
-                      <motion.div
-                        key={`${project.publicID}-conversations`}
-                        id={projectConversationContentID}
-                        initial={{ height: 0, opacity: 0, "--mask-stop": "0%", y: 6 }}
-                        animate={{ height: "auto", opacity: 1, "--mask-stop": "100%", y: 0 }}
-                        exit={{ height: 0, opacity: 0, "--mask-stop": "0%", y: 6 }}
-                        transition={PROJECT_TREE_ACCORDION_TRANSITION}
-                        style={PROJECT_TREE_ACCORDION_MASK_STYLE}
-                      >
-                        <SidebarMenuSub className="mx-0 w-full translate-x-0 border-l-0 px-0 py-0.5">
-                          {conversationLoading ? (
-                            <SidebarMenuSubItem>
-                              <div className="flex h-7 w-full items-center gap-2 rounded-md pl-8 pr-2 text-xs text-muted-foreground">
-                                <Spinner className="size-3.5" />
-                                <span>{tRecent("loadingMore")}</span>
-                              </div>
-                            </SidebarMenuSubItem>
-                          ) : null}
-                          {conversationState?.error ? (
-                            <SidebarMenuSubItem>
-                              <button
-                                type="button"
-                                className="flex h-7 w-full min-w-0 items-center gap-2 rounded-md pl-8 pr-2 text-left text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                                onClick={() => void loadProjectConversations(project.publicID, true)}
+                          {({ attributes, isDragging, listeners }) => (
+                            <>
+                              <div
+                                className="group/project-row relative"
+                                onFocus={() => setFocusedProjectRowID(project.publicID)}
+                                onBlur={(event) => {
+                                  const nextTarget = event.relatedTarget
+                                  if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+                                    setFocusedProjectRowID(null)
+                                  }
+                                }}
                               >
-                                <span className="truncate">{tRecent("loadMoreFailed")}</span>
-                                <span className="ml-auto shrink-0 underline underline-offset-4">{tRecent("retry")}</span>
-                              </button>
-                            </SidebarMenuSubItem>
-                          ) : null}
-                          {conversationState?.loaded && conversationState.items.length === 0 ? (
-                            <SidebarMenuSubItem>
-                              <div className="w-full rounded-md py-1 pl-8 pr-2 text-xs text-sidebar-foreground/55">{tRecent("empty")}</div>
-                            </SidebarMenuSubItem>
-                          ) : null}
-                          {conversationState?.items.map((conversation) => {
-                            const title = conversation.title || tRecent("untitled")
-                            return (
-                              <SidebarConversationItem
-                                key={conversation.publicID}
-                                active={activeConversationID === conversation.publicID}
-                                item={{
-                                  publicID: conversation.publicID,
-                                  title,
-                                  url: `/chat?conversation_id=${conversation.publicID}`,
-                                  starred: conversation.isStarred,
-                                  shareActive: conversation.shareStatus === "active" && Boolean(conversation.shareID?.trim()),
-                                }}
-                                starAction={{
-                                  label: conversation.isStarred ? tRecent("row.unstar") : tRecent("row.star"),
-                                  icon: conversation.isStarred ? StarOff : Star,
-                                  onSelect: (targetPublicID) => {
-                                    void setStarByPublicID(targetPublicID, !conversation.isStarred)
-                                  },
-                                }}
-                                projectMenu={{
-                                  label: tRecent("row.moveToProject"),
-                                  unassignedLabel: tRecent("projects.unassigned"),
-                                  currentProjectID: conversation.projectID,
-                                  projects,
-                                  onSelect: (targetPublicID, projectID) => {
-                                    void setProjectByPublicID(targetPublicID, projectID)
-                                  },
-                                }}
-                                isTransferring={false}
-                                isRenaming={conversationRenameTarget?.publicID === conversation.publicID}
-                                renameValue={conversationRenameTarget?.publicID === conversation.publicID ? renameValue : title}
-                                rowClassName="w-full"
-                                linkClassName="pl-8"
-                                onRenameValueChange={setRenameValue}
-                                onRenameCommit={onRenameConversationCommit}
-                                onRenameCancel={onRenameConversationCancel}
-                                onAutoRename={onAutoRenameConversation}
-                                isAutoRenaming={autoRenamingConversationID === conversation.publicID}
-                                onRename={onRenameConversation}
-                                onArchive={onArchiveConversation}
-                                onShare={(publicID, shareTitle) => setShareTarget({ publicID, title: shareTitle })}
-                                onExport={onExportConversation}
-                                onDelete={onDeleteConversation}
-                                onNavigate={onNavigate}
-                                menuTriggerID={`project-conversation-menu-trigger-${conversation.publicID}`}
-                              />
-                            )
-                          })}
-                        </SidebarMenuSub>
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
-                    </SidebarMenuItem>
-                  )
-                })}
-              </SidebarMenu>
+                                <ProjectDragHandle
+                                  attributes={attributes}
+                                  disabled={savingProjectOrder}
+                                  hidden={!canSortProjects}
+                                  label={t("dragToReorder", { name: project.name || t("untitled") })}
+                                  listeners={listeners}
+                                  visible={rowHovered || rowFocused || isDragging}
+                                />
+                                <ProjectTreeButton
+                                  active={active}
+                                  actionPaddingClassName={projectActionPaddingClassName}
+                                  contentID={projectConversationContentID}
+                                  expanded={expanded}
+                                  name={project.name}
+                                  onHoverChange={(hovered) => setHoveredProjectRowID(hovered ? project.publicID : null)}
+                                  onToggleExpanded={() => toggleProjectExpanded(project.publicID)}
+                                />
+                                <ProjectInlineAction
+                                  label={t("newChatInProject")}
+                                  visible={showProjectActions}
+                                  className={projectCreateActionClassName}
+                                  onHoverChange={(hovered) => setHoveredProjectCreateID(hovered ? project.publicID : null)}
+                                  onClick={() => startProjectConversation(project.publicID)}
+                                >
+                                  <PlusIcon size={16} strokeWidth={1.6} animate={createHovered ? "default" : undefined} />
+                                </ProjectInlineAction>
+                                <DropdownMenu
+                                  modal={false}
+                                  open={menuOpen}
+                                  onOpenChange={(open) => setOpenProjectMenuID(open ? project.publicID : null)}
+                                >
+                                  <DropdownMenuTrigger asChild>
+                                    <ProjectInlineAction
+                                      label={t("menu")}
+                                      visible={showProjectActions}
+                                      className={projectMenuActionClassName}
+                                      onHoverChange={(hovered) => setHoveredProjectMenuID(hovered ? project.publicID : null)}
+                                    >
+                                      <Ellipsis size={16} strokeWidth={1.4} animate={menuHovered ? "pulse" : undefined} />
+                                    </ProjectInlineAction>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-max min-w-36 max-w-[calc(100vw-2rem)]">
+                                    <DropdownMenuItem
+                                      onSelect={(event) => {
+                                        event.preventDefault()
+                                        setDraft({ publicID: project.publicID, name: project.name, systemPrompt: project.systemPrompt ?? "" })
+                                      }}
+                                    >
+                                      <DropdownMenuItemIcon icon={PencilLine} />
+                                      {t("edit")}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      variant="destructive"
+                                      onSelect={(event) => {
+                                        event.preventDefault()
+                                        setDeleteTarget({ publicID: project.publicID, name: project.name })
+                                      }}
+                                    >
+                                      <DropdownMenuItemIcon icon={Trash} className="text-current" />
+                                      {t("delete")}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                              <AnimatePresence initial={false}>
+                                {expanded ? (
+                                  <ProjectConversationSubmenu
+                                    activeConversationID={activeConversationID}
+                                    autoRenamingConversationID={autoRenamingConversationID}
+                                    contentID={projectConversationContentID}
+                                    conversationRenameTarget={conversationRenameTarget}
+                                    conversationState={conversationState}
+                                    loading={conversationLoading}
+                                    onArchiveConversation={onArchiveConversation}
+                                    onAutoRenameConversation={onAutoRenameConversation}
+                                    onDeleteConversation={onDeleteConversation}
+                                    onExportConversation={onExportConversation}
+                                    onLoadConversations={loadProjectConversations}
+                                    onNavigate={onNavigate}
+                                    onRenameConversation={onRenameConversation}
+                                    onRenameConversationCancel={onRenameConversationCancel}
+                                    onRenameConversationCommit={onRenameConversationCommit}
+                                    onRenameValueChange={setRenameValue}
+                                    onSetProjectByPublicID={setProjectByPublicID}
+                                    onSetShareTarget={setShareTarget}
+                                    onSetStarByPublicID={setStarByPublicID}
+                                    projectID={project.publicID}
+                                    projects={projects}
+                                    renameValue={renameValue}
+                                  />
+                                ) : null}
+                              </AnimatePresence>
+                            </>
+                          )}
+                        </ProjectSortableItem>
+                      )
+                    })}
+                  </SidebarMenu>
+                </SortableContext>
+              </DndContext>
             </CollapsibleMotionContent>
           </SidebarGroup>
         </Collapsible>

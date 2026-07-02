@@ -39,6 +39,24 @@ type ConversationResponse struct {
 	UpdatedAt           time.Time  `json:"updatedAt"`
 }
 
+type ConversationExportResponse struct {
+	Version                 int                                     `json:"version"`
+	ExportScope             string                                  `json:"exportScope"`
+	ExportedAt              time.Time                               `json:"exportedAt"`
+	Conversation            ConversationResponse                    `json:"conversation"`
+	Messages                []MessageResponse                       `json:"messages"`
+	Runs                    []RunResponse                           `json:"runs"`
+	TotalMessages           int64                                   `json:"totalMessages"`
+	TotalRuns               int64                                   `json:"totalRuns"`
+	DefaultMessagePublicIDs []string                                `json:"defaultMessagePublicIDs"`
+	Compatibility           ConversationExportCompatibilityResponse `json:"compatibility"`
+}
+
+type ConversationExportCompatibilityResponse struct {
+	Format string `json:"format"`
+	Notes  string `json:"notes"`
+}
+
 // ConversationDefaultModelCandidateResponse 返回新会话自动选模候选。
 type ConversationDefaultModelCandidateResponse struct {
 	PlatformModelName string     `json:"platformModelName"`
@@ -78,6 +96,50 @@ func toConversationResponse(item *model.Conversation) ConversationResponse {
 		LastShareAccessedAt: item.LastShareAccessedAt,
 		CreatedAt:           item.CreatedAt,
 		UpdatedAt:           item.UpdatedAt,
+	}
+}
+
+func toConversationExportResponse(item *appconversation.ConversationExportResult) ConversationExportResponse {
+	return ToConversationExportResponse(item)
+}
+
+// ToConversationExportResponse 转换导出结果为响应 DTO（供跨包复用）。
+func ToConversationExportResponse(item *appconversation.ConversationExportResult) ConversationExportResponse {
+	if item == nil {
+		return ConversationExportResponse{}
+	}
+	runModels := make(map[string]model.Run, len(item.Runs))
+	runs := make([]RunResponse, 0, len(item.Runs))
+	for _, run := range item.Runs {
+		if runID := strings.TrimSpace(run.RunID); runID != "" {
+			runModels[runID] = run
+		}
+		runs = append(runs, toRunResponse(run))
+	}
+
+	fallbackModel := ""
+	if item.Conversation != nil {
+		fallbackModel = item.Conversation.Model
+	}
+	messages := make([]MessageResponse, 0, len(item.Messages))
+	for _, message := range item.Messages {
+		messages = append(messages, toMessageResponseWithRunAndFallback(message, runModels[strings.TrimSpace(message.RunID)], fallbackModel))
+	}
+
+	return ConversationExportResponse{
+		Version:                 item.Version,
+		ExportScope:             item.ExportScope,
+		ExportedAt:              item.ExportedAt,
+		Conversation:            toConversationResponse(item.Conversation),
+		Messages:                messages,
+		Runs:                    runs,
+		TotalMessages:           item.TotalMessages,
+		TotalRuns:               item.TotalRuns,
+		DefaultMessagePublicIDs: item.DefaultMessagePublicIDs,
+		Compatibility: ConversationExportCompatibilityResponse{
+			Format: "deeix.conversation.export",
+			Notes:  "Full backup export. Import compatibility is not guaranteed.",
+		},
 	}
 }
 

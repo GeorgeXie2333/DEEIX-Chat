@@ -131,23 +131,27 @@ type UpstreamAPIKeyView struct {
 
 // ModelView 模型展示数据（内部传输，不携带序列化标记）。
 type ModelView struct {
-	ID                uint
-	PlatformModelName string
-	Vendor            string
-	KindsJSON         string
-	Icon              string
-	CapabilitiesJSON  string
-	SystemPrompt      string
-	AccessScope       string
-	Status            string
-	Description       string
-	SortOrder         int
-	SourceCount       int64
-	ActiveSourceCount int64
-	ProtocolsJSON     string
-	Pricing           *appbilling.PublicModelPricing
-	CreatedAt         string
-	UpdatedAt         string
+	ID                 uint
+	PlatformModelName  string
+	Vendor             string
+	KindsJSON          string
+	Icon               string
+	CapabilitiesJSON   string
+	SystemPrompt       string
+	AccessScope        string
+	Status             string
+	Description        string
+	CbPolicyMode       string
+	CbFailureThreshold int
+	CbDurationMin      int
+	CbWindowMin        int
+	SortOrder          int
+	SourceCount        int64
+	ActiveSourceCount  int64
+	ProtocolsJSON      string
+	Pricing            *appbilling.PublicModelPricing
+	CreatedAt          string
+	UpdatedAt          string
 }
 
 // ActiveModelRouteView 表示平台模型下可用的上游真实模型路由。
@@ -195,6 +199,7 @@ type ModelUpstreamSourceView struct {
 	ID                     uint
 	UpstreamID             uint
 	UpstreamName           string
+	UpstreamStatus         string
 	BaseURL                string
 	BindingCode            string
 	UpstreamModelName      string
@@ -208,9 +213,13 @@ type ModelUpstreamSourceView struct {
 	Priority               int
 	Weight                 int
 	Source                 string
+	CbFailureThreshold     int
+	CbDurationMin          int
+	CbWindowMin            int
 	HeadersJSON            string
 	CircuitOpen            bool
 	CircuitUntil           string
+	CircuitScope           string
 	CreatedAt              string
 	UpdatedAt              string
 }

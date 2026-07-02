@@ -142,6 +142,43 @@ function preserveKnownShareState(
   };
 }
 
+function orderProjectsByPublicIDs(
+  items: ConversationProjectDTO[],
+  projectIDs: string[],
+): ConversationProjectDTO[] {
+  if (projectIDs.length === 0) {
+    return items;
+  }
+
+  const byPublicID = new Map(items.map((item) => [item.publicID, item]));
+  const seen = new Set<string>();
+  const ordered: ConversationProjectDTO[] = [];
+
+  for (const publicID of projectIDs) {
+    const project = byPublicID.get(publicID);
+    if (!project || seen.has(publicID)) {
+      continue;
+    }
+    seen.add(publicID);
+    ordered.push({
+      ...project,
+      sortOrder: ordered.length + 1,
+    });
+  }
+
+  for (const project of items) {
+    if (seen.has(project.publicID)) {
+      continue;
+    }
+    ordered.push({
+      ...project,
+      sortOrder: ordered.length + 1,
+    });
+  }
+
+  return ordered;
+}
+
 async function fetchRecentPage(accessToken: string, page: number) {
   return listConversations(accessToken, {
     page,
@@ -212,6 +249,7 @@ export function useRecentSidebarRecentsController(): SidebarRecentsControllerVal
   const clearTransferTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const recentItemsRef = React.useRef<ConversationDTO[]>([]);
   const starredItemsRef = React.useRef<ConversationDTO[]>([]);
+  const projectsRef = React.useRef<ConversationProjectDTO[]>(initialCache?.projects ?? []);
   const starredTotalRef = React.useRef(0);
   const starredWindowRequestVersionRef = React.useRef(0);
   const hasHydratedInitialRef = React.useRef(Boolean(initialCache));
@@ -233,8 +271,22 @@ export function useRecentSidebarRecentsController(): SidebarRecentsControllerVal
   }, [starredItems]);
 
   React.useEffect(() => {
+    projectsRef.current = projects;
+  }, [projects]);
+
+  React.useEffect(() => {
     starredTotalRef.current = starredTotal;
   }, [starredTotal]);
+
+  const setProjectList = React.useCallback((updater: React.SetStateAction<ConversationProjectDTO[]>) => {
+    setProjects((current) => {
+      const next = typeof updater === "function"
+        ? (updater as (value: ConversationProjectDTO[]) => ConversationProjectDTO[])(current)
+        : updater;
+      projectsRef.current = next;
+      return next;
+    });
+  }, []);
 
   React.useEffect(() => {
     writeSidebarRecentsCache({
@@ -324,7 +376,7 @@ export function useRecentSidebarRecentsController(): SidebarRecentsControllerVal
       }
       setRecentItems([]);
       setStarredItems([]);
-      setProjects([]);
+      setProjectList([]);
       setStarredTotal(0);
       setHasMore(false);
       hasHydratedInitialRef.current = true;
@@ -350,7 +402,7 @@ export function useRecentSidebarRecentsController(): SidebarRecentsControllerVal
 
       setRecentItems(sortByUpdatedAtDesc(nextRecentItems));
       setStarredItems(nextStarredItems);
-      setProjects(projectData);
+      setProjectList(projectData);
       setStarredTotal(starredData.total ?? nextStarredItems.length);
       setHasMore(loaded === RECENT_PAGE_SIZE && loaded < total);
     } finally {
@@ -359,7 +411,7 @@ export function useRecentSidebarRecentsController(): SidebarRecentsControllerVal
         setLoadingInitial(false);
       }
     }
-  }, []);
+  }, [setProjectList]);
 
   React.useEffect(() => {
     void loadInitial();
@@ -499,9 +551,9 @@ export function useRecentSidebarRecentsController(): SidebarRecentsControllerVal
       return null;
     }
     const created = await createConversationProject(token, payload);
-    setProjects((current) => [...current, created].sort((a, b) => a.sortOrder - b.sortOrder || b.publicID.localeCompare(a.publicID)));
+    setProjectList((current) => [...current, created].sort((a, b) => a.sortOrder - b.sortOrder || b.publicID.localeCompare(a.publicID)));
     return created;
-  }, []);
+  }, [setProjectList]);
 
   const updateProject = React.useCallback(
     async (projectID: string, payload: UpdateConversationProjectRequest): Promise<ConversationProjectDTO | null> => {
@@ -510,7 +562,7 @@ export function useRecentSidebarRecentsController(): SidebarRecentsControllerVal
         return null;
       }
       const updated = await updateConversationProject(token, projectID, payload);
-      setProjects((current) =>
+      setProjectList((current) =>
         current
           .map((item) => (item.publicID === projectID ? updated : item))
           .filter((item) => item.status === "active")
@@ -526,7 +578,7 @@ export function useRecentSidebarRecentsController(): SidebarRecentsControllerVal
       }
       return updated;
     },
-    [],
+    [setProjectList],
   );
 
   const deleteProject = React.useCallback(
@@ -553,7 +605,7 @@ export function useRecentSidebarRecentsController(): SidebarRecentsControllerVal
         quota: result.quota,
         sourceID: projectID,
       });
-      setProjects((current) => current.filter((item) => item.publicID !== projectID));
+      setProjectList((current) => current.filter((item) => item.publicID !== projectID));
       if (deleteConversations) {
         setRecentItems((current) => current.filter((item) => item.projectID !== projectID));
         setStarredItems((current) => current.filter((item) => item.projectID !== projectID));
@@ -576,17 +628,27 @@ export function useRecentSidebarRecentsController(): SidebarRecentsControllerVal
       }
       return true;
     },
-    [publishChange, refreshStarredWindow],
+    [publishChange, refreshStarredWindow, setProjectList],
   );
 
   const reorderProjects = React.useCallback(async (projectIDs: string[]): Promise<void> => {
+    const rollbackProjects = projectsRef.current;
+    setProjectList(orderProjectsByPublicIDs(rollbackProjects, projectIDs));
+
     const token = await resolveAccessToken();
     if (!token) {
-      return;
+      setProjectList(rollbackProjects);
+      throw new Error("errors.auth.unauthorized");
     }
-    const reordered = await reorderConversationProjects(token, { projectIDs });
-    setProjects(reordered);
-  }, []);
+
+    try {
+      const reordered = await reorderConversationProjects(token, { projectIDs });
+      setProjectList(reordered);
+    } catch (error) {
+      setProjectList(rollbackProjects);
+      throw error;
+    }
+  }, [setProjectList]);
 
   const setProjectByPublicID = React.useCallback(
     async (publicID: string, projectID?: string): Promise<ConversationDTO | null> => {

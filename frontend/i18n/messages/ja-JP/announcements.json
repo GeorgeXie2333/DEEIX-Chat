@@ -15,5 +15,8 @@
   "dismissAllToday": "今日は表示しない",
   "dismissFailed": "お知らせの状態を保存できませんでした",
   "closeFailed": "お知らせの閉じる状態を保存できませんでした",
-  "close": "閉じる"
+  "close": "閉じる",
+  "loading": "お知らせを読み込み中...",
+  "empty": "現在のお知らせはありません",
+  "openFailed": "お知らせの読み込みに失敗しました"
 }

@@ -204,6 +204,28 @@ export function ChatMCPPanel({
     [defaultToolIDs, defaultToolIDSet, onDefaultToolsChange, selectionLimit, showToolLimitToast],
   );
 
+  const toggleDefaultToolGroup = React.useCallback(
+    (tools: MCPToolDTO[]) => {
+      const toolIDs = tools.map((tool) => tool.id);
+      if (toolIDs.length === 0) {
+        return;
+      }
+      const allDefault = toolIDs.every((toolID) => defaultToolIDSet.has(toolID));
+      if (allDefault) {
+        const removeSet = new Set(toolIDs);
+        void onDefaultToolsChange(defaultToolIDs.filter((id) => !removeSet.has(id)));
+        return;
+      }
+      const missingIDs = toolIDs.filter((toolID) => !defaultToolIDSet.has(toolID));
+      if (defaultToolIDs.length + missingIDs.length > selectionLimit) {
+        showToolLimitToast();
+        return;
+      }
+      void onDefaultToolsChange([...defaultToolIDs, ...missingIDs]);
+    },
+    [defaultToolIDs, defaultToolIDSet, onDefaultToolsChange, selectionLimit, showToolLimitToast],
+  );
+
   const toggleServerExpanded = React.useCallback((serverKey: string) => {
     setExpandedServerKeys((current) => {
       const next = new Set(current);

@@ -65,7 +65,13 @@
     "loggingOut": "サインアウト中",
     "fallbackUser": "ユーザー",
     "today": "今日",
-    "yesterday": "昨日"
+    "yesterday": "昨日",
+    "announcements": "お知らせ"
+  },
+  "time": {
+    "todayTime": "{time}",
+    "thisYearDateTime": "{month}/{day} {time}",
+    "fullDateTime": "{year}/{month}/{day} {time}"
   },
   "table": {
     "search": "検索",

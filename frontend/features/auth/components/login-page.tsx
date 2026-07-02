@@ -29,7 +29,7 @@ const LANDING_CAPABILITIES: ReadonlyArray<{ key: string; Icon: LucideIcon }> = [
 const MODEL_NAMES = ["GPT", "Gemini", "Claude", "Grok"] as const;
 
 // Ambient brand-color wash behind the cards: two large radial glows driven by the
-// theme `--primary` token, so it adapts across all 8 themes × dark mode for free.
+// theme `--primary` token, so it adapts across all 8 themes 脳 dark mode for free.
 const AMBIENT_BACKGROUND =
   "radial-gradient(80rem 50rem at 85% -10%, color-mix(in oklch, var(--primary) 6%, transparent), transparent 60%)," +
   "radial-gradient(60rem 40rem at -10% 110%, color-mix(in oklch, var(--primary) 4%, transparent), transparent 60%)";

@@ -159,6 +159,7 @@ func systemFallbackProtocols(compatible string) map[string]string {
 func isKnownProtocol(raw string) bool {
 	switch strings.TrimSpace(strings.ToLower(raw)) {
 	case llm.AdapterOpenAIResponses,
+		llm.AdapterOpenRouterChat,
 		llm.AdapterOpenRouterResponses,
 		llm.AdapterOpenAIChatCompletions,
 		llm.AdapterAnthropicMessages,
@@ -334,6 +335,7 @@ func isProtocolAllowedForKind(kind string, protocol string) bool {
 	case modelKindChat, modelKindAudio:
 		switch protocol {
 		case llm.AdapterOpenAIResponses,
+			llm.AdapterOpenRouterChat,
 			llm.AdapterOpenRouterResponses,
 			llm.AdapterOpenAIChatCompletions,
 			llm.AdapterAnthropicMessages,

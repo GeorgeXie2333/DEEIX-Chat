@@ -332,7 +332,7 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
         toast.error(t("toasts.passwordInvalid"));
         return;
       }
-      if (registerTurnstileRequired && !emailVerificationEnabled && !registerTurnstileToken) {
+      if (registerTurnstileRequired && !registerTurnstileToken) {
         toast.error(t("toasts.turnstileRequired"));
         return;
       }
@@ -342,14 +342,14 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
           registerEmail,
           registerPassword,
           emailVerificationEnabled ? registerCode : "",
-          registerTurnstileRequired && !emailVerificationEnabled ? registerTurnstileToken : undefined,
+          registerTurnstileRequired ? registerTurnstileToken : undefined,
           locale,
         );
         completeAuth(result.accessToken, result.sessionID);
       } catch (error) {
         toast.error(resolveErrorMessage(error, t("toasts.registerFailed")));
       } finally {
-        if (registerTurnstileRequired && !emailVerificationEnabled && registerTurnstileToken) {
+        if (registerTurnstileRequired && registerTurnstileToken) {
           resetRegisterTurnstile();
         }
         setSubmitting(false);

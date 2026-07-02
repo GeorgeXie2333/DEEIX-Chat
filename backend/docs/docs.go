@@ -1181,6 +1181,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/conversations/export": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "流式导出全量会话及消息为 NDJSON 文件，最后一行为 export_manifest 元数据",
+                "produces": [
+                    "application/x-ndjson"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理员导出全量对话数据",
+                "responses": {
+                    "200": {
+                        "description": "NDJSON stream",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/llm/models": {
             "get": {
                 "security": [
@@ -3160,6 +3191,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/logs/cleanup": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按日志类型物理删除指定时间点之前的日志；操作不可恢复",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理员清理日志",
+                "parameters": [
+                    {
+                        "description": "日志清理参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_admin.CleanupLogsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_admin.CleanupLogsResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/payment-orders": {
             "get": {
                 "security": [
@@ -4838,6 +4920,14 @@ const docTemplate = `{
                     "announcements"
                 ],
                 "summary": "获取当前公告",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "是否包含今日不再显示的公告",
+                        "name": "include_dismissed",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -9806,6 +9896,46 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_transport_http_admin.CleanupLogsRequest": {
+            "type": "object",
+            "required": [
+                "before",
+                "type"
+            ],
+            "properties": {
+                "before": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_admin.CleanupLogsResponse": {
+            "type": "object",
+            "properties": {
+                "before": {
+                    "type": "string"
+                },
+                "deletedCount": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transport_http_admin.CleanupLogsResponseDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_transport_http_admin.CleanupLogsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_transport_http_admin.ConversationEventListResponseDoc": {
             "type": "object",
             "properties": {
@@ -12192,6 +12322,10 @@ const docTemplate = `{
         "internal_transport_http_billing.CreateCheckoutRequest": {
             "type": "object",
             "properties": {
+                "amountMinorUnits": {
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "amountUSD": {
                     "type": "number",
                     "minimum": 0
@@ -13334,6 +13468,18 @@ const docTemplate = `{
                 "upstreamModelID"
             ],
             "properties": {
+                "cbDurationMin": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "cbFailureThreshold": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "cbWindowMin": {
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "priority": {
                     "type": "integer"
                 },
@@ -13383,6 +13529,25 @@ const docTemplate = `{
                 "capabilitiesJSON": {
                     "type": "string",
                     "maxLength": 10000
+                },
+                "cbDurationMin": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "cbFailureThreshold": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "cbPolicyMode": {
+                    "type": "string",
+                    "enum": [
+                        "default",
+                        "enforced"
+                    ]
+                },
+                "cbWindowMin": {
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "description": {
                     "type": "string",
@@ -13874,6 +14039,18 @@ const docTemplate = `{
                 "capabilitiesJSON": {
                     "type": "string"
                 },
+                "cbDurationMin": {
+                    "type": "integer"
+                },
+                "cbFailureThreshold": {
+                    "type": "integer"
+                },
+                "cbPolicyMode": {
+                    "type": "string"
+                },
+                "cbWindowMin": {
+                    "type": "integer"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -13954,8 +14131,20 @@ const docTemplate = `{
                 "bindingCode": {
                     "type": "string"
                 },
+                "cbDurationMin": {
+                    "type": "integer"
+                },
+                "cbFailureThreshold": {
+                    "type": "integer"
+                },
+                "cbWindowMin": {
+                    "type": "integer"
+                },
                 "circuitOpen": {
                     "type": "boolean"
+                },
+                "circuitScope": {
+                    "type": "string"
                 },
                 "circuitUntil": {
                     "type": "string"
@@ -14006,6 +14195,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "upstreamName": {
+                    "type": "string"
+                },
+                "upstreamStatus": {
                     "type": "string"
                 },
                 "weight": {
@@ -14197,6 +14389,25 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 10000
                 },
+                "cbDurationMin": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "cbFailureThreshold": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "cbPolicyMode": {
+                    "type": "string",
+                    "enum": [
+                        "default",
+                        "enforced"
+                    ]
+                },
+                "cbWindowMin": {
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "description": {
                     "type": "string",
                     "maxLength": 10000
@@ -14245,6 +14456,18 @@ const docTemplate = `{
         "internal_transport_http_channel.UpdateModelUpstreamSourceRequest": {
             "type": "object",
             "properties": {
+                "cbDurationMin": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "cbFailureThreshold": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "cbWindowMin": {
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "priority": {
                     "type": "integer"
                 },
@@ -17616,7 +17839,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "0.2.8",
+	Version:          "0.3.0",
 	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},

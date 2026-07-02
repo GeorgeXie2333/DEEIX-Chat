@@ -50,6 +50,9 @@ func (s *Service) ListModels(ctx context.Context, page int, pageSize int, input 
 	for _, item := range items {
 		views = append(views, toModelView(item))
 	}
+	if err := s.normalizeModelAvailability(ctx, views); err != nil {
+		return nil, 0, err
+	}
 	return views, total, nil
 }
 
@@ -216,6 +219,39 @@ func filterPricedModelViews(items []ModelView, pricingByPlatformModelName map[st
 	return results
 }
 
+func (s *Service) normalizeModelAvailability(ctx context.Context, items []ModelView) error {
+	for index := range items {
+		if items[index].Status != "active" {
+			items[index].ActiveSourceCount = 0
+			continue
+		}
+		if s.cache == nil || items[index].SourceCount <= 0 || items[index].ActiveSourceCount <= 0 {
+			continue
+		}
+		sources, _, err := s.repo.ListModelUpstreamSources(ctx, items[index].PlatformModelName, 0, int(items[index].SourceCount))
+		if err != nil {
+			return err
+		}
+		var active int64
+		for _, source := range sources {
+			view := toModelUpstreamSourceView(source)
+			s.applyModelSourceCircuitStatus(ctx, &view)
+			if modelSourceAvailable(view) {
+				active++
+			}
+		}
+		items[index].ActiveSourceCount = active
+	}
+	return nil
+}
+
+func modelSourceAvailable(view ModelUpstreamSourceView) bool {
+	return view.Status == "active" &&
+		view.UpstreamStatus == "active" &&
+		view.UpstreamModelStatus == "active" &&
+		!view.CircuitOpen
+}
+
 // ResolvePlatformModelIdentity 将平台模型名解析为统一平台身份。
 func (s *Service) ResolvePlatformModelIdentity(ctx context.Context, platformModelName string) (appbilling.PlatformModelIdentity, error) {
 	name, err := normalizePlatformModelName(platformModelName)
@@ -280,17 +316,22 @@ func (s *Service) CreateModel(ctx context.Context, input CreateModelInput) (*Mod
 	if err != nil {
 		return nil, err
 	}
+	cbPolicyMode := normalizeModelCircuitPolicyMode(input.CbPolicyMode)
 
 	item := &domainchannel.PlatformModel{
-		PlatformModelName: platformModelName,
-		Vendor:            normalizeModelVendor(input.Vendor, platformModelName),
-		KindsJSON:         kindsJSON,
-		Icon:              normalizeModelIcon(input.Icon, input.Vendor, platformModelName),
-		CapabilitiesJSON:  strings.TrimSpace(input.CapabilitiesJSON),
-		SystemPrompt:      systemPrompt,
-		AccessScope:       accessScope,
-		Status:            normalizeStatus(input.Status),
-		Description:       strings.TrimSpace(input.Description),
+		PlatformModelName:  platformModelName,
+		Vendor:             normalizeModelVendor(input.Vendor, platformModelName),
+		KindsJSON:          kindsJSON,
+		Icon:               normalizeModelIcon(input.Icon, input.Vendor, platformModelName),
+		CapabilitiesJSON:   strings.TrimSpace(input.CapabilitiesJSON),
+		SystemPrompt:       systemPrompt,
+		AccessScope:        accessScope,
+		Status:             normalizeStatus(input.Status),
+		Description:        strings.TrimSpace(input.Description),
+		CbPolicyMode:       cbPolicyMode,
+		CbFailureThreshold: normalizeNonNegative(input.CbFailureThreshold),
+		CbDurationMin:      normalizeNonNegative(input.CbDurationMin),
+		CbWindowMin:        normalizeNonNegative(input.CbWindowMin),
 	}
 	if err := s.repo.CreateModel(ctx, item); err != nil {
 		if isDuplicateKeyError(err) {
@@ -365,6 +406,22 @@ func (s *Service) UpdateModel(ctx context.Context, modelID uint, input UpdateMod
 		description := strings.TrimSpace(*input.Description)
 		update.Description = &description
 	}
+	if input.CbPolicyMode != nil {
+		value := normalizeModelCircuitPolicyMode(*input.CbPolicyMode)
+		update.CbPolicyMode = &value
+	}
+	if input.CbFailureThreshold != nil {
+		value := normalizeNonNegative(*input.CbFailureThreshold)
+		update.CbFailureThreshold = &value
+	}
+	if input.CbDurationMin != nil {
+		value := normalizeNonNegative(*input.CbDurationMin)
+		update.CbDurationMin = &value
+	}
+	if input.CbWindowMin != nil {
+		value := normalizeNonNegative(*input.CbWindowMin)
+		update.CbWindowMin = &value
+	}
 	if input.Vendor == nil && input.PlatformModelName != nil {
 		autoVendor := normalizeModelVendor("", nextPlatformModelName)
 		if autoVendor != nextVendor {
@@ -394,6 +451,11 @@ func (s *Service) getModelViewByID(ctx context.Context, modelID uint) (*ModelVie
 		return nil, err
 	}
 	view := toModelView(*item)
+	views := []ModelView{view}
+	if err := s.normalizeModelAvailability(ctx, views); err != nil {
+		return nil, err
+	}
+	view = views[0]
 	return &view, nil
 }
 
@@ -486,7 +548,7 @@ func (s *Service) ListModelUpstreamSources(ctx context.Context, modelID uint, pa
 	views := make([]ModelUpstreamSourceView, 0, len(items))
 	for _, item := range items {
 		v := toModelUpstreamSourceView(item)
-		v.CircuitOpen, v.CircuitUntil = s.cache.QueryModelCircuitStatus(ctx, item.UpstreamID, bindingCircuitKey(item.BindingCode))
+		s.applyModelSourceCircuitStatus(ctx, &v)
 		views = append(views, v)
 	}
 	return views, total, nil
@@ -526,13 +588,16 @@ func (s *Service) BindModelUpstreamSource(ctx context.Context, modelID uint, inp
 	}
 
 	route := &domainchannel.PlatformModelRoute{
-		PlatformModelID: modelItem.ID,
-		UpstreamModelID: upstreamModel.ID,
-		Protocol:        protocol,
-		Status:          normalizeStatus(input.Status),
-		Priority:        normalizePriority(input.Priority),
-		Weight:          normalizeWeight(input.Weight),
-		Source:          "manual",
+		PlatformModelID:    modelItem.ID,
+		UpstreamModelID:    upstreamModel.ID,
+		Protocol:           protocol,
+		Status:             normalizeStatus(input.Status),
+		Priority:           normalizePriority(input.Priority),
+		Weight:             normalizeWeight(input.Weight),
+		Source:             "manual",
+		CbFailureThreshold: normalizeNonNegative(input.CbFailureThreshold),
+		CbDurationMin:      normalizeNonNegative(input.CbDurationMin),
+		CbWindowMin:        normalizeNonNegative(input.CbWindowMin),
 	}
 	if err := s.repo.UpsertPlatformModelRoute(ctx, route); err != nil {
 		if isDuplicateKeyError(err) {
@@ -547,6 +612,7 @@ func (s *Service) BindModelUpstreamSource(ctx context.Context, modelID uint, inp
 		return nil, err
 	}
 	view := toModelUpstreamSourceView(*source)
+	s.applyModelSourceCircuitStatus(ctx, &view)
 	return &view, nil
 }
 
@@ -584,9 +650,22 @@ func (s *Service) UpdateModelUpstreamSource(ctx context.Context, modelID uint, r
 		weight := normalizeWeight(*input.Weight)
 		updateInput.Weight = &weight
 	}
+	if input.CbFailureThreshold != nil {
+		value := normalizeNonNegative(*input.CbFailureThreshold)
+		updateInput.CbFailureThreshold = &value
+	}
+	if input.CbDurationMin != nil {
+		value := normalizeNonNegative(*input.CbDurationMin)
+		updateInput.CbDurationMin = &value
+	}
+	if input.CbWindowMin != nil {
+		value := normalizeNonNegative(*input.CbWindowMin)
+		updateInput.CbWindowMin = &value
+	}
 
 	if updateInput.IsZero() {
 		view := toModelUpstreamSourceView(*source)
+		s.applyModelSourceCircuitStatus(ctx, &view)
 		return &view, nil
 	}
 
@@ -603,7 +682,29 @@ func (s *Service) UpdateModelUpstreamSource(ctx context.Context, modelID uint, r
 		return nil, err
 	}
 	view := toModelUpstreamSourceView(*source)
+	s.applyModelSourceCircuitStatus(ctx, &view)
 	return &view, nil
+}
+
+func (s *Service) applyModelSourceCircuitStatus(ctx context.Context, view *ModelUpstreamSourceView) {
+	if view == nil || s.cache == nil {
+		return
+	}
+	if upstreamOpen, upstreamUntil := s.cache.QueryUpstreamCircuitStatus(ctx, view.UpstreamID); upstreamOpen {
+		view.CircuitOpen = true
+		view.CircuitUntil = upstreamUntil
+		view.CircuitScope = "upstream"
+		return
+	}
+	if modelOpen, modelUntil := s.cache.QueryModelCircuitStatus(ctx, view.UpstreamID, bindingCircuitKey(view.BindingCode)); modelOpen {
+		view.CircuitOpen = true
+		view.CircuitUntil = modelUntil
+		view.CircuitScope = "source"
+		return
+	}
+	view.CircuitOpen = false
+	view.CircuitUntil = ""
+	view.CircuitScope = ""
 }
 
 // ---------------------------------------------------------------------------

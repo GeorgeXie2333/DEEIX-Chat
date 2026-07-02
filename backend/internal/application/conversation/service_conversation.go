@@ -9,6 +9,7 @@ import (
 	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 const (
@@ -16,6 +17,9 @@ const (
 	maxPageSize           = 100
 	maxAdminEventPageSize = 1000
 	maxMessagePageSize    = 1000
+
+	conversationExportVersion   = 1
+	conversationExportScopeFull = "full"
 )
 
 // DeleteConversationOptions 定义会话删除选项。
@@ -34,7 +38,7 @@ type DeleteConversationResult struct {
 func (s *Service) CreateConversation(ctx context.Context, userID uint, title string, modelName string, projectPublicID string) (*model.Conversation, error) {
 	normalizedTitle := strings.TrimSpace(title)
 	if normalizedTitle == "" {
-		normalizedTitle = "新会话"
+		normalizedTitle = "新对话"
 	}
 
 	normalizedModel := strings.TrimSpace(modelName)
@@ -135,6 +139,101 @@ func (s *Service) ListMessagesBeforeID(ctx context.Context, userID uint, convers
 		return nil, 0, err
 	}
 	return items, total, nil
+}
+
+// ExportConversation 查询单会话完整导出数据。
+func (s *Service) ExportConversation(ctx context.Context, userID uint, publicID string) (*ConversationExportResult, error) {
+	conversation, err := s.repo.GetConversationByPublicID(ctx, publicID, userID)
+	if err != nil {
+		return nil, ErrConversationNotFound
+	}
+
+	items, err := s.repo.ListAllMessages(ctx, conversation.ID)
+	if err != nil {
+		return nil, err
+	}
+	if err = s.hydrateMessageFeedback(ctx, userID, items); err != nil {
+		return nil, err
+	}
+	if err = s.hydrateMessageProcessTraces(ctx, items); err != nil {
+		return nil, err
+	}
+
+	runs, err := s.repo.ListConversationRunsByRunIDs(ctx, userID, conversation.ID, collectExportMessageRunIDs(items))
+	if err != nil {
+		return nil, err
+	}
+
+	return &ConversationExportResult{
+		Version:                 conversationExportVersion,
+		ExportScope:             conversationExportScopeFull,
+		ExportedAt:              time.Now().UTC(),
+		Conversation:            conversation,
+		Messages:                items,
+		Runs:                    runs,
+		TotalMessages:           int64(len(items)),
+		TotalRuns:               int64(len(runs)),
+		DefaultMessagePublicIDs: exportDefaultMessagePublicIDs(items),
+	}, nil
+}
+
+// ListAllConversationsAfterID 按主键游标分页列出会话（管理员导出用）。
+func (s *Service) ListAllConversationsAfterID(ctx context.Context, afterID uint, limit int) ([]model.Conversation, error) {
+	return s.repo.ListAllConversationsAfterID(ctx, afterID, limit)
+}
+
+// ExportConversationData 导出单会话完整数据，不做用户归属校验（管理员用）。
+func (s *Service) ExportConversationData(ctx context.Context, conversation *model.Conversation) (*ConversationExportResult, error) {
+	items, err := s.repo.ListAllMessages(ctx, conversation.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var runs []model.Run
+	runIDs := collectExportMessageRunIDs(items)
+	if len(runIDs) > 0 && conversation.UserID > 0 {
+		var runsErr error
+		runs, runsErr = s.repo.ListConversationRunsByRunIDs(ctx, conversation.UserID, conversation.ID, runIDs)
+		if runsErr != nil && s.logger != nil {
+			s.logger.Warn("export_conversation_runs_failed", zap.Uint("conversation_id", conversation.ID), zap.Error(runsErr))
+		}
+	}
+	if runs == nil {
+		runs = []model.Run{}
+	}
+
+	return &ConversationExportResult{
+		Version:                 conversationExportVersion,
+		ExportScope:             conversationExportScopeFull,
+		ExportedAt:              time.Now().UTC(),
+		Conversation:            conversation,
+		Messages:                items,
+		Runs:                    runs,
+		TotalMessages:           int64(len(items)),
+		TotalRuns:               int64(len(runs)),
+		DefaultMessagePublicIDs: exportDefaultMessagePublicIDs(items),
+	}, nil
+}
+
+func exportDefaultMessagePublicIDs(items []model.Message) []string {
+	return publicIDsFromMessages(buildLatestVisibleMessages(items))
+}
+
+func collectExportMessageRunIDs(items []model.Message) []string {
+	seen := make(map[string]struct{}, len(items))
+	runIDs := make([]string, 0, len(items))
+	for _, item := range items {
+		runID := strings.TrimSpace(item.RunID)
+		if runID == "" {
+			continue
+		}
+		if _, ok := seen[runID]; ok {
+			continue
+		}
+		seen[runID] = struct{}{}
+		runIDs = append(runIDs, runID)
+	}
+	return runIDs
 }
 
 // ListRecentMessages 查询会话最近消息窗口，供对话页恢复最新上下文。

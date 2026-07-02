@@ -9,18 +9,19 @@ import (
 
 // 已支持的协议常量。每个协议固定对应一个 HTTP 端点，任务能力由模型类别和路由规则约束。
 const (
-	AdapterOpenAIResponses        = "openai_responses"         // POST /v1/responses
-	AdapterOpenRouterResponses    = "openrouter_responses"     // POST /v1/responses（OpenRouter Responses Beta）
-	AdapterOpenAIChatCompletions  = "openai_chat_completions"  // POST /v1/chat/completions
-	AdapterOpenAIImageGenerations = "openai_image_generations" // POST /v1/images/generations
-	AdapterOpenAIImageEdits       = "openai_image_edits"       // POST /v1/images/edits
-	AdapterOpenAIVideoGenerations = "openai_video_generations" // POST /v1/videos
-	AdapterAnthropicMessages      = "anthropic_messages"       // POST /v1/messages
-	AdapterGoogleGenerateContent  = "google_generate_content"  // POST /v1beta/models/{model}:generateContent
-	AdapterGoogleImageGeneration  = "google_image_generation"  // POST /v1beta/models/{model}:generateContent
-	AdapterXAIResponses           = "xai_responses"            // POST /v1/responses（OpenAI 兼容）
-	AdapterXAIImage               = "xai_image"                // POST /v1/images/generations
-	AdapterXAIImageEdits          = "xai_image_edits"          // POST /v1/images/edits
+	AdapterOpenAIResponses        = "openai_responses"            // POST /v1/responses
+	AdapterOpenRouterChat         = "openrouter_chat_completions" // POST /v1/chat/completions（OpenRouter）
+	AdapterOpenRouterResponses    = "openrouter_responses"        // POST /v1/responses（OpenRouter Responses Beta）
+	AdapterOpenAIChatCompletions  = "openai_chat_completions"     // POST /v1/chat/completions
+	AdapterOpenAIImageGenerations = "openai_image_generations"    // POST /v1/images/generations
+	AdapterOpenAIImageEdits       = "openai_image_edits"          // POST /v1/images/edits
+	AdapterOpenAIVideoGenerations = "openai_video_generations"    // POST /v1/videos
+	AdapterAnthropicMessages      = "anthropic_messages"          // POST /v1/messages
+	AdapterGoogleGenerateContent  = "google_generate_content"     // POST /v1beta/models/{model}:generateContent
+	AdapterGoogleImageGeneration  = "google_image_generation"     // POST /v1beta/models/{model}:generateContent
+	AdapterXAIResponses           = "xai_responses"               // POST /v1/responses（OpenAI 兼容）
+	AdapterXAIImage               = "xai_image"                   // POST /v1/images/generations
+	AdapterXAIImageEdits          = "xai_image_edits"             // POST /v1/images/edits
 )
 
 var (
@@ -37,7 +38,7 @@ type transportAdapter interface {
 	ListModels(ctx context.Context, route RouteConfig) ([]ModelItem, error)
 }
 
-// NormalizeAdapter 规范化协议名，未知值默认返回 openai_responses。
+// NormalizeAdapter 规范化协议名；空值按历史默认使用 openai_responses，未知值保留给校验层处理。
 func NormalizeAdapter(raw string) string {
 	value := strings.TrimSpace(strings.ToLower(raw))
 	if value == "" {
@@ -50,6 +51,7 @@ func NormalizeAdapter(raw string) string {
 func IsKnownAdapter(raw string) bool {
 	switch NormalizeAdapter(raw) {
 	case AdapterOpenAIResponses,
+		AdapterOpenRouterChat,
 		AdapterOpenRouterResponses,
 		AdapterOpenAIChatCompletions,
 		AdapterOpenAIImageGenerations,
@@ -70,7 +72,7 @@ func IsKnownAdapter(raw string) bool {
 // IsImplementedAdapter 返回协议是否已有可用的传输层实现。
 func IsImplementedAdapter(raw string) bool {
 	switch NormalizeAdapter(raw) {
-	case AdapterOpenAIResponses, AdapterOpenRouterResponses, AdapterOpenAIChatCompletions, AdapterOpenAIImageGenerations, AdapterOpenAIImageEdits, AdapterXAIResponses,
+	case AdapterOpenAIResponses, AdapterOpenRouterChat, AdapterOpenRouterResponses, AdapterOpenAIChatCompletions, AdapterOpenAIImageGenerations, AdapterOpenAIImageEdits, AdapterXAIResponses,
 		AdapterOpenAIVideoGenerations, AdapterAnthropicMessages, AdapterGoogleGenerateContent, AdapterGoogleImageGeneration, AdapterXAIImage, AdapterXAIImageEdits:
 		return true
 	default:
@@ -82,6 +84,7 @@ func IsImplementedAdapter(raw string) bool {
 func SupportsStreamingAdapter(raw string) bool {
 	switch NormalizeAdapter(raw) {
 	case AdapterOpenAIResponses,
+		AdapterOpenRouterChat,
 		AdapterOpenRouterResponses,
 		AdapterOpenAIChatCompletions,
 		AdapterOpenAIImageGenerations,
@@ -138,7 +141,7 @@ func IsVideoGenerationAdapter(raw string) bool {
 // DefaultEndpointForAdapter 返回协议对应的固定端点标识。
 func DefaultEndpointForAdapter(adapter string) string {
 	switch NormalizeAdapter(adapter) {
-	case AdapterOpenAIChatCompletions:
+	case AdapterOpenAIChatCompletions, AdapterOpenRouterChat:
 		return EndpointChatCompletions
 	case AdapterOpenAIImageGenerations, AdapterGoogleImageGeneration, AdapterXAIImage:
 		return EndpointImageGenerations

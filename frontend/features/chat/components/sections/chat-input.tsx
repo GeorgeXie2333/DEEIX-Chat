@@ -7,6 +7,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  CircleAlert,
   Code2,
   CornerDownRight,
   Globe2,
@@ -44,7 +45,7 @@ import {
 import { ChatMentionMenuPortal } from "@/features/chat/components/shared/chat-mention-menu";
 import { ChatModelPicker } from "@/features/chat/components/sections/chat-model-picker";
 import { ChatModelConfig } from "@/features/chat/components/sections/chat-model-config";
-import { formatBytes, resolveFileIcon } from "@/shared/lib/file-display";
+import { formatBytes, resolveFileExtension, resolveFileIcon } from "@/shared/lib/file-display";
 import type { ChatSubmitDecision } from "@/features/chat/model/chat-task";
 import { isMediaSubmitTask, resolveChatSubmitDecision } from "@/features/chat/model/chat-task";
 import { ChatMCPPanel } from "@/features/chat/components/sections/chat-mcp";
@@ -309,6 +310,14 @@ function clipboardFilesFromPaste(event: React.ClipboardEvent<HTMLTextAreaElement
       lastModified: file.lastModified,
     });
   });
+}
+
+function formatAttachmentFileType(fileName: string) {
+  return resolveFileExtension(fileName).toUpperCase() || "FILE";
+}
+
+function formatAttachmentMeta(fileName: string, sizeBytes: number) {
+  return `${formatAttachmentFileType(fileName)} 路 ${formatBytes(sizeBytes)}`;
 }
 
 function ChatInputComponent({
@@ -711,7 +720,7 @@ function ChatInputComponent({
           <div className="w-full space-y-2 px-2.5 pt-2">
             {showRagWarn ? (
               <div className="flex items-center gap-2 rounded-lg border border-amber-200/70 bg-amber-50/70 px-3 py-2 text-[11px] text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-400">
-                <span className="shrink-0">⚠</span>
+                <CircleAlert className="size-3.5 shrink-0" strokeWidth={1.7} />
                 <span className="flex-1">{tComposer("ragAllDisabled")}</span>
                 <button
                   type="button"
@@ -719,7 +728,7 @@ function ChatInputComponent({
                   onClick={() => setRagWarnDismissed(true)}
                   aria-label={tComposer("closeHint")}
                 >
-                  ✕
+                  <XIcon size={13} strokeWidth={1.8} animateOnHover="default" />
                 </button>
               </div>
             ) : null}

@@ -449,7 +449,11 @@
     "queuedEditPlaceholder": "キュー内メッセージを編集",
     "guideQueuedMessageTitle": "現在の生成を停止して、このキュー内メッセージを送信",
     "editQueuedMessage": "キュー内メッセージを編集",
-    "deleteQueuedMessage": "キュー内メッセージを削除"
+    "deleteQueuedMessage": "キュー内メッセージを削除",
+    "mcpSetDefaultServerTools": "新しいチャットで {server} のすべてのツールを既定で使用する",
+    "mcpUnsetDefaultServerTools": "新しいチャットで {server} のすべてのツールを既定使用しない",
+    "mcpDefaultServerToolsEnabled": "このサーバーのすべてのツールは新しいチャットで既定になります",
+    "mcpDefaultServerToolsDisabled": "このサーバーのすべてのツールを新しいチャットの既定に設定"
   },
   "modelPicker": {
     "selectModel": "モデルを選択",
@@ -603,14 +607,6 @@
         "titleDone": "ツール呼び出し",
         "summaryCount": "{count} 回のツール呼び出し",
         "summaryFallback": "ツール呼び出し"
-      },
-      "trace": {
-        "titleActive": "ツール呼び出し中",
-        "titleDone": "ツール呼び出し",
-        "summaryDone": "ツール呼び出しが完了しました",
-        "summaryActive": "{count} 回のツール呼び出しが進行中",
-        "summaryCount": "{count} 回のツール呼び出しが完了",
-        "summaryFailed": "{count} 回のツール呼び出し、{failed} 回失敗"
       }
     },
     "think": {
@@ -899,5 +895,30 @@
     "advisor": "Advisor",
     "toolSearchRegex": "ツール検索（Regex）",
     "toolSearchBm25": "ツール検索（BM25）"
+  },
+  "screenshot": {
+    "captureFull": "会話全体をキャプチャ",
+    "captureSelect": "キャプチャするメッセージを選択",
+    "selectMessage": "このメッセージを選択",
+    "selectedCount": "{count} 件選択中",
+    "selectAll": "すべて選択",
+    "clearSelection": "選択をクリア",
+    "captureSelected": "キャプチャ",
+    "exitSelection": "選択を終了",
+    "generating": "スクリーンショットを生成中...",
+    "ready": "スクリーンショットの準備ができました",
+    "failed": "スクリーンショットの生成に失敗しました",
+    "loadLimitReached": "会話が長すぎます。スクリーンショットを撮るメッセージ範囲を選択してください。",
+    "tooLarge": "会話内容が大きすぎます。スクリーンショットを撮るメッセージ範囲を選択してください。",
+    "emptySelection": "少なくとも 1 件のメッセージを選択してください",
+    "previewTitle": "会話スクリーンショット",
+    "previewDescription": "生成された画像をプレビューしてから、ダウンロードまたはクリップボードにコピーできます。",
+    "close": "閉じる",
+    "copy": "コピー",
+    "download": "ダウンロード",
+    "downloaded": "画像をダウンロードしました",
+    "copied": "画像をクリップボードにコピーしました",
+    "copyFailed": "画像のコピーに失敗しました",
+    "copyUnsupported": "このブラウザーでは画像のコピーに対応していません"
   }
 }

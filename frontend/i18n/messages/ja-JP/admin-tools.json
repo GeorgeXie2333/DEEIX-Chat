@@ -33,7 +33,12 @@
     "toolRetry": {
       "label": "MCP Tool リトライ回数",
       "description": "MCP Tool Call 失敗後のリトライ回数です。既定は 0 です。"
-    }
+    },
+    "toolPrompt": {
+      "label": "MCP ツールプロンプト",
+      "description": "モデルが MCP ツールを呼び出すタイミングと方法を制御します。空にすると組み込みの既定プロンプトを使用します。"
+    },
+    "defaultPromptPlaceholder": "空にすると組み込みの既定プロンプトを使用します"
   },
   "status": {
     "active": "オン",
@@ -47,7 +52,8 @@
     "nameDesc": "名前 Z-A",
     "statusAsc": "状態",
     "updatedDesc": "最近更新",
-    "updatedAsc": "最も古い更新"
+    "updatedAsc": "最も古い更新",
+    "customOrder": "カスタム順序"
   },
   "table": {
     "name": "名前",
@@ -82,7 +88,8 @@
     "viewToolSchema": "ツール {name} の Schema を表示",
     "toggleTool": "ツール {name} を切り替え",
     "activateSelected": "有効化",
-    "deactivateSelected": "無効化"
+    "deactivateSelected": "無効化",
+    "order": "順序"
   },
   "bulkConfirm": {
     "title": "一括操作を確認",
@@ -145,5 +152,22 @@
     "unknownError": "リクエストに失敗しました。しばらくしてからもう一度お試しください。",
     "sessionExpired": "ログイン状態が失効しました",
     "sessionExpiredDescription": "続行するには再度ログインしてください。"
+  },
+  "order": {
+    "title": "MCP 表示順序",
+    "description": "会話セレクターで MCP サーバーとツールを表示する順序を設定します。",
+    "loading": "MCP 順序を読み込み中",
+    "empty": "並べ替える MCP サーバーはありません",
+    "loadFailed": "MCP 順序の読み込みに失敗しました",
+    "serverHeader": "MCP サーバー",
+    "toolHeader": "ツール",
+    "itemCount": "{count}",
+    "dragServer": "MCP サーバー {name} をドラッグして並べ替え",
+    "dragTool": "{name} をドラッグして並べ替え",
+    "statusActive": "有効",
+    "statusInactive": "無効",
+    "emptyTools": "このサーバーには並べ替えるツールがありません",
+    "saveSuccess": "MCP 表示順序を保存しました",
+    "saveFailed": "MCP 表示順序の保存に失敗しました"
   }
 }

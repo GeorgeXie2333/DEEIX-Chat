@@ -54,6 +54,22 @@
     "skillUpdated": "Skill を更新しました",
     "skillUpdateFailed": "Skill の更新に失敗しました",
     "skillDeleted": "Skill を削除しました",
-    "skillDeleteFailed": "Skill の削除に失敗しました"
+    "skillDeleteFailed": "Skill の削除に失敗しました",
+    "settingsLoadFailed": "プロンプト設定の読み込みに失敗しました",
+    "settingsUpdated": "プロンプト設定を更新しました",
+    "settingsSaveFailed": "プロンプト設定の保存に失敗しました",
+    "sessionExpired": "セッションの有効期限が切れました。",
+    "signInAgain": "続行するにはもう一度サインインしてください。"
+  },
+  "libraryTitle": {
+    "prompts": "プロンプトライブラリ",
+    "skills": "スキルライブラリ"
+  },
+  "settings": {
+    "skillsPrompt": {
+      "label": "スキルプロンプト",
+      "description": "モデルが読み込まれたスキルを解釈して使用する方法を制御します。空にすると組み込みの既定プロンプトを使用します。"
+    },
+    "defaultPromptPlaceholder": "空にすると組み込みの既定プロンプトを使用します"
   }
 }

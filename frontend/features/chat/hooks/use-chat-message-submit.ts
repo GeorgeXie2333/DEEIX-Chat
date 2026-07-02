@@ -166,13 +166,27 @@ function normalizeLabelsJSON(value: string | null | undefined): string {
 
 function isPlaceholderConversationTitle(title: string): boolean {
   const value = title.trim().toLowerCase();
-  return ["", "new conversation", "new chat", "untitled", "新会话", "新对话", "新的对话"].includes(value);
+  return ["new chat", "新对话"].includes(value);
 }
 
-function hasPendingGeneratedConversationMetadata(item: ConversationDTO | null): boolean {
+function isFallbackConversationTitle(title: string, fallbackTitle: string): boolean {
+  const normalizedFallback = fallbackTitle.trim();
+  return normalizedFallback !== "" && title.trim() === normalizedFallback;
+}
+
+function conversationTitleFromFirstUserMessage(content: string): string {
+  const value = content.trim().replace(/\s+/g, " ").replace(/^[\s"'`“”‘’]+|[\s"'`“”‘’]+$/g, "");
+  if (!value) {
+    return "";
+  }
+  return Array.from(value).slice(0, 16).join("").trim();
+}
+
+function hasPendingGeneratedConversationMetadata(item: ConversationDTO | null, fallbackTitle = ""): boolean {
   return (
     !item ||
     isPlaceholderConversationTitle(item.title) ||
+    isFallbackConversationTitle(item.title, fallbackTitle) ||
     normalizeLabelsJSON(item.labelsJSON) === "[]"
   );
 }
@@ -192,8 +206,9 @@ function hasGeneratedConversationMetadataChanged(
 function shouldPollGeneratedConversationMetadata(
   item: ConversationDTO | null,
   result: SendMessageResult | null | undefined,
+  fallbackTitle = "",
 ): boolean {
-  if (!hasPendingGeneratedConversationMetadata(item)) {
+  if (!hasPendingGeneratedConversationMetadata(item, fallbackTitle)) {
     return false;
   }
   const hint = result?.metadataRefreshHint?.trim();
@@ -207,10 +222,12 @@ async function refreshGeneratedConversationMetadata(
   accessToken: string,
   conversationPublicID: string,
   previous: ConversationDTO | null,
+  fallbackTitle: string,
   touchByPublicID: (publicID: string, patch?: Partial<ConversationDTO>) => void,
 ): Promise<void> {
   let elapsedMS = 0;
   let delayMS = CONVERSATION_METADATA_REFRESH_INITIAL_DELAY_MS;
+  let current = previous;
 
   while (elapsedMS < CONVERSATION_METADATA_REFRESH_MAX_WAIT_MS) {
     const nextDelayMS = Math.min(delayMS, CONVERSATION_METADATA_REFRESH_MAX_WAIT_MS - elapsedMS);
@@ -223,9 +240,12 @@ async function refreshGeneratedConversationMetadata(
     } catch {
       continue;
     }
-    if (hasGeneratedConversationMetadataChanged(previous, latest)) {
+    if (hasGeneratedConversationMetadataChanged(current, latest)) {
       touchByPublicID(conversationPublicID, latest);
-      return;
+      current = latest;
+      if (!hasPendingGeneratedConversationMetadata(latest, fallbackTitle)) {
+        return;
+      }
     }
 
     delayMS = Math.min(
@@ -258,7 +278,6 @@ export function useChatMessageSubmit({
   replaceMessage,
   setDraft,
   setAttachments,
-  setSelectedSkills,
   releaseAttachments,
   pendingExchange,
   setPendingExchange,
@@ -300,7 +319,6 @@ export function useChatMessageSubmit({
   replaceMessage: (message: MessageDTO) => void;
   setDraft: React.Dispatch<React.SetStateAction<string>>;
   setAttachments: React.Dispatch<React.SetStateAction<PendingAttachment[]>>;
-  setSelectedSkills: React.Dispatch<React.SetStateAction<SkillSummaryDTO[]>>;
   releaseAttachments: (items: PendingAttachment[]) => void;
   pendingExchange: PendingExchange | null;
   setPendingExchange: React.Dispatch<React.SetStateAction<PendingExchange | null>>;
@@ -478,8 +496,13 @@ export function useChatMessageSubmit({
       const resolvedParentPublicID = resolvePersistedPublicID(parentMessagePublicID);
       const resolvedSourcePublicID = resolvePersistedPublicID(sourceMessagePublicID);
       const resolvedBranchReason = branchReason ?? "default";
+      const assistantOnlyBranch =
+        resolvedBranchReason === "retry" &&
+        Boolean(resolvedParentPublicID && resolvedSourcePublicID) &&
+        combinedMessages.some((item) => item.publicID === resolvedSourcePublicID && item.role === "assistant");
       const tempUserPublicID = `${exchangeKey}-user`;
       const tempAssistantPublicID = `${exchangeKey}-assistant`;
+      const pendingUserPublicID = assistantOnlyBranch && resolvedParentPublicID ? resolvedParentPublicID : tempUserPublicID;
       const createdAt = new Date().toISOString();
       let sentSuccessfully = false;
       let shouldKeepConversationLayout = false;
@@ -490,6 +513,7 @@ export function useChatMessageSubmit({
         submitTask === "chat" ? undefined : resolveImageLoadingAspectRatio(sanitizedOptions);
       let targetConversationID = conversationIDRef.current;
       let targetConversation = activeConversationRef.current;
+      let metadataRefreshInFlight = false;
 
       activeGenerationRunsRef?.current.add(clientRunID);
       setShowConversationLayout(true);
@@ -502,12 +526,12 @@ export function useChatMessageSubmit({
       if (resetComposer) {
         setDraft("");
         setAttachments([]);
-        setSelectedSkills([]);
       }
       startStream(exchangeKey);
       setPendingExchange({
         key: exchangeKey,
         conversationPublicID: targetConversationID?.trim() || null,
+        userPublicID: assistantOnlyBranch ? pendingUserPublicID : undefined,
         tempUserPublicID,
         tempAssistantPublicID,
         runID: clientRunID,
@@ -529,8 +553,8 @@ export function useChatMessageSubmit({
       });
       setBranchSelections((prev) => ({
         ...prev,
-        [toBranchKey(resolvedParentPublicID)]: tempUserPublicID,
-        [tempUserPublicID]: tempAssistantPublicID,
+        ...(assistantOnlyBranch ? {} : { [toBranchKey(resolvedParentPublicID)]: pendingUserPublicID }),
+        [pendingUserPublicID]: tempAssistantPublicID,
       }));
 
       try {
@@ -548,6 +572,30 @@ export function useChatMessageSubmit({
             accessToken: token,
           };
         }
+        let metadataFallbackTitle = "";
+        const startMetadataRefresh = (result?: SendMessageResult | null) => {
+          if (
+            !targetConversationID ||
+            metadataRefreshInFlight ||
+            !shouldPollGeneratedConversationMetadata(targetConversation, result, metadataFallbackTitle)
+          ) {
+            return;
+          }
+          metadataRefreshInFlight = true;
+          void refreshGeneratedConversationMetadata(
+            token,
+            targetConversationID,
+            targetConversation,
+            metadataFallbackTitle,
+            touchByPublicID,
+          )
+            .catch(() => {
+              // Metadata refresh failure does not affect this turn; the next list load will fetch server state.
+            })
+            .finally(() => {
+              metadataRefreshInFlight = false;
+            });
+        };
 
         if (!targetConversationID) {
           const created = await prependNewConversation(requestPlatformModelName);
@@ -573,6 +621,23 @@ export function useChatMessageSubmit({
           window.history.replaceState(null, "", `/chat?conversation_id=${created.publicID}`);
           onConversationCreated?.(created.publicID);
         }
+        metadataFallbackTitle = conversationTitleFromFirstUserMessage(payloadContent);
+        const optimisticTitle = metadataFallbackTitle;
+        if (
+          targetConversationID &&
+          optimisticTitle &&
+          (!targetConversation || isPlaceholderConversationTitle(targetConversation.title))
+        ) {
+          if (targetConversation) {
+            targetConversation = {
+              ...targetConversation,
+              title: optimisticTitle,
+            };
+            activeConversationRef.current = targetConversation;
+          }
+          touchByPublicID(targetConversationID, { title: optimisticTitle });
+        }
+        startMetadataRefresh(null);
         const commonStreamPayload = {
           model: requestPlatformModelName,
           options: Object.keys(sanitizedOptions).length > 0 ? sanitizedOptions : undefined,
@@ -801,10 +866,14 @@ export function useChatMessageSubmit({
           applyBranchSelectionPath(
             prev,
             [
-              {
-                parentPublicID: completed.userMessage.parentPublicID || resolvedParentPublicID,
-                publicID: completed.userMessage.publicID,
-              },
+              ...(assistantOnlyBranch
+                ? []
+                : [
+                    {
+                      parentPublicID: completed.userMessage.parentPublicID || resolvedParentPublicID,
+                      publicID: completed.userMessage.publicID,
+                    },
+                  ]),
               {
                 parentPublicID: completed.userMessage.publicID,
                 publicID: completed.assistantMessage.publicID,
@@ -817,15 +886,8 @@ export function useChatMessageSubmit({
           targetConversationID,
           toConversationPatch(targetConversation, requestPlatformModelName),
         );
-        if (assistantMessageSucceeded && shouldPollGeneratedConversationMetadata(targetConversation, completed)) {
-          void refreshGeneratedConversationMetadata(
-            token,
-            targetConversationID,
-            targetConversation,
-            touchByPublicID,
-          ).catch(() => {
-            // Metadata refresh failure does not affect this turn; the next list load will fetch server state.
-          });
+        if (assistantMessageSucceeded) {
+          startMetadataRefresh(completed);
         }
         releaseAttachments(effectiveAttachments);
         if (assistantMessageSucceeded) {
@@ -864,7 +926,6 @@ export function useChatMessageSubmit({
         if (resetComposer && restoreDraftOnFailure) {
           setDraft(content);
           setAttachments(currentAttachments);
-          setSelectedSkills(requestSelectedSkills);
         }
         setPendingExchange((prev) =>
           prev && prev.key === exchangeKey
@@ -920,7 +981,6 @@ export function useChatMessageSubmit({
       htmlVisualColorMode,
       selectedPlatformModelName,
       setAttachments,
-      setSelectedSkills,
       setBranchSelections,
       setDraft,
       setPendingExchange,
@@ -932,6 +992,7 @@ export function useChatMessageSubmit({
       maxFilesPerMessage,
       t,
       visibleMessageCount,
+      combinedMessages,
     ],
   );
 
@@ -1085,8 +1146,9 @@ export function useChatMessageSubmit({
         toast.error(t("retryReplyFailed"), { description: t("retryReplyMissingUser") });
         return;
       }
-      const sourceMessagePublicID = resolvePersistedPublicID(parentUser.publicID);
-      if (!sourceMessagePublicID) {
+      const parentUserPublicID = resolvePersistedPublicID(parentUser.publicID);
+      const assistantSourceMessagePublicID = resolvePersistedPublicID(message.publicID);
+      if (!parentUserPublicID || !assistantSourceMessagePublicID) {
         toast.error(t("retryReplyFailed"), { description: t("continueReplyUnavailable") });
         return;
       }
@@ -1094,8 +1156,8 @@ export function useChatMessageSubmit({
         content: parentUser.content.trim(),
         currentAttachments: toPendingAttachments(parentUser),
         resetComposer: false,
-        parentMessagePublicID: parentUser.parentPublicID,
-        sourceMessagePublicID,
+        parentMessagePublicID: parentUserPublicID,
+        sourceMessagePublicID: assistantSourceMessagePublicID,
         branchReason: "retry",
       });
     },

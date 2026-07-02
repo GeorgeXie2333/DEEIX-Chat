@@ -45,7 +45,9 @@
     "deleteConversationsLabel": "すべての会話も削除",
     "deleteConversationsDescription": "チェックすると、プロジェクト内の会話も同時に削除されます。チェックしない場合は既定へ移動します。",
     "cancel": "キャンセル",
-    "save": "保存"
+    "save": "保存",
+    "dragToReorder": "{name} をドラッグして並べ替え",
+    "reorderFailed": "プロジェクト順序の保存に失敗しました"
   },
   "select": "選択",
   "selectedCount": "{count} 件の会話を選択中",
