@@ -1280,58 +1280,6 @@ func (s *Service) saveGeneratedVideos(ctx context.Context, input assistantGenera
 	return uploaded, attachmentRows, nil
 }
 
-func generatedVideoFileName(modelName string, capturedAt time.Time, index int, total int, mimeType string) string {
-	base := sanitizeGeneratedImageFileBase(modelName)
-	if base == "image" {
-		base = "video"
-	}
-	timestamp := fmt.Sprintf("%s-%03d", capturedAt.Format("20060102-150405"), capturedAt.Nanosecond()/int(time.Millisecond))
-	if total > 1 {
-		return fmt.Sprintf("%s-%s-%02d%s", base, timestamp, index+1, videoFileExtension(mimeType))
-	}
-	return fmt.Sprintf("%s-%s%s", base, timestamp, videoFileExtension(mimeType))
-}
-
-func videoFileExtension(mimeType string) string {
-	if strings.EqualFold(strings.TrimSpace(mimeType), "video/mp4") {
-		return ".mp4"
-	}
-	return ".mp4"
-}
-
-func generatedVideoMarkdown(files []model.FileObject) string {
-	blocks := make([]string, 0, len(files))
-	for i, file := range files {
-		label := "Generated video"
-		if len(files) > 1 {
-			label = fmt.Sprintf("Generated video %d", i+1)
-		}
-		blocks = append(blocks, fmt.Sprintf("[%s](/api/v1/files/%s/content)", label, file.FileID))
-	}
-	return strings.Join(blocks, "\n\n")
-}
-
-func videoAttachmentsFromFiles(files []model.FileObject) []AttachmentInput {
-	items := make([]AttachmentInput, 0, len(files))
-	for _, file := range files {
-		items = append(items, AttachmentInput{
-			FileObjID:        file.ID,
-			FileID:           file.FileID,
-			Kind:             "video",
-			FileName:         file.FileName,
-			MimeType:         file.MimeType,
-			DetectedMIME:     file.DetectedMIME,
-			FileCategory:     file.FileCategory,
-			FileSize:         file.SizeBytes,
-			SHA256:           file.SHA256,
-			StoragePath:      file.StoragePath,
-			ProcessingStatus: file.ProcessingStatus,
-			ProcessingReady:  file.ProcessingReady,
-		})
-	}
-	return items
-}
-
 // attachmentsFromFiles 生成消息附件快照，供流式完成事件立即返回给前端。
 func attachmentsFromFiles(files []model.FileObject) []AttachmentInput {
 	items := make([]AttachmentInput, 0, len(files))
