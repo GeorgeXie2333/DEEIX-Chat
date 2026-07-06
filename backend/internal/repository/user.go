@@ -47,15 +47,6 @@ type UserImportRecord struct {
 	BillingBalanceDescription string
 }
 
-// OpenWebUIUserRow 描述从外部 OpenWebUI 数据库读取的用户行。
-type OpenWebUIUserRow struct {
-	PublicID    string
-	Username    string
-	DisplayName string
-	Email       string
-	Balance     float64
-}
-
 // UserListFilter 定义管理员用户列表过滤条件。
 type UserListFilter struct {
 	Query              string
