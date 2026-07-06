@@ -717,8 +717,6 @@ func normalizeDetectedMIME(detected string, fileName string) string {
 		return "text/markdown"
 	case "json":
 		return "application/json"
-	case "mp4":
-		return "video/mp4"
 	case "yaml", "yml":
 		return "text/yaml"
 	case "toml":
