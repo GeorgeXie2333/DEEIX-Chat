@@ -159,7 +159,7 @@ func TestListModelsFiltersAllowlistedActiveTextChatCompletionModels(t *testing.T
 		Now:               fixedNow,
 	})
 
-	result, err := service.ListModels(context.Background())
+	result, err := service.ListModels(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("ListModels returned error: %v", err)
 	}
@@ -777,7 +777,7 @@ func (s settingsStub) RuntimeValuesByNamespace(_ context.Context, namespace stri
 
 type channelStub struct{}
 
-func (channelStub) ListActiveModels(context.Context) ([]appchannel.ModelView, error) {
+func (channelStub) ListActiveModels(context.Context, uint) ([]appchannel.ModelView, error) {
 	return []appchannel.ModelView{
 		{PlatformModelName: "chat-openai", KindsJSON: `["chat"]`, ProtocolsJSON: `["openai_chat_completions"]`},
 		{PlatformModelName: "chat-responses", KindsJSON: `["chat"]`, ProtocolsJSON: `["openai_responses"]`},
@@ -840,7 +840,7 @@ type capturingChannelStub struct {
 	upstreamModelName string
 }
 
-func (c *capturingChannelStub) ListActiveModels(context.Context) ([]appchannel.ModelView, error) {
+func (c *capturingChannelStub) ListActiveModels(context.Context, uint) ([]appchannel.ModelView, error) {
 	return nil, nil
 }
 

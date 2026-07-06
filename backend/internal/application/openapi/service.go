@@ -66,7 +66,7 @@ type settingsReader interface {
 }
 
 type channelService interface {
-	ListActiveModels(ctx context.Context) ([]appchannel.ModelView, error)
+	ListActiveModels(ctx context.Context, userID uint) ([]appchannel.ModelView, error)
 	ListActiveModelRoutes(ctx context.Context, platformModelName string) ([]appchannel.ActiveModelRouteView, error)
 	ResolveRoute(ctx context.Context, input appchannel.ResolveRouteInput) (*appchannel.ResolvedRoute, error)
 	MarkRouteSuccess(ctx context.Context, route *appchannel.ResolvedRoute)
@@ -310,8 +310,8 @@ func (s *Service) EnforceRateLimit(ctx context.Context, key *domainopenapi.UserA
 	return ErrRateLimited
 }
 
-// ListModels 返回管理员开放白名单内的 active 文本模型。
-func (s *Service) ListModels(ctx context.Context) (OpenAIModelList, error) {
+// ListModels 返回管理员开放白名单内、当前 API Key 用户可访问的 active 文本模型。
+func (s *Service) ListModels(ctx context.Context, userID uint) (OpenAIModelList, error) {
 	result := OpenAIModelList{Success: true, Object: "list", Data: []OpenAIModel{}}
 	if s == nil || s.channel == nil {
 		return result, nil
@@ -324,7 +324,7 @@ func (s *Service) ListModels(ctx context.Context) (OpenAIModelList, error) {
 	if len(allowlist) == 0 {
 		return result, nil
 	}
-	models, err := s.channel.ListActiveModels(ctx)
+	models, err := s.channel.ListActiveModels(ctx, userID)
 	if err != nil {
 		return result, err
 	}

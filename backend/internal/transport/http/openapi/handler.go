@@ -98,7 +98,7 @@ func (h *Handler) ListModels(c *gin.Context) {
 		writeOpenAIError(c, err)
 		return
 	}
-	models, err := h.service.ListModels(c.Request.Context())
+	models, err := h.service.ListModels(c.Request.Context(), key.UserID)
 	if err != nil {
 		writeOpenAIError(c, err)
 		return
