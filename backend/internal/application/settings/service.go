@@ -95,7 +95,10 @@ func (s *Service) Seed(ctx context.Context, cfg config.Config) error {
 	if err != nil {
 		return err
 	}
-	return s.repo.UpsertWithDescription(ctx, items)
+	if err := s.repo.UpsertWithDescription(ctx, items); err != nil {
+		return err
+	}
+	return s.migrateDefaultAllowedMIMETypes(ctx)
 }
 
 // ListAll 查询全部配置，按 namespace 分组。
@@ -135,6 +138,61 @@ func (s *Service) RuntimeValuesByNamespace(ctx context.Context, namespace string
 		result[item.Key] = strings.TrimSpace(value)
 	}
 	return result, nil
+}
+
+func (s *Service) migrateDefaultAllowedMIMETypes(ctx context.Context) error {
+	items, err := s.repo.ListByNamespace(ctx, "file")
+	if err != nil {
+		return err
+	}
+	for _, item := range items {
+		if item.Key != "allowed_mime_types" {
+			continue
+		}
+		value := strings.TrimSpace(item.Value)
+		if value == "" || !sameCSVSet(value, legacyDefaultAllowedMIMETypes) {
+			return nil
+		}
+		updates, encryptErr := s.encryptSettingsForStorage([]domainsettings.SystemSetting{{
+			Namespace:   "file",
+			Key:         "allowed_mime_types",
+			Value:       defaultAllowedMIMETypes,
+			ValueType:   "string",
+			Description: "白名单MIME类型(逗号分隔)",
+		}})
+		if encryptErr != nil {
+			return encryptErr
+		}
+		return s.repo.Upsert(ctx, updates)
+	}
+	return nil
+}
+
+func sameCSVSet(left string, right string) bool {
+	leftSet := csvSet(left)
+	rightSet := csvSet(right)
+	if len(leftSet) != len(rightSet) {
+		return false
+	}
+	for item := range leftSet {
+		if _, ok := rightSet[item]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func csvSet(raw string) map[string]struct{} {
+	parts := strings.Split(raw, ",")
+	result := make(map[string]struct{}, len(parts))
+	for _, part := range parts {
+		value := strings.ToLower(strings.TrimSpace(part))
+		if value == "" {
+			continue
+		}
+		result[value] = struct{}{}
+	}
+	return result
 }
 
 // validNamespaces 合法的 namespace 集合。
@@ -332,6 +390,8 @@ func validatePatchItem(item PatchItem) error {
 		return validateStringMax(value, 255, key)
 	case "auth:turnstile_site_key", "auth:turnstile_secret_key":
 		return validateStringMax(value, 512, key)
+	case "chat:conversation_default_model":
+		return validateStringMax(value, 255, key)
 	case "chat:default_system_prompt", "chat:skills_prompt":
 		return validateStringMax(value, 20000, key)
 	case "chat:prompt_sensitive_words":

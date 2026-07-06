@@ -113,6 +113,22 @@ func DefaultModelOptionAllowedPathsJSON() string {
     "generationConfig.imageConfig.aspectRatio",
     "generationConfig.imageConfig.imageSize"
   ],
+  "gemini_interactions": [
+    "generation_config.temperature",
+    "generation_config.top_p",
+    "generation_config.max_output_tokens",
+    "generation_config.thinking_level",
+    "response_format.type",
+    "response_format.aspect_ratio",
+    "response_format.image_size",
+    "response_format.mime_type",
+    "responseFormat.type",
+    "responseFormat.aspectRatio",
+    "responseFormat.imageSize",
+    "responseFormat.mimeType",
+    "generationConfig.videoConfig.task",
+    "generation_config.video_config.task"
+  ],
   "anthropic_messages": [
     "output_config.effort",
     "speed",
@@ -518,6 +534,7 @@ type Config struct {
 	ContextCompactEnabled    bool
 	ContextCompactTrigger    int
 	ContextCompactPreserve   int
+	ConversationDefaultModel string
 	ConversationTaskModel    string
 	ConversationTitlePrompt  string
 	ConversationLabelsPrompt string
@@ -739,6 +756,7 @@ func Load() Config {
 		ContextCompactEnabled:             false,
 		ContextCompactTrigger:             65536,
 		ContextCompactPreserve:            8,
+		ConversationDefaultModel:          "",
 		ConversationTaskModel:             "follow",
 		ConversationTitlePrompt:           "",
 		ConversationLabelsPrompt:          "",
@@ -758,7 +776,7 @@ func Load() Config {
 		FileImageMaxBytes:                 0,
 		FileDocMaxBytes:                   0,
 		FileFullContextPDFMaxPages:        20,
-		FileAllowedMIMETypes:              "image/jpeg,image/png,image/webp,image/gif,video/mp4,text/plain,text/markdown,text/csv,text/yaml,application/json,application/yaml,application/x-yaml,application/toml,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel",
+		FileAllowedMIMETypes:              "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,text/plain,text/markdown,text/csv,text/yaml,application/json,application/yaml,application/x-yaml,application/toml,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel",
 		ExtractEngine:                     "builtin",
 		ExtractOCREngine:                  "rapidocr",
 		ExtractImageOCREnabled:            false,

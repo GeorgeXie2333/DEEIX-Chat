@@ -292,7 +292,7 @@ func (s *Service) UploadFile(ctx context.Context, input UploadFileInput) (*Uploa
 		StoragePath:      relativePath,
 		Status:           "active",
 		ProcessingStatus: "uploaded",
-		ProcessingReady:  category == fileCategoryImage && !cfg.ExtractImageOCREnabled,
+		ProcessingReady:  category == fileCategoryVideo || (category == fileCategoryImage && !cfg.ExtractImageOCREnabled),
 		ExtractStatus:    "none",
 		EmbedStatus:      "none",
 		ExtractorVersion: s.resolveExtractorVersion(),
@@ -328,7 +328,7 @@ func (s *Service) UploadFile(ctx context.Context, input UploadFileInput) (*Uploa
 				zap.Error(initErr),
 			)
 		}
-	} else if category != fileCategoryImage {
+	} else if fileCategoryRequiresProcessing(category) {
 		fileItem.ProcessingStatus = "queued"
 		fileItem.ProcessingReady = false
 		fileItem.ProcessingErrorCode = ""
@@ -723,6 +723,10 @@ func normalizeDetectedMIME(detected string, fileName string) string {
 		return "text/yaml"
 	case "toml":
 		return "application/toml"
+	case "mp4":
+		return "video/mp4"
+	case "webm":
+		return "video/webm"
 	}
 	if ext != "" && isTextMIMEForEmbed("", "sample."+ext) {
 		return "text/plain"
@@ -829,9 +833,18 @@ func maxBytesForCategory(category string, cfg config.Config) int64 {
 	return cfg.FileDocMaxBytes
 }
 
-func supportsRAG(category string) bool {
+func fileCategoryRequiresProcessing(category string) bool {
 	switch category {
 	case fileCategoryPDF, fileCategoryWord, fileCategoryExcel, fileCategoryText:
+		return true
+	default:
+		return false
+	}
+}
+
+func supportsRAG(category string) bool {
+	switch category {
+	case fileCategoryPDF, fileCategoryWord, fileCategoryExcel, fileCategoryText, fileCategoryImage:
 		return true
 	default:
 		return false

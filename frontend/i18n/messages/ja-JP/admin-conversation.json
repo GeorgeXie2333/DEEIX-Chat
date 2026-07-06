@@ -5,6 +5,9 @@
     "contextCompression": "コンテキスト圧縮",
     "dataExport": "データエクスポート"
   },
+  "defaultModel": {
+    "systemRecommended": "システム推奨"
+  },
   "taskModel": {
     "follow": "現在のモデルに従う"
   },
@@ -14,6 +17,10 @@
     "disabled": "透過を禁止"
   },
   "fields": {
+    "defaultModel": {
+      "label": "新規会話のデフォルトモデル",
+      "description": "ユーザーがシステム推奨を選択した場合、または個人のデフォルトモデルがない場合に最初に使用されます。空欄の場合は最初に利用可能なモデルへフォールバックします。"
+    },
     "taskModel": {
       "label": "タスク実行モデル",
       "description": "会話タイトルとラベルの生成に使用するチャットモデルです。"

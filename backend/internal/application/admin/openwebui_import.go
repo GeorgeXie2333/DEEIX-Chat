@@ -45,6 +45,10 @@ type openWebUIUserSource interface {
 	LoadUsers(ctx context.Context, dsn string) ([]repository.OpenWebUIUserRow, error)
 }
 
+type openWebUIRowLoader interface {
+	LoadOpenWebUIRows(ctx context.Context, dsn string) ([]repository.OpenWebUIUserRow, error)
+}
+
 // ImportOpenWebUIUsers 从 OpenWebUI 数据库导入用户。
 func (s *Service) ImportOpenWebUIUsers(
 	ctx context.Context,
@@ -64,11 +68,16 @@ func (s *Service) ImportOpenWebUIUsers(
 	if !ok {
 		return nil, ErrOpenWebUIImportFailed
 	}
-	if s.openWebUIUserSource == nil {
+	var rows []repository.OpenWebUIUserRow
+	var err error
+	switch {
+	case s.openWebUIRowLoader != nil:
+		rows, err = s.openWebUIRowLoader.LoadOpenWebUIRows(ctx, input.DSN)
+	case s.openWebUIUserSource != nil:
+		rows, err = s.openWebUIUserSource.LoadUsers(ctx, input.DSN)
+	default:
 		return nil, ErrOpenWebUIImportFailed
 	}
-
-	rows, err := s.openWebUIUserSource.LoadUsers(ctx, input.DSN)
 	if err != nil {
 		if errors.Is(err, repository.ErrInvalidInput) {
 			return nil, ErrInvalidImportDSN

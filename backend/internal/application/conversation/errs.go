@@ -73,6 +73,8 @@ var (
 	ErrMessageEditStateInvalid = errors.New("invalid message edit state")
 	// ErrModelRouteNotConfigured 模型路由未配置。
 	ErrModelRouteNotConfigured = errors.New("model route not configured")
+	// ErrModelAccessDenied 当前用户无权使用此模型。
+	ErrModelAccessDenied = errors.New("model access denied by group policy")
 	// ErrUpstreamRequestFailed 上游请求失败。
 	ErrUpstreamRequestFailed = errors.New("upstream request failed")
 	// ErrUpstreamEmptyResponse 上游返回空响应。
@@ -101,6 +103,10 @@ var (
 	ErrMediaVideoReferenceImageInvalid = errors.New("video reference image is invalid")
 	// ErrMediaVideoReferenceSizeMismatch 视频生成参考图尺寸必须与目标分辨率一致。
 	ErrMediaVideoReferenceSizeMismatch = errors.New("video reference image size must match selected resolution")
+	// ErrMediaVideoInputInvalid 视频生成输入不合法。
+	ErrMediaVideoInputInvalid = errors.New("video generation input is invalid")
+	// ErrMediaVideoTooManyInputs 视频生成输入图数量超限。
+	ErrMediaVideoTooManyInputs = errors.New("too many video generation input images")
 	// ErrMediaRouteProtocolMismatch 图片任务命中的路由协议与任务类型不匹配。
 	ErrMediaRouteProtocolMismatch = errors.New("media route protocol does not match task")
 	// ErrDuplicateMessageGenerationRun 表示客户端重复提交同一个生成 run。

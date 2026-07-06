@@ -250,6 +250,8 @@
       "image_task_rejects_non_image_attachments": "画像タスクでは画像添付のみ対応しています。画像以外のファイルを削除してください。",
       "video_generation_rejects_non_image_attachments": "動画生成では参照画像を1枚だけ使用できます。画像以外のファイルを削除してください。",
       "video_generation_too_many_reference_images": "動画生成で使用できる参照画像は1枚までです。余分な画像を削除してください。",
+      "video_generation_too_many_images": "動画生成で使用できる入力画像は1枚までです。画像を1枚だけ残して再試行してください。",
+      "video_task_rejects_non_image_attachments": "動画生成ではテキストプロンプトと画像添付のみ対応しています。画像以外のファイルを削除してください。",
       "model_task_unsupported": "このモデルは現在の入力を処理できません。モデルを切り替えてから再試行してください。"
     },
     "mediaStatus": {
@@ -410,6 +412,8 @@
         "image_task_rejects_non_image_attachments": "画像タスクでは画像添付のみ対応しています。画像以外のファイルを削除してください。",
         "video_generation_rejects_non_image_attachments": "動画生成では参照画像を1枚だけ使用できます。画像以外のファイルを削除してください。",
         "video_generation_too_many_reference_images": "動画生成で使用できる参照画像は1枚までです。余分な画像を削除してください。",
+        "video_generation_too_many_images": "動画生成で使用できる入力画像は1枚までです。",
+        "video_task_rejects_non_image_attachments": "動画生成ではテキストプロンプトと画像添付のみ対応しています。画像以外のファイルを削除してください。",
         "model_task_unsupported": "現在のモデルはこの入力に対応していません。モデルを切り替えてから再試行してください。"
       }
     },

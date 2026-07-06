@@ -173,6 +173,88 @@ func TestProcessTraceStaysStreamingUntilNextVisiblePhase(t *testing.T) {
 	}
 }
 
+func TestUpstreamThinkingDeltaIsCoalescedBetweenFlushes(t *testing.T) {
+	eventCount := 0
+	var events []map[string]interface{}
+	recorder := &messageTraceRecorder{
+		cfg: config.Config{
+			ProcessTraceEnabled:            true,
+			ProcessTraceVisibleToUser:      true,
+			ProcessTraceStoreUpstreamThink: true,
+		},
+		assistant: &model.Message{ID: 1, ConversationID: 2, UserID: 3, RunID: "run_1"},
+		onEvent: func(eventType string, payload map[string]interface{}) error {
+			if eventType == "upstream_think_delta" {
+				eventCount++
+				events = append(events, payload)
+			}
+			return nil
+		},
+	}
+
+	recorder.appendUpstreamReasoning(messageTraceThinkKindContent, "a", nil)
+	recorder.appendUpstreamReasoning(messageTraceThinkKindContent, "b", nil)
+	recorder.appendUpstreamReasoning(messageTraceThinkKindContent, "c", nil)
+
+	if eventCount != 1 {
+		t.Fatalf("expected dense thinking deltas to be coalesced after first flush, got %d events", eventCount)
+	}
+	if len(events) != 1 || events[0]["delta"] != "a" {
+		t.Fatalf("expected first live event to carry only first delta, got %#v", events)
+	}
+	if _, ok := events[0]["trace"]; ok {
+		t.Fatalf("live thinking delta must not carry full trace: %#v", events[0])
+	}
+	if _, ok := events[0]["block"]; ok {
+		t.Fatalf("live thinking delta must not carry full block: %#v", events[0])
+	}
+	if recorder.upstreamThink == nil || recorder.upstreamThink.contentMarkdown != "abc" {
+		t.Fatalf("expected full reasoning to remain in memory snapshot, got %#v", recorder.upstreamThink)
+	}
+
+	recorder.completeUpstreamThink()
+	if eventCount != 2 {
+		t.Fatalf("expected completion to emit final thinking snapshot, got %d events", eventCount)
+	}
+	if events[1]["delta"] != "bc" || events[1]["status"] != messageTraceStatusCompleted {
+		t.Fatalf("expected completion to flush coalesced delta with completed status, got %#v", events[1])
+	}
+}
+
+func TestUpstreamThinkingLiveDeltaSkipsOversizedContent(t *testing.T) {
+	var events []map[string]interface{}
+	recorder := &messageTraceRecorder{
+		cfg: config.Config{
+			ProcessTraceEnabled:            true,
+			ProcessTraceVisibleToUser:      true,
+			ProcessTraceStoreUpstreamThink: true,
+		},
+		assistant: &model.Message{ID: 1, ConversationID: 2, UserID: 3, RunID: "run_1"},
+		onEvent: func(eventType string, payload map[string]interface{}) error {
+			if eventType == "upstream_think_delta" {
+				events = append(events, payload)
+			}
+			return nil
+		},
+	}
+
+	largeDelta := strings.Repeat("x", upstreamThinkLiveReplaceBytes+1)
+	recorder.appendUpstreamReasoning(messageTraceThinkKindContent, largeDelta, nil)
+
+	if len(events) != 1 {
+		t.Fatalf("expected one lightweight status event, got %d", len(events))
+	}
+	if _, ok := events[0]["delta"]; ok {
+		t.Fatalf("oversized thinking delta must not be sent in live event: %#v", events[0])
+	}
+	if _, ok := events[0]["contentMarkdown"]; ok {
+		t.Fatalf("oversized thinking content must not be sent in live event: %#v", events[0])
+	}
+	if recorder.upstreamThink == nil || recorder.upstreamThink.contentMarkdown != largeDelta {
+		t.Fatal("expected oversized thinking content to remain available for final trace")
+	}
+}
+
 func TestBuildMessageProcessTraceDTOExtractsPromptTrace(t *testing.T) {
 	payload := map[string]interface{}{
 		"prompt_trace": messagePromptTracePayload(&model.MessagePromptTrace{

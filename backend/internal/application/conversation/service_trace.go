@@ -48,6 +48,13 @@ const (
 	toolTraceDetailMaxChars  = 4096
 )
 
+const (
+	upstreamThinkLiveFlushInterval = 80 * time.Millisecond
+	upstreamThinkLiveFlushBytes    = 1024
+	upstreamThinkPersistInterval   = 2 * time.Second
+	upstreamThinkLiveReplaceBytes  = 16 * 1024
+)
+
 type messageTraceDraft struct {
 	traceType       string
 	eventID         string
@@ -80,6 +87,14 @@ type messageTraceRecorder struct {
 	nextRoundSeq  int
 	eventCounters map[string]int
 	events        []model.MessageTraceEvent
+
+	upstreamThinkLastLiveFlush  time.Time
+	upstreamThinkLastPersist    time.Time
+	upstreamThinkPendingText    strings.Builder
+	upstreamThinkPendingReplace string
+	upstreamThinkPendingKind    string
+	upstreamThinkPendingReason  map[string]interface{}
+	upstreamThinkBufferedByte   int
 }
 
 func formatTraceStep(label string, detail string) string {
@@ -438,8 +453,7 @@ func (r *messageTraceRecorder) appendUpstreamReasoning(kind string, text string,
 		draft.status = messageTraceStatusStreaming
 	}
 	mergeUpstreamReasoningPayload(draft, kind, payload)
-	r.persistDraft(draft, false)
-	r.emitUpstreamThinkDelta(payload)
+	r.queueUpstreamThinkLiveUpdate(draft, kind, text, "", payload)
 }
 
 func (r *messageTraceRecorder) syncStructuredThink(content string, summary string, payload map[string]interface{}) {
@@ -454,6 +468,7 @@ func (r *messageTraceRecorder) syncStructuredThink(content string, summary strin
 	if draft == nil {
 		return
 	}
+	previousContent := draft.contentMarkdown
 	displayContent := strings.TrimSpace(content)
 	if displayContent == "" {
 		displayContent = strings.TrimSpace(summary)
@@ -474,7 +489,8 @@ func (r *messageTraceRecorder) syncStructuredThink(content string, summary strin
 		kind = messageTraceThinkKindSummary
 	}
 	mergeUpstreamReasoningPayload(draft, kind, payload)
-	r.persistDraft(draft, false)
+	deltaText, replaceText := diffUpstreamThinkContent(previousContent, draft.contentMarkdown)
+	r.queueUpstreamThinkLiveUpdate(draft, kind, deltaText, replaceText, payload)
 }
 
 // recordPromptTrace 把 PromptPlan 摘要合并进处理轨迹，供前端结构化展示。
@@ -530,7 +546,7 @@ func (r *messageTraceRecorder) completeTools() {
 
 func (r *messageTraceRecorder) completeUpstreamThink() {
 	if r.completeDraft(r.upstreamThink) {
-		r.emitUpstreamThinkDelta(nil)
+		r.flushUpstreamThinkLiveUpdate(r.upstreamThink, true, false)
 	}
 }
 
@@ -665,6 +681,103 @@ func (r *messageTraceRecorder) persistDraftCtx(ctx context.Context, draft *messa
 	}
 }
 
+type upstreamThinkLiveUpdate struct {
+	kind            string
+	delta           string
+	contentMarkdown string
+	reasoning       map[string]interface{}
+}
+
+func (r *messageTraceRecorder) queueUpstreamThinkLiveUpdate(draft *messageTraceDraft, kind string, deltaText string, replaceText string, payload map[string]interface{}) {
+	if !r.enabled() || draft == nil {
+		return
+	}
+	if deltaText != "" {
+		r.upstreamThinkBufferedByte += len(deltaText)
+		if len(deltaText) > upstreamThinkLiveReplaceBytes {
+			deltaText = ""
+		}
+	}
+	if deltaText != "" {
+		_, _ = r.upstreamThinkPendingText.WriteString(deltaText)
+	}
+	if replaceText != "" {
+		r.upstreamThinkBufferedByte += len(replaceText)
+		if len(replaceText) <= upstreamThinkLiveReplaceBytes {
+			r.upstreamThinkPendingReplace = replaceText
+		}
+	}
+	if strings.TrimSpace(kind) != "" {
+		r.upstreamThinkPendingKind = strings.TrimSpace(kind)
+	}
+	if reasoning := liveUpstreamReasoningPayload(kind, payload); len(reasoning) > 0 {
+		r.upstreamThinkPendingReason = reasoning
+	}
+	if !r.shouldFlushUpstreamThinkLiveUpdate() {
+		return
+	}
+	r.flushUpstreamThinkLiveUpdate(draft, false, true)
+}
+
+func (r *messageTraceRecorder) shouldFlushUpstreamThinkLiveUpdate() bool {
+	if r == nil {
+		return false
+	}
+	if r.upstreamThinkLastLiveFlush.IsZero() {
+		return true
+	}
+	if r.upstreamThinkBufferedByte >= upstreamThinkLiveFlushBytes {
+		return true
+	}
+	return time.Since(r.upstreamThinkLastLiveFlush) >= upstreamThinkLiveFlushInterval
+}
+
+func (r *messageTraceRecorder) shouldPersistUpstreamThinkSnapshot() bool {
+	if r == nil {
+		return false
+	}
+	if !r.cfg.ProcessTracePersistInflight {
+		return false
+	}
+	if r.upstreamThinkLastPersist.IsZero() {
+		return true
+	}
+	return time.Since(r.upstreamThinkLastPersist) >= upstreamThinkPersistInterval
+}
+
+func (r *messageTraceRecorder) flushUpstreamThinkLiveUpdate(draft *messageTraceDraft, force bool, persistSnapshot bool) {
+	if !r.enabled() || draft == nil {
+		return
+	}
+	if persistSnapshot && r.shouldPersistUpstreamThinkSnapshot() {
+		r.persistDraft(draft, false)
+		r.upstreamThinkLastPersist = time.Now()
+	}
+	update := upstreamThinkLiveUpdate{
+		kind:            r.upstreamThinkPendingKind,
+		delta:           r.upstreamThinkPendingText.String(),
+		contentMarkdown: r.upstreamThinkPendingReplace,
+		reasoning:       r.upstreamThinkPendingReason,
+	}
+	if !force && update.delta == "" && update.contentMarkdown == "" && len(update.reasoning) == 0 {
+		return
+	}
+	r.emitUpstreamThinkDelta(update)
+	r.resetUpstreamThinkLiveBuffer()
+}
+
+func (r *messageTraceRecorder) resetUpstreamThinkLiveBuffer() {
+	if r == nil {
+		return
+	}
+	r.upstreamThinkLastLiveFlush = time.Now()
+	r.upstreamThinkPendingText.Reset()
+	r.upstreamThinkPendingReplace = ""
+	r.upstreamThinkPendingKind = ""
+	r.upstreamThinkPendingReason = nil
+	r.upstreamThinkBufferedByte = 0
+}
+
 func (r *messageTraceRecorder) persistMessageTraceRow(ctx context.Context, draft *messageTraceDraft, payloadJSON string) {
 	item := &model.MessageTrace{
 		MessageID:       r.assistant.ID,
@@ -795,17 +908,29 @@ func (r *messageTraceRecorder) emitToolUpdate() {
 	})
 }
 
-func (r *messageTraceRecorder) emitUpstreamThinkDelta(reasoning map[string]interface{}) {
+func (r *messageTraceRecorder) emitUpstreamThinkDelta(update upstreamThinkLiveUpdate) {
 	if !r.visible() || r.upstreamThink == nil {
 		return
 	}
 	payload := map[string]interface{}{
-		"status": r.upstreamThink.status,
-		"block":  traceDraftToBlock(r.upstreamThink),
-		"trace":  r.snapshot(),
+		"status":  r.upstreamThink.status,
+		"title":   r.upstreamThink.title,
+		"summary": r.upstreamThink.summary,
+		"stage":   r.upstreamThink.stage,
+		"roundID": r.upstreamThink.roundID,
+		"eventID": r.upstreamThink.eventID,
 	}
-	if len(reasoning) > 0 {
-		payload["reasoning"] = reasoning
+	if update.kind != "" {
+		payload["kind"] = update.kind
+	}
+	if update.delta != "" {
+		payload["delta"] = update.delta
+	}
+	if update.contentMarkdown != "" {
+		payload["contentMarkdown"] = update.contentMarkdown
+	}
+	if len(update.reasoning) > 0 {
+		payload["reasoning"] = update.reasoning
 	}
 	emitEvent(r.onEvent, "upstream_think_delta", payload)
 }
@@ -1202,6 +1327,34 @@ func getTraceString(value interface{}) string {
 	return text
 }
 
+func diffUpstreamThinkContent(previous string, next string) (string, string) {
+	if next == "" || next == previous {
+		return "", ""
+	}
+	if previous != "" && strings.HasPrefix(next, previous) {
+		return next[len(previous):], ""
+	}
+	if previous == "" {
+		return next, ""
+	}
+	return "", next
+}
+
+func liveUpstreamReasoningPayload(kind string, payload map[string]interface{}) map[string]interface{} {
+	reasoning := map[string]interface{}{}
+	if strings.TrimSpace(kind) != "" {
+		reasoning["kind"] = strings.TrimSpace(kind)
+	}
+	for _, key := range []string{"event_type", "item_id", "status"} {
+		if value, ok := payload[key]; ok {
+			if text, ok := value.(string); ok && strings.TrimSpace(text) != "" {
+				reasoning[key] = strings.TrimSpace(text)
+			}
+		}
+	}
+	return reasoning
+}
+
 func mergeUpstreamReasoningPayload(draft *messageTraceDraft, kind string, payload map[string]interface{}) {
 	if draft == nil {
 		return
@@ -1286,8 +1439,7 @@ func buildAttachmentProcessTrace(
 		payload.FileNames = append(payload.FileNames, name)
 		ref := newAttachmentTraceFileRef(item, name)
 		payload.FileRefs = append(payload.FileRefs, ref)
-		kind := normalizeAttachmentKind(item.Kind, item.MimeType)
-		if kind == "image" {
+		if item.ContextMode == fileContextModeDirectImage {
 			payload.FileGroups.DirectImages = append(payload.FileGroups.DirectImages, name)
 			payload.FileGroupRefs.DirectImages = append(payload.FileGroupRefs.DirectImages, ref)
 			continue

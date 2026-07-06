@@ -202,6 +202,10 @@ func classifyRunErrorCode(err error) string {
 		return "media_video_reference_invalid"
 	case errors.Is(err, ErrMediaVideoReferenceSizeMismatch):
 		return "media_video_reference_size_mismatch"
+	case errors.Is(err, ErrMediaVideoInputInvalid):
+		return "media_video_input_invalid"
+	case errors.Is(err, ErrMediaVideoTooManyInputs):
+		return "media_video_too_many_inputs"
 	case errors.Is(err, ErrMediaRouteProtocolMismatch):
 		return "media_route_protocol_mismatch"
 	case errors.Is(err, ErrUpstreamRequestFailed):
@@ -707,8 +711,7 @@ func buildStableFileContextXML(attachments []AttachmentInput) userContextXML {
 	}
 	items := make([]AttachmentInput, 0, len(attachments))
 	for _, att := range attachments {
-		kind := normalizeAttachmentKind(att.Kind, att.MimeType)
-		if kind == "image" || strings.TrimSpace(att.ExtractedText) == "" {
+		if !isStableTextAttachment(att) {
 			continue
 		}
 		items = append(items, att)
@@ -745,7 +748,7 @@ func imageAttachmentsForCurrentUser(attachments []AttachmentInput) []AttachmentI
 	}
 	result := make([]AttachmentInput, 0)
 	for _, att := range attachments {
-		if normalizeAttachmentKind(att.Kind, att.MimeType) == "image" {
+		if att.Current && normalizeAttachmentKind(att.Kind, att.MimeType) == "image" {
 			result = append(result, att)
 		}
 	}

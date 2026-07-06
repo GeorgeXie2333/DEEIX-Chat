@@ -346,6 +346,11 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		DeniedPathsJSON:       cfg.ModelOptionDeniedPaths,
 		ModelCapabilitiesJSON: route.ModelCapabilitiesJSON,
 	})
+	if llm.NormalizeAdapter(route.Protocol) == llm.AdapterGeminiInteractions {
+		filteredOptions = withGeminiInteractionResponseType(filteredOptions, "image")
+		routeConfig.Endpoint = llm.EndpointInteractions
+		run.Endpoint = llm.EndpointInteractions
+	}
 
 	emitMediaEvent(input.OnEvent, "running", mediaImageRunningMessage(input.TaskType))
 	generateInput := llm.GenerateInput{
@@ -414,10 +419,25 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		output, err = s.llmClient.Generate(ctx, routeConfig, generateInput)
 	}
 	if err != nil {
-		if s.isMessageGenerationCanceled(context.Background(), runID) {
+		if s.isCanceledMediaGeneration(ctx, runID, err) {
 			retErr = ErrMessageGenerationCanceled
-			_ = s.repo.UpdateMessageState(ctx, assistantMessage.ID, "canceled", classifyRunErrorCode(retErr), truncateError(messageErrorSummary(retErr), 255))
-			return nil, retErr
+			result, cancelErr := s.completeCanceledMediaGeneration(canceledMediaGenerationInput{
+				Context:          ctx,
+				Conversation:     conversation,
+				UserMessage:      userMessage,
+				AssistantMessage: assistantMessage,
+				ReuseUserMessage: reuseUserMessage,
+				Route:            *route,
+				EffectiveOptions: filteredOptions,
+				GenerateInput:    generateInput,
+				StartedAt:        startedAt,
+			})
+			if cancelErr != nil {
+				retErr = cancelErr
+				return nil, cancelErr
+			}
+			applyCanceledMediaRunUsage(run, result)
+			return result, nil
 		}
 		s.routeResolver.MarkRouteFailure(ctx, route, err)
 		retErr = wrapUpstreamRequestError(err)
@@ -852,14 +872,18 @@ func imageDimensionsFromBytes(data []byte) (int, int, error) {
 }
 
 // emitMediaEvent 输出媒体任务状态事件；失败不影响主流程。
-func emitMediaEvent(onEvent func(string, map[string]interface{}) error, status string, message string) {
+func emitMediaEvent(onEvent func(string, map[string]interface{}) error, status string, message string, contentType ...string) {
 	if onEvent == nil {
 		return
 	}
-	_ = onEvent("media_status", map[string]interface{}{
+	payload := map[string]interface{}{
 		"status":  status,
 		"message": message,
-	})
+	}
+	if len(contentType) > 0 && strings.TrimSpace(contentType[0]) != "" {
+		payload["content_type"] = strings.TrimSpace(contentType[0])
+	}
+	_ = onEvent("media_status", payload)
 }
 
 func emitMediaImageDelta(onEvent func(string, map[string]interface{}) error, event llm.GenerateStreamEvent) error {
@@ -922,6 +946,28 @@ func mediaImageStreamEnabled(protocol string, upstreamModel string, capabilities
 	return llm.SupportsImageGenerationStream(protocol, upstreamModel) && !mediaImageStreamExplicitlyDisabled(capabilitiesJSON)
 }
 
+func withGeminiInteractionResponseType(options map[string]interface{}, responseType string) map[string]interface{} {
+	next := make(map[string]interface{}, len(options)+1)
+	for key, value := range options {
+		next[key] = value
+	}
+	format := map[string]interface{}{}
+	if raw, ok := next["response_format"].(map[string]interface{}); ok {
+		for key, value := range raw {
+			format[key] = value
+		}
+	}
+	if raw, ok := next["responseFormat"].(map[string]interface{}); ok {
+		for key, value := range raw {
+			format[key] = value
+		}
+		delete(next, "responseFormat")
+	}
+	format["type"] = strings.TrimSpace(responseType)
+	next["response_format"] = format
+	return next
+}
+
 func mediaImageStreamExplicitlyDisabled(capabilitiesJSON string) bool {
 	raw := strings.TrimSpace(capabilitiesJSON)
 	if raw == "" {
@@ -952,6 +998,9 @@ func (s *Service) readGeneratedImage(ctx context.Context, image llm.GeneratedIma
 	if url == "" {
 		return nil, mimeType, ErrUpstreamEmptyResponse
 	}
+	if isGeminiFilesURL(url) {
+		return nil, mimeType, fmt.Errorf("Gemini Files generated image URI is not supported")
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, mimeType, err
@@ -969,7 +1018,7 @@ func (s *Service) readGeneratedImage(ctx context.Context, image llm.GeneratedIma
 	if contentType := strings.TrimSpace(resp.Header.Get("Content-Type")); strings.HasPrefix(strings.ToLower(contentType), "image/") {
 		mimeType = strings.Split(contentType, ";")[0]
 	}
-	limit := s.cfg.Snapshot().MaxUploadFileBytes
+	limit := cfg.MaxUploadFileBytes
 	if limit <= 0 {
 		limit = 20 * 1024 * 1024
 	}
@@ -1229,13 +1278,6 @@ func (s *Service) saveGeneratedVideos(ctx context.Context, input assistantGenera
 		})
 	}
 	return uploaded, attachmentRows, nil
-}
-
-func validateGeneratedVideoBytes(data []byte, declaredMIME string) ([]byte, string, error) {
-	if len(data) < 12 || !bytes.Equal(data[4:8], []byte("ftyp")) {
-		return nil, strings.TrimSpace(declaredMIME), fmt.Errorf("generated video content is not a supported mp4")
-	}
-	return data, "video/mp4", nil
 }
 
 func generatedVideoFileName(modelName string, capturedAt time.Time, index int, total int, mimeType string) string {

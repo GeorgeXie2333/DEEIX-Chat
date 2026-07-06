@@ -29,6 +29,8 @@ const (
 	EndpointImageEdits = "image_edits"
 	// EndpointVideoGenerations 表示 OpenAI Videos API 生成端点。
 	EndpointVideoGenerations = "video_generations"
+	// EndpointInteractions 表示 Gemini Interactions API 端点。
+	EndpointInteractions = "interactions"
 )
 
 // 超时默认值。
@@ -664,11 +666,14 @@ type GeneratedImage struct {
 	RevisedPrompt string
 }
 
-// GeneratedVideo 表示视频生成接口返回的一段视频。
+// GeneratedVideo 表示视频生成接口返回的一个视频结果。
 type GeneratedVideo struct {
 	ID       string
 	Data     []byte
+	URL      string
+	B64JSON  string
 	MIMEType string
+	FileName string
 	Size     string
 	Seconds  string
 }
@@ -797,6 +802,7 @@ func NewClientWithEnv(env string, ssrfProtectionEnabled bool) *Client {
 		AdapterAnthropicMessages:      &anthropicMessagesAdapter{client: client},
 		AdapterGoogleGenerateContent:  &geminiGenerateContentAdapter{client: client},
 		AdapterGoogleImageGeneration:  &geminiImageGenerationAdapter{client: client},
+		AdapterGeminiInteractions:     &geminiInteractionsAdapter{client: client},
 	}
 	return client
 }
@@ -1542,6 +1548,8 @@ func normalizeEndpoint(raw string) string {
 		return EndpointImageEdits
 	case EndpointVideoGenerations:
 		return EndpointVideoGenerations
+	case EndpointInteractions:
+		return EndpointInteractions
 	default:
 		return EndpointResponses
 	}

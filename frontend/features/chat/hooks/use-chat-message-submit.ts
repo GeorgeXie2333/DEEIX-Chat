@@ -18,6 +18,7 @@ import {
   toPendingAttachments,
   toPendingProcessTrace,
 } from "@/features/chat/model/message-submit";
+import { readLiveUpstreamThinkTrace } from "@/features/chat/model/upstream-think-store";
 import {
   resolveErrorDetails,
   resolveErrorMessage,
@@ -27,6 +28,7 @@ import {
 import {
   applyBranchSelectionPath,
   buildChildrenIndex,
+  parseAttachments,
   resolveBranchSelectionPath,
   toBranchKey,
 } from "@/features/chat/model/chat-thread";
@@ -109,15 +111,29 @@ function resolveInputSideUsageValue(...values: Array<number | null | undefined>)
 function resolveMediaStatusLabel(
   status: string,
   fallbackMessage: string,
+  contentType: string | undefined,
   t: ReturnType<typeof useTranslations>,
 ): string {
+  const normalizedContentType =
+    contentType === "video" || (!contentType && fallbackMessage.toLowerCase().includes("video"))
+      ? "video"
+      : "image";
   switch (status.trim()) {
     case "queued":
-      return fallbackMessage.toLowerCase().includes("video") ? t("mediaStatus.videoQueued") : t("mediaStatus.queued");
+      if (normalizedContentType === "video") {
+        return t("mediaStatus.videoQueued");
+      }
+      return t("mediaStatus.queued");
     case "running":
-      return fallbackMessage.toLowerCase().includes("video") ? t("mediaStatus.videoRunning") : t("mediaStatus.running");
+      if (normalizedContentType === "video") {
+        return t("mediaStatus.videoRunning");
+      }
+      return t("mediaStatus.running");
     case "saving_artifact":
-      return fallbackMessage.toLowerCase().includes("video") ? t("mediaStatus.videoSavingArtifact") : t("mediaStatus.savingArtifact");
+      if (normalizedContentType === "video") {
+        return t("mediaStatus.videoSavingArtifact");
+      }
+      return t("mediaStatus.savingArtifact");
     default:
       return fallbackMessage.trim() || status.trim();
   }
@@ -289,8 +305,10 @@ export function useChatMessageSubmit({
   visibleMessages,
   combinedMessages,
   serverMessagePublicIDs,
+  enqueueUpstreamThinkDelta,
   enqueueStreamText,
   flushStreamTextNow,
+  flushUpstreamThinkNow,
   resetStreamBuffer,
   startStream,
   activeGenerationRunsRef,
@@ -330,10 +348,12 @@ export function useChatMessageSubmit({
   visibleMessages: ChatAreaMessage[];
   combinedMessages: ChatAreaMessage[];
   serverMessagePublicIDs: Set<string>;
+  enqueueUpstreamThinkDelta: (event: Extract<StreamMessageEvent, { type: "upstream_think_delta" }>) => void;
   enqueueStreamText: (delta: string) => void;
   flushStreamTextNow: () => void;
+  flushUpstreamThinkNow: () => void;
   resetStreamBuffer: () => void;
-  startStream: (exchangeKey: string) => void;
+  startStream: (exchangeKey: string, runID?: string) => void;
   activeGenerationRunsRef?: React.RefObject<Set<string>>;
   failedGenerationRunsRef?: React.RefObject<Set<string>>;
   resumeGenerationActive?: boolean;
@@ -478,7 +498,8 @@ export function useChatMessageSubmit({
           description: t("attachmentsTruncatedDescription", { count: maxFilesPerMessage }),
         });
       }
-      const submitDecision = resolveChatSubmitDecision(selectedModel, effectiveAttachments);
+      const sanitizedOptions = sanitizeConversationOptions(requestOptions);
+      const submitDecision = resolveChatSubmitDecision(selectedModel, effectiveAttachments, sanitizedOptions);
       if (submitDecision.blockedReason) {
         toast.error(t("mediaInputUnsupported"), {
           description: resolveSubmitBlockDescription(submitDecision.blockedReason, t),
@@ -508,9 +529,12 @@ export function useChatMessageSubmit({
       let shouldKeepConversationLayout = false;
       const streamAbortController = new AbortController();
       const clientRunID = createClientRunID();
-      const sanitizedOptions = sanitizeConversationOptions(requestOptions);
       const assistantImageAspectRatio =
-        submitTask === "chat" ? undefined : resolveImageLoadingAspectRatio(sanitizedOptions);
+        submitTask === "image_generation" || submitTask === "image_edit"
+          ? resolveImageLoadingAspectRatio(sanitizedOptions)
+          : undefined;
+      const assistantContentType =
+        submitTask === "chat" ? "markdown" : submitTask === "video_generation" ? "video" : "image";
       let targetConversationID = conversationIDRef.current;
       let targetConversation = activeConversationRef.current;
       let metadataRefreshInFlight = false;
@@ -527,7 +551,7 @@ export function useChatMessageSubmit({
         setDraft("");
         setAttachments([]);
       }
-      startStream(exchangeKey);
+      startStream(exchangeKey, clientRunID);
       setPendingExchange({
         key: exchangeKey,
         conversationPublicID: targetConversationID?.trim() || null,
@@ -545,7 +569,7 @@ export function useChatMessageSubmit({
         assistantText: "",
         assistantPending: true,
         assistantStreaming: true,
-        assistantContentType: submitTask === "chat" ? "markdown" : submitTask === "video_generation" ? "video" : "image",
+        assistantContentType,
         assistantImageAspectRatio,
         assistantInlineAlert: undefined,
         assistantCreatedAt: createdAt,
@@ -668,7 +692,7 @@ export function useChatMessageSubmit({
             );
           },
           onMediaStatus: (event) => {
-            const activityLabel = resolveMediaStatusLabel(event.status, event.message, t);
+            const activityLabel = resolveMediaStatusLabel(event.status, event.message, event.content_type, t);
             setPendingExchange((prev) =>
               prev && prev.key === exchangeKey
                 ? {
@@ -722,14 +746,7 @@ export function useChatMessageSubmit({
             );
           },
           onUpstreamThinkDelta: (event) => {
-            setPendingExchange((prev) =>
-              prev && prev.key === exchangeKey
-                ? {
-                    ...prev,
-                    assistantProcessTrace: event.trace ? toPendingProcessTrace(event.trace) : prev.assistantProcessTrace,
-                  }
-                : prev,
-            );
+            enqueueUpstreamThinkDelta(event);
           },
           onDelta: (delta) => {
             // Always clear assistantFileProc so batched React updates cannot keep the file_proc spinner alive.
@@ -770,6 +787,12 @@ export function useChatMessageSubmit({
             htmlVisualColorMode: requestHTMLVisualPromptEnabled ? requestHTMLVisualColorMode : undefined,
           };
           completed = await streamConversationMessage(token, targetConversationID, chatPayload, streamOptions);
+        } else if (submitTask === "video_generation") {
+          const mediaPayload: MediaVideoRequest = {
+            ...commonStreamPayload,
+            prompt: payloadContent,
+          };
+          completed = await streamVideoGeneration(token, targetConversationID, mediaPayload, streamOptions);
         } else {
           const mediaPayload: MediaImageRequest = {
             ...commonStreamPayload,
@@ -788,6 +811,7 @@ export function useChatMessageSubmit({
         sentSuccessfully = true;
         lastCompletedAssistantPublicIDRef.current = completed.assistantMessage.publicID;
         flushStreamTextNow();
+        flushUpstreamThinkNow();
         resetStreamBuffer();
         const assistantMessageStatus = completed.assistantMessage.status || "success";
         const assistantMessageSucceeded = assistantMessageStatus === "success";
@@ -826,6 +850,7 @@ export function useChatMessageSubmit({
             assistantCreatedAt: completed.assistantMessage.createdAt,
             assistantUpdatedAt: completed.assistantMessage.updatedAt,
             assistantContentType: completed.assistantMessage.contentType || prev.assistantContentType,
+            assistantAttachments: parseAttachments(completed.assistantMessage.attachments),
             assistantInputTokens: resolveInputSideUsageValue(
               completed.assistantMessage.inputTokens,
               completed.userMessage.inputTokens,
@@ -900,6 +925,7 @@ export function useChatMessageSubmit({
         reload();
       } catch (error) {
         flushStreamTextNow();
+        flushUpstreamThinkNow();
         resetStreamBuffer();
         if (streamAbortController.signal.aborted) {
           shouldKeepConversationLayout = true;
@@ -912,6 +938,7 @@ export function useChatMessageSubmit({
                   assistantStreaming: false,
                   assistantFileProc: false,
                   assistantActivityLabel: undefined,
+                  assistantProcessTrace: readLiveUpstreamThinkTrace(clientRunID) ?? prev.assistantProcessTrace,
                   assistantInlineAlert: undefined,
                 }
               : prev,
@@ -935,6 +962,7 @@ export function useChatMessageSubmit({
                 assistantStreaming: false,
                 assistantFileProc: false,
                 assistantActivityLabel: undefined,
+                assistantProcessTrace: readLiveUpstreamThinkTrace(clientRunID) ?? prev.assistantProcessTrace,
                 assistantStatus: "error",
                 assistantErrorMessage: errorMessage,
                 assistantInlineAlert: {
@@ -965,8 +993,10 @@ export function useChatMessageSubmit({
     [
       activeGenerationRunsRef,
       failedGenerationRunsRef,
+      enqueueUpstreamThinkDelta,
       enqueueStreamText,
       flushStreamTextNow,
+      flushUpstreamThinkNow,
       options,
       onConversationCreated,
       prependNewConversation,

@@ -10,6 +10,7 @@ import {
   CircleAlert,
   Code2,
   CornerDownRight,
+  Film,
   Globe2,
   Image as ImageIcon,
   ImageOff,
@@ -237,7 +238,10 @@ function resolveComposerModeIndicator(
   decision: ChatSubmitDecision,
   t: (key: string) => string,
 ): ComposerModeIndicator | null {
-  if (decision.blockedReason === "image_task_rejects_non_image_attachments") {
+  if (
+    decision.blockedReason === "image_task_rejects_non_image_attachments" ||
+    decision.blockedReason === "video_task_rejects_non_image_attachments"
+  ) {
     return {
       label: t("mediaMode.invalidFile"),
       intro: t("mediaMode.invalidFileIntro"),
@@ -246,7 +250,11 @@ function resolveComposerModeIndicator(
       tone: "warning",
     };
   }
-  if (decision.blockedReason === "video_generation_rejects_non_image_attachments" || decision.blockedReason === "video_generation_too_many_reference_images") {
+  if (
+    decision.blockedReason === "video_generation_rejects_non_image_attachments" ||
+    decision.blockedReason === "video_generation_too_many_reference_images" ||
+    decision.blockedReason === "video_generation_too_many_images"
+  ) {
     return {
       label: t("mediaMode.invalidFile"),
       intro: t("mediaMode.videoInvalidFileIntro"),
@@ -284,7 +292,7 @@ function resolveComposerModeIndicator(
       description: decision.blockedReason
         ? t(`mediaMode.blockedDescriptions.${decision.blockedReason}`)
         : t("mediaMode.videoGenerationDescription"),
-      icon: Video,
+      icon: Film,
       tone: "default",
     };
   }
@@ -418,7 +426,7 @@ function ChatInputComponent({
     [modelOptions, selectedPlatformModelName],
   );
   const selectedProtocol = selectedModel?.protocols[0]?.trim() ?? "";
-  const submitDecision = resolveChatSubmitDecision(selectedModel, attachments);
+  const submitDecision = resolveChatSubmitDecision(selectedModel, attachments, options);
   const submitTask = submitDecision.task;
   const isMediaMode = isMediaSubmitTask(submitTask);
   const composerModeIndicator = resolveComposerModeIndicator(submitDecision, tComposer);

@@ -1,4 +1,14 @@
 {
+  "admin": {
+    "defaultPermissionGroupDeleteNotAllowed": "デフォルトの権限グループは削除できません。",
+    "permissionGroupNotFound": "権限グループが見つかりません。",
+    "invalidPermissionGroupName": "権限グループ名が必要です。",
+    "invalidPermissionGroupRateMultiplier": "課金倍率が無効です。1 から 10000 の範囲で指定してください。",
+    "invalidPermissionGroupModels": "権限グループのモデル設定が無効です。",
+    "invalidPermissionGroupUsers": "権限グループのメンバー設定が無効です。",
+    "defaultPermissionGroupUsersImplicit": "デフォルト権限グループのメンバーは自動管理されます。",
+    "permissionGroupReferencedByPlan": "この権限グループは課金プランから参照されています。削除する前に関連付けを解除してください。"
+  },
   "auth": {
     "adminRequired": "管理者権限が必要です。",
     "authorizationCodeRequired": "認可コードが必要です。",
@@ -71,6 +81,9 @@
   "billing": {
     "insufficientBalance": "残高が不足しています。",
     "insufficientFunds": "残高が不足しています。",
+    "invalidPlan": "課金プランが無効です。",
+    "planNotFound": "課金プランが見つかりません。",
+    "invalidPermissionGroup": "権限グループが無効です。",
     "invalidDailyUsageDateRange": "利用日の範囲が無効です。",
     "invalidDailyUsageDays": "利用日数が無効です。",
     "invalidModelPricing": "モデル料金が無効です。",
@@ -170,6 +183,7 @@
     "invalidRouteProtocolCombination": "このプロトコル組み合わせは利用できません。バインドでは1つのプロトコル、または同じプロバイダーの画像生成/画像編集プロトコルを使用してください。",
     "systemPromptTooLong": "システムプロンプトは20000文字以内にしてください。",
     "invalidProtocolDefaultsConfig": "プロトコル既定設定が無効です。",
+    "modelAccessDenied": "このモデルへのアクセス権がありません。",
     "modelRouteNotConfigured": "モデルルートが設定されていません。",
     "noActiveApiKey": "利用可能な有効 API キーがありません。",
     "platformModelNameExists": "プラットフォームモデル名はすでに存在します。",

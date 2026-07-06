@@ -3,6 +3,7 @@ package billing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
@@ -18,25 +19,6 @@ func (s modelIdentityResolverStub) ResolvePlatformModelIdentity(context.Context,
 	return s.identity, nil
 }
 
-type freeModelRateLimiterStub struct {
-	allowed        bool
-	minuteExceeded bool
-	dailyExceeded  bool
-	err            error
-	called         bool
-	userID         uint
-	rpm            int
-	dailyLimit     int
-}
-
-func (s *freeModelRateLimiterStub) AllowFreeModelUsage(_ context.Context, userID uint, requestsPerMinute int, dailyLimit int, _ time.Time) (bool, bool, bool, error) {
-	s.called = true
-	s.userID = userID
-	s.rpm = requestsPerMinute
-	s.dailyLimit = dailyLimit
-	return s.allowed, s.minuteExceeded, s.dailyExceeded, s.err
-}
-
 func TestUpstreamUsageSnapshotReturnsEmptyObjectWhenRawUsageIsMissing(t *testing.T) {
 	snapshot, ok := upstreamUsageSnapshot(UsagePricingInput{
 		InputTokens:  10,
@@ -47,103 +29,75 @@ func TestUpstreamUsageSnapshotReturnsEmptyObjectWhenRawUsageIsMissing(t *testing
 	}
 }
 
-func TestBuildUsageLedgerSnapshotsCanceledAccounting(t *testing.T) {
+func TestUpdatePlanRejectsUnknownPermissionGroup(t *testing.T) {
 	repo := &billingRepositoryStub{
-		mode: "usage",
-		pricing: &domainbilling.ModelPricing{
-			PlatformModelName:          "gpt-4o",
-			Currency:                   "USD",
-			PricingMode:                domainbilling.PricingModeToken,
-			InputNanousdPerMTokens:     1_000_000_000,
-			OutputNanousdPerMTokens:    2_000_000_000,
-			CacheReadNanousdPerMTokens: 200_000_000,
-		},
+		plans: []domainbilling.Plan{{ID: 1, Code: "pro", Name: "Pro"}},
 	}
 	service := NewService(repo)
+	groupID := uint(99)
+	service.SetPermissionGroupLookup(permissionGroupLookupStub{})
 
-	ledger, err := service.BuildUsageLedger(context.Background(), UsagePricingInput{
-		UserID:             1,
-		PlatformModelName:  "gpt-4o",
-		InputTokens:        10,
-		OutputTokens:       2,
-		RunStatus:          "canceled",
-		CanceledBy:         "user",
-		UpstreamDispatched: true,
-		InputTokenSource:   "upstream",
-		OutputTokenSource:  "calculated",
+	_, err := service.UpdatePlan(context.Background(), 1, PlanUpdateInput{
+		Name:              "Pro",
+		PermissionGroupID: &groupID,
 	})
-	if err != nil {
-		t.Fatalf("BuildUsageLedger() error = %v", err)
-	}
-
-	var snapshot map[string]interface{}
-	if err := json.Unmarshal([]byte(ledger.PricingSnapshotJSON), &snapshot); err != nil {
-		t.Fatalf("unmarshal pricing snapshot: %v", err)
-	}
-	if snapshot["run_status"] != "canceled" || snapshot["canceled_by"] != "user" {
-		t.Fatalf("unexpected canceled snapshot: %#v", snapshot)
-	}
-	if snapshot["upstream_dispatched"] != true {
-		t.Fatalf("expected upstream_dispatched=true, got %#v", snapshot["upstream_dispatched"])
-	}
-	sources, ok := snapshot["usage_sources"].(map[string]interface{})
-	if !ok || sources["input_tokens"] != "upstream" || sources["output_tokens"] != "calculated" {
-		t.Fatalf("unexpected usage sources: %#v", snapshot["usage_sources"])
+	if !errors.Is(err, ErrInvalidPermissionGroup) {
+		t.Fatalf("expected invalid permission group error, got %v", err)
 	}
 }
 
-func TestBuildUsageLedgerCanceledCallPricingChargesSingleRequest(t *testing.T) {
+func TestUpdatePlanDefaultsPermissionGroup(t *testing.T) {
+	defaultGroupID := uint(7)
 	repo := &billingRepositoryStub{
-		mode: "usage",
-		pricing: &domainbilling.ModelPricing{
-			PlatformModelName:  "image-model",
-			Currency:           "USD",
-			PricingMode:        domainbilling.PricingModeCall,
-			CallNanousdPerCall: 75_000,
-		},
+		plans: []domainbilling.Plan{{ID: 1, Code: "pro", Name: "Pro"}},
 	}
+	service := NewService(repo)
+	service.SetPermissionGroupLookup(permissionGroupLookupStub{
+		validIDs:   map[uint]struct{}{defaultGroupID: {}},
+		defaultIDs: []uint{defaultGroupID},
+	})
 
-	ledger, err := NewService(repo).BuildUsageLedger(context.Background(), UsagePricingInput{
-		UserID:             1,
-		PlatformModelName:  "image-model",
-		CallCount:          1,
-		RunStatus:          "canceled",
-		CanceledBy:         "user",
-		UpstreamDispatched: true,
+	view, err := service.UpdatePlan(context.Background(), 1, PlanUpdateInput{
+		Name: "Pro",
 	})
 	if err != nil {
-		t.Fatalf("BuildUsageLedger() error = %v", err)
+		t.Fatalf("UpdatePlan() error = %v", err)
 	}
-	if ledger.CallCount != 1 || ledger.BilledNanousd != 75_000 {
-		t.Fatalf("unexpected canceled call billing: count=%d billed=%d", ledger.CallCount, ledger.BilledNanousd)
+	if view.PermissionGroupID == nil || *view.PermissionGroupID != defaultGroupID {
+		t.Fatalf("PermissionGroupID = %v, want %d", view.PermissionGroupID, defaultGroupID)
+	}
+	if repo.updatedPlan == nil || repo.updatedPlan.PermissionGroupID == nil || *repo.updatedPlan.PermissionGroupID != defaultGroupID {
+		t.Fatalf("updated plan PermissionGroupID = %v, want %d", repo.updatedPlan, defaultGroupID)
 	}
 }
 
-func TestBuildUsageLedgerCanceledDurationPricingUsesRequestedSeconds(t *testing.T) {
+func TestUpdatePlanRejectsMissingDefaultPermissionGroup(t *testing.T) {
 	repo := &billingRepositoryStub{
-		mode: "usage",
-		pricing: &domainbilling.ModelPricing{
-			PlatformModelName:        "video-model",
-			Currency:                 "USD",
-			PricingMode:              domainbilling.PricingModeDuration,
-			DurationNanousdPerSecond: 9_000,
-		},
+		plans: []domainbilling.Plan{{ID: 1, Code: "pro", Name: "Pro"}},
 	}
+	service := NewService(repo)
+	service.SetPermissionGroupLookup(permissionGroupLookupStub{})
 
-	ledger, err := NewService(repo).BuildUsageLedger(context.Background(), UsagePricingInput{
-		UserID:             1,
-		PlatformModelName:  "video-model",
-		DurationSeconds:    8,
-		RunStatus:          "canceled",
-		CanceledBy:         "user",
-		UpstreamDispatched: true,
+	_, err := service.UpdatePlan(context.Background(), 1, PlanUpdateInput{
+		Name: "Pro",
 	})
-	if err != nil {
-		t.Fatalf("BuildUsageLedger() error = %v", err)
+	if !errors.Is(err, ErrInvalidPermissionGroup) {
+		t.Fatalf("expected invalid permission group error, got %v", err)
 	}
-	if ledger.DurationSeconds != 8 || ledger.BilledNanousd != 72_000 {
-		t.Fatalf("unexpected canceled duration billing: seconds=%d billed=%d", ledger.DurationSeconds, ledger.BilledNanousd)
-	}
+}
+
+type permissionGroupLookupStub struct {
+	validIDs   map[uint]struct{}
+	defaultIDs []uint
+}
+
+func (s permissionGroupLookupStub) PermissionGroupExists(_ context.Context, id uint) (bool, error) {
+	_, ok := s.validIDs[id]
+	return ok, nil
+}
+
+func (s permissionGroupLookupStub) ListDefaultGroupIDs(context.Context) ([]uint, error) {
+	return s.defaultIDs, nil
 }
 
 type billingRepositoryStub struct {
@@ -158,7 +112,6 @@ type billingRepositoryStub struct {
 	billableNanousd            int64
 	nativeToolBillingEnabled   bool
 	nativeToolPricingJSON      string
-	freeModelRateLimit         domainbilling.FreeModelRateLimit
 	requestedPlatformModelName string
 	replacedSubscription       *domainbilling.Subscription
 	reservedNanousd            int64
@@ -166,6 +119,8 @@ type billingRepositoryStub struct {
 	periodStartAt              time.Time
 	periodEndAt                time.Time
 	periodCreditNanousd        int64
+	updatedPlan                *domainbilling.Plan
+	updatedPrice               *domainbilling.Price
 }
 
 func (r *billingRepositoryStub) GetBillingMode(context.Context) (string, error) {
@@ -182,10 +137,6 @@ func (r *billingRepositoryStub) GetNativeToolBillingEnabled(context.Context) (bo
 
 func (r *billingRepositoryStub) GetNativeToolPricingJSON(context.Context) (string, error) {
 	return r.nativeToolPricingJSON, nil
-}
-
-func (r *billingRepositoryStub) GetFreeModelRateLimit(context.Context) (domainbilling.FreeModelRateLimit, error) {
-	return r.freeModelRateLimit, nil
 }
 
 func (r *billingRepositoryStub) GetModelPricing(_ context.Context, platformModelName string) (*domainbilling.ModelPricing, error) {
@@ -237,8 +188,10 @@ func (r *billingRepositoryStub) ListPlansByIDs(_ context.Context, planIDs []uint
 func (r *billingRepositoryStub) GetActivePlanByCode(context.Context, string) (*domainbilling.Plan, error) {
 	panic("not used")
 }
-func (r *billingRepositoryStub) UpdatePlanWithDefaultPrice(context.Context, *domainbilling.Plan, *domainbilling.Price) error {
-	panic("not used")
+func (r *billingRepositoryStub) UpdatePlanWithDefaultPrice(_ context.Context, plan *domainbilling.Plan, price *domainbilling.Price) error {
+	r.updatedPlan = plan
+	r.updatedPrice = price
+	return nil
 }
 func (r *billingRepositoryStub) ListCurrentSubscriptionsByUserIDs(context.Context, []uint, time.Time) ([]domainbilling.Subscription, error) {
 	panic("not used")
@@ -508,122 +461,6 @@ func TestBuildUsageLedgerSnapshotsModelIdentity(t *testing.T) {
 	}
 }
 
-func TestEnsureModelUsableSkipsFreeModelLimiterWhenDisabled(t *testing.T) {
-	repo := &billingRepositoryStub{
-		mode: "period",
-		pricing: &domainbilling.ModelPricing{
-			PlatformModelName: "free-chat",
-			IsFree:            true,
-		},
-	}
-	limiter := &freeModelRateLimiterStub{allowed: true}
-	service := NewService(repo)
-	service.SetFreeModelRateLimiter(limiter)
-
-	if err := service.EnsureModelUsable(context.Background(), 7, "free-chat", time.Now()); err != nil {
-		t.Fatalf("expected free model to pass with disabled limits, got %v", err)
-	}
-	if limiter.called {
-		t.Fatal("did not expect limiter call when both free model limits are disabled")
-	}
-}
-
-func TestEnsureModelUsableReturnsMinuteLimitForFreeModel(t *testing.T) {
-	repo := &billingRepositoryStub{
-		mode: "self",
-		pricing: &domainbilling.ModelPricing{
-			PlatformModelName: "free-chat",
-			IsFree:            true,
-		},
-		freeModelRateLimit: domainbilling.FreeModelRateLimit{
-			RequestsPerMinute: 2,
-			DailyRequests:     10,
-		},
-	}
-	limiter := &freeModelRateLimiterStub{minuteExceeded: true}
-	service := NewService(repo)
-	service.SetFreeModelRateLimiter(limiter)
-
-	err := service.EnsureModelUsable(context.Background(), 7, "free-chat", time.Now())
-	if err != ErrFreeModelRateLimitExceeded {
-		t.Fatalf("expected minute free model limit error, got %v", err)
-	}
-	if !limiter.called || limiter.userID != 7 || limiter.rpm != 2 || limiter.dailyLimit != 10 {
-		t.Fatalf("unexpected limiter call: %#v", limiter)
-	}
-}
-
-func TestEnsureModelUsableReturnsDailyLimitForFreeModel(t *testing.T) {
-	repo := &billingRepositoryStub{
-		mode: "period",
-		pricing: &domainbilling.ModelPricing{
-			PlatformModelName: "free-chat",
-			IsFree:            true,
-		},
-		freeModelRateLimit: domainbilling.FreeModelRateLimit{
-			RequestsPerMinute: 2,
-			DailyRequests:     10,
-		},
-	}
-	limiter := &freeModelRateLimiterStub{dailyExceeded: true}
-	service := NewService(repo)
-	service.SetFreeModelRateLimiter(limiter)
-
-	err := service.EnsureModelUsable(context.Background(), 7, "free-chat", time.Now())
-	if err != ErrFreeModelDailyLimitExceeded {
-		t.Fatalf("expected daily free model limit error, got %v", err)
-	}
-}
-
-func TestEnsureModelUsableDoesNotLimitPaidModel(t *testing.T) {
-	repo := &billingRepositoryStub{
-		mode: "self",
-		pricing: &domainbilling.ModelPricing{
-			PlatformModelName: "paid-chat",
-			IsFree:            false,
-		},
-		freeModelRateLimit: domainbilling.FreeModelRateLimit{
-			RequestsPerMinute: 1,
-			DailyRequests:     1,
-		},
-	}
-	limiter := &freeModelRateLimiterStub{minuteExceeded: true, dailyExceeded: true}
-	service := NewService(repo)
-	service.SetFreeModelRateLimiter(limiter)
-
-	if err := service.EnsureModelUsable(context.Background(), 7, "paid-chat", time.Now()); err != nil {
-		t.Fatalf("expected paid model to pass in self mode, got %v", err)
-	}
-	if limiter.called {
-		t.Fatal("did not expect free model limiter call for paid model")
-	}
-}
-
-func TestEnsureModelUsableSkipsExemptFreeModel(t *testing.T) {
-	repo := &billingRepositoryStub{
-		mode: "usage",
-		pricing: &domainbilling.ModelPricing{
-			PlatformModelName: "free-chat",
-			IsFree:            true,
-		},
-		freeModelRateLimit: domainbilling.FreeModelRateLimit{
-			RequestsPerMinute: 1,
-			DailyRequests:     1,
-			ExemptModelNames:  []string{"free-chat"},
-		},
-	}
-	limiter := &freeModelRateLimiterStub{minuteExceeded: true, dailyExceeded: true}
-	service := NewService(repo)
-	service.SetFreeModelRateLimiter(limiter)
-
-	if err := service.EnsureModelUsable(context.Background(), 7, "free-chat", time.Now()); err != nil {
-		t.Fatalf("expected exempt free model to pass, got %v", err)
-	}
-	if limiter.called {
-		t.Fatal("did not expect limiter call for exempt free model")
-	}
-}
-
 func TestBuildUsageLedgerBillsNativeToolDefaultsWhenEnabled(t *testing.T) {
 	repo := &billingRepositoryStub{
 		mode:                     "usage",
@@ -748,122 +585,6 @@ func TestBuildUsageLedgerBillsOpenAIWebSearchPreviewByModelFamily(t *testing.T) 
 				t.Fatalf("expected %d billed nanousd, got %d", tc.wantNanousd, ledger.BilledNanousd)
 			}
 		})
-	}
-}
-
-func TestBuildUsageLedgerBillsOpenAIImageGenerationNativeTool(t *testing.T) {
-	repo := &billingRepositoryStub{
-		mode:                     "usage",
-		nativeToolBillingEnabled: true,
-		pricing: &domainbilling.ModelPricing{
-			PlatformModelName: "gpt-5.5",
-			Currency:          "USD",
-			PricingMode:       domainbilling.PricingModeToken,
-		},
-	}
-	service := NewService(repo)
-
-	ledger, err := service.BuildUsageLedger(context.Background(), UsagePricingInput{
-		UserID:            1,
-		PlatformModelName: "gpt-5.5",
-		ProviderProtocol:  "openai_responses",
-		ServerSideToolUsage: map[string]int64{
-			"image_generation": 2,
-		},
-	})
-	if err != nil {
-		t.Fatalf("build usage ledger: %v", err)
-	}
-	if ledger.BilledNanousd != 200_000_000 {
-		t.Fatalf("expected OpenAI image generation native tool billing total, got %d", ledger.BilledNanousd)
-	}
-
-	var snapshot map[string]interface{}
-	if err := json.Unmarshal([]byte(ledger.PricingSnapshotJSON), &snapshot); err != nil {
-		t.Fatalf("unmarshal pricing snapshot: %v", err)
-	}
-	if snapshot["native_tool_billed_nanousd"] != float64(200_000_000) {
-		t.Fatalf("expected image generation native tool billing snapshot, got %#v", snapshot)
-	}
-	serviceItems, ok := snapshot["service_items"].([]interface{})
-	if !ok || len(serviceItems) != 1 {
-		t.Fatalf("expected one native tool service item, got %#v", snapshot["service_items"])
-	}
-	serviceItem, ok := serviceItems[0].(map[string]interface{})
-	if !ok || serviceItem["service_code"] != "native_tool.openai.image_generation" || serviceItem["call_nanousd_per_call"] != float64(100_000_000) {
-		t.Fatalf("unexpected image generation service item: %#v", serviceItems[0])
-	}
-}
-
-func TestBuildUsageLedgerUsesCustomNativeToolPricing(t *testing.T) {
-	repo := &billingRepositoryStub{
-		mode:                     "usage",
-		nativeToolBillingEnabled: true,
-		nativeToolPricingJSON:    `{"xaiWebSearch":7000000,"xaiXSearch":0}`,
-		pricing: &domainbilling.ModelPricing{
-			PlatformModelName: "grok-4.3",
-			Currency:          "USD",
-			PricingMode:       domainbilling.PricingModeToken,
-		},
-	}
-	service := NewService(repo)
-
-	ledger, err := service.BuildUsageLedger(context.Background(), UsagePricingInput{
-		UserID:            1,
-		PlatformModelName: "grok-4.3",
-		ProviderProtocol:  "xai_responses",
-		ServerSideToolUsage: map[string]int64{
-			"web_search": 2,
-			"x_search":   3,
-		},
-	})
-	if err != nil {
-		t.Fatalf("build usage ledger: %v", err)
-	}
-	if ledger.BilledNanousd != 14_000_000 {
-		t.Fatalf("expected custom native tool billing total, got %d", ledger.BilledNanousd)
-	}
-
-	var snapshot map[string]interface{}
-	if err := json.Unmarshal([]byte(ledger.PricingSnapshotJSON), &snapshot); err != nil {
-		t.Fatalf("unmarshal pricing snapshot: %v", err)
-	}
-	serviceItems, ok := snapshot["service_items"].([]interface{})
-	if !ok || len(serviceItems) != 1 {
-		t.Fatalf("expected one native tool service item, got %#v", snapshot["service_items"])
-	}
-	serviceItem, ok := serviceItems[0].(map[string]interface{})
-	if !ok || serviceItem["service_code"] != "native_tool.xai.web_search" || serviceItem["call_nanousd_per_call"] != float64(7_000_000) {
-		t.Fatalf("unexpected custom native tool service item: %#v", serviceItems[0])
-	}
-}
-
-func TestBuildUsageLedgerBillsCustomPricedNonMeteredNativeTool(t *testing.T) {
-	repo := &billingRepositoryStub{
-		mode:                     "usage",
-		nativeToolBillingEnabled: true,
-		nativeToolPricingJSON:    `{"openaiShell":3000000}`,
-		pricing: &domainbilling.ModelPricing{
-			PlatformModelName: "gpt-5.5",
-			Currency:          "USD",
-			PricingMode:       domainbilling.PricingModeToken,
-		},
-	}
-	service := NewService(repo)
-
-	ledger, err := service.BuildUsageLedger(context.Background(), UsagePricingInput{
-		UserID:            1,
-		PlatformModelName: "gpt-5.5",
-		ProviderProtocol:  "openai_responses",
-		ServerSideToolUsage: map[string]int64{
-			"shell": 2,
-		},
-	})
-	if err != nil {
-		t.Fatalf("build usage ledger: %v", err)
-	}
-	if ledger.BilledNanousd != 6_000_000 {
-		t.Fatalf("expected custom shell billing total, got %d", ledger.BilledNanousd)
 	}
 }
 

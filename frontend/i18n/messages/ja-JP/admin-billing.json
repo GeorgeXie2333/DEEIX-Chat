@@ -73,6 +73,8 @@
     "interval": "周期",
     "periodCredit": "周期利用枠",
     "discount": "割引",
+    "permissionGroup": "権限グループ",
+    "permissionGroupDescription": "このプランを購読中のユーザーは、この権限グループのモデルアクセス権を自動的に取得します。",
     "tablePlan": "プラン",
     "tableDescription": "説明",
     "tablePrice": "価格",

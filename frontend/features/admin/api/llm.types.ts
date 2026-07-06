@@ -13,6 +13,7 @@ export type AdminLLMAdapter =
   | "anthropic_messages"
   | "google_generate_content"
   | "google_image_generation"
+  | "gemini_interactions"
   | "xai_responses"
   | "xai_image"
   | "xai_image_edits";
@@ -84,6 +85,7 @@ export type AdminLLMModelDTO = {
   sourceCount: number;
   activeSourceCount: number;
   protocolsJSON: string;
+  upstreamNamesJSON: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -341,6 +343,7 @@ export type BindAdminLLMModelUpstreamSourceRequest = {
 };
 
 export type ImportAdminLLMUpstreamModelsRequest = {
+  permissionGroupIDs?: number[];
   items: Array<{
     platformModelName: string;
     upstreamModelName: string;

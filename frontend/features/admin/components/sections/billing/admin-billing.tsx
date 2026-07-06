@@ -70,7 +70,9 @@ import {
   updateAdminRedemptionCode,
   updateAdminBillingPlan,
   upsertAdminModelPricing,
+  listPermissionGroups,
 } from "@/features/admin/api";
+import type { PermissionGroup } from "@/features/admin/api/permission-groups";
 import { listAllAdminPages } from "@/features/admin/api/shared";
 import type { AdminBillingMode, AdminBillingPlanDTO, AdminModelPricingDTO, AdminRedemptionCodeDTO, NativeToolPricingDTO, NativeToolPricingUpdateDTO } from "@/features/admin/api/billing.types";
 import type { AdminLLMModelDTO } from "@/features/admin/api/llm.types";
@@ -399,6 +401,7 @@ export function AdminBillingPage() {
   const [form, setForm] = React.useState<PricingFormState | null>(null);
   const [editPlan, setEditPlan] = React.useState<AdminBillingPlanDTO | null>(null);
   const [planForm, setPlanForm] = React.useState<PlanFormState | null>(null);
+  const [permissionGroups, setPermissionGroups] = React.useState<PermissionGroup[]>([]);
   const [redemptionForm, setRedemptionForm] = React.useState<RedemptionFormState | null>(null);
   const [redemptionSaving, setRedemptionSaving] = React.useState(false);
   const [selectedRedemptionIDs, setSelectedRedemptionIDs] = React.useState<Set<number>>(new Set());
@@ -417,10 +420,12 @@ export function AdminBillingPage() {
         toast.error(t("toast.sessionExpired"), { description: t("toast.sessionExpiredDescription") });
         return;
       }
-      const [referenceData, billingSettings] = await Promise.all([
+      const [referenceData, billingSettings, groups] = await Promise.all([
         getAdminReferenceData(token),
         listAdminSettingsByNamespace(token, "billing"),
+        listPermissionGroups(token),
       ]);
+      setPermissionGroups(groups);
       const nextPaymentSettings = flattenPaymentSettings(billingSettings);
       const nextPaymentConfiguredMap = configuredSettingsMap({ billing: billingSettings });
       const nextPrepaidAmount = formatBillingAmountInput(referenceData.billingConfig.config.prepaidAmountUSD);
@@ -720,7 +725,7 @@ export function AdminBillingPage() {
 
   function openPlanEdit(plan: AdminBillingPlanDTO) {
     setEditPlan(plan);
-    setPlanForm(createPlanFormState(plan));
+    setPlanForm(createPlanFormState(plan, permissionGroups.find((group) => group.isDefault)?.id ?? permissionGroups[0]?.id));
   }
 
   function openRedemptionCreate() {
@@ -1535,6 +1540,7 @@ export function AdminBillingPage() {
         billingInterval: planForm.billingInterval,
         periodCreditUSD: parsePrice(planForm.periodCredit),
         discountPercent: Math.min(100, parseIntValue(planForm.discountPercent)),
+        permissionGroupID: Number(planForm.permissionGroupID) || undefined,
       });
       setPlans((current) => current.map((plan) => plan.id === data.plan.id ? data.plan : plan));
       invalidateAdminReferenceDataCache();
@@ -2436,6 +2442,7 @@ export function AdminBillingPage() {
         saving={saving}
         planForm={planForm}
         setPlanForm={setPlanForm}
+        permissionGroups={permissionGroups}
         onOpenChange={(open) => {
           if (!open && !saving) {
             setEditPlan(null);

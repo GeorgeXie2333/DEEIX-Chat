@@ -12,6 +12,7 @@ export type ConversationSettingsField = {
   section: ConversationSettingsSection;
   namespace: "chat";
   key:
+    | "conversation_default_model"
     | "conversation_task_model"
     | "default_system_prompt"
     | "prompt_sensitive_words"
@@ -44,6 +45,7 @@ export type ConversationSettingsField = {
 };
 
 export const CONVERSATION_TASK_MODEL_FOLLOW = "follow";
+export const CONVERSATION_DEFAULT_MODEL_SYSTEM = "";
 
 export const CONTEXT_COMPACT_ENABLED_RULE: ConversationVisibilityRule = {
   field: "chat.context_compact_enabled",
@@ -124,6 +126,22 @@ export const DEFAULT_MODEL_OPTION_ALLOWED_PATHS = `{
     "generationConfig.imageConfig.aspectRatio",
     "generationConfig.imageConfig.imageSize"
   ],
+  "gemini_interactions": [
+    "generation_config.temperature",
+    "generation_config.top_p",
+    "generation_config.max_output_tokens",
+    "generation_config.thinking_level",
+    "response_format.type",
+    "response_format.aspect_ratio",
+    "response_format.image_size",
+    "response_format.mime_type",
+    "responseFormat.type",
+    "responseFormat.aspectRatio",
+    "responseFormat.imageSize",
+    "responseFormat.mimeType",
+    "generationConfig.videoConfig.task",
+    "generation_config.video_config.task"
+  ],
   "anthropic_messages": [
     "output_config.effort",
     "speed",
@@ -181,6 +199,15 @@ type ConversationSettingsTranslator = (key: string) => string;
 
 export function buildConversationSettingsFields(t: ConversationSettingsTranslator): ConversationSettingsField[] {
   return [
+    {
+      section: "conversation",
+      namespace: "chat",
+      key: "conversation_default_model",
+      label: t("fields.defaultModel.label"),
+      description: t("fields.defaultModel.description"),
+      type: "select",
+      options: [{ label: t("defaultModel.systemRecommended"), value: CONVERSATION_DEFAULT_MODEL_SYSTEM }],
+    },
     {
       section: "conversation",
       namespace: "chat",

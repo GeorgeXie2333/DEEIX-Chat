@@ -176,6 +176,7 @@ type SendMessageResult struct {
 	ServerSideToolUsage map[string]int64
 	DurationSeconds     int64
 	LatencyMS           int64
+	DurationSeconds     int64
 	StartedAt           time.Time
 }
 

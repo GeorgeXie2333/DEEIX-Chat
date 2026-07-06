@@ -129,7 +129,8 @@ type BindModelUpstreamSourceRequest struct {
 
 // ImportUpstreamModelsRequest 批量导入上游模型请求。
 type ImportUpstreamModelsRequest struct {
-	Items []ImportUpstreamModelItemRequest `json:"items" binding:"required,min=1,dive"`
+	Items              []ImportUpstreamModelItemRequest `json:"items" binding:"required,min=1,dive"`
+	PermissionGroupIDs []uint                           `json:"permissionGroupIDs"`
 }
 
 // ImportUpstreamModelItemRequest 单个导入项请求。
@@ -145,5 +146,5 @@ type ImportUpstreamModelItemRequest struct {
 
 // ModelProbeRequest 后台模型连通性测试请求。
 type ModelProbeRequest struct {
-	TaskType string `json:"taskType" binding:"omitempty,oneof=chat image_generation image_edit"`
+	TaskType string `json:"taskType" binding:"omitempty,oneof=chat image_generation image_edit video_generation"`
 }

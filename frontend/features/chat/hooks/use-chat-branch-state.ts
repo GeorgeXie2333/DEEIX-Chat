@@ -95,6 +95,10 @@ function buildPendingMessages({
     pendingExchange.assistantText.length > 0 ||
     !serverMessagePublicIDs.has(assistantPublicID)
   ) {
+    const assistantAttachments =
+      pendingExchange.assistantAttachments && pendingExchange.assistantAttachments.length > 0
+        ? pendingExchange.assistantAttachments
+        : undefined;
     nextMessages.push({
       key: `${pendingExchange.key}-assistant`,
       publicID: assistantPublicID,
@@ -125,6 +129,7 @@ function buildPendingMessages({
       reasoningTokens: pendingExchange.assistantReasoningTokens,
       latencyMS: pendingExchange.assistantLatencyMS,
       compactDone: pendingExchange.compactDone,
+      attachments: assistantAttachments,
     });
   }
 
@@ -173,6 +178,10 @@ function mergePendingAssistantState(messages: ChatAreaMessage[], pendingExchange
       latencyMS: pendingExchange.assistantLatencyMS ?? item.latencyMS,
       compactDone: pendingExchange.compactDone ?? item.compactDone,
       platformModelName: pendingExchange.platformModelName ?? item.platformModelName,
+      attachments:
+        pendingExchange.assistantAttachments && pendingExchange.assistantAttachments.length > 0
+          ? pendingExchange.assistantAttachments
+          : item.attachments,
       status: pendingExchange.assistantPending
         ? "pending"
         : serverHasTerminalState

@@ -275,6 +275,8 @@
       "image_task_rejects_non_image_attachments": "Image tasks only support image attachments. Remove non-image files.",
       "video_generation_rejects_non_image_attachments": "Video generation only supports one image as a reference. Remove non-image files.",
       "video_generation_too_many_reference_images": "Video generation can use at most one reference image. Remove extra images.",
+      "video_generation_too_many_images": "Video generation supports one input image at most. Keep one image and try again.",
+      "video_task_rejects_non_image_attachments": "Video generation only supports text prompts and image attachments. Remove non-image files.",
       "model_task_unsupported": "This model cannot process the current input. Select another model and try again."
     },
     "mediaStatus": {
@@ -467,6 +469,8 @@
         "image_task_rejects_non_image_attachments": "Image tasks only support image attachments. Remove non-image files.",
         "video_generation_rejects_non_image_attachments": "Video generation only supports one image as a reference. Remove non-image files.",
         "video_generation_too_many_reference_images": "Video generation can use at most one reference image. Remove extra images.",
+        "video_generation_too_many_images": "Video generation supports one input image at most.",
+        "video_task_rejects_non_image_attachments": "Video generation only supports text prompts and image attachments. Remove non-image files.",
         "model_task_unsupported": "The selected model cannot process this input. Switch models and try again."
       }
     },

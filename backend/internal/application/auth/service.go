@@ -535,7 +535,8 @@ func shouldRequireInitialUsername(item domainuser.User, adminUsername string) bo
 		return false
 	}
 	if item.Role == domainuser.RoleSuperAdmin {
-		return strings.EqualFold(strings.TrimSpace(item.Username), strings.TrimSpace(adminUsername))
+		return item.UsernameChangedAt == nil &&
+			strings.EqualFold(strings.TrimSpace(item.Username), strings.TrimSpace(adminUsername))
 	}
 	return false
 }
