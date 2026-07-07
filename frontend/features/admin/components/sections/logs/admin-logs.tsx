@@ -48,6 +48,7 @@ import { AdminDateRangeFilter, ADMIN_DATE_PICKER_TRIGGER_CLASSNAME } from "@/fea
 import { AdminDateTimePicker } from "@/features/admin/components/admin-date-time-picker";
 import { TablePagination, TableToolbar } from "@/components/ui/table-tools";
 import { CopyActionButton } from "@/shared/components/copy-action";
+import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot";
 import type {
   AdminAuditLogDTO,
   AdminConversationEventDTO,
@@ -815,10 +816,11 @@ function UsageServiceItemsDetail({ items, labels, locale }: { items: UsageServic
   );
 }
 
-function LogDetailSheet({ detail, onClose }: { detail: LogDetail | null; onClose: () => void }) {
+function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | null; onClose: () => void }) {
   const locale = useLocale();
   const t = useTranslations("adminLogs.detail");
   const usageLabels = useUsageBillingLabels();
+  const detail = useDialogSnapshot(rawDetail);
   const copyMessages = React.useMemo(() => ({
     copied: t("copied", { label: "" }).trim(),
     failed: t("copyFailed"),
@@ -876,7 +878,7 @@ function LogDetailSheet({ detail, onClose }: { detail: LogDetail | null; onClose
   const usageServiceItems = detail?.kind === "usage" ? readUsageServiceItems(parseUsagePricingSnapshot(detail.item.pricingSnapshotJSON)) : [];
 
   return (
-    <Sheet open={Boolean(detail)} onOpenChange={(open) => !open && onClose()}>
+    <Sheet open={Boolean(rawDetail)} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="sm:max-w-[480px]">
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>

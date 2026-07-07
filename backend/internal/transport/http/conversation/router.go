@@ -15,6 +15,7 @@ func (m *Module) RegisterRoutes(authRequired *gin.RouterGroup) {
 	authRequired.PATCH("/conversation-projects/:id", m.Handler.UpdateConversationProject)
 	authRequired.DELETE("/conversation-projects/:id", m.Handler.DeleteConversationProject)
 	authRequired.POST("/conversations/project", m.Handler.BatchSetConversationProject)
+	authRequired.GET("/conversations/export", m.Handler.ExportAllConversations)
 	authRequired.GET("/conversations/:id", m.Handler.GetConversation)
 	authRequired.PATCH("/conversations/:id/title", m.Handler.RenameConversation)
 	authRequired.POST("/conversations/:id/title/regenerate", m.Handler.RegenerateConversationTitle)

@@ -68,6 +68,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { resolveFileProcessingBadge, resolveFileProcessingToneClass } from "@/shared/lib/file-processing";
+import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot";
 import { cn } from "@/lib/utils";
 import type { ConversationOptions } from "@/shared/api/conversation.types";
 import type { FileObjectDTO } from "@/shared/api/file.types";
@@ -397,6 +398,7 @@ function ChatInputComponent({
   const [toolsMenuView, setToolsMenuView] = React.useState<ToolMenuView>("main");
   const [ragWarnDismissed, setRagWarnDismissed] = React.useState(false);
   const [previewAttachment, setPreviewAttachment] = React.useState<PendingAttachment | null>(null);
+  const stablePreviewAttachment = useDialogSnapshot(previewAttachment);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const inputGroupRef = React.useRef<HTMLDivElement | null>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
@@ -820,9 +822,9 @@ function ChatInputComponent({
                 ))}
               </div>
             </div>
-            {previewAttachment ? (
+            {stablePreviewAttachment ? (
               <FilePreviewDialog
-                file={previewAttachment}
+                file={stablePreviewAttachment}
                 open={previewAttachment !== null}
                 onOpenChange={closePreviewDialog}
               />

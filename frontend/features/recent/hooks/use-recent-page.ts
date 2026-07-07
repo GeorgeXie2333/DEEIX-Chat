@@ -11,8 +11,10 @@ import { useSidebarRecents } from "@/features/recent/context/sidebar-recents-con
 import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { runBulkActionInChunks } from "@/shared/lib/bulk-action";
+import { downloadBlob, readExportManifest } from "@/shared/lib/export-download";
 import {
   exportConversationArchive,
+  exportAllConversations,
   importConversationArchive,
   listConversations,
   revokeConversationShare,
@@ -138,6 +140,7 @@ export function useRecentPage() {
   const { deleteFilesByDefault } = useSettingsChatPreferences();
   const [shareTarget, setShareTarget] = React.useState<ConversationDTO | null>(null);
   const [importingArchive, setImportingArchive] = React.useState(false);
+  const [exportingAll, setExportingAll] = React.useState(false);
   const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
   const pageRef = React.useRef(1);
   const requestVersionRef = React.useRef(0);
@@ -314,6 +317,30 @@ export function useRecentPage() {
     loadMoreFailedRef.current = false;
     await loadMore();
   }, [loadMore]);
+
+  const onExportAll = React.useCallback(async () => {
+    if (exportingAll) return;
+    setExportingAll(true);
+    try {
+      const token = await resolveAccessToken();
+      if (!token) return;
+      const blob = await exportAllConversations(token);
+      const manifest = await readExportManifest(blob);
+      downloadBlob(blob, `my-conversations-${new Date().toISOString().slice(0, 10)}.jsonl`);
+
+      if (manifest && (!manifest.complete || (manifest.failed ?? 0) > 0)) {
+        toast.warning(t("toast.exportAllPartial", { exported: manifest.exported ?? 0, failed: manifest.failed ?? 0 }));
+      } else if (!manifest) {
+        toast.success(t("toast.exportAllDownloaded"));
+      } else {
+        toast.success(t("toast.exportAllSuccess", { count: manifest.exported ?? 0 }));
+      }
+    } catch {
+      toast.error(t("toast.exportAllFailed"));
+    } finally {
+      setExportingAll(false);
+    }
+  }, [exportingAll, t]);
 
   const onCreateConversation = React.useCallback(async () => {
     const currentProjectID = projectFilter !== "all" && projectFilter !== "unassigned" ? projectFilter : "";
@@ -818,5 +845,7 @@ export function useRecentPage() {
     exitSelectionMode,
     enterSelectionMode: () => setSelectionMode(true),
     retryLoadMore,
+    exportingAll,
+    onExportAll,
   };
 }

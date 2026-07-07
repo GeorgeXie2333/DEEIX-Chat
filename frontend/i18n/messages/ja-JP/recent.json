@@ -146,5 +146,17 @@
     "placeholder": "会話 ID、タイトル、ラベル、モデルを検索",
     "loading": "スター付き会話を読み込んでいます...",
     "empty": "一致するスター付き会話は見つかりません"
+  },
+  "timeGroup": {
+    "yesterday": "昨日",
+    "lastSevenDays": "過去 7 日間",
+    "earlier": "以前"
+  },
+  "exportAll": "すべての会話をエクスポート",
+  "toast": {
+    "exportAllSuccess": "{count} 件の会話をエクスポートしました",
+    "exportAllPartial": "{exported} 件の会話をエクスポートし、{failed} 件に失敗しました",
+    "exportAllDownloaded": "会話エクスポートをダウンロードしました",
+    "exportAllFailed": "会話のエクスポートに失敗しました"
   }
 }

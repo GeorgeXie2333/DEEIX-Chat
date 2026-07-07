@@ -214,7 +214,24 @@
       "output": "/ 1M 出力",
       "cacheRead": "/ 1M キャッシュ読み取り",
       "cacheWrite": "/ 1M キャッシュ書き込み"
-    }
+    },
+    "modelInfo": "モデル情報",
+    "similarity": "類似度",
+    "officialPricing": "クイック設定",
+    "officialPricingSingleTitle": "クイック設定",
+    "officialPricingSingleDescription": "OpenRouter のモデル一覧からモデル料金をすばやく設定します。",
+    "officialPricingSearchPlaceholder": "モデル料金を検索",
+    "officialPricingMultiplier": "取り込み倍率",
+    "officialPricingSync": "同期",
+    "officialPricingEmpty": "一致する料金候補は見つかりません。手動で検索してください。",
+    "officialPricingImportTitle": "モデル料金を取り込み",
+    "officialPricingImportDescription": "現在の料金フォームへ反映する前に取り込み倍率を設定します。",
+    "officialPricingImport": "取り込み",
+    "priceInput": "入力",
+    "priceOutput": "出力",
+    "priceCacheWrite": "キャッシュ書き込み",
+    "priceCacheRead": "キャッシュ読み取り",
+    "officialPricingRemoteError": "ライブ取得に失敗しました。手動で同期してください。"
   },
   "toolPricing": {
     "title": "ツール料金",
@@ -318,7 +335,11 @@
     "usdToCnyRateInvalid": "為替レートが無効です",
     "usdToCnyRateInvalidDescription": "0 より大きい USD -> CNY レートを入力してください。",
     "displayCurrencySaved": "表示通貨を保存しました",
-    "displayCurrencySaveFailed": "表示通貨の保存に失敗しました"
+    "displayCurrencySaveFailed": "表示通貨の保存に失敗しました",
+    "officialPricingApplied": "料金を入力しました",
+    "officialPricingRemoteLoaded": "{count} 件の OpenRouter モデル料金を読み込みました",
+    "officialPricingRemoteFailed": "OpenRouter 料金の取得に失敗しました",
+    "officialPricingRemoteEmpty": "OpenRouter のモデル一覧が空です"
   },
   "importErrors": {
     "invalidJSON": "ファイル内容は有効な JSON ではありません",

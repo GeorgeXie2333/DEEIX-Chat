@@ -76,6 +76,8 @@ export function AppRecent() {
           onArchiveSelected={requestArchiveSelected}
           onRevokeSelectedShares={requestRevokeSelectedShares}
           onRequestDeleteSelected={controller.requestDeleteSelected}
+          onExportAll={controller.onExportAll}
+          exportingAll={controller.exportingAll}
           onStatusFilterChange={controller.setStatusFilter}
           onStarredFilterChange={controller.setStarredFilter}
           onShareFilterChange={controller.setShareFilter}

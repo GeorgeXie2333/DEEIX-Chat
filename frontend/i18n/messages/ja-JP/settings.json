@@ -470,7 +470,9 @@
     "context": {
       "sectionTitle": "コンテキスト管理",
       "autoCompactTitle": "コンテキストを自動圧縮",
-      "autoCompactDescription": "会話コンテキストがモデル制限に近づいたとき、初期メッセージを自動で要約圧縮し、会話の連続性を保ちます。オフの場合は手動で圧縮を開始する必要があります。"
+      "autoCompactDescription": "会話コンテキストがモデル制限に近づいたとき、初期メッセージを自動で要約圧縮し、会話の連続性を保ちます。オフの場合は手動で圧縮を開始する必要があります。",
+      "reasoningPassbackTitle": "推論コンテキストを引き継ぐ",
+      "reasoningPassbackDescription": "有効にすると、対応する Chat Completions の推論モデルで過去の reasoning content を後続ターンに含め、複数ステップの連続性を高めます。"
     },
     "file": {
       "sectionTitle": "ファイル処理",

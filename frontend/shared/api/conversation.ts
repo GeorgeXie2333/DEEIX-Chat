@@ -551,6 +551,14 @@ export async function importConversationArchive(
   );
 }
 
+export async function exportAllConversations(accessToken: string): Promise<Blob> {
+  const response = await authedFetch("/api/v1/conversations/export", { accessToken });
+  if (!response.ok) {
+    throw new Error(`export failed: ${response.status}`);
+  }
+  return response.blob();
+}
+
 export async function renameConversation(
   accessToken: string,
   conversationPublicID: string,
