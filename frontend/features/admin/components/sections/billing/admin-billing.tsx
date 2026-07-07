@@ -17,6 +17,12 @@ export function AdminBillingPage() {
       <BillingConfigSection
         billingConfig={billing.billingConfig}
         setBillingConfig={billing.setBillingConfig}
+        paymentSettings={billing.paymentSettings}
+        setPaymentSettings={billing.setPaymentSettings}
+        savedPaymentSettings={billing.savedPaymentSettings}
+        setSavedPaymentSettings={billing.setSavedPaymentSettings}
+        paymentConfiguredMap={billing.paymentConfiguredMap}
+        setPaymentConfiguredMap={billing.setPaymentConfiguredMap}
         loading={billing.loading}
       />
       <Separator className="bg-border/60" />
