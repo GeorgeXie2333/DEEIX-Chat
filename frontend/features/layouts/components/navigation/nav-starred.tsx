@@ -42,7 +42,7 @@ import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot"
 import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences"
 import { useLayoutActiveConversation } from "@/features/layouts/hooks/use-layout-active-conversation"
 import { useLayoutSidebarListFlip } from "@/features/layouts/hooks/use-layout-sidebar-list-flip"
-import { useMobileSidebarNavigation } from "@/features/layouts/hooks/use-mobile-sidebar-navigation"
+import { useSidebarConversationNavigation } from "@/features/layouts/hooks/use-sidebar-conversation-navigation"
 import { SIDEBAR_OVERFLOW_ROW_TRANSITION } from "@/features/layouts/model/sidebar-motion"
 import type {
   SidebarConversationDeleteTarget,
@@ -72,7 +72,7 @@ export function NavStarred() {
   const t = useTranslations("recent")
   const { isMobile, setOpenMobile } = useSidebar()
   const router = useRouter()
-  const onNavigate = useMobileSidebarNavigation()
+  const onNavigate = useSidebarConversationNavigation()
   const activeConversationID = useLayoutActiveConversation()
   const { deleteFilesByDefault } = useSettingsChatPreferences()
 

@@ -154,7 +154,7 @@ func buildGeminiRequestBody(input GenerateInput) (map[string]interface{}, error)
 		webSearchTools = append(webSearchTools, map[string]interface{}{"google_search": map[string]interface{}{}})
 	}
 	appendToolDeclarations(payload, providerTools, webSearchTools, buildGeminiTools(toolDefinitions))
-	applyGeminiToolConfigDefaults(payload, len(providerTools)+len(webSearchTools) > 0, len(toolDefinitions) > 0)
+	applyGeminiToolConfigDefaults(payload, len(providerTools)+len(webSearchTools) > 0)
 
 	if len(systemTextParts) > 0 {
 		payload["systemInstruction"] = map[string]interface{}{
@@ -242,8 +242,8 @@ func cloneGeminiOptionMap(value interface{}) map[string]interface{} {
 	return cloned
 }
 
-func applyGeminiToolConfigDefaults(payload map[string]interface{}, hasServerSideTools bool, hasFunctionDeclarations bool) {
-	if !hasFunctionDeclarations {
+func applyGeminiToolConfigDefaults(payload map[string]interface{}, hasServerSideTools bool) {
+	if !hasServerSideTools {
 		return
 	}
 	toolConfig := asMap(payload["toolConfig"])

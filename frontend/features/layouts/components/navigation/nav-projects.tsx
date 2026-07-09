@@ -86,7 +86,7 @@ import { DeleteFilesOption } from "@/shared/components/delete-files-option"
 import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot"
 import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences"
 import { useLayoutActiveConversation } from "@/features/layouts/hooks/use-layout-active-conversation"
-import { useMobileSidebarNavigation } from "@/features/layouts/hooks/use-mobile-sidebar-navigation"
+import { useSidebarConversationNavigation } from "@/features/layouts/hooks/use-sidebar-conversation-navigation"
 import { SidebarConversationItem } from "@/features/layouts/components/navigation/sidebar-conversation-item"
 import type {
   SidebarConversationDeleteTarget,
@@ -593,7 +593,7 @@ export function NavProjects() {
   const resolveErrorMessage = useLocalizedErrorMessage()
   const { isMobile, setOpenMobile } = useSidebar()
   const router = useRouter()
-  const onNavigate = useMobileSidebarNavigation()
+  const onNavigate = useSidebarConversationNavigation()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const activeRecentProjectID = searchParams.get("project") ?? ""
