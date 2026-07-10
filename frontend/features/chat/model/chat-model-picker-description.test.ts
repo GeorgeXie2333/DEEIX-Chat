@@ -35,3 +35,8 @@ test("model picker keeps desktop tooltips and adds mobile long press popovers", 
   assert.match(pickerSource, /MODEL_MENU_AUXILIARY_LONG_PRESS_MS/);
   assert.match(pickerSource, /shouldCancelModelMenuAuxiliaryLongPress/);
 });
+
+test("tiered pricing headings render complete closed and open token ranges", () => {
+  assert.match(pickerSource, /return `\$\{formatTokenQuantity\(fromTokens\)\}～∞`;/);
+  assert.match(pickerSource, /return `\$\{formatTokenQuantity\(fromTokens\)\}～\$\{formatTokenQuantity\(upToTokens\)\}`;/);
+});

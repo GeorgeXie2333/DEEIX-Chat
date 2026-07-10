@@ -54,6 +54,8 @@ function labelKeyForSetting(setting: AdvancedSettingItem): string {
   switch (setting.kind) {
     case "temperature":
       return "temperature";
+    case "reasoningMode":
+      return "reasoning_mode";
     case "reasoningEffort":
       return "reasoning_effort";
     case "verbosity":
@@ -62,6 +64,8 @@ function labelKeyForSetting(setting: AdvancedSettingItem): string {
       return "quality";
     case "imageResolution":
       return "resolution";
+    case "imageAspectRatio":
+      return "aspect_ratio";
     case "videoResolution":
       return "videoResolution";
     case "videoSeconds":

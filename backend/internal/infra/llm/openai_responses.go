@@ -137,6 +137,11 @@ func applyOpenAIResponsesReasoningParams(payload map[string]interface{}, options
 	if effort := modelParamString(options, "reasoning_effort"); effort != "" {
 		reasoning["effort"] = effort
 	}
+	if mode, ok := normalizedResponsesReasoningMode(reasoning["mode"]); ok {
+		reasoning["mode"] = mode
+	} else {
+		delete(reasoning, "mode")
+	}
 	summaryConfigured := false
 	if summary, ok := normalizedResponsesReasoningSummary(reasoning["summary"]); ok {
 		summaryConfigured = true
@@ -159,6 +164,11 @@ func applyOpenAIResponsesReasoningParams(payload map[string]interface{}, options
 		reasoning["summary"] = "auto"
 	}
 	mergeObjectParam(payload, "reasoning", reasoning)
+}
+
+func normalizedResponsesReasoningMode(raw interface{}) (string, bool) {
+	value := strings.ToLower(strings.TrimSpace(getString(raw)))
+	return value, value == "pro"
 }
 
 func normalizedResponsesReasoningSummary(raw interface{}) (string, bool) {

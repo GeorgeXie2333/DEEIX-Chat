@@ -179,7 +179,23 @@ func buildGeminiImageGenerationConfig(model string, options map[string]interface
 	if imageConfig := buildGeminiImageConfig(model, modelParamMap(rawConfig, "imageConfig")); len(imageConfig) > 0 {
 		generationConfig["imageConfig"] = imageConfig
 	}
+	if thinkingConfig := buildGeminiImageThinkingConfig(modelParamMap(rawConfig, "thinkingConfig")); len(thinkingConfig) > 0 {
+		generationConfig["thinkingConfig"] = thinkingConfig
+	}
 	return generationConfig
+}
+
+func buildGeminiImageThinkingConfig(raw map[string]interface{}) map[string]interface{} {
+	level := strings.ToLower(strings.TrimSpace(getString(raw["thinkingLevel"])))
+	if level == "" {
+		level = strings.ToLower(strings.TrimSpace(getString(raw["thinking_level"])))
+	}
+	switch level {
+	case "minimal", "high":
+		return map[string]interface{}{"thinkingLevel": level}
+	default:
+		return nil
+	}
 }
 
 func buildGeminiImageConfig(model string, raw map[string]interface{}) map[string]interface{} {

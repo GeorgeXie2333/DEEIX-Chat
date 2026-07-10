@@ -109,6 +109,38 @@ func TestBuildOpenAIResponsesReasoningSummaryDefaultAndOverrides(t *testing.T) {
 	}
 }
 
+func TestBuildOpenAIResponsesReasoningModeOnlySendsPro(t *testing.T) {
+	tests := []struct {
+		name         string
+		mode         string
+		wantMode     string
+		wantModeSent bool
+	}{
+		{name: "pro", mode: "pro", wantMode: "pro", wantModeSent: true},
+		{name: "standard omitted", mode: "standard"},
+		{name: "invalid omitted", mode: "unsupported"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			payload := mustBuildRequestBody(t, AdapterOpenAIResponses, "gpt-5.6", EndpointResponses, GenerateInput{
+				Messages: []Message{{Role: "user", Content: "hello"}},
+				Options: map[string]interface{}{
+					"reasoning": map[string]interface{}{"mode": tt.mode, "effort": "max"},
+				},
+			}, true)
+			reasoning, ok := payload["reasoning"].(map[string]interface{})
+			if !ok || reasoning["effort"] != "max" {
+				t.Fatalf("expected reasoning effort to remain, got %#v", payload["reasoning"])
+			}
+			mode, hasMode := reasoning["mode"]
+			if hasMode != tt.wantModeSent || (tt.wantModeSent && mode != tt.wantMode) {
+				t.Fatalf("expected reasoning mode presence %v with value %q, got %#v", tt.wantModeSent, tt.wantMode, reasoning)
+			}
+		})
+	}
+}
+
 func TestBuildXAIResponsesDoesNotDefaultReasoningSummary(t *testing.T) {
 	payload := mustBuildRequestBody(t, AdapterXAIResponses, "grok-4.3", EndpointResponses, GenerateInput{
 		Messages: []Message{{Role: "user", Content: "hello"}},

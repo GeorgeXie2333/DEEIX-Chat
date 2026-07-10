@@ -811,6 +811,9 @@ func TestFilterModelOptionsGoogleImageAllowsImageConfigAndGoogleSearch(t *testin
 				"aspectRatio": "1:1",
 				"imageSize":   "1K",
 			},
+			"thinkingConfig": map[string]interface{}{
+				"thinkingLevel": "high",
+			},
 			"responseFormat": map[string]interface{}{"image": map[string]interface{}{"aspectRatio": "4:3"}},
 			"temperature":    0.5,
 		},
@@ -831,6 +834,10 @@ func TestFilterModelOptionsGoogleImageAllowsImageConfigAndGoogleSearch(t *testin
 	imageConfig := generationConfig["imageConfig"].(map[string]interface{})
 	if imageConfig["aspectRatio"] != "1:1" || imageConfig["imageSize"] != "1K" {
 		t.Fatalf("expected image config, got %#v", imageConfig)
+	}
+	thinkingConfig, ok := generationConfig["thinkingConfig"].(map[string]interface{})
+	if !ok || thinkingConfig["thinkingLevel"] != "high" {
+		t.Fatalf("expected Google image thinking level, got %#v", generationConfig["thinkingConfig"])
 	}
 	if _, ok := generationConfig["responseFormat"]; ok {
 		t.Fatalf("expected responseFormat to be filtered for Google image requests, got %#v", generationConfig)

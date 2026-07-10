@@ -14,6 +14,10 @@ import {
 test("resolveNativeToolGroup maps supported protocols and hides tools in media mode", () => {
   assert.equal(resolveNativeToolGroup("unknown_protocol", false), null);
   assert.equal(resolveNativeToolGroup("openai_responses", true), null);
+  assert.deepEqual(
+    resolveNativeToolGroup("google_image_generation", true)?.options.map((tool) => tool.type),
+    ["google_search"],
+  );
 
   assert.deepEqual(
     resolveNativeToolGroup("xai_responses", false)?.options.map((tool) => tool.type),

@@ -56,6 +56,9 @@ export const DEFAULT_NATIVE_TOOL_ALLOWED_TYPES = `{
     "google_search",
     "code_execution"
   ],
+  "google_image_generation": [
+    "google_search"
+  ],
   "xai_responses": [
     "web_search",
     "x_search",
@@ -176,6 +179,12 @@ export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
       additions: ["seconds", "size"],
     },
     {
+      protocol: "openai_responses",
+      anchors: ["service_tier", "reasoning.effort", "reasoning.summary", "text.verbosity"],
+      minAnchors: 3,
+      additions: ["reasoning.mode"],
+    },
+    {
       protocol: "anthropic_messages",
       anchors: ["speed", "top_k", "thinking.type"],
       minAnchors: 2,
@@ -191,6 +200,16 @@ export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
       ],
       minAnchors: 2,
       additions: ["thinkingConfig.thinkingLevel"],
+    },
+    {
+      protocol: "google_image_generation",
+      anchors: [
+        "generationConfig.responseModalities",
+        "generationConfig.imageConfig.aspectRatio",
+        "generationConfig.imageConfig.imageSize",
+      ],
+      minAnchors: 2,
+      additions: ["generationConfig.thinkingConfig.thinkingLevel"],
     },
   ];
   let changed = false;
