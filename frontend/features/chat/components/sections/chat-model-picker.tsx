@@ -669,9 +669,9 @@ function formatPricingUnitUSD(value: number, billingDisplay: BillingDisplayOptio
 
 function formatTokenRange(fromTokens: number, upToTokens: number | null): string {
   if (!upToTokens || upToTokens <= 0) {
-    return `${formatTokenQuantity(fromTokens)}锝炩垶`;
+    return `${formatTokenQuantity(fromTokens)}～∞`;
   }
-  return `${formatTokenQuantity(fromTokens)}锝?{formatTokenQuantity(upToTokens)}`;
+  return `${formatTokenQuantity(fromTokens)}～${formatTokenQuantity(upToTokens)}`;
 }
 
 function formatTokenQuantity(value: number): string {

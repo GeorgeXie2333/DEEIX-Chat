@@ -701,6 +701,7 @@
     "quality": "画像品質",
     "reasoning__summary": "推論要約",
     "reasoning__effort": "推論強度",
+    "reasoning_mode": "推論モード",
     "reasoning_effort": "推論強度",
     "reasoning_summary": "推論要約",
     "resolution": "解像度",

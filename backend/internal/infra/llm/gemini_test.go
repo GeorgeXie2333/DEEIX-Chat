@@ -238,6 +238,9 @@ func TestBuildGeminiImageGenerationRequestBody(t *testing.T) {
 					"aspectRatio": "16:9",
 					"imageSize":   "2K",
 				},
+				"thinkingConfig": map[string]interface{}{
+					"thinkingLevel": "minimal",
+				},
 			},
 			"prompt": "override",
 			"stream": true,
@@ -259,6 +262,10 @@ func TestBuildGeminiImageGenerationRequestBody(t *testing.T) {
 	imageConfig := asMap(config["imageConfig"])
 	if imageConfig["aspectRatio"] != "16:9" || imageConfig["imageSize"] != "2K" {
 		t.Fatalf("expected image config, got %#v", config)
+	}
+	thinkingConfig, ok := config["thinkingConfig"].(map[string]interface{})
+	if !ok || thinkingConfig["thinkingLevel"] != "minimal" {
+		t.Fatalf("expected image thinking level, got %#v", config["thinkingConfig"])
 	}
 	if _, ok := config["responseFormat"]; ok {
 		t.Fatalf("Gemini image requests must use generationConfig.imageConfig, got %#v", config["responseFormat"])

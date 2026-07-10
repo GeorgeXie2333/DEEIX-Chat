@@ -177,7 +177,9 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T)
 		t.Fatalf("parse default model option paths: %v", err)
 	}
 	legacy["anthropic_messages"] = removeString(legacy["anthropic_messages"], "output_config.effort")
+	legacy["openai_responses"] = removeString(legacy["openai_responses"], "reasoning.mode")
 	legacy["gemini_generate_content"] = removeString(legacy["gemini_generate_content"], "thinkingConfig.thinkingLevel")
+	legacy["google_image_generation"] = removeString(legacy["google_image_generation"], "generationConfig.thinkingConfig.thinkingLevel")
 	delete(legacy, "openai_video_generations")
 	rawLegacy, err := json.Marshal(legacy)
 	if err != nil {
@@ -196,6 +198,12 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T)
 	}
 	if !containsString(normalized["gemini_generate_content"], "thinkingConfig.includeThoughts") {
 		t.Fatalf("expected normalized gemini allowlist to include thinkingConfig.includeThoughts, got %#v", normalized["gemini_generate_content"])
+	}
+	if !containsString(normalized["openai_responses"], "reasoning.mode") {
+		t.Fatalf("expected normalized Responses allowlist to include reasoning.mode, got %#v", normalized["openai_responses"])
+	}
+	if !containsString(normalized["google_image_generation"], "generationConfig.thinkingConfig.thinkingLevel") {
+		t.Fatalf("expected normalized Google image allowlist to include thinking level, got %#v", normalized["google_image_generation"])
 	}
 	if !containsString(normalized["openai_video_generations"], "seconds") || !containsString(normalized["openai_video_generations"], "size") {
 		t.Fatalf("expected normalized OpenAI video allowlist to include seconds and size, got %#v", normalized["openai_video_generations"])
@@ -219,6 +227,9 @@ func TestDefaultNativeToolAllowedTypesIncludesGeminiTools(t *testing.T) {
 	}
 	if !containsString(rules["gemini_generate_content"], "code_execution") {
 		t.Fatalf("expected Gemini code_execution in native tool defaults, got %#v", rules["gemini_generate_content"])
+	}
+	if !containsString(rules["google_image_generation"], "google_search") {
+		t.Fatalf("expected Google image google_search in native tool defaults, got %#v", rules["google_image_generation"])
 	}
 }
 

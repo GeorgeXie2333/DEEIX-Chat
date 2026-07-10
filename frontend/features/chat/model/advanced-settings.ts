@@ -4,10 +4,12 @@ import { isModelOptionPathFiltered } from "../../../shared/lib/model-option-poli
 
 export type AdvancedSettingKind =
   | "temperature"
+  | "reasoningMode"
   | "reasoningEffort"
   | "verbosity"
   | "imageQuality"
   | "imageResolution"
+  | "imageAspectRatio"
   | "videoResolution"
   | "videoSeconds";
 export type AdvancedSettingCustomValueKind = "openaiImage2Resolution";
@@ -18,6 +20,7 @@ export type AdvancedSettingDefinition = {
   valueType: "number" | "select";
   fallbackValue: number | string;
   values?: string[];
+  omitValues?: string[];
   customValueKind?: AdvancedSettingCustomValueKind;
   min?: number;
   max?: number;
@@ -44,7 +47,16 @@ const RESPONSES_REASONING_EFFORT: AdvancedSettingDefinition = {
   path: ["reasoning", "effort"],
   valueType: "select",
   fallbackValue: "medium",
-  values: ["none", "low", "medium", "high", "xhigh"],
+  values: ["none", "low", "medium", "high", "xhigh", "max"],
+};
+
+const RESPONSES_REASONING_MODE: AdvancedSettingDefinition = {
+  kind: "reasoningMode",
+  path: ["reasoning", "mode"],
+  valueType: "select",
+  fallbackValue: "standard",
+  values: ["standard", "pro"],
+  omitValues: ["standard"],
 };
 
 const XAI_RESPONSES_REASONING_EFFORT: AdvancedSettingDefinition = {
@@ -105,6 +117,31 @@ const OPENAI_IMAGE_2_RESOLUTION: AdvancedSettingDefinition = {
   valueType: "select",
   fallbackValue: "auto",
   values: OPENAI_GPT_IMAGE_2_SIZE_VALUES,
+};
+
+const GEMINI_IMAGE_RESOLUTION: AdvancedSettingDefinition = {
+  kind: "imageResolution",
+  path: ["generationConfig", "imageConfig", "imageSize"],
+  valueType: "select",
+  fallbackValue: "1K",
+  values: ["512", "1K", "2K", "4K"],
+};
+
+const GEMINI_IMAGE_ASPECT_RATIO: AdvancedSettingDefinition = {
+  kind: "imageAspectRatio",
+  path: ["generationConfig", "imageConfig", "aspectRatio"],
+  valueType: "select",
+  fallbackValue: "auto",
+  values: ["auto", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9", "1:4", "4:1", "1:8", "8:1"],
+  omitValues: ["auto"],
+};
+
+const GEMINI_IMAGE_THINKING_LEVEL: AdvancedSettingDefinition = {
+  kind: "reasoningEffort",
+  path: ["generationConfig", "thinkingConfig", "thinkingLevel"],
+  valueType: "select",
+  fallbackValue: "high",
+  values: ["minimal", "high"],
 };
 
 const OPENAI_VIDEO_SECONDS: AdvancedSettingDefinition = {
@@ -292,7 +329,7 @@ export function resolveAdvancedSettingDefinitions(protocol: string, modelName = 
     case "openai_chat_completions":
       return [TEMPERATURE_SETTING];
     case "openai_responses":
-      return [TEMPERATURE_SETTING, RESPONSES_REASONING_EFFORT, RESPONSES_VERBOSITY];
+      return [TEMPERATURE_SETTING, RESPONSES_REASONING_MODE, RESPONSES_REASONING_EFFORT, RESPONSES_VERBOSITY];
     case "openrouter_responses":
       return [TEMPERATURE_SETTING, RESPONSES_REASONING_EFFORT];
     case "xai_responses":
@@ -304,6 +341,8 @@ export function resolveAdvancedSettingDefinitions(protocol: string, modelName = 
       return [OPENAI_IMAGE_QUALITY, OPENAI_IMAGE_2_RESOLUTION];
     case "openai_video_generations":
       return [openAIVideoResolutionSetting(modelName), OPENAI_VIDEO_SECONDS];
+    case "google_image_generation":
+      return [GEMINI_IMAGE_RESOLUTION, GEMINI_IMAGE_ASPECT_RATIO, GEMINI_IMAGE_THINKING_LEVEL];
     case "gemini_generate_content":
     case "google_generate_content":
       return isGemini3PlusModel(modelName) ? [TEMPERATURE_SETTING, GEMINI_THINKING_LEVEL] : [];
@@ -351,7 +390,7 @@ export function resolveAdvancedSettings({
 
 export function setAdvancedSettingValue(
   options: ConversationOptions,
-  setting: Pick<AdvancedSettingDefinition, "path" | "valueType" | "values" | "customValueKind" | "min" | "max">,
+  setting: Pick<AdvancedSettingDefinition, "path" | "valueType" | "values" | "omitValues" | "customValueKind" | "min" | "max">,
   value: number | string,
 ): ConversationOptions {
   if (setting.valueType === "number") {
@@ -366,6 +405,9 @@ export function setAdvancedSettingValue(
   const selected = selectValue(value, setting.values, setting.customValueKind);
   if (!selected) {
     return options;
+  }
+  if (setting.omitValues?.includes(selected)) {
+    return removeOptionAtPath(options, setting.path);
   }
   return setOptionAtPath(options, setting.path, selected);
 }
@@ -385,6 +427,8 @@ export function resetAdvancedSettings(
       return numeric === null ? withoutCurrentValue : setOptionAtPath(withoutCurrentValue, setting.path, numeric);
     }
     const selected = selectValue(defaultValue, setting.values, setting.customValueKind);
-    return selected ? setOptionAtPath(withoutCurrentValue, setting.path, selected) : withoutCurrentValue;
+    return selected && !setting.omitValues?.includes(selected)
+      ? setOptionAtPath(withoutCurrentValue, setting.path, selected)
+      : withoutCurrentValue;
   }, options);
 }

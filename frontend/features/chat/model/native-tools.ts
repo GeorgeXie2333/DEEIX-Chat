@@ -123,6 +123,8 @@ const GEMINI_NATIVE_TOOL_OPTIONS: NativeToolOption[] = [
   },
 ];
 
+const GOOGLE_IMAGE_NATIVE_TOOL_OPTIONS = GEMINI_NATIVE_TOOL_OPTIONS.filter((option) => option.type === "google_search");
+
 const NATIVE_TOOL_TYPES = new Set(
   [
     ...XAI_NATIVE_TOOL_OPTIONS,
@@ -146,6 +148,12 @@ function isPlainOptionObject(value: unknown): value is Record<string, unknown> {
 }
 
 export function resolveNativeToolGroup(protocol: string, isMediaMode: boolean, modelName = ""): NativeToolGroup | null {
+  if (protocol === "google_image_generation") {
+    return {
+      key: "gemini",
+      options: GOOGLE_IMAGE_NATIVE_TOOL_OPTIONS,
+    };
+  }
   if (isMediaMode) {
     return null;
   }

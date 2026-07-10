@@ -15,7 +15,7 @@ const allowAdvancedPolicy: ModelOptionPolicy = {
   allowedPathsJSON: JSON.stringify({
     default: ["temperature"],
     openai_chat_completions: ["reasoning_effort", "verbosity"],
-    openai_responses: ["reasoning.effort", "text.verbosity"],
+    openai_responses: ["reasoning.mode", "reasoning.effort", "text.verbosity"],
     openrouter_responses: ["reasoning.effort"],
     xai_responses: ["reasoning.effort"],
     anthropic_messages: ["output_config.effort"],
@@ -23,6 +23,11 @@ const allowAdvancedPolicy: ModelOptionPolicy = {
     openai_image_generations: ["quality", "size"],
     openai_image_edits: ["quality", "size"],
     openai_video_generations: ["size", "seconds"],
+    google_image_generation: [
+      "generationConfig.imageConfig.imageSize",
+      "generationConfig.imageConfig.aspectRatio",
+      "generationConfig.thinkingConfig.thinkingLevel",
+    ],
   }),
   deniedPathsJSON: "{}",
   nativeToolAllowedTypesJSON: "{}",
@@ -50,6 +55,7 @@ test("resolveAdvancedSettings maps settings to protocol-specific option paths", 
     }).map((item) => [item.kind, item.key, item.value]),
     [
       ["temperature", "temperature", 0.2],
+      ["reasoningMode", "reasoning.mode", "standard"],
       ["reasoningEffort", "reasoning.effort", "low"],
       ["verbosity", "text.verbosity", "high"],
     ],
@@ -65,7 +71,7 @@ test("resolveAdvancedSettings exposes updated reasoning effort values by provide
   }).find((item) => item.kind === "reasoningEffort");
 
   assert.equal(openAIReasoning?.value, "xhigh");
-  assert.deepEqual(openAIReasoning?.values, ["none", "low", "medium", "high", "xhigh"]);
+  assert.deepEqual(openAIReasoning?.values, ["none", "low", "medium", "high", "xhigh", "max"]);
 
   const xAIReasoning = resolveAdvancedSettings({
     protocol: "xai_responses",
@@ -76,6 +82,23 @@ test("resolveAdvancedSettings exposes updated reasoning effort values by provide
 
   assert.equal(xAIReasoning?.value, "none");
   assert.deepEqual(xAIReasoning?.values, ["none", "low", "medium", "high"]);
+});
+
+test("OpenAI Responses reasoning mode writes pro and omits standard without disturbing sibling options", () => {
+  const mode = resolveAdvancedSettings({
+    protocol: "openai_responses",
+    options: { reasoning: { effort: "max", summary: "auto" } },
+    defaultOptions: {},
+    policy: allowAdvancedPolicy,
+  }).find((item) => item.kind === "reasoningMode");
+  assert.ok(mode);
+
+  assert.deepEqual(setAdvancedSettingValue({ reasoning: { effort: "max", summary: "auto" } }, mode, "pro"), {
+    reasoning: { effort: "max", summary: "auto", mode: "pro" },
+  });
+  assert.deepEqual(setAdvancedSettingValue({ reasoning: { effort: "max", summary: "auto", mode: "pro" } }, mode, "standard"), {
+    reasoning: { effort: "max", summary: "auto" },
+  });
 });
 
 test("resolveAdvancedSettings exposes OpenRouter Responses reasoning controls", () => {
@@ -189,6 +212,39 @@ test("resolveAdvancedSettings exposes fixed GPT Image 2 quality and resolution o
   assert.equal(editResolution?.customValueKind, undefined);
 });
 
+test("resolveAdvancedSettings exposes Gemini image resolution, aspect ratio, and thinking controls", () => {
+  const settings = resolveAdvancedSettings({
+    protocol: "google_image_generation",
+    modelName: "gemini-3.1-flash-image",
+    options: {
+      generationConfig: {
+        imageConfig: { imageSize: "4K", aspectRatio: "16:9" },
+        thinkingConfig: { thinkingLevel: "minimal" },
+      },
+    },
+    defaultOptions: {},
+    policy: allowAdvancedPolicy,
+  });
+  const resolution = settings.find((item) => item.kind === "imageResolution");
+  const aspectRatio = settings.find((item) => item.kind === "imageAspectRatio");
+  const thinking = settings.find((item) => item.kind === "reasoningEffort");
+
+  assert.equal(resolution?.key, "generationConfig.imageConfig.imageSize");
+  assert.deepEqual(resolution?.values, ["512", "1K", "2K", "4K"]);
+  assert.equal(resolution?.value, "4K");
+  assert.equal(aspectRatio?.key, "generationConfig.imageConfig.aspectRatio");
+  assert.deepEqual(aspectRatio?.values, ["auto", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9", "1:4", "4:1", "1:8", "8:1"]);
+  assert.equal(aspectRatio?.value, "16:9");
+  assert.equal(thinking?.key, "generationConfig.thinkingConfig.thinkingLevel");
+  assert.deepEqual(thinking?.values, ["minimal", "high"]);
+  assert.equal(thinking?.value, "minimal");
+
+  assert.deepEqual(
+    setAdvancedSettingValue({ generationConfig: { imageConfig: { imageSize: "2K", aspectRatio: "16:9" } } }, aspectRatio!, "auto"),
+    { generationConfig: { imageConfig: { imageSize: "2K" } } },
+  );
+});
+
 test("resolveAdvancedSettings exposes Sora video resolution and seconds options", () => {
   const baseSettings = resolveAdvancedSettings({
     protocol: "openai_video_generations",
@@ -248,6 +304,7 @@ test("resolveAdvancedSettings upgrades legacy default policy paths for Claude an
     ...allowAdvancedPolicy,
     allowedPathsJSON: JSON.stringify({
       default: ["temperature"],
+      openai_responses: ["service_tier", "reasoning.effort", "reasoning.summary", "text.verbosity"],
       anthropic_messages: ["speed", "top_k", "thinking.type"],
       gemini_generate_content: [
         "generationConfig.temperature",
@@ -255,9 +312,23 @@ test("resolveAdvancedSettings upgrades legacy default policy paths for Claude an
         "generationConfig.maxOutputTokens",
         "generationConfig.responseMimeType",
       ],
+      google_image_generation: [
+        "generationConfig.responseModalities",
+        "generationConfig.imageConfig.aspectRatio",
+        "generationConfig.imageConfig.imageSize",
+      ],
     }),
   };
 
+  assert.deepEqual(
+    resolveAdvancedSettings({
+      protocol: "openai_responses",
+      options: {},
+      defaultOptions: {},
+      policy: legacyDefaultPolicy,
+    }).map((item) => item.key),
+    ["temperature", "reasoning.mode", "reasoning.effort", "text.verbosity"],
+  );
   assert.deepEqual(
     resolveAdvancedSettings({
       protocol: "anthropic_messages",
@@ -276,6 +347,19 @@ test("resolveAdvancedSettings upgrades legacy default policy paths for Claude an
       policy: legacyDefaultPolicy,
     }).map((item) => item.key),
     ["temperature", "thinkingConfig.thinkingLevel"],
+  );
+  assert.deepEqual(
+    resolveAdvancedSettings({
+      protocol: "google_image_generation",
+      options: {},
+      defaultOptions: {},
+      policy: legacyDefaultPolicy,
+    }).map((item) => item.key),
+    [
+      "generationConfig.imageConfig.imageSize",
+      "generationConfig.imageConfig.aspectRatio",
+      "generationConfig.thinkingConfig.thinkingLevel",
+    ],
   );
 });
 

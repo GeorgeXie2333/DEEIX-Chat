@@ -69,6 +69,7 @@ func DefaultModelOptionAllowedPathsJSON() string {
   ],
   "openai_responses": [
     "service_tier",
+    "reasoning.mode",
     "reasoning.effort",
     "reasoning.summary",
     "reasoning_effort",
@@ -111,7 +112,8 @@ func DefaultModelOptionAllowedPathsJSON() string {
   "google_image_generation": [
     "generationConfig.responseModalities",
     "generationConfig.imageConfig.aspectRatio",
-    "generationConfig.imageConfig.imageSize"
+    "generationConfig.imageConfig.imageSize",
+    "generationConfig.thinkingConfig.thinkingLevel"
   ],
   "gemini_interactions": [
     "generation_config.temperature",
@@ -223,6 +225,12 @@ func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 			additions:  []string{"seconds", "size"},
 		},
 		{
+			protocol:   "openai_responses",
+			anchors:    []string{"service_tier", "reasoning.effort", "reasoning.summary", "text.verbosity"},
+			minAnchors: 3,
+			additions:  []string{"reasoning.mode"},
+		},
+		{
 			protocol: "gemini_generate_content",
 			anchors: []string{
 				"generationConfig.temperature",
@@ -232,6 +240,12 @@ func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 			},
 			minAnchors: 2,
 			additions:  []string{"thinkingConfig.includeThoughts", "thinkingConfig.thinkingLevel"},
+		},
+		{
+			protocol:   "google_image_generation",
+			anchors:    []string{"generationConfig.responseModalities", "generationConfig.imageConfig.aspectRatio", "generationConfig.imageConfig.imageSize"},
+			minAnchors: 2,
+			additions:  []string{"generationConfig.thinkingConfig.thinkingLevel"},
 		},
 	}
 	changed := false
@@ -331,6 +345,9 @@ func DefaultNativeToolAllowedTypesJSON() string {
   "gemini_generate_content": [
     "google_search",
     "code_execution"
+  ],
+  "google_image_generation": [
+    "google_search"
   ],
   "xai_responses": [
     "web_search",

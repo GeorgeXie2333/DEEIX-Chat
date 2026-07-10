@@ -726,6 +726,7 @@
     "quality": "质量",
     "reasoning__summary": "推理摘要",
     "reasoning__effort": "推理强度",
+    "reasoning_mode": "推理模式",
     "reasoning_effort": "推理强度",
     "reasoning_summary": "推理摘要",
     "resolution": "分辨率",
