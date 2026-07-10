@@ -166,3 +166,6 @@ docker-compose.local.yml
 
 .DS_Store
 .idea
+
+# Local Git worktrees
+.worktrees/
