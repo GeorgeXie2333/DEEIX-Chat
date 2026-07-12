@@ -15,7 +15,6 @@ import (
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/llm"
 	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/traceid"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -40,13 +39,6 @@ func (s *Service) StreamMessage(
 	input.Cancelable = true
 	ctx = context.WithoutCancel(ctx)
 	return s.sendMessageInternal(ctx, input, onDelta, true)
-}
-
-func normalizeCanceledMessageGenerationError(err error, canceled bool) error {
-	if err != nil && canceled {
-		return ErrMessageGenerationCanceled
-	}
-	return err
 }
 
 func (s *Service) reasoningContentPassbackEnabled(ctx context.Context, userID uint, route *channel.ResolvedRoute) bool {
@@ -237,10 +229,6 @@ func (s *Service) sendMessageInternal(
 	runState.reuseUserMessage = reuseUserMessage
 	runState.bind(&userMessage, &assistantMessage, &traceRecorder, &result, ctx)
 	defer func() {
-		retErr = normalizeCanceledMessageGenerationError(
-			retErr,
-			input.Cancelable && (ctx.Err() != nil || s.isMessageGenerationCanceled(context.Background(), runID)),
-		)
 		if retErr != nil {
 			if errors.Is(retErr, ErrMessageGenerationCanceled) {
 				if usage, ok := s.recoverOpenAIResponsesBackgroundUsage(responsesBackgroundRouteConfig, responsesBackgroundRecovery); ok {
@@ -887,12 +875,6 @@ func (s *Service) sendMessageInternal(
 			}, promptShapeTraceAttributes("llm.prompt", callPromptShape)...)...),
 		)
 		var generateErr error
-		checkCanceledBeforeDispatch := func() error {
-			if s.isMessageGenerationCanceled(generationCtx, runID) {
-				return ErrMessageGenerationCanceled
-			}
-			return nil
-		}
 		defer func() {
 			platformtracing.RecordError(generationSpan, generateErr)
 			generationSpan.End()
@@ -932,9 +914,6 @@ func (s *Service) sendMessageInternal(
 		}
 
 		if !streamRequested || !streamSupported {
-			if generateErr = checkCanceledBeforeDispatch(); generateErr != nil {
-				return nil, generateErr
-			}
 			upstreamCallStarted = true
 			output, err := s.llmClient.Generate(generationCtx, routeConfig, currentInput)
 			generateErr = err
@@ -951,9 +930,6 @@ func (s *Service) sendMessageInternal(
 		}
 		thinkingRouter := &thinkingDeltaRouter{}
 		callStreamUsage := llm.Usage{}
-		if generateErr = checkCanceledBeforeDispatch(); generateErr != nil {
-			return nil, generateErr
-		}
 		upstreamCallStarted = true
 		output, streamErr := s.llmClient.GenerateStream(generationCtx, routeConfig, currentInput, func(event llm.GenerateStreamEvent) error {
 			if currentInput.ResponsesBackground {
@@ -977,6 +953,11 @@ func (s *Service) sendMessageInternal(
 					if err := emitLLMUsageEvent(input.OnEvent, currentUsage); err != nil {
 						return err
 					}
+				}
+			}
+			if event.GeneratedImage != nil {
+				if err := emitMediaImageDelta(input.OnEvent, event); err != nil {
+					return err
 				}
 			}
 			if traceRecorder != nil && event.Reasoning != nil && event.Reasoning.Text != "" {
@@ -1043,10 +1024,6 @@ func (s *Service) sendMessageInternal(
 			}
 		}
 		if generateErr != nil && shouldFallbackToNonStreaming(generateErr) {
-			if generateErr = checkCanceledBeforeDispatch(); generateErr != nil {
-				return output, generateErr
-			}
-			upstreamCallStarted = true
 			output, generateErr = s.llmClient.Generate(generationCtx, routeConfig, currentInput)
 			if generateErr == nil {
 				generateErr = emitNonStreamingOutput(output)
@@ -1061,31 +1038,6 @@ func (s *Service) sendMessageInternal(
 	handleCanceledGeneration := func(generateErr error) bool {
 		if generateErr == nil || (ctx.Err() == nil && !isMessageGenerationCanceledError(generateErr)) {
 			return false
-		}
-		partialText := strings.TrimSpace(streamedText.String())
-		if assistantMessage != nil && partialText != "" {
-			latencyMS := time.Since(startedAt).Milliseconds()
-			if latencyMS < 0 {
-				latencyMS = 0
-			}
-			_ = s.repo.UpdateAssistantMessageCompletion(
-				context.Background(),
-				assistantMessage.ID,
-				repository.AssistantMessageCompletionUpdate{
-					Content:      partialText,
-					OutputTokens: estimateTokens(partialText),
-					LatencyMS:    latencyMS,
-					Status:       "canceled",
-					ErrorCode:    classifyRunErrorCode(ErrMessageGenerationCanceled),
-					ErrorMessage: ErrMessageGenerationCanceled.Error(),
-				},
-			)
-			assistantMessage.Content = partialText
-			assistantMessage.OutputTokens = estimateTokens(partialText)
-			assistantMessage.TokenUsage = assistantMessage.OutputTokens + assistantMessage.ReasoningTokens
-			assistantMessage.Status = "canceled"
-			assistantMessage.ErrorCode = classifyRunErrorCode(ErrMessageGenerationCanceled)
-			assistantMessage.ErrorMessage = ErrMessageGenerationCanceled.Error()
 		}
 		retErr = ErrMessageGenerationCanceled
 		return true
@@ -1313,29 +1265,7 @@ func (s *Service) sendMessageInternal(
 		return nil, retErr
 	}
 
-	var generatedImageFiles []model.FileObject
-	var generatedImageAttachmentRows []model.Attachment
-	if upstreamOutput != nil && len(upstreamOutput.GeneratedImages) > 0 {
-		var imageSaveErr error
-		generatedImageFiles, generatedImageAttachmentRows, imageSaveErr = s.saveAssistantGeneratedImages(ctx, assistantGeneratedImageSaveInput{
-			UserID:         input.UserID,
-			ConversationID: input.ConversationID,
-			MessageID:      assistantMessage.ID,
-			ModelName:      route.PlatformModelName,
-			Images:         upstreamOutput.GeneratedImages,
-		})
-		if imageSaveErr != nil {
-			retErr = imageSaveErr
-			_ = s.repo.UpdateMessageState(ctx, assistantMessage.ID, "error", classifyRunErrorCode(retErr), truncateError(messageErrorSummary(retErr), 255))
-			return nil, imageSaveErr
-		}
-		assistantText = appendGeneratedImageMarkdown(assistantText, generatedImageFiles)
-		if effectiveOutputTokens <= 0 {
-			effectiveOutputTokens = estimateTokens(assistantText)
-		}
-	}
-
-	if strings.TrimSpace(assistantText) == "" {
+	if strings.TrimSpace(assistantText) == "" && len(upstreamOutput.GeneratedImages) == 0 {
 		retErr = ErrUpstreamEmptyResponse
 		return nil, retErr
 	}
@@ -1412,6 +1342,7 @@ func (s *Service) sendMessageInternal(
 		AssistantMessage:          assistantMessage,
 		AssistantText:             assistantText,
 		AssistantReasoningContent: assistantReasoningContent,
+		GeneratedImages:           upstreamOutput.GeneratedImages,
 		InputTokens:               effectiveInputTokens,
 		CacheReadTokens:           totalUsage.CacheReadTokens,
 		CacheWriteTokens:          totalUsage.CacheWriteTokens,
@@ -1421,8 +1352,6 @@ func (s *Service) sendMessageInternal(
 		ResponseID:                upstreamOutput.ResponseID,
 		StatefulPromptFingerprint: statefulPromptFingerprint,
 		ToolCallRows:              toolCallRows,
-		AssistantAttachments:      generatedImageAttachmentRows,
-		GeneratedImageFiles:       generatedImageFiles,
 		PersistedToolCallKeys:     persistedToolCallKeys,
 		ReuseUserMessage:          reuseUserMessage,
 	})

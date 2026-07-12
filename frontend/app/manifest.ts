@@ -1,14 +1,14 @@
 import type { MetadataRoute } from "next";
 
-import { pwaAsset } from "@/shared/pwa/assets";
+import { brandAssets, brandText } from "@/shared/lib/branding";
 
 export const dynamic = "force-static";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Comi AI",
-    short_name: "Comi AI",
-    description: "Comi AI is a multi-model AI conversation workspace.",
+    name: brandText.title,
+    short_name: brandText.shortName,
+    description: brandText.description,
     id: "/",
     start_url: "/chat",
     scope: "/",
@@ -20,19 +20,19 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "en",
     icons: [
       {
-        src: pwaAsset("/pwa/icon-192.png"),
+        src: brandAssets.pwaIcon192,
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: pwaAsset("/pwa/icon-512.png"),
+        src: brandAssets.pwaIcon512,
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: pwaAsset("/pwa/icon-maskable-512.png"),
+        src: brandAssets.pwaMaskableIcon512,
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

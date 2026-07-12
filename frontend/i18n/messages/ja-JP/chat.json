@@ -490,32 +490,6 @@
     "secondUnit": "秒",
     "empty": "利用可能なモデルはありません"
   },
-  "shareDialog": {
-    "title": "この会話を共有",
-    "statusShared": "共有中",
-    "statusNotShared": "未共有",
-    "publicLink": "公開リンク",
-    "emptyLink": "公開リンクは作成されていません",
-    "copyLink": "共有リンクをコピー",
-    "openLink": "共有リンクを開く",
-    "loadFailed": "共有状態の読み込みに失敗しました",
-    "noMessages": "共有できるメッセージはありません",
-    "signInRequired": "先にログインしてください",
-    "closed": "共有を閉じました",
-    "regenerated": "共有リンクを再生成しました",
-    "created": "共有リンクを作成しました",
-    "operationFailed": "操作に失敗しました",
-    "linkCopied": "リンクをコピーしました",
-    "copyFailed": "コピーに失敗しました",
-    "closing": "閉じています",
-    "closeShare": "共有を閉じる",
-    "regenerating": "生成中",
-    "regenerate": "再生成",
-    "copyAndClose": "コピーして閉じる",
-    "creating": "作成中",
-    "createLink": "リンクを作成",
-    "snapshotMessages": "{title} - {count} 件のスナップショットメッセージ"
-  },
   "processTrace": {
     "fileBadges": {
       "directRead": "直接読込",

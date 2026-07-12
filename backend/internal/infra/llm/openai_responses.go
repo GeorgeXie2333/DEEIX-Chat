@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// openAIResponsesAdapter 实现 OpenAI Responses API（POST /v1/responses）。
+// openAIResponsesAdapter 瀹炵幇 OpenAI Responses API锛圥OST /v1/responses锛夈€?
 type openAIResponsesAdapter struct {
 	client *Client
 }
@@ -70,8 +70,8 @@ func buildResponsesRequestBody(
 		payload["prompt_cache_retention"] = retention
 	}
 	appendToolDeclarations(payload, providerTools, webSearchTools, buildOpenAITools(toolDefinitions, false))
-	// 有状态会话：提供 previous_response_id 时服务端续接存储的历史，
-	// input 仅包含本轮新消息，避免全量重传。
+	// 鏈夌姸鎬佷細璇濓細鎻愪緵 previous_response_id 鏃舵湇鍔＄缁帴瀛樺偍鐨勫巻鍙诧紝
+	// input 浠呭寘鍚湰杞柊娑堟伅锛岄伩鍏嶅叏閲忛噸浼犮€?
 	if prevID := strings.TrimSpace(input.PreviousResponseID); prevID != "" {
 		payload["previous_response_id"] = prevID
 	}
@@ -283,7 +283,7 @@ func buildResponsesAPIInput(messages []Message) []map[string]interface{} {
 	return items
 }
 
-// buildResponsesAPIContent 将消息内容序列化为 Responses API 格式（content 数组）。
+// buildResponsesAPIContent 灏嗘秷鎭唴瀹瑰簭鍒楀寲涓?Responses API 鏍煎紡锛坈ontent 鏁扮粍锛夈€?
 func buildResponsesAPIContent(msg Message) []map[string]interface{} {
 	textType := responsesTextContentType(msg.Role)
 	if len(msg.Parts) == 0 {
@@ -508,7 +508,7 @@ func parseResponsesServerToolStatusEvent(eventType string, parsed map[string]int
 		return ToolCall{}, false
 	}
 	status := ""
-	for _, suffix := range []string{".in_progress", ".searching", ".completed", ".failed", ".error"} {
+	for _, suffix := range []string{".in_progress", ".searching", ".generating", ".completed", ".failed", ".error"} {
 		if strings.HasSuffix(value, suffix) {
 			status = strings.TrimPrefix(suffix, ".")
 			value = strings.TrimSuffix(strings.TrimPrefix(value, "response."), suffix)
@@ -1032,7 +1032,12 @@ func isResponsesServerToolCallType(itemType string) bool {
 }
 
 func isResponsesImageGenerationCallType(itemType string) bool {
-	return strings.TrimSpace(itemType) == "image_generation_call"
+	switch strings.TrimSpace(itemType) {
+	case "image_generation_call", "image_generation_call_output":
+		return true
+	default:
+		return false
+	}
 }
 
 func isResponsesImageGenerationPartialEvent(eventType string) bool {
@@ -1106,16 +1111,26 @@ func parseResponsesImageGenerationImages(item map[string]interface{}) []Generate
 	if !isResponsesImageGenerationCallType(getString(item["type"])) {
 		return nil
 	}
-	b64 := strings.TrimSpace(getString(item["result"]))
-	if b64 == "" {
+	revisedPrompt := firstNonEmptyString(getString(item["revised_prompt"]), getString(item["revisedPrompt"]))
+	outputFormat := getString(item["output_format"])
+	if b64 := strings.TrimSpace(getString(item["result"])); b64 != "" {
+		return []GeneratedImage{{
+			B64JSON:       b64,
+			MIMEType:      openAIImageMIMEType(outputFormat),
+			RevisedPrompt: strings.TrimSpace(revisedPrompt),
+		}}
+	}
+	image, ok := parseOpenAIImagePayload(asMap(item["result"]), outputFormat)
+	if !ok {
+		image, ok = parseOpenAIImagePayload(item, outputFormat)
+	}
+	if !ok {
 		return nil
 	}
-	revisedPrompt := firstNonEmptyString(getString(item["revised_prompt"]), getString(item["revisedPrompt"]))
-	return []GeneratedImage{{
-		B64JSON:       b64,
-		MIMEType:      openAIImageMIMEType(getString(item["output_format"])),
-		RevisedPrompt: strings.TrimSpace(revisedPrompt),
-	}}
+	if image.RevisedPrompt == "" {
+		image.RevisedPrompt = strings.TrimSpace(revisedPrompt)
+	}
+	return []GeneratedImage{image}
 }
 
 func appendUniqueGeneratedImage(items *[]GeneratedImage, image GeneratedImage) (int, bool) {
@@ -1141,11 +1156,23 @@ func responsesImageGenerationToolOutputJSON(item map[string]interface{}, fallbac
 	if len(parseResponsesImageGenerationImages(item)) == 0 {
 		return fallback
 	}
-	return normalizeJSONString(map[string]interface{}{
-		"type":          "image_generation_call",
-		"result":        "[redacted]",
-		"output_format": firstNonEmptyString(getString(item["output_format"]), "png"),
-	})
+	payload := map[string]interface{}{
+		"type":            "image_generation_call",
+		"result":          "[redacted]",
+		"output_format":   firstNonEmptyString(getString(item["output_format"]), "png"),
+		"image_generated": true,
+	}
+	for _, key := range []string{"background", "quality", "revised_prompt", "size", "status"} {
+		if value, ok := item[key]; ok {
+			payload[key] = value
+		}
+	}
+	if result := asMap(item["result"]); len(result) > 0 {
+		if imageURL := strings.TrimSpace(getString(result["url"])); imageURL != "" {
+			payload["url"] = imageURL
+		}
+	}
+	return normalizeJSONString(payload)
 }
 
 func isResponsesClientToolCallType(itemType string) bool {

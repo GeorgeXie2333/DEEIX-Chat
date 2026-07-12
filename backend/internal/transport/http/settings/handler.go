@@ -124,7 +124,6 @@ func (h *Handler) GetLoginPageSettings(c *gin.Context) {
 		values["login_default_next_path"] = "/chat"
 	}
 	response.Success(c, LoginPageSettingsResponse{
-		Title:           values["login_page_title"],
 		DefaultNextPath: values["login_default_next_path"],
 	})
 }

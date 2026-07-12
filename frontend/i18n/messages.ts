@@ -14,6 +14,7 @@ import zhAdminUsers from "@/i18n/messages/zh-CN/admin-users.json";
 import zhAnnouncements from "@/i18n/messages/zh-CN/announcements.json";
 import zhChat from "@/i18n/messages/zh-CN/chat.json";
 import zhCommon from "@/i18n/messages/zh-CN/common.json";
+import zhConversation from "@/i18n/messages/zh-CN/conversation.json";
 import zhErrors from "@/i18n/messages/zh-CN/errors.json";
 import zhFiles from "@/i18n/messages/zh-CN/files.json";
 import zhGuide from "@/i18n/messages/zh-CN/guide.json";
@@ -23,9 +24,11 @@ import zhRecent from "@/i18n/messages/zh-CN/recent.json";
 import zhSettings from "@/i18n/messages/zh-CN/settings.json";
 import zhShare from "@/i18n/messages/zh-CN/share.json";
 import type { AppLocale } from "@/i18n/config";
+import { replaceDefaultBrandTitle } from "@/shared/lib/branding";
 
-export const DEFAULT_MESSAGES = {
+const BASE_MESSAGES = {
   common: zhCommon,
+  conversation: zhConversation,
   errors: zhErrors,
   login: zhLogin,
   prompts: zhPrompts,
@@ -51,10 +54,57 @@ export const DEFAULT_MESSAGES = {
   adminUsers: zhAdminUsers,
 };
 
-export type AppMessages = typeof DEFAULT_MESSAGES;
+export type AppMessages = typeof BASE_MESSAGES;
+
+function prepareMessages(messages: AppMessages): AppMessages {
+  return {
+    ...messages,
+    guide: {
+      ...messages.guide,
+      userWelcomeTitle: replaceDefaultBrandTitle(messages.guide.userWelcomeTitle),
+    },
+    recent: {
+      ...messages.recent,
+      allConversationsDescription: replaceDefaultBrandTitle(messages.recent.allConversationsDescription),
+    },
+    login: {
+      ...messages.login,
+      title: replaceDefaultBrandTitle(messages.login.title),
+    },
+    share: {
+      ...messages.share,
+      signInToContinue: replaceDefaultBrandTitle(messages.share.signInToContinue),
+    },
+    chat: {
+      ...messages.chat,
+      placeholder: replaceDefaultBrandTitle(messages.chat.placeholder),
+    },
+    settings: {
+      ...messages.settings,
+      accountPage: {
+        ...messages.settings.accountPage,
+        securityDialog: {
+          ...messages.settings.accountPage.securityDialog,
+          email: {
+            ...messages.settings.accountPage.securityDialog.email,
+            description: {
+              ...messages.settings.accountPage.securityDialog.email.description,
+              change: replaceDefaultBrandTitle(
+                messages.settings.accountPage.securityDialog.email.description.change,
+              ),
+            },
+          },
+        },
+      },
+    },
+  };
+}
+
+export const DEFAULT_MESSAGES: AppMessages = prepareMessages(BASE_MESSAGES);
 
 type LocaleMessageImports = [
   { default: AppMessages["common"] },
+  { default: AppMessages["conversation"] },
   { default: AppMessages["errors"] },
   { default: AppMessages["login"] },
   { default: AppMessages["prompts"] },
@@ -82,6 +132,7 @@ type LocaleMessageImports = [
 
 function toAppMessages([
   common,
+  conversation,
   errors,
   login,
   prompts,
@@ -108,6 +159,7 @@ function toAppMessages([
 ]: LocaleMessageImports): AppMessages {
   return {
     common: common.default,
+    conversation: conversation.default,
     errors: errors.default,
     login: login.default,
     prompts: prompts.default,
@@ -142,6 +194,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
   if (locale === "ja-JP") {
     return toAppMessages(await Promise.all([
       import("@/i18n/messages/ja-JP/common.json"),
+      import("@/i18n/messages/ja-JP/conversation.json"),
       import("@/i18n/messages/ja-JP/errors.json"),
       import("@/i18n/messages/ja-JP/login.json"),
       import("@/i18n/messages/ja-JP/prompts.json"),
@@ -170,6 +223,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
 
   return toAppMessages(await Promise.all([
     import("@/i18n/messages/en-US/common.json"),
+    import("@/i18n/messages/en-US/conversation.json"),
     import("@/i18n/messages/en-US/errors.json"),
     import("@/i18n/messages/en-US/login.json"),
     import("@/i18n/messages/en-US/prompts.json"),

@@ -37,6 +37,7 @@ import { buildMediaImagePreviewMarkdown } from "@/features/chat/model/media-imag
 import { resolveMediaStatusProgress } from "@/features/chat/model/media-status";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { notifyResponseCompletion } from "@/shared/lib/browser-notifications";
+import { brandText } from "@/shared/lib/branding";
 import {
   cancelMessageGeneration,
   getConversation,
@@ -919,7 +920,7 @@ export function useChatMessageSubmit({
           notifyResponseCompletion({
             content: completed.assistantMessage.content,
             conversationPublicID: targetConversationID,
-            conversationTitle: targetConversation?.title || "Comi AI",
+            conversationTitle: targetConversation?.title || brandText.title,
           });
         }
         reload();

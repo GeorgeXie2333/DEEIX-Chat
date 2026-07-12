@@ -159,6 +159,8 @@
     "protocolUpdated": "プロトコルを更新しました",
     "priorityMustBePositive": "優先度は 0 より大きい必要があります",
     "weightMustBePositive": "重みは 0 より大きい必要があります",
+    "priorityDesc": "値が小さいほど優先度が高くなります。トラフィックは最小の優先度を持つソースから先にルーティングされます。正の整数を指定してください。",
+    "weightDesc": "同じ優先度のソースでは、値が大きいほどトラフィックの割り当てが増えます。正の整数を指定してください。",
     "priorityUpdated": "優先度を更新しました",
     "weightUpdated": "重みを更新しました",
     "circuitSettings": "サーキット設定",

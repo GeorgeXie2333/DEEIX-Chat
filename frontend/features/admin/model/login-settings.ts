@@ -7,7 +7,6 @@ export type LoginFieldType = "int" | "bool" | "string" | "password" | "textarea"
 export type LoginSettingsField = {
   namespace: "auth";
   key:
-    | "login_page_title"
     | "login_default_next_path"
     | "username_login_enabled"
     | "email_login_enabled"
@@ -58,7 +57,6 @@ export function buildLoginSettingsGroups(t: LoginSettingsTranslator): LoginSetti
     title: t("groups.loginPage.title"),
     description: t("groups.loginPage.description"),
     fields: [
-      { namespace: "auth", key: "login_page_title", label: t("fields.loginPageTitle.label"), description: t("fields.loginPageTitle.description"), type: "string", placeholder: t("fields.loginPageTitle.placeholder") },
       { namespace: "auth", key: "login_default_next_path", label: t("fields.loginDefaultNextPath.label"), description: t("fields.loginDefaultNextPath.description"), type: "string", placeholder: "/chat" },
     ],
   },

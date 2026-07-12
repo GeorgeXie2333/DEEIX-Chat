@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
+import { brandAssets, brandText } from "@/shared/lib/branding";
 
 import {
   appLogoMaskImage,
@@ -12,21 +13,16 @@ import {
 
 type AppLogoProps = {
   alt?: string;
+  width?: number;
   height: number;
   priority?: boolean;
   className?: string;
 };
 
-export function AppLogo({
-  alt = "Comi AI",
-  height,
-  className,
-}: AppLogoProps) {
-  const visualHeight = appLogoVisualHeight(height);
-  const visualWidth = appLogoVisualWidth(height);
-  const style = {
-    width: visualWidth,
-    height: visualHeight,
+function logoStyle(height: number, width: number | undefined): CSSProperties {
+  return {
+    width: width ?? appLogoVisualWidth(height),
+    height: width ? height : appLogoVisualHeight(height),
     maskImage: appLogoMaskImage(),
     maskPosition: "center",
     maskRepeat: "no-repeat",
@@ -35,8 +31,20 @@ export function AppLogo({
     WebkitMaskPosition: "center",
     WebkitMaskRepeat: "no-repeat",
     WebkitMaskSize: "contain",
-  } as CSSProperties;
+    backgroundImage: brandAssets.logo ? `url("${brandAssets.logo}")` : undefined,
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "contain",
+  };
+}
 
+export function AppLogo({
+  alt = brandText.title,
+  width,
+  height,
+  priority: _priority,
+  className,
+}: AppLogoProps) {
   return (
     <span
       role="img"
@@ -46,7 +54,12 @@ export function AppLogo({
         "inline-block shrink-0 bg-current text-foreground align-middle leading-none",
         className,
       )}
-      style={style}
+      style={logoStyle(height, width)}
     />
   );
+}
+
+// Kept as a compatibility alias for older callers; it uses the Comi-configured asset.
+export function DeeixLogo({ alt = brandText.title, ...props }: AppLogoProps) {
+  return <AppLogo {...props} alt={alt} />;
 }

@@ -905,10 +905,10 @@ func emitOpenAIImagePartial(
 	if !ok {
 		return nil
 	}
-	index := int(firstNonZero(
+	index := firstNonZero(
 		getInt64FromPath(parsed, "partial_image_index"),
 		getInt64FromPath(parsed, "index"),
-	))
+	)
 	return onEvent(GenerateStreamEvent{
 		GeneratedImage:        &image,
 		GeneratedImageIndex:   index,

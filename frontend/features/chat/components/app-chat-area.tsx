@@ -5,6 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
+import {
+  ConversationShareDialog,
+  sharePatchFromDTO,
+  useSidebarConversations,
+} from "@/entities/conversation";
 import { ChatArea, ChatAreaLoadError, ChatAreaSkeleton } from "@/features/chat/components/sections/chat-area";
 import { ChatArtifactWorkspace } from "@/features/chat/components/sections/chat-artifact";
 import { ChatEmptyState } from "@/features/chat/components/sections/chat-empty";
@@ -17,16 +22,11 @@ import type { ChatAreaMessage, MessageAttachment } from "@/features/chat/types/m
 import { useChatModelOptions } from "@/features/chat/hooks/use-chat-model-options";
 import { useChatRuntime } from "@/features/chat/hooks/use-chat-runtime";
 import { useChatViewerProfile } from "@/features/chat/hooks/use-chat-viewer-profile";
-import { useChatConversationExport } from "@/features/chat/hooks/use-chat-conversation-export";
 import { useChatScreenshot } from "@/features/chat/hooks/use-chat-screenshot";
 import { useChatVisualPrompt } from "@/features/chat/hooks/use-chat-visual-prompt";
 import { ChatInput } from "@/features/chat/components/sections/chat-input";
 import { ChatScreenshotPreviewDialog } from "@/features/chat/components/sections/chat-screenshot-preview-dialog";
 import { resolveChatContentWidthClassName } from "@/shared/model/chat-content-width";
-import {
-  ConversationShareDialog,
-  sharePatchFromDTO,
-} from "@/features/chat/components/sections/chat-share-dialog";
 import { DeleteFilesOption } from "@/shared/components/delete-files-option";
 import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences";
 import {
@@ -44,7 +44,6 @@ import {
   isConversationOptionsObject,
   sanitizeConversationOptions,
 } from "@/features/chat/model/conversation-options";
-import { useSidebarRecents } from "@/features/recent/context/sidebar-recents-context";
 import { useChatData } from "@/features/chat/hooks/use-chat-data";
 import { toPendingAttachment } from "@/features/chat/model/message-submit";
 import { exportConversationArchive, getConversation } from "@/shared/api/conversation";
@@ -224,7 +223,7 @@ export function AppChatArea() {
     setStarByPublicID,
     setProjectByPublicID,
     deleteByPublicID,
-  } = useSidebarRecents();
+  } = useSidebarConversations();
   const {
     cancelResumedGeneration,
     loading,

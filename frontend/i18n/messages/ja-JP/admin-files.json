@@ -54,7 +54,12 @@
     "reindexFailed": "インデックス再構築に失敗しました",
     "embeddingModelChanged": "Embedding モデルが変更されました",
     "embeddingModelChangedDescription": "既存のベクトルは失効としてマークされました。インデックス状態パネルで「インデックスを再構築」をクリックし、すべてのファイルを再ベクトル化してください。",
+    "mimeTypesUpdated": "添付ファイルの MIME 許可リストを更新しました",
     "groupUpdated": "{group}を更新しました"
+  },
+  "mineruMimeHint": {
+    "missing": "選択した MinerU 形式に必要な MIME タイプがアップロード許可リストにありません: {formats}。",
+    "addAndSave": "不足している MIME タイプを追加して保存"
   },
   "validation": {
     "embeddingRequired": "先に「ベクトル検索」で Embedding サービス URL とリクエストモデルを有効化して設定してください。",
@@ -237,6 +242,16 @@
         "label": "MinerU サービス URL *",
         "description": "MinerU サービス URL を設定します。",
         "placeholder": "サービス URL"
+      },
+      "mineru_file_types": {
+        "label": "MinerU ファイル形式",
+        "description": "MinerU に送信するファイルカテゴリを選択します。",
+        "options": {
+          "pdf": "PDF",
+          "word": "Word",
+          "presentation": "PowerPoint",
+          "excel": "Excel"
+        }
       },
       "mineru_auth_token": {
         "label": "MinerU 認証キー",

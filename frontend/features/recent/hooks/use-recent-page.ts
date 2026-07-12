@@ -5,10 +5,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
+import {
+  isArchivedConversation,
+  mergeUniqueByPublicID,
+  removeByPublicID,
+  sortByUpdatedAtDesc,
+  upsertByPublicID,
+  useSidebarConversations,
+} from "@/entities/conversation";
 import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import { useLoadMoreSentinel } from "@/shared/hooks/use-load-more-sentinel";
-import { useSidebarRecents } from "@/features/recent/context/sidebar-recents-context";
-import { useSettingsChatPreferences } from "@/features/settings/hooks/use-settings-chat-preferences";
+import { useSettingsChatPreferences } from "@/features/settings";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { runBulkActionInChunks } from "@/shared/lib/bulk-action";
 import { downloadBlob, readExportManifest } from "@/shared/lib/export-download";
@@ -116,7 +123,7 @@ export function useRecentPage() {
     setProjectByPublicID,
     touchByPublicID,
     lastChange,
-  } = useSidebarRecents();
+  } = useSidebarConversations();
   const [items, setItems] = React.useState<ConversationDTO[]>([]);
   const [loadingInitial, setLoadingInitial] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
@@ -141,7 +148,6 @@ export function useRecentPage() {
   const [shareTarget, setShareTarget] = React.useState<ConversationDTO | null>(null);
   const [importingArchive, setImportingArchive] = React.useState(false);
   const [exportingAll, setExportingAll] = React.useState(false);
-  const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
   const pageRef = React.useRef(1);
   const requestVersionRef = React.useRef(0);
   const loadingMoreRef = React.useRef(false);
@@ -305,9 +311,8 @@ export function useRecentPage() {
     }
   }, [hasMore, loadPage, loadingInitial, resolveErrorMessage, t]);
 
-  useLoadMoreSentinel({
+  const loadMoreRef = useLoadMoreSentinel<HTMLDivElement>({
     enabled: hasMore && !loadingInitial && !loadingMore && !loadMoreFailed,
-    targetRef: loadMoreRef,
     rootMargin: "160px",
     onLoadMore: loadMore,
   });
@@ -599,7 +604,7 @@ export function useRecentPage() {
     await runBulkActionInChunks({
       chunkSize: 10,
       items: deleteTarget.ids,
-      title: t("labelMenu.bulk.pending"),
+      title: t("dialogs.bulk.pending"),
       runChunk: async (ids) => {
         for (const id of ids) {
           await deleteByPublicID(id, deleteFiles ? { deleteFiles: true } : undefined);
@@ -671,7 +676,7 @@ export function useRecentPage() {
     const updates = (await runBulkActionInChunks({
       chunkSize: 10,
       items: targets,
-      title: t("labelMenu.bulk.pending"),
+      title: t("dialogs.bulk.pending"),
       runChunk: async (chunk) => {
         const updatedItems: Array<ConversationDTO | null> = [];
         for (const item of chunk) {
@@ -714,7 +719,7 @@ export function useRecentPage() {
     const ids = selectedSharedItems.map((item) => item.publicID);
     await runBulkActionInChunks({
       items: ids,
-      title: t("labelMenu.bulk.pending"),
+      title: t("dialogs.bulk.pending"),
       runChunk: (conversationPublicIDs) => revokeConversationShares(token, { conversationPublicIDs }),
     });
     const patch: Partial<ConversationDTO> = {
