@@ -1066,7 +1066,7 @@ func emitResponsesImageGenerationPartial(
 	))
 	return onEvent(GenerateStreamEvent{
 		GeneratedImage:        &image,
-		GeneratedImageIndex:   index,
+		GeneratedImageIndex:   int64(index),
 		GeneratedImagePartial: true,
 		ResponseID:            responseIDForStreamEvent(result, parsed),
 	})
@@ -1088,7 +1088,7 @@ func mergeResponsesImageGenerationToolItem(
 		eventImage := image
 		if err := onEvent(GenerateStreamEvent{
 			GeneratedImage:      &eventImage,
-			GeneratedImageIndex: index,
+			GeneratedImageIndex: int64(index),
 			ResponseID:          result.ResponseID,
 		}); err != nil {
 			return err
