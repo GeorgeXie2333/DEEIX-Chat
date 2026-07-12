@@ -36,13 +36,6 @@ import type {
   ConversationStatusFilter,
 } from "@/shared/api/conversation.types";
 import {
-  mergeUniqueByPublicID,
-  removeByPublicID,
-  sortByUpdatedAtDesc,
-  upsertByPublicID,
-  isArchivedConversation,
-} from "@/features/recent/utils/conversation-list";
-import {
   downloadConversationArchive,
   readConversationArchiveFile,
 } from "@/features/recent/utils/conversation-archive";
