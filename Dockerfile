@@ -12,6 +12,7 @@ ARG NEXT_PUBLIC_API_BASE_URL=""
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY VERSION /src/VERSION
 COPY frontend/package.json ./frontend/package.json
 COPY backend/package.json ./backend/package.json
 COPY packages/api-contract/package.json ./packages/api-contract/package.json
@@ -24,7 +25,6 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm config set store-dir /pnpm/store \
     && pnpm install --frozen-lockfile --prefer-offline --filter @deeix/web
 
-COPY VERSION /src/VERSION
 COPY scripts /src/scripts
 COPY frontend ./frontend
 COPY packages/api-contract ./packages/api-contract
