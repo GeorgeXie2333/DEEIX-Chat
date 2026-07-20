@@ -18,6 +18,7 @@ COPY backend/package.json ./backend/package.json
 COPY packages/api-contract/package.json ./packages/api-contract/package.json
 COPY frontend/scripts ./frontend/scripts
 COPY frontend/public/pwa ./frontend/public/pwa
+COPY frontend/public/logo.svg frontend/public/logo-color.svg frontend/public/logo-black.svg frontend/public/logo-white.svg ./frontend/public/
 
 RUN corepack enable
 
