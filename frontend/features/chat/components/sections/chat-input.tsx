@@ -1098,6 +1098,7 @@ function ChatInputComponent({
                 modelOptionPolicy={modelOptionPolicy}
                 selectedProtocol={selectedProtocol}
                 selectedModelName={selectedPlatformModelName}
+                submitTask={submitTask}
                 onOptionsChange={onOptionsChange}
                 onOptionsReset={onOptionsReset}
                 onDefaultOptionsRestore={onOptionsDefaultRestore}

@@ -441,7 +441,8 @@ func TestBuildOpenAIChatCompletionsStructuredOutputsAndVerbosity(t *testing.T) {
 	payload := mustBuildRequestBody(t, AdapterOpenAIChatCompletions, "gpt-5.1", EndpointChatCompletions, GenerateInput{
 		Messages: []Message{{Role: "developer", Content: "Return valid JSON."}, {Role: "user", Content: "hello"}},
 		Options: map[string]interface{}{
-			"verbosity": "low",
+			"reasoning_summary": "concise",
+			"verbosity":         "low",
 			"response_format": map[string]interface{}{
 				"type":   "json_schema",
 				"name":   "answer",
@@ -453,6 +454,9 @@ func TestBuildOpenAIChatCompletionsStructuredOutputsAndVerbosity(t *testing.T) {
 
 	if payload["verbosity"] != "low" {
 		t.Fatalf("expected chat verbosity=low, got %#v", payload["verbosity"])
+	}
+	if payload["reasoning_summary"] != "concise" {
+		t.Fatalf("expected chat reasoning_summary=concise, got %#v", payload["reasoning_summary"])
 	}
 	messages := payload["messages"].([]map[string]interface{})
 	if messages[0]["role"] != "developer" {
@@ -468,6 +472,27 @@ func TestBuildOpenAIChatCompletionsStructuredOutputsAndVerbosity(t *testing.T) {
 	}
 	if _, ok := format["schema"]; ok {
 		t.Fatalf("expected schema under json_schema wrapper, got %#v", format)
+	}
+}
+
+func TestBuildOpenRouterChatCompletionsAdvancedReasoningOptions(t *testing.T) {
+	payload := mustBuildRequestBody(t, AdapterOpenRouterChat, "openai/gpt-5.1", EndpointChatCompletions, GenerateInput{
+		Messages: []Message{{Role: "user", Content: "hello"}},
+		Options: map[string]interface{}{
+			"reasoning": map[string]interface{}{
+				"effort":  "high",
+				"summary": "detailed",
+			},
+			"verbosity": "low",
+		},
+	}, false)
+
+	reasoning, ok := payload["reasoning"].(map[string]interface{})
+	if !ok || reasoning["effort"] != "high" || reasoning["summary"] != "detailed" {
+		t.Fatalf("expected nested OpenRouter reasoning options, got %#v", payload["reasoning"])
+	}
+	if payload["verbosity"] != "low" {
+		t.Fatalf("expected OpenRouter verbosity=low, got %#v", payload["verbosity"])
 	}
 }
 

@@ -177,6 +177,7 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T)
 		t.Fatalf("parse default model option paths: %v", err)
 	}
 	legacy["anthropic_messages"] = removeString(legacy["anthropic_messages"], "output_config.effort")
+	legacy["openai_chat_completions"] = removeString(legacy["openai_chat_completions"], "reasoning_summary")
 	legacy["openai_responses"] = removeString(legacy["openai_responses"], "reasoning.mode")
 	legacy["gemini_generate_content"] = removeString(legacy["gemini_generate_content"], "thinkingConfig.thinkingLevel")
 	legacy["google_image_generation"] = removeString(legacy["google_image_generation"], "generationConfig.thinkingConfig.thinkingLevel")
@@ -192,6 +193,9 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T)
 	}
 	if !containsString(normalized["anthropic_messages"], "output_config.effort") {
 		t.Fatalf("expected normalized anthropic allowlist to include output_config.effort, got %#v", normalized["anthropic_messages"])
+	}
+	if !containsString(normalized["openai_chat_completions"], "reasoning_summary") {
+		t.Fatalf("expected normalized OpenAI Chat allowlist to include reasoning_summary, got %#v", normalized["openai_chat_completions"])
 	}
 	if !containsString(normalized["gemini_generate_content"], "thinkingConfig.thinkingLevel") {
 		t.Fatalf("expected normalized gemini allowlist to include thinkingConfig.thinkingLevel, got %#v", normalized["gemini_generate_content"])
@@ -214,6 +218,13 @@ func TestNormalizeModelOptionAllowedPathsJSONKeepsCustomPolicy(t *testing.T) {
 	custom := `{"default":["temperature"],"anthropic_messages":["speed"]}`
 	if got := NormalizeModelOptionAllowedPathsJSON(custom); got != custom {
 		t.Fatalf("expected custom allowlist unchanged, got %s", got)
+	}
+}
+
+func TestNormalizeModelOptionAllowedPathsJSONKeepsCustomizedOpenAIChatPolicy(t *testing.T) {
+	custom := `{"openai_chat_completions":["service_tier","presence_penalty","frequency_penalty","reasoning_effort","verbosity","thinking.type","stream_options.include_usage","metadata.tenant"]}`
+	if got := NormalizeModelOptionAllowedPathsJSON(custom); got != custom {
+		t.Fatalf("expected customized OpenAI Chat allowlist unchanged, got %s", got)
 	}
 }
 

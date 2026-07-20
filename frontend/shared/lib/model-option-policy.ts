@@ -166,6 +166,24 @@ export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
   for (const [protocol, paths] of Object.entries(parsed.value)) {
     next[protocol] = [...(paths ?? [])];
   }
+  let changed = false;
+  const legacyOpenAIChatPaths = [
+    "service_tier",
+    "presence_penalty",
+    "frequency_penalty",
+    "reasoning_effort",
+    "verbosity",
+    "thinking.type",
+    "stream_options.include_usage",
+  ];
+  const openAIChatPaths = next.openai_chat_completions;
+  if (
+    openAIChatPaths?.length === legacyOpenAIChatPaths.length &&
+    legacyOpenAIChatPaths.every((path) => openAIChatPaths.includes(path))
+  ) {
+    openAIChatPaths.push("reasoning_summary");
+    changed = true;
+  }
   const upgrades: Array<{
     protocol: string;
     anchors: string[];
@@ -212,7 +230,6 @@ export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
       additions: ["generationConfig.thinkingConfig.thinkingLevel"],
     },
   ];
-  let changed = false;
   for (const upgrade of upgrades) {
     const paths = next[upgrade.protocol];
     if (!paths) {

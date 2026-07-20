@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
 import { useTranslations } from "next-intl";
+import * as React from "react";
 
 import { Cog } from "@/components/animate-ui/icons/cog";
 import { Input } from "@/components/ui/input";
@@ -16,12 +16,13 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import {
+  type AdvancedSettingItem,
   isAdvancedSettingCustomValueValid,
   resetAdvancedSettings,
   resolveAdvancedSettings,
   setAdvancedSettingValue,
-  type AdvancedSettingItem,
 } from "@/features/chat/model/advanced-settings";
+import type { ChatSubmitTask } from "@/features/chat/model/chat-task";
 import type { ConversationOptions } from "@/shared/api/conversation.types";
 import type { ModelOptionPolicy } from "@/shared/lib/model-option-policy";
 
@@ -35,6 +36,7 @@ type ChatModelConfigProps = {
   modelOptionPolicy: ModelOptionPolicy | null;
   selectedProtocol: string;
   selectedModelName: string;
+  submitTask: ChatSubmitTask;
   onOptionsChange: React.Dispatch<React.SetStateAction<ConversationOptions>>;
   onOptionsReset: (defaults?: ConversationOptions) => void;
   onDefaultOptionsRestore?: () => Promise<ConversationOptions | null>;
@@ -58,18 +60,32 @@ function labelKeyForSetting(setting: AdvancedSettingItem): string {
       return "reasoning_mode";
     case "reasoningEffort":
       return "reasoning_effort";
+    case "reasoningSummary":
+      return "reasoning_summary";
     case "verbosity":
       return "verbosity";
+    case "outputFormat":
+      return "output_format";
+    case "speed":
+      return "speed";
     case "imageQuality":
       return "quality";
     case "imageResolution":
       return "resolution";
     case "imageAspectRatio":
       return "aspect_ratio";
+    case "imageSize":
+      return "image_size";
+    case "responseFormat":
+      return "response_format";
+    case "thinkingLevel":
+      return "thinking_level";
     case "videoResolution":
       return "videoResolution";
     case "videoSeconds":
       return "videoSeconds";
+    case "videoTask":
+      return "video_task_type";
   }
 }
 
@@ -80,6 +96,7 @@ export function ChatModelConfig({
   modelOptionPolicy,
   selectedProtocol,
   selectedModelName,
+  submitTask,
   onOptionsChange,
   onOptionsReset,
 }: ChatModelConfigProps) {
@@ -92,11 +109,12 @@ export function ChatModelConfig({
       resolveAdvancedSettings({
         protocol: selectedProtocol,
         modelName: selectedModelName,
+        submitTask,
         options,
         defaultOptions,
         policy: modelOptionPolicy,
       }),
-    [defaultOptions, modelOptionPolicy, options, selectedModelName, selectedProtocol],
+    [defaultOptions, modelOptionPolicy, options, selectedModelName, selectedProtocol, submitTask],
   );
   const visibleSettings = React.useMemo(
     () => settings.filter((setting) => setting.kind !== "temperature"),
@@ -115,14 +133,21 @@ export function ChatModelConfig({
   );
 
   const resetSettings = React.useCallback(() => {
-    const nextOptions = resetAdvancedSettings(options, defaultOptions, selectedProtocol, modelOptionPolicy, selectedModelName);
+    const nextOptions = resetAdvancedSettings(
+      options,
+      defaultOptions,
+      selectedProtocol,
+      modelOptionPolicy,
+      selectedModelName,
+      submitTask,
+    );
     setCustomInputs({});
     if (JSON.stringify(nextOptions) === JSON.stringify(defaultOptions)) {
       onOptionsReset(defaultOptions);
       return;
     }
     onOptionsChange(nextOptions);
-  }, [defaultOptions, modelOptionPolicy, onOptionsChange, onOptionsReset, options, selectedModelName, selectedProtocol]);
+  }, [defaultOptions, modelOptionPolicy, onOptionsChange, onOptionsReset, options, selectedModelName, selectedProtocol, submitTask]);
 
   if (visibleSettings.length === 0) {
     return null;

@@ -75,6 +75,7 @@ export const DEFAULT_MODEL_OPTION_ALLOWED_PATHS = `{
     "presence_penalty",
     "frequency_penalty",
     "reasoning_effort",
+    "reasoning_summary",
     "verbosity",
     "thinking.type",
     "stream_options.include_usage"

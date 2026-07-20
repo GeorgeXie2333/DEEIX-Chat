@@ -63,6 +63,7 @@ func DefaultModelOptionAllowedPathsJSON() string {
     "presence_penalty",
     "frequency_penalty",
     "reasoning_effort",
+    "reasoning_summary",
     "verbosity",
     "thinking.type",
     "stream_options.include_usage"
@@ -216,6 +217,7 @@ func parseModelOptionPathRules(raw string) (map[string][]string, bool) {
 }
 
 func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
+	changed := upgradeLegacyOpenAIChatAllowedPaths(rules)
 	upgrades := []struct {
 		protocol   string
 		anchors    []string
@@ -258,7 +260,6 @@ func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 			additions:  []string{"generationConfig.thinkingConfig.thinkingLevel"},
 		},
 	}
-	changed := false
 	for _, upgrade := range upgrades {
 		paths, ok := rules[upgrade.protocol]
 		if !ok {
@@ -291,6 +292,31 @@ func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 		}
 	}
 	return changed
+}
+
+func upgradeLegacyOpenAIChatAllowedPaths(rules map[string][]string) bool {
+	const protocol = "openai_chat_completions"
+	legacyPaths := []string{
+		"service_tier",
+		"presence_penalty",
+		"frequency_penalty",
+		"reasoning_effort",
+		"verbosity",
+		"thinking.type",
+		"stream_options.include_usage",
+	}
+	paths, ok := rules[protocol]
+	if !ok || len(paths) != len(legacyPaths) {
+		return false
+	}
+	pathSet := stringSet(paths)
+	for _, path := range legacyPaths {
+		if _, ok := pathSet[path]; !ok {
+			return false
+		}
+	}
+	rules[protocol] = append(paths, "reasoning_summary")
+	return true
 }
 
 func stringSet(values []string) map[string]struct{} {

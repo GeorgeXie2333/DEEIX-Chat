@@ -1,17 +1,25 @@
 import type { ConversationOptions } from "@/shared/api/conversation.types";
 import type { ModelOptionPolicy } from "../../../shared/lib/model-option-policy.ts";
 import { isModelOptionPathFiltered } from "../../../shared/lib/model-option-policy.ts";
+import type { ChatSubmitTask } from "./chat-task.ts";
 
 export type AdvancedSettingKind =
   | "temperature"
   | "reasoningMode"
   | "reasoningEffort"
+  | "reasoningSummary"
   | "verbosity"
+  | "outputFormat"
+  | "speed"
   | "imageQuality"
   | "imageResolution"
   | "imageAspectRatio"
+  | "imageSize"
+  | "responseFormat"
+  | "thinkingLevel"
   | "videoResolution"
-  | "videoSeconds";
+  | "videoSeconds"
+  | "videoTask";
 export type AdvancedSettingCustomValueKind = "openaiImage2Resolution";
 
 export type AdvancedSettingDefinition = {
@@ -40,6 +48,55 @@ const TEMPERATURE_SETTING: AdvancedSettingDefinition = {
   min: 0,
   max: 2,
   step: 0.1,
+};
+
+const CHAT_REASONING_EFFORT_VALUES = ["none", "low", "medium", "high", "xhigh", "max"];
+const CHAT_REASONING_SUMMARY_VALUES = ["none", "auto", "concise", "detailed"];
+const CHAT_VERBOSITY_VALUES = ["none", "low", "medium", "high"];
+
+const OPENAI_CHAT_REASONING_EFFORT: AdvancedSettingDefinition = {
+  kind: "reasoningEffort",
+  path: ["reasoning_effort"],
+  valueType: "select",
+  fallbackValue: "none",
+  values: CHAT_REASONING_EFFORT_VALUES,
+  omitValues: ["none"],
+};
+
+const OPENAI_CHAT_REASONING_SUMMARY: AdvancedSettingDefinition = {
+  kind: "reasoningSummary",
+  path: ["reasoning_summary"],
+  valueType: "select",
+  fallbackValue: "none",
+  values: CHAT_REASONING_SUMMARY_VALUES,
+  omitValues: ["none"],
+};
+
+const OPENROUTER_CHAT_REASONING_EFFORT: AdvancedSettingDefinition = {
+  kind: "reasoningEffort",
+  path: ["reasoning", "effort"],
+  valueType: "select",
+  fallbackValue: "none",
+  values: CHAT_REASONING_EFFORT_VALUES,
+  omitValues: ["none"],
+};
+
+const OPENROUTER_CHAT_REASONING_SUMMARY: AdvancedSettingDefinition = {
+  kind: "reasoningSummary",
+  path: ["reasoning", "summary"],
+  valueType: "select",
+  fallbackValue: "none",
+  values: CHAT_REASONING_SUMMARY_VALUES,
+  omitValues: ["none"],
+};
+
+const CHAT_VERBOSITY: AdvancedSettingDefinition = {
+  kind: "verbosity",
+  path: ["verbosity"],
+  valueType: "select",
+  fallbackValue: "none",
+  values: CHAT_VERBOSITY_VALUES,
+  omitValues: ["none"],
 };
 
 const RESPONSES_REASONING_EFFORT: AdvancedSettingDefinition = {
@@ -73,6 +130,15 @@ const ANTHROPIC_EFFORT: AdvancedSettingDefinition = {
   valueType: "select",
   fallbackValue: "high",
   values: ["low", "medium", "high", "xhigh", "max"],
+};
+
+const ANTHROPIC_SPEED: AdvancedSettingDefinition = {
+  kind: "speed",
+  path: ["speed"],
+  valueType: "select",
+  fallbackValue: "standard",
+  values: ["standard", "fast"],
+  omitValues: ["standard"],
 };
 
 const GEMINI_THINKING_LEVEL: AdvancedSettingDefinition = {
@@ -111,6 +177,14 @@ const OPENAI_IMAGE_QUALITY: AdvancedSettingDefinition = {
   values: OPENAI_GPT_IMAGE_QUALITY_VALUES,
 };
 
+const OPENAI_IMAGE_OUTPUT_FORMAT: AdvancedSettingDefinition = {
+  kind: "outputFormat",
+  path: ["output_format"],
+  valueType: "select",
+  fallbackValue: "png",
+  values: ["png", "jpeg", "webp"],
+};
+
 const OPENAI_IMAGE_2_RESOLUTION: AdvancedSettingDefinition = {
   kind: "imageResolution",
   path: ["size"],
@@ -142,6 +216,56 @@ const GEMINI_IMAGE_THINKING_LEVEL: AdvancedSettingDefinition = {
   valueType: "select",
   fallbackValue: "high",
   values: ["minimal", "high"],
+};
+
+const XAI_IMAGE_ASPECT_RATIO: AdvancedSettingDefinition = {
+  kind: "imageAspectRatio",
+  path: ["aspect_ratio"],
+  valueType: "select",
+  fallbackValue: "auto",
+  values: ["auto", "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "2:1", "1:2", "19.5:9", "9:19.5", "20:9", "9:20"],
+  omitValues: ["auto"],
+};
+
+const XAI_IMAGE_RESOLUTION: AdvancedSettingDefinition = {
+  kind: "imageResolution",
+  path: ["resolution"],
+  valueType: "select",
+  fallbackValue: "1k",
+  values: ["1k", "2k"],
+};
+
+const XAI_IMAGE_RESPONSE_FORMAT: AdvancedSettingDefinition = {
+  kind: "responseFormat",
+  path: ["response_format"],
+  valueType: "select",
+  fallbackValue: "b64_json",
+  values: ["url", "b64_json"],
+};
+
+const GEMINI_INTERACTIONS_THINKING_LEVEL: AdvancedSettingDefinition = {
+  kind: "thinkingLevel",
+  path: ["generation_config", "thinking_level"],
+  valueType: "select",
+  fallbackValue: "high",
+  values: ["minimal", "low", "medium", "high"],
+};
+
+const GEMINI_INTERACTIONS_IMAGE_SIZE: AdvancedSettingDefinition = {
+  kind: "imageSize",
+  path: ["response_format", "image_size"],
+  valueType: "select",
+  fallbackValue: "1K",
+  values: ["512", "1K", "2K", "4K"],
+};
+
+const GEMINI_INTERACTIONS_VIDEO_TASK: AdvancedSettingDefinition = {
+  kind: "videoTask",
+  path: ["generation_config", "video_config", "task"],
+  valueType: "select",
+  fallbackValue: "auto",
+  values: ["auto", "text_to_video", "image_to_video", "reference_to_video", "edit"],
+  omitValues: ["auto"],
 };
 
 const OPENAI_VIDEO_SECONDS: AdvancedSettingDefinition = {
@@ -324,10 +448,26 @@ function valueForDefinition(
     String(definition.fallbackValue);
 }
 
-export function resolveAdvancedSettingDefinitions(protocol: string, modelName = ""): AdvancedSettingDefinition[] {
+export function resolveAdvancedSettingDefinitions(
+  protocol: string,
+  modelName = "",
+  submitTask: ChatSubmitTask = "chat",
+): AdvancedSettingDefinition[] {
   switch (protocol.trim()) {
     case "openai_chat_completions":
-      return [TEMPERATURE_SETTING];
+      return [
+        TEMPERATURE_SETTING,
+        OPENAI_CHAT_REASONING_EFFORT,
+        OPENAI_CHAT_REASONING_SUMMARY,
+        CHAT_VERBOSITY,
+      ];
+    case "openrouter_chat_completions":
+      return [
+        TEMPERATURE_SETTING,
+        OPENROUTER_CHAT_REASONING_EFFORT,
+        OPENROUTER_CHAT_REASONING_SUMMARY,
+        CHAT_VERBOSITY,
+      ];
     case "openai_responses":
       return [TEMPERATURE_SETTING, RESPONSES_REASONING_MODE, RESPONSES_REASONING_EFFORT, RESPONSES_VERBOSITY];
     case "openrouter_responses":
@@ -335,8 +475,9 @@ export function resolveAdvancedSettingDefinitions(protocol: string, modelName = 
     case "xai_responses":
       return [TEMPERATURE_SETTING, XAI_RESPONSES_REASONING_EFFORT];
     case "anthropic_messages":
-      return [TEMPERATURE_SETTING, ANTHROPIC_EFFORT];
+      return [TEMPERATURE_SETTING, ANTHROPIC_EFFORT, ANTHROPIC_SPEED];
     case "openai_image_generations":
+      return [OPENAI_IMAGE_QUALITY, OPENAI_IMAGE_2_RESOLUTION, OPENAI_IMAGE_OUTPUT_FORMAT];
     case "openai_image_edits":
       return [OPENAI_IMAGE_QUALITY, OPENAI_IMAGE_2_RESOLUTION];
     case "openai_video_generations":
@@ -346,6 +487,17 @@ export function resolveAdvancedSettingDefinitions(protocol: string, modelName = 
     case "gemini_generate_content":
     case "google_generate_content":
       return isGemini3PlusModel(modelName) ? [TEMPERATURE_SETTING, GEMINI_THINKING_LEVEL] : [];
+    case "xai_image":
+    case "xai_image_edits":
+      return [XAI_IMAGE_ASPECT_RATIO, XAI_IMAGE_RESOLUTION, XAI_IMAGE_RESPONSE_FORMAT];
+    case "gemini_interactions":
+      if (submitTask === "image_generation" || submitTask === "image_edit") {
+        return [GEMINI_INTERACTIONS_THINKING_LEVEL, GEMINI_INTERACTIONS_IMAGE_SIZE];
+      }
+      if (submitTask === "video_generation") {
+        return [GEMINI_INTERACTIONS_THINKING_LEVEL, GEMINI_INTERACTIONS_VIDEO_TASK];
+      }
+      return [GEMINI_INTERACTIONS_THINKING_LEVEL];
     default:
       return [];
   }
@@ -372,14 +524,16 @@ export function resolveAdvancedSettings({
   defaultOptions,
   policy,
   modelName = "",
+  submitTask = "chat",
 }: {
   protocol: string;
   modelName?: string;
+  submitTask?: ChatSubmitTask;
   options: ConversationOptions;
   defaultOptions: ConversationOptions;
   policy: ModelOptionPolicy | null;
 }): AdvancedSettingItem[] {
-  return resolveAdvancedSettingDefinitions(protocol, modelName)
+  return resolveAdvancedSettingDefinitions(protocol, modelName, submitTask)
     .filter((definition) => !isSettingFiltered(definition, policy, protocol))
     .map((definition) => ({
       ...definition,
@@ -418,8 +572,9 @@ export function resetAdvancedSettings(
   protocol: string,
   policy: ModelOptionPolicy | null,
   modelName = "",
+  submitTask: ChatSubmitTask = "chat",
 ): ConversationOptions {
-  return resolveAdvancedSettings({ protocol, modelName, options, defaultOptions, policy }).reduce((current, setting) => {
+  return resolveAdvancedSettings({ protocol, modelName, submitTask, options, defaultOptions, policy }).reduce((current, setting) => {
     const withoutCurrentValue = removeOptionAtPath(current, setting.path);
     const defaultValue = getOptionAtPath(defaultOptions, setting.path);
     if (setting.valueType === "number") {

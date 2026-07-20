@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-
+import type { ModelOptionPolicy } from "../../../shared/lib/model-option-policy.ts";
 import {
   isGemini3PlusModel,
   isValidOpenAIImage2Resolution,
@@ -8,25 +8,32 @@ import {
   resolveAdvancedSettings,
   setAdvancedSettingValue,
 } from "./advanced-settings.ts";
-import type { ModelOptionPolicy } from "../../../shared/lib/model-option-policy.ts";
 
 const allowAdvancedPolicy: ModelOptionPolicy = {
   mode: "allowlist",
   allowedPathsJSON: JSON.stringify({
     default: ["temperature"],
-    openai_chat_completions: ["reasoning_effort", "verbosity"],
+    openai_chat_completions: ["reasoning_effort", "reasoning_summary", "verbosity"],
+    openrouter_chat_completions: ["reasoning.effort", "reasoning.summary", "verbosity"],
     openai_responses: ["reasoning.mode", "reasoning.effort", "text.verbosity"],
     openrouter_responses: ["reasoning.effort"],
     xai_responses: ["reasoning.effort"],
-    anthropic_messages: ["output_config.effort"],
+    anthropic_messages: ["output_config.effort", "speed"],
     gemini_generate_content: ["thinkingConfig.thinkingLevel"],
-    openai_image_generations: ["quality", "size"],
+    openai_image_generations: ["quality", "size", "output_format"],
     openai_image_edits: ["quality", "size"],
     openai_video_generations: ["size", "seconds"],
     google_image_generation: [
       "generationConfig.imageConfig.imageSize",
       "generationConfig.imageConfig.aspectRatio",
       "generationConfig.thinkingConfig.thinkingLevel",
+    ],
+    xai_image: ["aspect_ratio", "resolution", "response_format"],
+    xai_image_edits: ["aspect_ratio", "resolution", "response_format"],
+    gemini_interactions: [
+      "generation_config.thinking_level",
+      "response_format.image_size",
+      "generation_config.video_config.task",
     ],
   }),
   deniedPathsJSON: "{}",
@@ -37,12 +44,15 @@ test("resolveAdvancedSettings maps settings to protocol-specific option paths", 
   assert.deepEqual(
     resolveAdvancedSettings({
       protocol: "openai_chat_completions",
-      options: { temperature: 0.4, reasoning_effort: "high", verbosity: "low" },
+      options: { temperature: 0.4, reasoning_effort: "high", reasoning_summary: "concise", verbosity: "low" },
       defaultOptions: {},
       policy: allowAdvancedPolicy,
     }).map((item) => [item.kind, item.key, item.value]),
     [
       ["temperature", "temperature", 0.4],
+      ["reasoningEffort", "reasoning_effort", "high"],
+      ["reasoningSummary", "reasoning_summary", "concise"],
+      ["verbosity", "verbosity", "low"],
     ],
   );
 
@@ -60,6 +70,73 @@ test("resolveAdvancedSettings maps settings to protocol-specific option paths", 
       ["verbosity", "text.verbosity", "high"],
     ],
   );
+});
+
+test("Chat advanced controls default to none and omit none values", () => {
+  const openAISettings = resolveAdvancedSettings({
+    protocol: "openai_chat_completions",
+    options: {},
+    defaultOptions: {},
+    policy: allowAdvancedPolicy,
+  });
+  const effort = openAISettings.find((item) => item.kind === "reasoningEffort");
+  const summary = openAISettings.find((item) => item.kind === "reasoningSummary");
+  const verbosity = openAISettings.find((item) => item.kind === "verbosity");
+  assert.ok(effort);
+  assert.ok(summary);
+  assert.ok(verbosity);
+  assert.equal(effort.value, "none");
+  assert.deepEqual(effort.values, ["none", "low", "medium", "high", "xhigh", "max"]);
+  assert.equal(summary.value, "none");
+  assert.deepEqual(summary.values, ["none", "auto", "concise", "detailed"]);
+  assert.equal(verbosity.value, "none");
+  assert.deepEqual(verbosity.values, ["none", "low", "medium", "high"]);
+
+  const configured = setAdvancedSettingValue(
+    setAdvancedSettingValue(setAdvancedSettingValue({ metadata: { tenant: "deeix" } }, effort, "high"), summary, "auto"),
+    verbosity,
+    "low",
+  );
+  assert.deepEqual(configured, {
+    metadata: { tenant: "deeix" },
+    reasoning_effort: "high",
+    reasoning_summary: "auto",
+    verbosity: "low",
+  });
+  assert.deepEqual(
+    setAdvancedSettingValue(
+      setAdvancedSettingValue(setAdvancedSettingValue(configured, effort, "none"), summary, "none"),
+      verbosity,
+      "none",
+    ),
+    { metadata: { tenant: "deeix" } },
+  );
+});
+
+test("OpenRouter Chat advanced controls use nested reasoning paths and prune empty parents", () => {
+  const settings = resolveAdvancedSettings({
+    protocol: "openrouter_chat_completions",
+    options: { reasoning: { effort: "xhigh", summary: "detailed" }, verbosity: "high" },
+    defaultOptions: {},
+    policy: allowAdvancedPolicy,
+  });
+  assert.deepEqual(
+    settings.map((item) => [item.kind, item.key, item.value]),
+    [
+      ["temperature", "temperature", 1],
+      ["reasoningEffort", "reasoning.effort", "xhigh"],
+      ["reasoningSummary", "reasoning.summary", "detailed"],
+      ["verbosity", "verbosity", "high"],
+    ],
+  );
+
+  const effort = settings.find((item) => item.kind === "reasoningEffort");
+  const summary = settings.find((item) => item.kind === "reasoningSummary");
+  assert.ok(effort);
+  assert.ok(summary);
+  const withoutEffort = setAdvancedSettingValue({ reasoning: { effort: "high", summary: "auto" } }, effort, "none");
+  assert.deepEqual(withoutEffort, { reasoning: { summary: "auto" } });
+  assert.deepEqual(setAdvancedSettingValue(withoutEffort, summary, "none"), {});
 });
 
 test("resolveAdvancedSettings exposes updated reasoning effort values by provider", () => {
@@ -133,6 +210,21 @@ test("resolveAdvancedSettings maps Anthropic effort with high default", () => {
       effort: "max",
     },
   });
+});
+
+test("Anthropic speed uses standard as an omitted UI default", () => {
+  const speed = resolveAdvancedSettings({
+    protocol: "anthropic_messages",
+    options: {},
+    defaultOptions: {},
+    policy: allowAdvancedPolicy,
+  }).find((item) => item.kind === "speed");
+  assert.ok(speed);
+  assert.equal(speed.key, "speed");
+  assert.equal(speed.value, "standard");
+  assert.deepEqual(speed.values, ["standard", "fast"]);
+  assert.deepEqual(setAdvancedSettingValue({ top_k: 20 }, speed, "fast"), { top_k: 20, speed: "fast" });
+  assert.deepEqual(setAdvancedSettingValue({ top_k: 20, speed: "fast" }, speed, "standard"), { top_k: 20 });
 });
 
 test("resolveAdvancedSettings only exposes Gemini thinking level for Gemini 3+", () => {
@@ -210,6 +302,106 @@ test("resolveAdvancedSettings exposes fixed GPT Image 2 quality and resolution o
   }).find((item) => item.kind === "imageResolution");
   assert.deepEqual(editResolution?.values, resolution?.values);
   assert.equal(editResolution?.customValueKind, undefined);
+
+  const generationFormat = settings.find((item) => item.kind === "outputFormat");
+  assert.equal(generationFormat?.key, "output_format");
+  assert.equal(generationFormat?.value, "png");
+  assert.deepEqual(generationFormat?.values, ["png", "jpeg", "webp"]);
+  assert.equal(
+    resolveAdvancedSettings({
+      protocol: "openai_image_edits",
+      options: {},
+      defaultOptions: {},
+      policy: allowAdvancedPolicy,
+    }).some((item) => item.kind === "outputFormat"),
+    false,
+  );
+});
+
+test("xAI image generation and edit expose aspect ratio, resolution, and response format", () => {
+  for (const protocol of ["xai_image", "xai_image_edits"]) {
+    const settings = resolveAdvancedSettings({
+      protocol,
+      options: { aspect_ratio: "16:9", resolution: "2k", response_format: "url" },
+      defaultOptions: {},
+      policy: allowAdvancedPolicy,
+    });
+    assert.deepEqual(
+      settings.map((item) => [item.kind, item.key, item.value]),
+      [
+        ["imageAspectRatio", "aspect_ratio", "16:9"],
+        ["imageResolution", "resolution", "2k"],
+        ["responseFormat", "response_format", "url"],
+      ],
+    );
+    const aspectRatio = settings.find((item) => item.kind === "imageAspectRatio");
+    const resolution = settings.find((item) => item.kind === "imageResolution");
+    const responseFormat = settings.find((item) => item.kind === "responseFormat");
+    assert.ok(aspectRatio);
+    assert.ok(resolution);
+    assert.ok(responseFormat);
+    assert.deepEqual(aspectRatio.values, [
+      "auto",
+      "1:1",
+      "16:9",
+      "9:16",
+      "4:3",
+      "3:4",
+      "3:2",
+      "2:3",
+      "2:1",
+      "1:2",
+      "19.5:9",
+      "9:19.5",
+      "20:9",
+      "9:20",
+    ]);
+    assert.deepEqual(resolution.values, ["1k", "2k"]);
+    assert.deepEqual(responseFormat.values, ["url", "b64_json"]);
+    assert.deepEqual(
+      setAdvancedSettingValue({ aspect_ratio: "16:9", resolution: "2k" }, aspectRatio, "auto"),
+      { resolution: "2k" },
+    );
+  }
+});
+
+test("Gemini Interactions exposes media settings only for the active task", () => {
+  const base = {
+    protocol: "gemini_interactions",
+    options: {},
+    defaultOptions: {},
+    policy: allowAdvancedPolicy,
+  } as const;
+  assert.deepEqual(
+    resolveAdvancedSettings(base).map((item) => [item.kind, item.key, item.value]),
+    [["thinkingLevel", "generation_config.thinking_level", "high"]],
+  );
+  assert.deepEqual(
+    resolveAdvancedSettings({ ...base, submitTask: "image_generation" }).map((item) => [item.kind, item.key, item.value]),
+    [
+      ["thinkingLevel", "generation_config.thinking_level", "high"],
+      ["imageSize", "response_format.image_size", "1K"],
+    ],
+  );
+  assert.deepEqual(
+    resolveAdvancedSettings({ ...base, submitTask: "image_edit" }).map((item) => item.key),
+    ["generation_config.thinking_level", "response_format.image_size"],
+  );
+  const videoSettings = resolveAdvancedSettings({ ...base, submitTask: "video_generation" });
+  assert.deepEqual(
+    videoSettings.map((item) => [item.kind, item.key, item.value]),
+    [
+      ["thinkingLevel", "generation_config.thinking_level", "high"],
+      ["videoTask", "generation_config.video_config.task", "auto"],
+    ],
+  );
+  const videoTask = videoSettings.find((item) => item.kind === "videoTask");
+  assert.ok(videoTask);
+  assert.deepEqual(videoTask.values, ["auto", "text_to_video", "image_to_video", "reference_to_video", "edit"]);
+  assert.deepEqual(
+    setAdvancedSettingValue({ generation_config: { thinking_level: "low", video_config: { task: "edit" } } }, videoTask, "auto"),
+    { generation_config: { thinking_level: "low" } },
+  );
 });
 
 test("resolveAdvancedSettings exposes Gemini image resolution, aspect ratio, and thinking controls", () => {
@@ -299,11 +491,20 @@ test("resolveAdvancedSettings hides fields blocked by the model option policy", 
   );
 });
 
-test("resolveAdvancedSettings upgrades legacy default policy paths for Claude and Gemini", () => {
+test("resolveAdvancedSettings upgrades legacy built-in policy paths without changing custom rules", () => {
   const legacyDefaultPolicy: ModelOptionPolicy = {
     ...allowAdvancedPolicy,
     allowedPathsJSON: JSON.stringify({
       default: ["temperature"],
+      openai_chat_completions: [
+        "service_tier",
+        "presence_penalty",
+        "frequency_penalty",
+        "reasoning_effort",
+        "verbosity",
+        "thinking.type",
+        "stream_options.include_usage",
+      ],
       openai_responses: ["service_tier", "reasoning.effort", "reasoning.summary", "text.verbosity"],
       anthropic_messages: ["speed", "top_k", "thinking.type"],
       gemini_generate_content: [
@@ -322,6 +523,16 @@ test("resolveAdvancedSettings upgrades legacy default policy paths for Claude an
 
   assert.deepEqual(
     resolveAdvancedSettings({
+      protocol: "openai_chat_completions",
+      options: {},
+      defaultOptions: {},
+      policy: legacyDefaultPolicy,
+    }).map((item) => item.key),
+    ["temperature", "reasoning_effort", "reasoning_summary", "verbosity"],
+  );
+
+  assert.deepEqual(
+    resolveAdvancedSettings({
       protocol: "openai_responses",
       options: {},
       defaultOptions: {},
@@ -336,7 +547,7 @@ test("resolveAdvancedSettings upgrades legacy default policy paths for Claude an
       defaultOptions: {},
       policy: legacyDefaultPolicy,
     }).map((item) => item.key),
-    ["temperature", "output_config.effort"],
+    ["temperature", "output_config.effort", "speed"],
   );
   assert.deepEqual(
     resolveAdvancedSettings({
@@ -360,6 +571,32 @@ test("resolveAdvancedSettings upgrades legacy default policy paths for Claude an
       "generationConfig.imageConfig.aspectRatio",
       "generationConfig.thinkingConfig.thinkingLevel",
     ],
+  );
+
+  const customizedOpenAIChatPolicy: ModelOptionPolicy = {
+    ...allowAdvancedPolicy,
+    allowedPathsJSON: JSON.stringify({
+      default: ["temperature"],
+      openai_chat_completions: [
+        "service_tier",
+        "presence_penalty",
+        "frequency_penalty",
+        "reasoning_effort",
+        "verbosity",
+        "thinking.type",
+        "stream_options.include_usage",
+        "metadata.tenant",
+      ],
+    }),
+  };
+  assert.deepEqual(
+    resolveAdvancedSettings({
+      protocol: "openai_chat_completions",
+      options: {},
+      defaultOptions: {},
+      policy: customizedOpenAIChatPolicy,
+    }).map((item) => item.key),
+    ["temperature", "reasoning_effort", "verbosity"],
   );
 });
 
