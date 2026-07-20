@@ -579,8 +579,10 @@
       },
       "tooltip": {
         "cost": "費用",
-        "calls": "呼び出し"
-      }
+        "calls": "呼び出し",
+        "latency": "平均レイテンシ"
+      },
+      "otherModels": "その他のモデル"
     },
     "usageLog": {
       "title": "利用ログ",

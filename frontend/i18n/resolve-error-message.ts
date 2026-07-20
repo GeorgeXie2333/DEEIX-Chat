@@ -153,7 +153,7 @@ const SETTINGS_FIELD_LABELS: Record<AppLocale, Record<string, string>> = {
     "billing:epay_types": "EPay payment types",
     "billing:mode": "Billing mode",
     "billing:payment_providers": "Payment providers",
-    "billing:prepaid_amount_usd": "Prepaid amount",
+    "billing:prepaid_amount_usd": "Per-request reservation",
     "billing:stripe_publishable_key": "Stripe publishable key",
     "billing:stripe_secret_key": "Stripe secret key",
     "billing:stripe_webhook_secret": "Stripe webhook secret",
@@ -202,7 +202,7 @@ const SETTINGS_FIELD_LABELS: Record<AppLocale, Record<string, string>> = {
     "billing:epay_types": "易支付支付方式",
     "billing:mode": "计费模式",
     "billing:payment_providers": "支付渠道",
-    "billing:prepaid_amount_usd": "预付费金额",
+    "billing:prepaid_amount_usd": "单次预留金额",
     "billing:stripe_publishable_key": "Stripe Publishable Key",
     "billing:stripe_secret_key": "Stripe Secret Key",
     "billing:stripe_webhook_secret": "Stripe Webhook Secret",
@@ -301,7 +301,7 @@ function readClientLocale(): AppLocale {
 function lookupErrorMessage(locale: AppLocale, errorCode: string): string | undefined {
   let current: unknown = ERROR_MESSAGES[locale];
   for (const segment of toErrorMessagePath(errorCode)) {
-    if (!current || typeof current !== "object" || !Object.prototype.hasOwnProperty.call(current, segment)) {
+    if (!current || typeof current !== "object" || !Object.hasOwn(current, segment)) {
       return undefined;
     }
     current = (current as Record<string, unknown>)[segment];

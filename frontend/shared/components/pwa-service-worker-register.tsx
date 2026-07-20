@@ -4,10 +4,7 @@ import * as React from "react";
 
 export function PWAServiceWorkerRegister() {
   React.useEffect(() => {
-    if (process.env.NODE_ENV !== "production") {
-      return undefined;
-    }
-    if (!("serviceWorker" in navigator)) {
+    if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) {
       return undefined;
     }
 

@@ -130,6 +130,7 @@ type nativeToolCatalogProvider interface {
 
 // UsagePricingInput 定义账单计算入参。
 type UsagePricingInput struct {
+	Authorization       *domainbilling.UsageAuthorization
 	UserID              uint
 	ConversationID      uint
 	PlatformModelName   string
@@ -1134,24 +1135,31 @@ func (s *Service) validatePermissionGroupID(ctx context.Context, groupID *uint) 
 	return nil
 }
 
-// RecordUsage 记录用量。
-func (s *Service) RecordUsage(ctx context.Context, usage *domainbilling.UsageLedger) error {
-	return s.RecordUsageWithReservation(ctx, usage, nil)
-}
-
-// RecordUsageWithReservation 记录用量，并结算需要走余额的部分。
-func (s *Service) RecordUsageWithReservation(ctx context.Context, usage *domainbilling.UsageLedger, reservation *domainbilling.UsageBalanceReservation) error {
+// RecordUsageWithAuthorization 按请求开始时的计费授权记录用量并结算预算。
+func (s *Service) RecordUsageWithAuthorization(ctx context.Context, usage *domainbilling.UsageLedger, authorization *domainbilling.UsageAuthorization) error {
 	if usage == nil {
 		return nil
 	}
-	mode, err := s.repo.GetBillingMode(ctx)
-	if err != nil {
-		return err
+	mode := ""
+	var reservation *domainbilling.UsageBalanceReservation
+	if authorization != nil {
+		mode = strings.TrimSpace(authorization.Mode)
+		reservation = authorization.Reservation
+	}
+	if mode == "" {
+		var err error
+		mode, err = s.repo.GetBillingMode(ctx)
+		if err != nil {
+			return err
+		}
 	}
 	if mode == "usage" || (mode != "period" && reservation != nil) {
 		if err := s.repo.AddUsageAndSettleBalance(ctx, usage, reservation); err != nil {
 			if errors.Is(err, repository.ErrInsufficientBalance) {
 				return ErrUsageBalanceInsufficient
+			}
+			if errors.Is(err, repository.ErrConflict) {
+				return ErrUsageReservationConflict
 			}
 			return err
 		}
@@ -1164,13 +1172,31 @@ func (s *Service) RecordUsageWithReservation(ctx context.Context, usage *domainb
 		if usage.UsageDate.IsZero() {
 			return repository.ErrInvalidInput
 		}
-		plan, startAt, endAt, planErr := s.currentPeriodPlan(ctx, usage.UserID, usage.BillingAt)
-		if planErr != nil {
-			return planErr
+		periodCreditNanousd := int64(0)
+		var startAt time.Time
+		var endAt time.Time
+		if reservation != nil && reservation.Mode == "period" {
+			if reservation.PeriodStartAt == nil || reservation.PeriodEndAt == nil || !reservation.PeriodEndAt.After(*reservation.PeriodStartAt) || reservation.PeriodLimitNanousd < 0 {
+				return repository.ErrInvalidInput
+			}
+			startAt = *reservation.PeriodStartAt
+			endAt = *reservation.PeriodEndAt
+			periodCreditNanousd = reservation.PeriodLimitNanousd
+		} else {
+			plan, resolvedStartAt, resolvedEndAt, planErr := s.currentPeriodPlan(ctx, usage.UserID, usage.BillingAt)
+			if planErr != nil {
+				return planErr
+			}
+			startAt = resolvedStartAt
+			endAt = resolvedEndAt
+			periodCreditNanousd = plan.PeriodCreditNanousd
 		}
-		if err := s.repo.AddPeriodUsageAndSettleOverage(ctx, usage, startAt, endAt, plan.PeriodCreditNanousd, reservation); err != nil {
+		if err := s.repo.AddPeriodUsageAndSettleOverage(ctx, usage, startAt, endAt, periodCreditNanousd, reservation); err != nil {
 			if errors.Is(err, repository.ErrInsufficientBalance) {
 				return ErrUsageBalanceInsufficient
+			}
+			if errors.Is(err, repository.ErrConflict) {
+				return ErrUsageReservationConflict
 			}
 			return err
 		}
@@ -1179,132 +1205,96 @@ func (s *Service) RecordUsageWithReservation(ctx context.Context, usage *domainb
 	return s.repo.AddUsage(ctx, usage)
 }
 
-// ReserveUsageBalance 在按量模式下预扣余额；周期模式仅对可能超出套餐额度的部分预扣。
-func (s *Service) ReserveUsageBalance(ctx context.Context, userID uint, platformModelName string, refNo string) (*domainbilling.UsageBalanceReservation, error) {
+// AuthorizeUsage 固定请求开始时的计费模式，并为付费调用原子预留预算。
+func (s *Service) AuthorizeUsage(ctx context.Context, userID uint, platformModelName string, refNo string) (*domainbilling.UsageAuthorization, error) {
 	mode, err := s.repo.GetBillingMode(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if mode != "usage" && mode != "period" {
-		return nil, nil
-	}
+	mode = strings.TrimSpace(mode)
+	authorization := &domainbilling.UsageAuthorization{Mode: mode}
 	pricing, err := s.getResolvedModelPricing(ctx, platformModelName)
 	if err != nil && !errors.Is(err, repository.ErrNotFound) {
 		return nil, err
-	}
-	if pricing == nil {
-		return nil, ErrModelPricingRequired
-	}
-	if pricing.IsFree {
-		return nil, nil
-	}
-	prepaidNanousd, err := s.repo.GetBillingPrepaidAmountNanousd(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if prepaidNanousd <= 0 {
-		return nil, nil
-	}
-	reserveNanousd := prepaidNanousd
-	if mode == "period" {
-		// 周期模式预扣只做调用前的余额风险控制；最终超额金额仍由入账事务在账户行锁下重算并兜底。
-		plan, startAt, endAt, planErr := s.currentPeriodPlan(ctx, userID, time.Now())
-		if planErr != nil {
-			return nil, planErr
-		}
-		usedNanousd, usedErr := s.repo.SumBillableNanousd(ctx, userID, startAt, endAt)
-		if usedErr != nil {
-			return nil, usedErr
-		}
-		remainingNanousd := plan.PeriodCreditNanousd - usedNanousd
-		if remainingNanousd < 0 {
-			remainingNanousd = 0
-		}
-		reserveNanousd = prepaidNanousd - remainingNanousd
-		if reserveNanousd <= 0 {
-			return nil, nil
-		}
-	}
-	reservation, err := s.repo.ReserveUsageBalance(ctx, userID, reserveNanousd, refNo)
-	if err != nil {
-		if errors.Is(err, repository.ErrInsufficientBalance) {
-			return nil, ErrUsageBalanceInsufficient
-		}
-		return nil, err
-	}
-	return reservation, nil
-}
-
-// ReleaseUsageBalanceReservation 在调用失败时退回已预扣余额。
-func (s *Service) ReleaseUsageBalanceReservation(ctx context.Context, reservation *domainbilling.UsageBalanceReservation, description string) error {
-	if reservation == nil || reservation.AmountNanousd <= 0 {
-		return nil
-	}
-	return s.repo.ReleaseUsageBalanceReservation(ctx, reservation.UserID, reservation.RefNo, description)
-}
-
-// EnsureModelUsable 按当前计费方式校验用户是否还能使用指定模型。
-func (s *Service) EnsureModelUsable(ctx context.Context, userID uint, platformModelName string, now time.Time) error {
-	mode, err := s.repo.GetBillingMode(ctx)
-	if err != nil {
-		return err
-	}
-
-	pricing, err := s.getResolvedModelPricing(ctx, platformModelName)
-	if err != nil && !errors.Is(err, repository.ErrNotFound) {
-		return err
 	}
 	if pricing != nil && pricing.IsFree {
 		modelName := pricing.PlatformModelName
 		if strings.TrimSpace(modelName) == "" {
 			modelName = platformModelName
 		}
-		return s.enforceFreeModelRateLimit(ctx, userID, modelName, now)
+		if err = s.enforceFreeModelRateLimit(ctx, userID, modelName, time.Now()); err != nil {
+			return nil, err
+		}
+		return authorization, nil
 	}
-	if mode == "self" {
-		return nil
+	if mode != "usage" && mode != "period" {
+		return authorization, nil
 	}
 	if pricing == nil {
-		return ErrModelPricingRequired
+		return nil, ErrModelPricingRequired
 	}
-	if mode == "usage" {
-		return s.ensureUsageBalance(ctx, userID)
-	}
-	if mode != "period" {
-		return nil
-	}
-
-	plan, startAt, endAt, err := s.currentPeriodPlan(ctx, userID, now)
+	reservationNanousd, err := s.repo.GetBillingPrepaidAmountNanousd(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	usedNanousd, err := s.repo.SumBillableNanousd(ctx, userID, startAt, endAt)
+	request := domainbilling.UsageBalanceReservationRequest{
+		UserID:           userID,
+		RefNo:            strings.TrimSpace(refNo),
+		Mode:             mode,
+		RequestedNanousd: reservationNanousd,
+	}
+	if mode == "period" {
+		// 周期额度和余额预算必须在同一个仓储事务中计算，避免并发请求重复占用同一份额度。
+		plan, startAt, endAt, planErr := s.currentPeriodPlan(ctx, userID, time.Now())
+		if planErr != nil {
+			return nil, planErr
+		}
+		request.PeriodStartAt = &startAt
+		request.PeriodEndAt = &endAt
+		request.PeriodCreditNanousd = plan.PeriodCreditNanousd
+	}
+	reservation, err := s.repo.ReserveUsageBalance(ctx, request)
 	if err != nil {
-		return err
+		if errors.Is(err, repository.ErrUsageReservationLimitExceeded) {
+			return nil, ErrUsageConcurrencyLimitExceeded
+		}
+		if errors.Is(err, repository.ErrInsufficientBalance) {
+			return nil, ErrUsageBalanceInsufficient
+		}
+		if errors.Is(err, repository.ErrConflict) {
+			return nil, ErrUsageReservationConflict
+		}
+		return nil, err
 	}
-	if plan.PeriodCreditNanousd > 0 && usedNanousd < plan.PeriodCreditNanousd {
-		return nil
-	}
-	return s.ensureUsageBalance(ctx, userID)
+	authorization.Reservation = reservation
+	return authorization, nil
 }
 
-func (s *Service) ensureUsageBalance(ctx context.Context, userID uint) error {
-	account, accountErr := s.repo.GetOrCreateBillingAccount(ctx, userID)
-	if accountErr != nil {
-		return accountErr
+// ReleaseUsageAuthorization 在调用未产生可计费用量时释放预算。
+func (s *Service) ReleaseUsageAuthorization(ctx context.Context, authorization *domainbilling.UsageAuthorization) error {
+	if authorization == nil || authorization.Reservation == nil {
+		return nil
 	}
-	prepaidNanousd, prepaidErr := s.repo.GetBillingPrepaidAmountNanousd(ctx)
-	if prepaidErr != nil {
-		return prepaidErr
+	reservation := authorization.Reservation
+	return s.repo.ReleaseUsageBalanceReservation(ctx, reservation.UserID, reservation.RefNo)
+}
+
+// RenewUsageAuthorization 延长仍在运行的付费调用预算租约。
+func (s *Service) RenewUsageAuthorization(ctx context.Context, authorization *domainbilling.UsageAuthorization) error {
+	if authorization == nil || authorization.Reservation == nil {
+		return nil
 	}
-	requiredBalance := int64(1)
-	if prepaidNanousd > requiredBalance {
-		requiredBalance = prepaidNanousd
+	reservation := authorization.Reservation
+	return s.repo.RenewUsageBalanceReservation(ctx, reservation.UserID, reservation.RefNo)
+}
+
+// MarkUsageAuthorizationForReconciliation 保留已产生上游费用但尚未完成账单的预算。
+func (s *Service) MarkUsageAuthorizationForReconciliation(ctx context.Context, authorization *domainbilling.UsageAuthorization, failureCode string) error {
+	if authorization == nil || authorization.Reservation == nil {
+		return nil
 	}
-	if account.BalanceNanousd < requiredBalance {
-		return ErrUsageBalanceInsufficient
-	}
-	return nil
+	reservation := authorization.Reservation
+	return s.repo.MarkUsageReservationReconciliationRequired(ctx, reservation.UserID, reservation.RefNo, failureCode)
 }
 
 func (s *Service) enforceFreeModelRateLimit(ctx context.Context, userID uint, platformModelName string, now time.Time) error {
@@ -1584,9 +1574,15 @@ func (s *Service) BuildUsageLedger(ctx context.Context, input UsagePricingInput)
 		providerProtocol,
 		input.CacheTimeout,
 	)
-	mode, err := s.repo.GetBillingMode(ctx)
-	if err != nil {
-		return nil, err
+	mode := ""
+	if input.Authorization != nil {
+		mode = strings.TrimSpace(input.Authorization.Mode)
+	}
+	if mode == "" {
+		mode, err = s.repo.GetBillingMode(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var groupRatePercent int = 100
 	var subGroupID *uint
@@ -1608,6 +1604,10 @@ func (s *Service) BuildUsageLedger(ctx context.Context, input UsagePricingInput)
 	pricing, err := s.repo.GetModelPricing(ctx, platformModelName)
 	if err != nil && !errors.Is(err, repository.ErrNotFound) {
 		return nil, err
+	}
+	if mode != "self" && !input.ServiceOnly && pricing == nil {
+		// 授权后价格被删除时必须进入待核对流程，不能把已发生的上游用量静默记为 0。
+		return nil, ErrModelPricingRequired
 	}
 
 	currency := "USD"
@@ -2236,7 +2236,13 @@ func (s *Service) buildUsageServiceItem(ctx context.Context, input ServiceUsageI
 			return item, err
 		}
 	}
-	if billingMode == "self" || pricing == nil || pricing.IsFree {
+	if billingMode == "self" {
+		return item, nil
+	}
+	if pricing == nil {
+		return item, ErrModelPricingRequired
+	}
+	if pricing.IsFree {
 		return item, nil
 	}
 	item.PricingMode = normalizePricingMode(pricing.PricingMode)
@@ -2355,6 +2361,110 @@ func (s *Service) ListUsageLogs(ctx context.Context, page int, pageSize int, fil
 		CreatedTo:         filter.CreatedTo,
 		Sort:              filter.Sort,
 	}, offset, limit)
+}
+
+// UsageStatisticsFilter 描述管理员仪表盘的用量统计条件。
+type UsageStatisticsFilter struct {
+	StartDate         time.Time
+	EndDate           time.Time
+	UserID            uint
+	PermissionGroupID uint
+	PlatformModelName string
+	BillingScope      string
+	Section           string
+	ModelRankBy       string
+	UserRankBy        string
+}
+
+// GetUsageStatistics 查询管理员仪表盘使用的全局用量统计。
+func (s *Service) GetUsageStatistics(ctx context.Context, filter UsageStatisticsFilter) (domainbilling.UsageStatistics, error) {
+	if filter.UserID > 0 && filter.PermissionGroupID > 0 {
+		return domainbilling.UsageStatistics{}, ErrInvalidUsageStatisticsSubject
+	}
+	statisticsRepo, ok := s.repo.(repository.UsageStatisticsRepository)
+	if !ok {
+		return domainbilling.UsageStatistics{}, errors.New("usage statistics repository unavailable")
+	}
+
+	startDate := time.Date(filter.StartDate.Year(), filter.StartDate.Month(), filter.StartDate.Day(), 0, 0, 0, 0, filter.StartDate.Location())
+	endDate := time.Date(filter.EndDate.Year(), filter.EndDate.Month(), filter.EndDate.Day(), 0, 0, 0, 0, filter.EndDate.Location())
+	if endDate.Before(startDate) {
+		return domainbilling.UsageStatistics{}, errors.New("invalid usage statistics date range")
+	}
+	days := int(endDate.Sub(startDate).Hours()/24) + 1
+	if days <= 0 || days > 366 {
+		return domainbilling.UsageStatistics{}, errors.New("invalid usage statistics date range")
+	}
+	granularity := usageStatisticsGranularity(days)
+	result, err := statisticsRepo.GetUsageStatistics(ctx, repository.UsageStatisticsFilter{
+		StartDate:         startDate,
+		EndDateExclusive:  endDate.AddDate(0, 0, 1),
+		UserID:            filter.UserID,
+		PermissionGroupID: filter.PermissionGroupID,
+		MembershipAt:      time.Now(),
+		PlatformModelName: strings.TrimSpace(filter.PlatformModelName),
+		BillingScope:      strings.TrimSpace(filter.BillingScope),
+		Granularity:       granularity,
+		Section:           strings.TrimSpace(filter.Section),
+		ModelRankBy:       strings.TrimSpace(filter.ModelRankBy),
+		UserRankBy:        strings.TrimSpace(filter.UserRankBy),
+		RankLimit:         10,
+	})
+	if err != nil {
+		return domainbilling.UsageStatistics{}, err
+	}
+	result.Granularity = granularity
+	if strings.TrimSpace(filter.Section) == "" || strings.TrimSpace(filter.Section) == "all" {
+		result.Trend = fillUsageStatisticsTrend(result.Trend, startDate, endDate, granularity)
+	}
+	return result, nil
+}
+
+func usageStatisticsGranularity(days int) string {
+	if days >= 180 {
+		return "month"
+	}
+	if days > 30 {
+		return "week"
+	}
+	return "day"
+}
+
+func fillUsageStatisticsTrend(
+	items []domainbilling.UsageStatisticsTrendPoint,
+	startDate time.Time,
+	endDate time.Time,
+	granularity string,
+) []domainbilling.UsageStatisticsTrendPoint {
+	byPeriod := make(map[string]domainbilling.UsageStatisticsTrendPoint, len(items))
+	for _, item := range items {
+		byPeriod[item.PeriodStart.Format("2006-01-02")] = item
+	}
+
+	current := startDate
+	if granularity == "week" {
+		daysSinceMonday := (int(startDate.Weekday()) + 6) % 7
+		current = startDate.AddDate(0, 0, -daysSinceMonday)
+	} else if granularity == "month" {
+		current = time.Date(startDate.Year(), startDate.Month(), 1, 0, 0, 0, 0, startDate.Location())
+	}
+	results := make([]domainbilling.UsageStatisticsTrendPoint, 0, len(items))
+	for !current.After(endDate) {
+		key := current.Format("2006-01-02")
+		if item, exists := byPeriod[key]; exists {
+			results = append(results, item)
+		} else {
+			results = append(results, domainbilling.UsageStatisticsTrendPoint{PeriodStart: current})
+		}
+		if granularity == "week" {
+			current = current.AddDate(0, 0, 7)
+		} else if granularity == "month" {
+			current = current.AddDate(0, 1, 0)
+		} else {
+			current = current.AddDate(0, 0, 1)
+		}
+	}
+	return results
 }
 
 // ListPaymentOrders 分页查询管理员支付订单记录。

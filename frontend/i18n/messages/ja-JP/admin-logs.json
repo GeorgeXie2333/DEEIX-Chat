@@ -191,7 +191,8 @@
     "amount": "金額",
     "scope": "スコープ",
     "tool": "ツール",
-    "runID": "実行 ID"
+    "runID": "実行 ID",
+    "upstream": "アップストリーム"
   },
   "auth": {
     "searchPlaceholder": "ユーザー ID またはイベント種別を検索",

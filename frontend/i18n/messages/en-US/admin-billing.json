@@ -14,8 +14,8 @@
     "title": "Billing mode",
     "mode": "Billing mode",
     "modeDescription": "Self-use records usage only. Subscription billing limits usage by plan credits. Usage billing calculates cost from model pricing.",
-    "prepaidAmount": "Prepaid amount",
-    "prepaidAmountDescription": "In usage billing and subscription overage billing, calls can start only when the account balance meets this amount. The final deduction still uses the actual bill.",
+    "prepaidAmount": "Per-request reservation",
+    "prepaidAmountDescription": "Risk budget reserved before each paid call; final billing still uses actual usage. Set to 0 to distribute the available budget across up to 5 concurrent paid calls.",
     "freeModelRateLimitRPM": "Free model requests per minute",
     "freeModelRateLimitRPMDescription": "Each user shares this minute allowance across all free models. Enter 0 for unlimited.",
     "freeModelDailyLimit": "Free model daily requests",
@@ -33,7 +33,7 @@
     "usdToCnyRateDescription": "Platform-level CNY conversion rate used for cost display and CNY payment amounts.",
     "displayCurrencies": {
       "usd": "US Dollar ($)",
-      "cny": "Chinese Yuan (?)"
+      "cny": "Chinese Yuan (¥)"
     }
   },
   "payment": {
@@ -243,7 +243,7 @@
     "tool": "Tool",
     "type": "Type",
     "defaultPrice": "Default price",
-    "price": "Billing price",
+    "price": "Price",
     "restoreDefault": "Restore default price",
     "note": "Native tool prices are configured as per-call rates. Tools without upstream-reported call counts will not create separate native tool billing items.",
     "prices": {
@@ -276,10 +276,10 @@
     "paymentSaveFailed": "Failed to save payment settings",
     "billingModeChanged": "Switched to {mode}",
     "billingModeFailed": "Failed to update billing mode",
-    "prepaidInvalid": "Invalid prepaid amount",
+    "prepaidInvalid": "Invalid reservation amount",
     "prepaidInvalidDescription": "Enter a USD amount greater than or equal to 0.",
-    "billingConfigSaved": "Billing settings saved",
-    "billingConfigSaveFailed": "Failed to save billing settings",
+    "billingConfigSaved": "Billing configuration saved",
+    "billingConfigSaveFailed": "Failed to save billing configuration",
     "prepaidSaved": "Prepaid amount saved",
     "prepaidSaveFailed": "Failed to save prepaid amount",
     "nativeToolBillingSaved": "Native tool billing saved",

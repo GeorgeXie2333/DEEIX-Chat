@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./frontend/public/logo-white.svg" />
-    <img src="./frontend/public/logo-black.svg" alt="DEEIX Chat" width="160" />
+    <img src="../frontend/public/logo-black.svg" alt="Comi AI" width="160" />
   </picture>
 </p>
 
@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="./README.md">English</a> | 简体中文
+  <a href="../README.md">English</a> | 简体中文
 </p>
 
 <p align="center">
@@ -26,11 +26,11 @@
 
 ## 项目简介
 
-DEEIX Chat 是一款开源可部署的 AI 平台，面向需要长期、稳定、统一使用多模型能力的个人、团队与企业。它用一个清晰的使用入口承载多个上游模型和服务商，将多模态对话、模型路由、文件与 RAG、MCP 工具、用量计费、身份认证、审计日志和运维控制整合到同一个产品中。
+Comi AI 是一款开源可部署的 AI 平台，面向需要长期、稳定、统一使用多模型能力的个人、团队与企业。它用一个清晰的使用入口承载多个上游模型和服务商，将多模态对话、模型路由、文件与 RAG、MCP 工具、用量计费、身份认证、审计日志和运维控制整合到同一个产品中。
 
 系统围绕简单部署、高效静态分发和低资源的运行时占用设计，轻量而不简陋、克制而不缺能力、开放而不失秩序。
 
-![DEEIX Chat 工作区](./frontend/public/DEEIX-Chat.jpg)
+![Comi AI 工作区](../frontend/public/DEEIX-Chat.jpg)
 
 ## 核心能力
 
@@ -48,19 +48,19 @@ DEEIX Chat 是一款开源可部署的 AI 平台，面向需要长期、稳定�
 | 部署与运维 | 支持单运行时托管前端与 API、Docker 部署、SQLite 或 PostgreSQL、内存缓存或 Redis、S3 兼容存储、Swagger、结构化日志、版本接口、GeoIP 和 OpenTelemetry。 |
 
 <p align="center">
-  <img src="./frontend/public/DEEIX-Chat-Image.png" alt="DEEIX Chat 图片生成" width="49.45%" />
-  <img src="./frontend/public/DEEIX-Chat-Dark.png" alt="DEEIX Chat 深色模式" width="49.45%" />
+  <img src="../frontend/public/DEEIX-Chat-Image.png" alt="Comi AI 图片生成" width="49.45%" />
+  <img src="../frontend/public/DEEIX-Chat-Dark.png" alt="Comi AI 深色模式" width="49.45%" />
 </p>
 
 <p align="center">
-  <img src="./frontend/public/DEEIX-Chat-Usage.png" alt="DEEIX Chat 用量与计费" width="32.3%" />
-  <img src="./frontend/public/DEEIX-Chat-Artifacts.png" alt="DEEIX Chat Artifacts" width="32.3%" />
-  <img src="./frontend/public/DEEIX-Chat-Html.png" alt="DEEIX Chat HTML 渲染" width="32.3%" />
+  <img src="../frontend/public/DEEIX-Chat-Usage.png" alt="Comi AI 用量与计费" width="32.3%" />
+  <img src="../frontend/public/DEEIX-Chat-Artifacts.png" alt="Comi AI Artifacts" width="32.3%" />
+  <img src="../frontend/public/DEEIX-Chat-Html.png" alt="Comi AI HTML 渲染" width="32.3%" />
 </p>
 
 ## 系统架构与技术栈
 
-DEEIX Chat 采用前后端分离开发、单运行时部署的结构。前端构建为静态资源后由 Go 服务统一托管，API、权限、模型路由、文件、计费和审计等后端能力由同一个运行时提供；文档提取、OCR 等重型能力以可选服务接入，避免基础部署过重。
+Comi AI 采用前后端分离开发、单运行时部署的结构。前端构建为静态资源后由 Go 服务统一托管，API、权限、模型路由、文件、计费和审计等后端能力由同一个运行时提供；文档提取、OCR 等重型能力以可选服务接入，避免基础部署过重。
 
 ```mermaid
 flowchart TB
@@ -130,21 +130,20 @@ cp config.example.yaml config.yaml
 
 根据本机环境调整 `config.yaml` 中的 `database.postgres.dsn`、`database.redis.*` 和公开访问地址。
 
-2. 启动后端：
+2. 安装工作区依赖并准备前端环境：
 
 ```bash
-cd backend
-make run
+pnpm install
+cp frontend/.env.example frontend/.env.local
 ```
 
-3. 启动前端：
+3. 同时启动前端和后端：
 
 ```bash
-cd frontend
-pnpm install
-cp .env.example .env.local
 pnpm dev
 ```
+
+只启动单个工作区时，使用 `pnpm dev:web` 或 `pnpm dev:api`。
 
 前端请求后端使用 `NEXT_PUBLIC_API_BASE_URL`。本地开发时确认 `frontend/.env.local` 中包含：
 
@@ -208,7 +207,7 @@ docker compose -f docker-compose.full.yml up -d
 
 #### 配置、持久化和镜像
 
-配置优先级是：`环境变量 > config.yaml > 代码内置默认值`。`config.yaml` 只负责静态基础设施和安全配置，例如服务地址、数据库、缓存、存储、GeoIP、Trace、JWT 和加密密钥。运行时业务配置存储在数据库中，并通过后台管理修改。
+配置优先级是：`环境变量 > config.yaml > 代码内置默认值`。`config.yaml` 负责品牌和静态基础设施、安全配置，例如品牌资源、服务地址、数据库、缓存、存储、GeoIP、Trace、JWT 和加密密钥。运行时业务配置存储在数据库中，并通过后台管理修改。
 
 默认 compose 会持久化应用数据：
 
@@ -268,9 +267,8 @@ docker compose -f docker/docling/docker-compose.yml up -d --build
 2. 构建并发布前端。
 
    ```bash
-   cd frontend
    pnpm install
-   NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm build
+   NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @deeix/web build
    ```
 
    静态产物在 `frontend/out`，可由 Nginx、CDN、对象存储或任意静态服务托管。如需由 Go 后端托管前端，把 `frontend/out` 放到 `server.frontend_dist_dir` 指向的目录；Docker 镜像默认是 `/app/frontend/out`。
@@ -311,9 +309,11 @@ docker compose logs app
 
 > 完整配置说明：[配置说明](https://deeix.com/zh/docs/deeix-chat/configuration)。
 
-后端配置分为静态运行配置和运行时业务配置。静态运行配置用于描述服务启动所需的基础设施、安全和存储参数，由 `config.yaml` 与环境变量提供；运行时业务配置用于认证、会话、模型、文件、计费等产品能力，写入 `system_settings` 并通过后台管理维护。环境变量会覆盖配置文件中的同名项，适合容器化、分离部署和密钥注入场景。
+后端配置分为静态运行配置和运行时业务配置。静态运行配置用于描述品牌以及服务启动所需的基础设施、安全和存储参数，由 `config.yaml` 与环境变量提供；运行时业务配置用于认证、会话、模型、文件、计费等产品能力，写入 `system_settings` 并通过后台管理维护。环境变量会覆盖配置文件中的同名项，适合容器化、分离部署和密钥注入场景。
 
 后端启动时会按运行目录解析默认配置文件：从仓库根目录启动读取 `config.yaml`，从 `backend/` 目录启动读取 `../config.yaml`。Docker 部署通常将宿主机 `./config.yaml` 只读挂载到容器内 `/app/config.yaml`；如果配置文件放在其他位置，请使用 `CONFIG_FILE` 指向实际运行环境可访问的路径。
+
+前端品牌同样属于运行时配置。在 `config.yaml` 中设置 `branding` 后重启应用即可生效，无需重新构建前端或 Docker 镜像。详见[自定义品牌资源](./BRANDING.md)。
 
 静态配置环境变量：
 
@@ -406,16 +406,16 @@ docker compose logs app
 - [用户指南](https://deeix.com/zh/docs/deeix-chat/new-chat)
 - [管理指南](https://deeix.com/zh/docs/deeix-chat/admin-accounts)
 - [进阶指南](https://deeix.com/zh/docs/deeix-chat/advanced-capabilities-passthrough-tools)
-- 后端说明：[backend/README.md](./backend/README.md)
-- 后端规范：[backend/docs/README.md](./backend/docs/README.md)
-- 前端说明：[frontend/README.md](./frontend/README.md)
-- 贡献指南：[CONTRIBUTING.md](./CONTRIBUTING.md)
-- 安全策略：[SECURITY.md](./SECURITY.md)
+- 后端说明：[backend/README.md](../backend/README.md)
+- 后端规范：[backend/docs/README.md](../backend/docs/README.md)
+- 前端说明：[frontend/README.md](../frontend/README.md)
+- 贡献指南：[CONTRIBUTING.md](../.github/CONTRIBUTING.md)
+- 安全策略：[SECURITY.md](../.github/SECURITY.md)
 - Swagger UI：`http://localhost:8080/swagger/index.html`
 
 ## 鸣谢
 
-DEEIX Chat 基于开源生态构建，感谢所有 AI 工具生态中的维护者和社区。
+Comi AI 基于开源生态构建，感谢所有 AI 工具生态中的维护者和社区。
 
 - [Next.js](https://nextjs.org)
 - [Go](https://go.dev)
@@ -431,4 +431,4 @@ DEEIX Chat 基于开源生态构建，感谢所有 AI 工具生态中的维护�
 
 ## 开源协议
 
-DEEIX Chat 使用 [Apache License 2.0](./LICENSE) 授权。
+Comi AI 使用 [Apache License 2.0](../LICENSE) 授权。

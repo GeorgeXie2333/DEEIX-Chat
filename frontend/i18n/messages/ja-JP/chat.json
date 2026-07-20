@@ -269,7 +269,8 @@
     "continueReplyUnavailable": "この返信は現在続行できません。",
     "editReplyFailed": "返信を編集できません",
     "retryReplyFailed": "この返信を再試行できません",
-    "retryReplyMissingUser": "対応するユーザーメッセージが見つかりません。"
+    "retryReplyMissingUser": "対応するユーザーメッセージが見つかりません。",
+    "concurrentGenerationLimit": "同時生成数の上限に達しました。進行中の生成が完了してから再試行してください。"
   },
   "data": {
     "signInRequired": "未ログインのため、会話メッセージを読み込めません",

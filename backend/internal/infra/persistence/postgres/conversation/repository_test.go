@@ -3,9 +3,12 @@ package conversation
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 
+	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
 	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 	"gorm.io/driver/sqlite"
@@ -15,6 +18,142 @@ import (
 func TestTranslateErrorAllowsNil(t *testing.T) {
 	if err := translateError(nil); err != nil {
 		t.Fatalf("translateError(nil) = %v, want nil", err)
+	}
+}
+
+func TestConversationProjectDefaultsRoundTripAndDelete(t *testing.T) {
+	db := openConversationRepositoryTestDB(t)
+	repo := NewRepo(db)
+	ctx := context.Background()
+	project := domainconversation.ConversationProject{
+		UserID:            1,
+		PublicID:          "project_defaults",
+		Name:              "Project defaults",
+		MCPDefaultMode:    domainconversation.ConversationProjectMCPDefaultModeCustom,
+		DefaultMCPToolIDs: []uint{7, 3},
+		DefaultSkillIDs:   []uint{11, 5},
+		Status:            "active",
+	}
+	if err := repo.CreateConversationProject(ctx, &project); err != nil {
+		t.Fatalf("CreateConversationProject() error = %v", err)
+	}
+	if !reflect.DeepEqual(project.DefaultMCPToolIDs, []uint{7, 3}) || !reflect.DeepEqual(project.DefaultSkillIDs, []uint{11, 5}) {
+		t.Fatalf("created defaults = MCP %v Skills %v", project.DefaultMCPToolIDs, project.DefaultSkillIDs)
+	}
+
+	loaded, err := repo.GetConversationProjectByPublicID(ctx, 1, project.PublicID)
+	if err != nil {
+		t.Fatalf("GetConversationProjectByPublicID() error = %v", err)
+	}
+	if loaded.MCPDefaultMode != domainconversation.ConversationProjectMCPDefaultModeCustom ||
+		!reflect.DeepEqual(loaded.DefaultMCPToolIDs, []uint{7, 3}) ||
+		!reflect.DeepEqual(loaded.DefaultSkillIDs, []uint{11, 5}) {
+		t.Fatalf("loaded project defaults = %#v", loaded)
+	}
+
+	nextMCPToolIDs := []uint{}
+	nextSkillIDs := []uint{5}
+	inheritMode := domainconversation.ConversationProjectMCPDefaultModeInherit
+	updated, err := repo.UpdateConversationProjectMetadataByPublicID(ctx, 1, project.PublicID, domainconversation.ConversationProjectPatch{
+		MCPDefaultMode:    &inheritMode,
+		DefaultMCPToolIDs: &nextMCPToolIDs,
+		DefaultSkillIDs:   &nextSkillIDs,
+	})
+	if err != nil {
+		t.Fatalf("UpdateConversationProjectMetadataByPublicID() error = %v", err)
+	}
+	if updated.MCPDefaultMode != inheritMode || len(updated.DefaultMCPToolIDs) != 0 || !reflect.DeepEqual(updated.DefaultSkillIDs, nextSkillIDs) {
+		t.Fatalf("updated project defaults = %#v", updated)
+	}
+
+	if _, err = repo.DeleteConversationProjectByPublicID(ctx, 1, project.PublicID, false, false); err != nil {
+		t.Fatalf("DeleteConversationProjectByPublicID() error = %v", err)
+	}
+	var associationCount int64
+	if err = db.Model(&model.ConversationProjectMCPTool{}).Where("project_id = ?", project.ID).Count(&associationCount).Error; err != nil {
+		t.Fatalf("count project MCP associations: %v", err)
+	}
+	if associationCount != 0 {
+		t.Fatalf("project MCP association count = %d, want 0", associationCount)
+	}
+	if err = db.Model(&model.ConversationProjectSkill{}).Where("project_id = ?", project.ID).Count(&associationCount).Error; err != nil {
+		t.Fatalf("count project Skill associations: %v", err)
+	}
+	if associationCount != 0 {
+		t.Fatalf("project Skill association count = %d, want 0", associationCount)
+	}
+}
+
+func TestListConversationEventLogsHydratesRunRouteSnapshot(t *testing.T) {
+	db := openConversationRepositoryTestDB(t)
+	repo := NewRepo(db)
+	ctx := context.Background()
+	now := time.Now()
+
+	run := model.ConversationRun{
+		RunID:             "run_with_route",
+		UserID:            1,
+		ConversationID:    2,
+		ProviderProtocol:  "openai_responses",
+		UpstreamName:      "OpenAI Official",
+		PlatformModelName: "gpt-5.5",
+		RoutedBindingCode: "binding_openai",
+		UpstreamModelName: "gpt-5.5-pro",
+		Status:            "error",
+		StartedAt:         now,
+	}
+	if err := db.Create(&run).Error; err != nil {
+		t.Fatalf("create conversation run: %v", err)
+	}
+
+	events := []model.ChatRunEvent{
+		{
+			ConversationID: 2,
+			UserID:         1,
+			RunID:          run.RunID,
+			EventScope:     "trace_event",
+			EventID:        "event_with_route",
+			EventType:      "error",
+			Status:         "error",
+			StartedAt:      now,
+		},
+		{
+			ConversationID: 2,
+			UserID:         1,
+			RunID:          "run_before_route",
+			EventScope:     "trace_event",
+			EventID:        "event_without_route",
+			EventType:      "error",
+			Status:         "error",
+			StartedAt:      now,
+		},
+	}
+	if err := db.Create(&events).Error; err != nil {
+		t.Fatalf("create conversation events: %v", err)
+	}
+
+	items, total, err := repo.ListConversationEventLogs(ctx, repository.ConversationEventLogListFilter{}, 0, 10)
+	if err != nil {
+		t.Fatalf("ListConversationEventLogs() error = %v", err)
+	}
+	if total != 2 || len(items) != 2 {
+		t.Fatalf("got total=%d len=%d, want 2", total, len(items))
+	}
+	itemsByRunID := make(map[string]domainconversation.EventLog, len(items))
+	for _, item := range items {
+		itemsByRunID[item.RunID] = item
+	}
+	withRoute := itemsByRunID[run.RunID]
+	if withRoute.UpstreamName != run.UpstreamName ||
+		withRoute.ProviderProtocol != run.ProviderProtocol ||
+		withRoute.PlatformModelName != run.PlatformModelName ||
+		withRoute.RoutedBindingCode != run.RoutedBindingCode ||
+		withRoute.UpstreamModelName != run.UpstreamModelName {
+		t.Fatalf("route snapshot = %#v, want run snapshot %#v", withRoute, run)
+	}
+	withoutRoute := itemsByRunID["run_before_route"]
+	if withoutRoute.UpstreamName != "" || withoutRoute.ProviderProtocol != "" || withoutRoute.UpstreamModelName != "" {
+		t.Fatalf("unexpected route snapshot for unmatched run: %#v", withoutRoute)
 	}
 }
 
@@ -419,7 +558,7 @@ func openConversationRepositoryTestDB(t *testing.T) *gorm.DB {
 			_ = sqlDB.Close()
 		}
 	})
-	if err := db.AutoMigrate(&model.Conversation{}, &model.ConversationProject{}, &model.ConversationShare{}, &model.Message{}, &model.Attachment{}, &model.FileObject{}, &model.ConversationRun{}); err != nil {
+	if err := db.AutoMigrate(&model.Conversation{}, &model.ConversationProject{}, &model.ConversationProjectMCPTool{}, &model.ConversationProjectSkill{}, &model.ConversationShare{}, &model.Message{}, &model.Attachment{}, &model.FileObject{}, &model.ConversationRun{}, &model.ChatRunEvent{}); err != nil {
 		t.Fatalf("migrate models: %v", err)
 	}
 	return db

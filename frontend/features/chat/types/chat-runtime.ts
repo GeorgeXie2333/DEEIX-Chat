@@ -78,6 +78,7 @@ export type PendingExchange = {
   parentPublicID: string | null;
   sourcePublicID: string | null;
   branchReason: "default" | "retry" | "edit";
+  reuseUserMessage: boolean;
   userContent: string;
   userAttachments?: PendingAttachment[];
   userServerMessageID?: number;
@@ -107,3 +108,5 @@ export type PendingExchange = {
   assistantLatencyMS?: number;
   compactDone?: { method: string; freed_tokens: number; summary_preview: string };
 };
+
+export type PendingExchangeMap = Record<string, PendingExchange>;

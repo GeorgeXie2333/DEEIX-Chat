@@ -1789,7 +1789,47 @@ func (r *Repo) ListConversationEventLogs(
 		Find(&items).Error; err != nil {
 		return nil, 0, translateError(err)
 	}
-	return toConversationEventLogDomains(items), total, nil
+	results := toConversationEventLogDomains(items)
+	runIDs := make([]string, 0, len(results))
+	seenRunIDs := make(map[string]struct{}, len(results))
+	for _, item := range results {
+		runID := strings.TrimSpace(item.RunID)
+		if runID == "" {
+			continue
+		}
+		if _, exists := seenRunIDs[runID]; exists {
+			continue
+		}
+		seenRunIDs[runID] = struct{}{}
+		runIDs = append(runIDs, runID)
+	}
+	if len(runIDs) == 0 {
+		return results, total, nil
+	}
+
+	runs := make([]models.ConversationRun, 0, len(runIDs))
+	if err := r.db.WithContext(ctx).
+		Select("run_id", "provider_protocol", "upstream_name", "platform_model_name", "routed_binding_code", "upstream_model_name").
+		Where("run_id IN ?", runIDs).
+		Find(&runs).Error; err != nil {
+		return nil, 0, translateError(err)
+	}
+	runsByID := make(map[string]models.ConversationRun, len(runs))
+	for _, run := range runs {
+		runsByID[run.RunID] = run
+	}
+	for index := range results {
+		run, exists := runsByID[results[index].RunID]
+		if !exists {
+			continue
+		}
+		results[index].ProviderProtocol = run.ProviderProtocol
+		results[index].UpstreamName = run.UpstreamName
+		results[index].PlatformModelName = run.PlatformModelName
+		results[index].RoutedBindingCode = run.RoutedBindingCode
+		results[index].UpstreamModelName = run.UpstreamModelName
+	}
+	return results, total, nil
 }
 
 // ListConversationRunsByRunIDs 按运行 ID 查询会话运行快照。

@@ -139,6 +139,7 @@ func migrate(db *gorm.DB, cfg config.Config) error {
 		"billing_payment_orders":         "支付订单表",
 		"billing_accounts":               "按量计费余额账户表",
 		"billing_balance_transactions":   "按量计费余额流水表",
+		"billing_usage_reservations":     "模型调用用量预算预留表",
 		"billing_redemption_codes":       "计费兑换码定义表",
 		"billing_redemptions":            "计费兑换记录表",
 		"billing_model_prices":           "平台模型按量单价配置表",
@@ -155,6 +156,8 @@ func migrate(db *gorm.DB, cfg config.Config) error {
 		"file_chunks":                    "RAG文件分片表",
 		"chat_message_chunks":            "会话消息向量分片表(历史对话语义检索)",
 	}
+	tableComments["chat_conversation_project_mcp_tools"] = "项目默认 MCP 工具关联表"
+	tableComments["chat_conversation_project_skills"] = "项目默认 Skill 关联表"
 
 	for table, comment := range tableComments {
 		statement := fmt.Sprintf(`COMMENT ON TABLE "%s" IS '%s'`, table, escapeSQLLiteral(comment))

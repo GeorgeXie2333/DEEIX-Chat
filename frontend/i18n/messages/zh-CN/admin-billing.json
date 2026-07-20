@@ -14,8 +14,8 @@
     "title": "计费方式",
     "mode": "计费模式",
     "modeDescription": "自用模式只记录用量；周期计费按订阅额度限制；按量计费按模型定价计算费用。",
-    "prepaidAmount": "预付费金额",
-    "prepaidAmountDescription": "按量模式及周期超额按量扣费时，发起调用前要求账户余额达到该金额；最终仍按真实账单扣费。",
+    "prepaidAmount": "单次预留金额",
+    "prepaidAmountDescription": "每个付费调用开始前预留的风险预算，最终仍按真实账单扣费。设为 0 时按剩余槽位动态分配可用预算，最多支持 5 个并发付费调用。",
     "freeModelRateLimitRPM": "免费模型每分钟请求数",
     "freeModelRateLimitRPMDescription": "每个用户对所有免费模型共享此分钟额度；填 0 表示不限。",
     "freeModelDailyLimit": "免费模型每日请求数",
@@ -27,13 +27,13 @@
       "period": "周期计费",
       "usage": "按量计费"
     },
-    "displayCurrency": "展示币种",
-    "displayCurrencyDescription": "全局控制用户侧费用展示。记账、扣费和 API 字段仍以 USD / nanousd 记录。",
+    "displayCurrency": "费用展示币种",
+    "displayCurrencyDescription": "统一控制用户端费用展示。账务、扣费和接口字段仍按 USD / 纳美元记录。",
     "usdToCnyRate": "USD -> CNY 汇率",
-    "usdToCnyRateDescription": "用于费用展示和 CNY 支付金额的平台级人民币换算汇率。",
+    "usdToCnyRateDescription": "平台级人民币换算汇率，供费用展示和人民币支付金额计算使用。",
     "displayCurrencies": {
-      "usd": "美元 ($)",
-      "cny": "人民币 (¥)"
+      "usd": "美元（$）",
+      "cny": "人民币（¥）"
     }
   },
   "payment": {
@@ -243,7 +243,7 @@
     "tool": "工具",
     "type": "类型",
     "defaultPrice": "默认价格",
-    "price": "计费价格",
+    "price": "价格",
     "restoreDefault": "恢复默认价格",
     "note": "原生工具价格由管理员统一配置为每次调用价格；未被上游返回调用次数的工具不会生成单独工具账单项。",
     "prices": {
@@ -276,10 +276,10 @@
     "paymentSaveFailed": "保存支付配置失败",
     "billingModeChanged": "已切换为{mode}",
     "billingModeFailed": "计费方式更新失败",
-    "prepaidInvalid": "预付费金额不合法",
+    "prepaidInvalid": "单次预留金额不合法",
     "prepaidInvalidDescription": "请输入大于等于 0 的美元金额。",
     "billingConfigSaved": "计费配置已保存",
-    "billingConfigSaveFailed": "保存计费配置失败",
+    "billingConfigSaveFailed": "计费配置保存失败",
     "prepaidSaved": "预付费金额已保存",
     "prepaidSaveFailed": "预付费金额保存失败",
     "nativeToolBillingSaved": "原生工具计费已保存",
@@ -338,8 +338,8 @@
     "redemptionDeleteSummary": "成功 {successCount} 个，未找到 {notFoundCount} 个，失败 {failedCount} 个。",
     "usdToCnyRateInvalid": "汇率无效",
     "usdToCnyRateInvalidDescription": "请输入大于 0 的 USD -> CNY 汇率。",
-    "displayCurrencySaved": "展示币种已保存",
-    "displayCurrencySaveFailed": "展示币种保存失败"
+    "displayCurrencySaved": "费用展示币种已保存",
+    "displayCurrencySaveFailed": "费用展示币种保存失败"
   },
   "importErrors": {
     "invalidJSON": "文件内容不是合法 JSON",

@@ -8,6 +8,7 @@ import zhAdminLogs from "@/i18n/messages/zh-CN/admin-logs.json";
 import zhAdminModels from "@/i18n/messages/zh-CN/admin-models.json";
 import zhAdminOpenAPI from "@/i18n/messages/zh-CN/admin-openapi.json";
 import zhAdminPrompts from "@/i18n/messages/zh-CN/admin-prompts.json";
+import zhAdminStatistics from "@/i18n/messages/zh-CN/admin-statistics.json";
 import zhAdminTools from "@/i18n/messages/zh-CN/admin-tools.json";
 import zhAdminUpstreams from "@/i18n/messages/zh-CN/admin-upstreams.json";
 import zhAdminUsers from "@/i18n/messages/zh-CN/admin-users.json";
@@ -24,7 +25,7 @@ import zhRecent from "@/i18n/messages/zh-CN/recent.json";
 import zhSettings from "@/i18n/messages/zh-CN/settings.json";
 import zhShare from "@/i18n/messages/zh-CN/share.json";
 import type { AppLocale } from "@/i18n/config";
-import { replaceDefaultBrandTitle } from "@/shared/lib/branding";
+import { replaceDefaultBrandTitle } from "@/shared/config/branding";
 
 const BASE_MESSAGES = {
   common: zhCommon,
@@ -49,6 +50,7 @@ const BASE_MESSAGES = {
   adminModels: zhAdminModels,
   adminOpenAPI: zhAdminOpenAPI,
   adminPrompts: zhAdminPrompts,
+  adminStatistics: zhAdminStatistics,
   adminTools: zhAdminTools,
   adminUpstreams: zhAdminUpstreams,
   adminUsers: zhAdminUsers,
@@ -56,28 +58,28 @@ const BASE_MESSAGES = {
 
 export type AppMessages = typeof BASE_MESSAGES;
 
-function prepareMessages(messages: AppMessages): AppMessages {
+export function applyBrandingToMessages(messages: AppMessages, brandTitle: string): AppMessages {
   return {
     ...messages,
     guide: {
       ...messages.guide,
-      userWelcomeTitle: replaceDefaultBrandTitle(messages.guide.userWelcomeTitle),
+      userWelcomeTitle: replaceDefaultBrandTitle(messages.guide.userWelcomeTitle, brandTitle),
     },
     recent: {
       ...messages.recent,
-      allConversationsDescription: replaceDefaultBrandTitle(messages.recent.allConversationsDescription),
+      allConversationsDescription: replaceDefaultBrandTitle(messages.recent.allConversationsDescription, brandTitle),
     },
     login: {
       ...messages.login,
-      title: replaceDefaultBrandTitle(messages.login.title),
+      title: replaceDefaultBrandTitle(messages.login.title, brandTitle),
     },
     share: {
       ...messages.share,
-      signInToContinue: replaceDefaultBrandTitle(messages.share.signInToContinue),
+      signInToContinue: replaceDefaultBrandTitle(messages.share.signInToContinue, brandTitle),
     },
     chat: {
       ...messages.chat,
-      placeholder: replaceDefaultBrandTitle(messages.chat.placeholder),
+      placeholder: replaceDefaultBrandTitle(messages.chat.placeholder, brandTitle),
     },
     settings: {
       ...messages.settings,
@@ -91,6 +93,7 @@ function prepareMessages(messages: AppMessages): AppMessages {
               ...messages.settings.accountPage.securityDialog.email.description,
               change: replaceDefaultBrandTitle(
                 messages.settings.accountPage.securityDialog.email.description.change,
+                brandTitle,
               ),
             },
           },
@@ -100,7 +103,7 @@ function prepareMessages(messages: AppMessages): AppMessages {
   };
 }
 
-export const DEFAULT_MESSAGES: AppMessages = prepareMessages(BASE_MESSAGES);
+export const DEFAULT_MESSAGES: AppMessages = BASE_MESSAGES;
 
 type LocaleMessageImports = [
   { default: AppMessages["common"] },
@@ -125,6 +128,7 @@ type LocaleMessageImports = [
   { default: AppMessages["adminModels"] },
   { default: AppMessages["adminOpenAPI"] },
   { default: AppMessages["adminPrompts"] },
+  { default: AppMessages["adminStatistics"] },
   { default: AppMessages["adminTools"] },
   { default: AppMessages["adminUpstreams"] },
   { default: AppMessages["adminUsers"] },
@@ -153,6 +157,7 @@ function toAppMessages([
   adminModels,
   adminOpenAPI,
   adminPrompts,
+  adminStatistics,
   adminTools,
   adminUpstreams,
   adminUsers,
@@ -180,6 +185,7 @@ function toAppMessages([
     adminModels: adminModels.default,
     adminOpenAPI: adminOpenAPI.default,
     adminPrompts: adminPrompts.default,
+    adminStatistics: adminStatistics.default,
     adminTools: adminTools.default,
     adminUpstreams: adminUpstreams.default,
     adminUsers: adminUsers.default,
@@ -215,6 +221,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
       import("@/i18n/messages/ja-JP/admin-models.json"),
       import("@/i18n/messages/ja-JP/admin-openapi.json"),
       import("@/i18n/messages/ja-JP/admin-prompts.json"),
+      import("@/i18n/messages/ja-JP/admin-statistics.json"),
       import("@/i18n/messages/ja-JP/admin-tools.json"),
       import("@/i18n/messages/ja-JP/admin-upstreams.json"),
       import("@/i18n/messages/ja-JP/admin-users.json"),
@@ -244,6 +251,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
     import("@/i18n/messages/en-US/admin-models.json"),
     import("@/i18n/messages/en-US/admin-openapi.json"),
     import("@/i18n/messages/en-US/admin-prompts.json"),
+    import("@/i18n/messages/en-US/admin-statistics.json"),
     import("@/i18n/messages/en-US/admin-tools.json"),
     import("@/i18n/messages/en-US/admin-upstreams.json"),
     import("@/i18n/messages/en-US/admin-users.json"),

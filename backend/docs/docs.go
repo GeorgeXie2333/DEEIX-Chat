@@ -75,13 +75,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.AdminAnnouncementListResponseDoc"
+                            "$ref": "#/definitions/AdminAnnouncementListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     }
                 }
@@ -110,7 +110,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.CreateAnnouncementRequest"
+                            "$ref": "#/definitions/CreateAnnouncementRequest"
                         }
                     }
                 ],
@@ -118,19 +118,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementResponseDoc"
+                            "$ref": "#/definitions/AnnouncementResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     }
                 }
@@ -167,25 +167,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementDeleteResponseDoc"
+                            "$ref": "#/definitions/AnnouncementDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     }
                 }
@@ -221,7 +221,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.PatchAnnouncementRequestDoc"
+                            "$ref": "#/definitions/PatchAnnouncementRequestDoc"
                         }
                     }
                 ],
@@ -229,25 +229,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementResponseDoc"
+                            "$ref": "#/definitions/AnnouncementResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     }
                 }
@@ -331,13 +331,246 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.AuditLogListResponseDoc"
+                            "$ref": "#/definitions/AuditLogListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/auth/provider-order": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员保存第三方身份源的展示顺序",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-auth"
+                ],
+                "summary": "调整第三方身份源顺序",
+                "parameters": [
+                    {
+                        "description": "身份源顺序",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ReorderIdentityProvidersRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/IdentityProviderReorderResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/AuthErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/auth/providers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员查看已配置的 OIDC 和 OAuth2 身份源",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-auth"
+                ],
+                "summary": "获取第三方身份源列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/IdentityProviderListResponseDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/AuthErrorDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员创建一个 OIDC 或 OAuth2 身份源",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-auth"
+                ],
+                "summary": "创建第三方身份源",
+                "parameters": [
+                    {
+                        "description": "身份源配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpsertIdentityProviderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/IdentityProviderResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/AuthErrorDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/AuthErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/auth/providers/{provider_id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员删除第三方身份源；force=true 时允许删除仍有关联用户的身份源",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-auth"
+                ],
+                "summary": "删除第三方身份源",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "身份源 ID",
+                        "name": "provider_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否强制删除",
+                        "name": "force",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/IdentityProviderDeleteResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/AuthErrorDoc"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/AuthErrorDoc"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员更新一个 OIDC 或 OAuth2 身份源",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-auth"
+                ],
+                "summary": "更新第三方身份源",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "身份源 ID",
+                        "name": "provider_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "身份源配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpsertIdentityProviderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/IdentityProviderResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/AuthErrorDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -375,7 +608,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UpdateBillingAccountBalanceRequest"
+                            "$ref": "#/definitions/UpdateBillingAccountBalanceRequest"
                         }
                     }
                 ],
@@ -383,19 +616,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingAccountResponseDoc"
+                            "$ref": "#/definitions/BillingAccountResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -423,13 +656,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingConfigResponseDoc"
+                            "$ref": "#/definitions/BillingConfigResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -458,7 +691,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingConfigRequest"
+                            "$ref": "#/definitions/BillingConfigRequest"
                         }
                     }
                 ],
@@ -466,19 +699,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingConfigResponseDoc"
+                            "$ref": "#/definitions/BillingConfigResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -526,13 +759,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ModelPricingListResponseDoc"
+                            "$ref": "#/definitions/ModelPricingListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -561,7 +794,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UpsertModelPricingRequest"
+                            "$ref": "#/definitions/UpsertModelPricingRequest"
                         }
                     }
                 ],
@@ -569,19 +802,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ModelPricingDataResponse"
+                            "$ref": "#/definitions/ModelPricingDataResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -617,13 +850,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.OpenRouterOfficialPricingResponseDoc"
+                            "$ref": "#/definitions/OpenRouterOfficialPricingResponseDoc"
                         }
                     },
                     "502": {
                         "description": "Bad Gateway",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -661,7 +894,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UpdateBillingPlanRequest"
+                            "$ref": "#/definitions/UpdateBillingPlanRequest"
                         }
                     }
                 ],
@@ -669,25 +902,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingPlanResponseDoc"
+                            "$ref": "#/definitions/BillingPlanResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -753,13 +986,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeListResponseDoc"
+                            "$ref": "#/definitions/RedemptionCodeListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -788,7 +1021,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.CreateRedemptionCodeRequest"
+                            "$ref": "#/definitions/CreateRedemptionCodeRequest"
                         }
                     }
                 ],
@@ -796,19 +1029,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeCreateResponseDoc"
+                            "$ref": "#/definitions/RedemptionCodeCreateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -839,7 +1072,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BatchDeleteRedemptionCodeRequest"
+                            "$ref": "#/definitions/BatchDeleteRedemptionCodeRequest"
                         }
                     }
                 ],
@@ -847,13 +1080,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BatchDeleteRedemptionCodeResponseDoc"
+                            "$ref": "#/definitions/BatchDeleteRedemptionCodeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -890,25 +1123,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeDeleteResponseDoc"
+                            "$ref": "#/definitions/RedemptionCodeDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -944,7 +1177,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.PatchRedemptionCodeRequestDoc"
+                            "$ref": "#/definitions/PatchRedemptionCodeRequestDoc"
                         }
                     }
                 ],
@@ -952,19 +1185,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeResponseDoc"
+                            "$ref": "#/definitions/RedemptionCodeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -1001,25 +1234,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeResponseDoc"
+                            "$ref": "#/definitions/RedemptionCodeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -1103,19 +1336,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.UsageLogListResponseDoc"
+                            "$ref": "#/definitions/UsageLogListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -1211,19 +1444,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ConversationEventListResponseDoc"
+                            "$ref": "#/definitions/ConversationEventListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -1254,7 +1487,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -1344,13 +1577,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelListResponseDoc"
+                            "$ref": "#/definitions/ChannelModelListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -1379,7 +1612,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.CreateModelRequest"
+                            "$ref": "#/definitions/CreateModelRequest"
                         }
                     }
                 ],
@@ -1387,25 +1620,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.CreateModelResponseDoc"
+                            "$ref": "#/definitions/CreateModelResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -1436,7 +1669,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteRequest"
+                            "$ref": "#/definitions/BatchDeleteRequest"
                         }
                     }
                 ],
@@ -1444,13 +1677,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteResponseDoc"
+                            "$ref": "#/definitions/BatchDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -1481,7 +1714,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ReorderModelsRequest"
+                            "$ref": "#/definitions/ReorderModelsRequest"
                         }
                     }
                 ],
@@ -1489,25 +1722,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc"
+                            "$ref": "#/definitions/SuccessDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -1544,25 +1777,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc"
+                            "$ref": "#/definitions/SuccessDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -1598,7 +1831,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateModelRequest"
+                            "$ref": "#/definitions/UpdateModelRequest"
                         }
                     }
                 ],
@@ -1606,25 +1839,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateModelResponseDoc"
+                            "$ref": "#/definitions/UpdateModelResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -1673,25 +1906,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelUpstreamSourceListResponseDoc"
+                            "$ref": "#/definitions/ModelUpstreamSourceListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -1727,7 +1960,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BindModelUpstreamSourceRequest"
+                            "$ref": "#/definitions/BindModelUpstreamSourceRequest"
                         }
                     }
                 ],
@@ -1735,31 +1968,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelUpstreamSourceDataResponse"
+                            "$ref": "#/definitions/ModelUpstreamSourceDataResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -1804,7 +2037,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateModelUpstreamSourceRequest"
+                            "$ref": "#/definitions/UpdateModelUpstreamSourceRequest"
                         }
                     }
                 ],
@@ -1812,25 +2045,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateModelUpstreamSourceResponseDoc"
+                            "$ref": "#/definitions/UpdateModelUpstreamSourceResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -1867,7 +2100,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeRequest"
+                            "$ref": "#/definitions/ModelProbeRequest"
                         }
                     }
                 ],
@@ -1875,25 +2108,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeResponseDoc"
+                            "$ref": "#/definitions/ModelProbeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -1930,7 +2163,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeRequest"
+                            "$ref": "#/definitions/ModelProbeRequest"
                         }
                     }
                 ],
@@ -1938,25 +2171,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeBatchResponseDoc"
+                            "$ref": "#/definitions/ModelProbeBatchResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -1984,13 +2217,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc"
+                            "$ref": "#/definitions/SuccessDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2039,25 +2272,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc"
+                            "$ref": "#/definitions/SuccessDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2123,13 +2356,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpstreamListResponseDoc"
+                            "$ref": "#/definitions/UpstreamListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2158,7 +2391,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.CreateUpstreamRequest"
+                            "$ref": "#/definitions/CreateUpstreamRequest"
                         }
                     }
                 ],
@@ -2166,25 +2399,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.CreateUpstreamResponseDoc"
+                            "$ref": "#/definitions/CreateUpstreamResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2215,7 +2448,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteRequest"
+                            "$ref": "#/definitions/BatchDeleteRequest"
                         }
                     }
                 ],
@@ -2223,13 +2456,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteResponseDoc"
+                            "$ref": "#/definitions/BatchDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2266,25 +2499,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc"
+                            "$ref": "#/definitions/SuccessDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2320,7 +2553,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateUpstreamRequest"
+                            "$ref": "#/definitions/UpdateUpstreamRequest"
                         }
                     }
                 ],
@@ -2328,25 +2561,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpdateUpstreamResponseDoc"
+                            "$ref": "#/definitions/UpdateUpstreamResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2383,25 +2616,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc"
+                            "$ref": "#/definitions/SuccessDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2438,25 +2671,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ResetUpstreamCircuitResponseDoc"
+                            "$ref": "#/definitions/ResetUpstreamCircuitResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2535,25 +2768,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpstreamModelListResponseDoc"
+                            "$ref": "#/definitions/UpstreamModelListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2589,7 +2822,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpsertUpstreamModelRequest"
+                            "$ref": "#/definitions/UpsertUpstreamModelRequest"
                         }
                     }
                 ],
@@ -2597,31 +2830,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpsertUpstreamModelResponseDoc"
+                            "$ref": "#/definitions/UpsertUpstreamModelResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2659,7 +2892,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteRequest"
+                            "$ref": "#/definitions/BatchDeleteRequest"
                         }
                     }
                 ],
@@ -2667,13 +2900,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteResponseDoc"
+                            "$ref": "#/definitions/BatchDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2711,7 +2944,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ImportUpstreamModelsRequest"
+                            "$ref": "#/definitions/ImportUpstreamModelsRequest"
                         }
                     }
                 ],
@@ -2719,31 +2952,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ImportUpstreamModelsResponseDoc"
+                            "$ref": "#/definitions/ImportUpstreamModelsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "502": {
                         "description": "Bad Gateway",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2780,31 +3013,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.UpstreamRemoteModelsResponseDoc"
+                            "$ref": "#/definitions/UpstreamRemoteModelsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "502": {
                         "description": "Bad Gateway",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2841,31 +3074,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.SyncUpstreamModelsResponseDoc"
+                            "$ref": "#/definitions/SyncUpstreamModelsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "502": {
                         "description": "Bad Gateway",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2909,25 +3142,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc"
+                            "$ref": "#/definitions/SuccessDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -2971,25 +3204,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc"
+                            "$ref": "#/definitions/SuccessDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -3033,25 +3266,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ResetUpstreamCircuitResponseDoc"
+                            "$ref": "#/definitions/ResetUpstreamCircuitResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -3092,25 +3325,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc"
+                            "$ref": "#/definitions/SuccessDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -3151,25 +3384,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc"
+                            "$ref": "#/definitions/SuccessDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -3213,7 +3446,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeRequest"
+                            "$ref": "#/definitions/ModelProbeRequest"
                         }
                     }
                 ],
@@ -3221,25 +3454,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ModelProbeResponseDoc"
+                            "$ref": "#/definitions/ModelProbeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -3270,7 +3503,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.CleanupLogsRequest"
+                            "$ref": "#/definitions/CleanupLogsRequest"
                         }
                     }
                 ],
@@ -3278,19 +3511,460 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.CleanupLogsResponseDoc"
+                            "$ref": "#/definitions/CleanupLogsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/mcp/servers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员查看已配置的 MCP 服务及其工具统计",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-mcp"
+                ],
+                "summary": "获取 MCP 服务列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ServerListResponseDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员创建一个 MCP 服务配置",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-mcp"
+                ],
+                "summary": "创建 MCP 服务",
+                "parameters": [
+                    {
+                        "description": "MCP 服务配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateServerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ServerDataResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/mcp/servers/order": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员保存 MCP 服务及其工具的展示顺序",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-mcp"
+                ],
+                "summary": "调整 MCP 服务及工具顺序",
+                "parameters": [
+                    {
+                        "description": "MCP 排序配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ReorderServersRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ServerToolOrderListResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/mcp/servers/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员删除一个 MCP 服务及其工具",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-mcp"
+                ],
+                "summary": "删除 MCP 服务",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "MCP 服务 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/DeleteServerResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员更新一个 MCP 服务配置",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-mcp"
+                ],
+                "summary": "更新 MCP 服务",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "MCP 服务 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "MCP 服务配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateServerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ServerDataResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/mcp/servers/{id}/sync": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员从 MCP 服务同步工具定义",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-mcp"
+                ],
+                "summary": "同步 MCP 工具",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "MCP 服务 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ToolListResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/mcp/servers/{id}/tools": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员查看指定 MCP 服务已同步的工具",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-mcp"
+                ],
+                "summary": "获取 MCP 服务工具",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "MCP 服务 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ToolListResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/mcp/servers/{id}/tools/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员批量启用或停用指定 MCP 服务的工具",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-mcp"
+                ],
+                "summary": "批量更新 MCP 工具状态",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "MCP 服务 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "MCP 工具状态",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateServerToolsStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ToolListResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/mcp/tools/{id}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员更新 MCP 工具的展示信息或状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-mcp"
+                ],
+                "summary": "更新 MCP 工具",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "MCP 工具 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "MCP 工具配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateToolRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ToolResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
                         }
                     }
                 }
@@ -3327,25 +4001,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ModelPermissionGroupsResponseDoc"
+                            "$ref": "#/definitions/ModelPermissionGroupsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -3381,7 +4055,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.SetModelPermissionGroupsRequest"
+                            "$ref": "#/definitions/SetModelPermissionGroupsRequest"
                         }
                     }
                 ],
@@ -3389,25 +4063,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ModelPermissionGroupsResponseDoc"
+                            "$ref": "#/definitions/ModelPermissionGroupsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -3497,19 +4171,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.PaymentOrderListResponseDoc"
+                            "$ref": "#/definitions/PaymentOrderListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -3537,13 +4211,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.PermissionGroupListResponseDoc"
+                            "$ref": "#/definitions/PermissionGroupListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -3572,7 +4246,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.CreatePermissionGroupRequest"
+                            "$ref": "#/definitions/CreatePermissionGroupRequest"
                         }
                     }
                 ],
@@ -3580,19 +4254,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.PermissionGroupDataResponseDoc"
+                            "$ref": "#/definitions/PermissionGroupDataResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -3629,31 +4303,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.DeletePermissionGroupResponseDoc"
+                            "$ref": "#/definitions/DeletePermissionGroupResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -3689,7 +4363,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.UpdatePermissionGroupRequest"
+                            "$ref": "#/definitions/UpdatePermissionGroupRequest"
                         }
                     }
                 ],
@@ -3697,25 +4371,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.PermissionGroupDataResponseDoc"
+                            "$ref": "#/definitions/PermissionGroupDataResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -3752,25 +4426,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.GroupModelsResponseDoc"
+                            "$ref": "#/definitions/GroupModelsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -3806,7 +4480,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.SetGroupModelsRequest"
+                            "$ref": "#/definitions/SetGroupModelsRequest"
                         }
                     }
                 ],
@@ -3814,25 +4488,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.GroupModelsResponseDoc"
+                            "$ref": "#/definitions/GroupModelsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -3869,31 +4543,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.GroupUsersResponseDoc"
+                            "$ref": "#/definitions/GroupUsersResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -3929,7 +4603,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.SetGroupUsersRequest"
+                            "$ref": "#/definitions/SetGroupUsersRequest"
                         }
                     }
                 ],
@@ -3937,31 +4611,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.GroupUsersResponseDoc"
+                            "$ref": "#/definitions/GroupUsersResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -4014,13 +4688,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetPageResponseDoc"
+                            "$ref": "#/definitions/PromptPresetPageResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     }
                 }
@@ -4048,7 +4722,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.WritePromptPresetRequest"
+                            "$ref": "#/definitions/WritePromptPresetRequest"
                         }
                     }
                 ],
@@ -4056,25 +4730,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetResponseDoc"
+                            "$ref": "#/definitions/PromptPresetResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     }
                 }
@@ -4110,25 +4784,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetDeleteResponseDoc"
+                            "$ref": "#/definitions/PromptPresetDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     }
                 }
@@ -4163,7 +4837,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.PatchPromptPresetRequest"
+                            "$ref": "#/definitions/PatchPromptPresetRequest"
                         }
                     }
                 ],
@@ -4171,31 +4845,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetResponseDoc"
+                            "$ref": "#/definitions/PromptPresetResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     }
                 }
@@ -4220,7 +4894,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4249,7 +4923,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_settings.PatchSettingsRequest"
+                            "$ref": "#/definitions/SettingsPatchSettingsRequest"
                         }
                     }
                 ],
@@ -4257,7 +4931,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4281,7 +4955,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4305,7 +4979,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4329,7 +5003,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4353,7 +5027,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4377,7 +5051,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4401,7 +5075,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4425,7 +5099,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4449,7 +5123,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4473,7 +5147,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4497,7 +5171,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4521,7 +5195,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4545,7 +5219,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4569,7 +5243,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4593,7 +5267,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4627,7 +5301,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -4680,13 +5354,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.SkillPageResponseDoc"
+                            "$ref": "#/definitions/SkillPageResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     }
                 }
@@ -4714,7 +5388,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.WriteSkillRequest"
+                            "$ref": "#/definitions/WriteSkillRequest"
                         }
                     }
                 ],
@@ -4722,25 +5396,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.SkillResponseDoc"
+                            "$ref": "#/definitions/SkillResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     }
                 }
@@ -4776,25 +5450,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.SkillDeleteResponseDoc"
+                            "$ref": "#/definitions/SkillDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     }
                 }
@@ -4829,7 +5503,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.PatchSkillRequest"
+                            "$ref": "#/definitions/PatchSkillRequest"
                         }
                     }
                 ],
@@ -4837,31 +5511,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.SkillResponseDoc"
+                            "$ref": "#/definitions/SkillResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     }
                 }
@@ -4945,19 +5619,121 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.SystemEventListResponseDoc"
+                            "$ref": "#/definitions/SystemEventListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/usage-statistics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员按日期、统计对象、平台模型和计费范围查看全局费用、Token、调用次数及排名；用户与权限组筛选互斥",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理员查询全局用量统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期(YYYY-MM-DD)，默认近30天",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期(YYYY-MM-DD，包含当日)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限组ID，与 user_id 互斥",
+                        "name": "permission_group_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "平台模型名",
+                        "name": "platform_model_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "计费范围：all/free/billable",
+                        "name": "billing_scope",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "返回范围：all/models/users",
+                        "name": "section",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "模型排名指标：cost/tokens/calls",
+                        "name": "model_rank_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户排名指标：cost/tokens/calls",
+                        "name": "user_rank_by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UsageStatisticsResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/AdminErrorDoc"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/AdminErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -5017,19 +5793,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.UserAuthEventListResponseDoc"
+                            "$ref": "#/definitions/UserAuthEventListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -5089,13 +5865,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.UserListResponseDoc"
+                            "$ref": "#/definitions/UserListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -5124,7 +5900,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.CreateUserRequest"
+                            "$ref": "#/definitions/CreateUserRequest"
                         }
                     }
                 ],
@@ -5132,25 +5908,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.CreateUserResponseDoc"
+                            "$ref": "#/definitions/CreateUserResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -5181,7 +5957,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ImportOpenWebUIUsersRequest"
+                            "$ref": "#/definitions/ImportOpenWebUIUsersRequest"
                         }
                     }
                 ],
@@ -5189,25 +5965,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ImportOpenWebUIUsersResponseDoc"
+                            "$ref": "#/definitions/ImportOpenWebUIUsersResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -5244,31 +6020,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.DeleteUserResponseDoc"
+                            "$ref": "#/definitions/DeleteUserResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -5304,7 +6080,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.PatchUserRequest"
+                            "$ref": "#/definitions/PatchUserRequest"
                         }
                     }
                 ],
@@ -5312,31 +6088,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.UpdateUserStatusResponseDoc"
+                            "$ref": "#/definitions/UpdateUserStatusResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -5374,7 +6150,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ResetUserPasswordRequest"
+                            "$ref": "#/definitions/ResetUserPasswordRequest"
                         }
                     }
                 ],
@@ -5382,31 +6158,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ResetUserPasswordResponseDoc"
+                            "$ref": "#/definitions/ResetUserPasswordResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -5443,25 +6219,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.RevokeUserSessionsResponseDoc"
+                            "$ref": "#/definitions/RevokeUserSessionsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -5499,7 +6275,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.UpdateUserStatusRequest"
+                            "$ref": "#/definitions/UpdateUserStatusRequest"
                         }
                     }
                 ],
@@ -5507,31 +6283,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.UpdateUserStatusResponseDoc"
+                            "$ref": "#/definitions/UpdateUserStatusResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_admin.ErrorDoc"
+                            "$ref": "#/definitions/AdminErrorDoc"
                         }
                     }
                 }
@@ -5567,13 +6343,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementListResponseDoc"
+                            "$ref": "#/definitions/AnnouncementListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     }
                 }
@@ -5611,7 +6387,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementStateRequest"
+                            "$ref": "#/definitions/AnnouncementStateRequest"
                         }
                     }
                 ],
@@ -5619,25 +6395,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementCloseResponseDoc"
+                            "$ref": "#/definitions/AnnouncementCloseResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     }
                 }
@@ -5675,7 +6451,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementStateRequest"
+                            "$ref": "#/definitions/AnnouncementStateRequest"
                         }
                     }
                 ],
@@ -5683,25 +6459,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementDismissResponseDoc"
+                            "$ref": "#/definitions/AnnouncementDismissResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_announcement.ErrorDoc"
+                            "$ref": "#/definitions/AnnouncementErrorDoc"
                         }
                     }
                 }
@@ -5727,7 +6503,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.LoginRequest"
+                            "$ref": "#/definitions/LoginRequest"
                         }
                     }
                 ],
@@ -5735,25 +6511,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.LoginResponseDoc"
+                            "$ref": "#/definitions/LoginResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -5773,13 +6549,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.LoginOptionsResponseDoc"
+                            "$ref": "#/definitions/LoginOptionsResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -5807,19 +6583,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.LogoutResponseDoc"
+                            "$ref": "#/definitions/LogoutResponseDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -5847,19 +6623,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.LogoutResponseDoc"
+                            "$ref": "#/definitions/LogoutResponseDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -5885,7 +6661,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.PasswordResetCompleteRequest"
+                            "$ref": "#/definitions/PasswordResetCompleteRequest"
                         }
                     }
                 ],
@@ -5893,19 +6669,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.PasswordResetCompleteResponseDoc"
+                            "$ref": "#/definitions/PasswordResetCompleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -5931,7 +6707,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.PasswordResetStartRequest"
+                            "$ref": "#/definitions/PasswordResetStartRequest"
                         }
                     }
                 ],
@@ -5939,19 +6715,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.PasswordResetStartResponseDoc"
+                            "$ref": "#/definitions/PasswordResetStartResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -5971,25 +6747,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.RefreshTokenResponseDoc"
+                            "$ref": "#/definitions/RefreshTokenResponseDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -6015,7 +6791,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.EmailRegistrationCompleteRequest"
+                            "$ref": "#/definitions/EmailRegistrationCompleteRequest"
                         }
                     }
                 ],
@@ -6023,13 +6799,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.LoginResponseDoc"
+                            "$ref": "#/definitions/LoginResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -6055,7 +6831,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.EmailRegistrationStartRequest"
+                            "$ref": "#/definitions/EmailRegistrationStartRequest"
                         }
                     }
                 ],
@@ -6063,13 +6839,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.EmailRegistrationStartResponseDoc"
+                            "$ref": "#/definitions/EmailRegistrationStartResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -6097,19 +6873,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ActiveSessionListResponseDoc"
+                            "$ref": "#/definitions/ActiveSessionListResponseDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -6140,7 +6916,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.UpdateCurrentSessionLocationRequest"
+                            "$ref": "#/definitions/UpdateCurrentSessionLocationRequest"
                         }
                     }
                 ],
@@ -6148,25 +6924,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.UpdateCurrentSessionLocationResponseDoc"
+                            "$ref": "#/definitions/UpdateCurrentSessionLocationResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -6203,19 +6979,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.LogoutResponseDoc"
+                            "$ref": "#/definitions/LogoutResponseDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -6243,13 +7019,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingAccountResponseDoc"
+                            "$ref": "#/definitions/BillingAccountResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -6277,13 +7053,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.BillingOverviewResponseDoc"
+                            "$ref": "#/definitions/BillingOverviewResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -6314,7 +7090,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.CreateCheckoutRequest"
+                            "$ref": "#/definitions/CreateCheckoutRequest"
                         }
                     }
                 ],
@@ -6322,19 +7098,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.CheckoutResponseDoc"
+                            "$ref": "#/definitions/CheckoutResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -6375,7 +7151,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -6403,13 +7179,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.PlanListResponseDoc"
+                            "$ref": "#/definitions/PlanListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -6440,7 +7216,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedeemCodeRequest"
+                            "$ref": "#/definitions/RedeemCodeRequest"
                         }
                     }
                 ],
@@ -6448,19 +7224,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.RedemptionApplyResponseDoc"
+                            "$ref": "#/definitions/RedemptionApplyResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -6491,7 +7267,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.SubscribeRequest"
+                            "$ref": "#/definitions/SubscribeRequest"
                         }
                     }
                 ],
@@ -6499,19 +7275,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.SubscribeResponseDoc"
+                            "$ref": "#/definitions/SubscribeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -6571,13 +7347,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UsageLedgerListResponseDoc"
+                            "$ref": "#/definitions/UsageLedgerListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -6613,13 +7389,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UsageDailyListResponseDoc"
+                            "$ref": "#/definitions/UsageDailyListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
                         }
                     }
                 }
@@ -6655,13 +7431,51 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.UsageMonthlyListResponseDoc"
+                            "$ref": "#/definitions/UsageMonthlyListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_billing.ErrorDoc"
+                            "$ref": "#/definitions/BillingErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/branding": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settings"
+                ],
+                "summary": "查询公开品牌配置",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/BrandingResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/branding/manifest.webmanifest": {
+            "get": {
+                "produces": [
+                    "application/manifest+json"
+                ],
+                "tags": [
+                    "settings"
+                ],
+                "summary": "查询品牌 Web App Manifest",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/BrandingManifestResponse"
                         }
                     }
                 }
@@ -6698,25 +7512,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ContextArtifactResponseDoc"
+                            "$ref": "#/definitions/ContextArtifactResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -6752,13 +7566,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectListResponseDoc"
+                            "$ref": "#/definitions/ConversationProjectListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -6787,7 +7601,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.CreateConversationProjectRequest"
+                            "$ref": "#/definitions/CreateConversationProjectRequest"
                         }
                     }
                 ],
@@ -6795,19 +7609,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectResponseDoc"
+                            "$ref": "#/definitions/ConversationProjectResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -6838,7 +7652,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ReorderConversationProjectsRequest"
+                            "$ref": "#/definitions/ReorderConversationProjectsRequest"
                         }
                     }
                 ],
@@ -6846,25 +7660,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectListResponseDoc"
+                            "$ref": "#/definitions/ConversationProjectListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -6913,25 +7727,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationDeleteResponseDoc"
+                            "$ref": "#/definitions/ConversationDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -6967,7 +7781,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.UpdateConversationProjectRequest"
+                            "$ref": "#/definitions/UpdateConversationProjectRequest"
                         }
                     }
                 ],
@@ -6975,25 +7789,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectResponseDoc"
+                            "$ref": "#/definitions/ConversationProjectResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7027,13 +7841,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc"
+                            "$ref": "#/definitions/SuccessDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7079,7 +7893,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7151,13 +7965,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationListResponseDoc"
+                            "$ref": "#/definitions/ConversationListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7186,7 +8000,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.CreateConversationRequest"
+                            "$ref": "#/definitions/CreateConversationRequest"
                         }
                     }
                 ],
@@ -7194,19 +8008,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationCreateResponseDoc"
+                            "$ref": "#/definitions/ConversationCreateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7234,13 +8048,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationDefaultModelCandidateResponseDoc"
+                            "$ref": "#/definitions/ConversationDefaultModelCandidateResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7271,7 +8085,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7302,7 +8116,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveRequest"
+                            "$ref": "#/definitions/ConversationArchiveRequest"
                         }
                     }
                 ],
@@ -7310,25 +8124,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "413": {
                         "description": "Request Entity Too Large",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7359,7 +8173,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.BatchSetConversationProjectRequest"
+                            "$ref": "#/definitions/BatchSetConversationProjectRequest"
                         }
                     }
                 ],
@@ -7367,25 +8181,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.BatchSetConversationProjectResponseDoc"
+                            "$ref": "#/definitions/BatchSetConversationProjectResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7416,7 +8230,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.RevokeConversationSharesRequest"
+                            "$ref": "#/definitions/RevokeConversationSharesRequest"
                         }
                     }
                 ],
@@ -7424,25 +8238,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.RevokeConversationSharesResponseDoc"
+                            "$ref": "#/definitions/RevokeConversationSharesResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7479,25 +8293,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7538,25 +8352,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationDeleteResponseDoc"
+                            "$ref": "#/definitions/ConversationDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7594,7 +8408,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SetConversationArchiveRequest"
+                            "$ref": "#/definitions/SetConversationArchiveRequest"
                         }
                     }
                 ],
@@ -7602,25 +8416,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7657,25 +8471,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveResponseDoc"
+                            "$ref": "#/definitions/ConversationArchiveResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7724,25 +8538,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.MessageListResponseDoc"
+                            "$ref": "#/definitions/MessageListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7778,7 +8592,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SendMessageRequest"
+                            "$ref": "#/definitions/SendMessageRequest"
                         }
                     }
                 ],
@@ -7786,25 +8600,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SendMessageResponseDoc"
+                            "$ref": "#/definitions/SendMessageResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7842,7 +8656,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SendMessageRequest"
+                            "$ref": "#/definitions/SendMessageRequest"
                         }
                     }
                 ],
@@ -7856,19 +8670,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7906,7 +8720,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SetConversationProjectRequest"
+                            "$ref": "#/definitions/SetConversationProjectRequest"
                         }
                     }
                 ],
@@ -7914,25 +8728,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -7981,25 +8795,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationRunListResponseDoc"
+                            "$ref": "#/definitions/ConversationRunListResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8036,25 +8850,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationShareResponseDoc"
+                            "$ref": "#/definitions/ConversationShareResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8089,7 +8903,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.CreateConversationShareRequest"
+                            "$ref": "#/definitions/CreateConversationShareRequest"
                         }
                     }
                 ],
@@ -8097,25 +8911,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationShareResponseDoc"
+                            "$ref": "#/definitions/ConversationShareResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8150,25 +8964,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationShareResponseDoc"
+                            "$ref": "#/definitions/ConversationShareResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8205,7 +9019,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.CreateConversationShareRequest"
+                            "$ref": "#/definitions/CreateConversationShareRequest"
                         }
                     }
                 ],
@@ -8213,25 +9027,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationShareResponseDoc"
+                            "$ref": "#/definitions/ConversationShareResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8269,7 +9083,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SetConversationStarRequest"
+                            "$ref": "#/definitions/SetConversationStarRequest"
                         }
                     }
                 ],
@@ -8277,25 +9091,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8333,7 +9147,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.RenameConversationRequest"
+                            "$ref": "#/definitions/RenameConversationRequest"
                         }
                     }
                 ],
@@ -8341,25 +9155,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8396,25 +9210,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8474,13 +9288,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.FileListResponseDoc"
+                            "$ref": "#/definitions/FileListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8521,31 +9335,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.UploadFileResponseDoc"
+                            "$ref": "#/definitions/UploadFileResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "413": {
                         "description": "Request Entity Too Large",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8582,25 +9396,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.DeleteFileResponseDoc"
+                            "$ref": "#/definitions/DeleteFileResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8636,7 +9450,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.UpdateFileRequest"
+                            "$ref": "#/definitions/UpdateFileRequest"
                         }
                     }
                 ],
@@ -8644,25 +9458,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.FileUpdateResponseDoc"
+                            "$ref": "#/definitions/FileUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -8702,19 +9516,50 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/mcp/tools": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前聊天侧可选择的 MCP 工具",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mcp"
+                ],
+                "summary": "获取可用 MCP 工具",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ToolListResponseDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/McpErrorDoc"
                         }
                     }
                 }
@@ -8742,19 +9587,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.MeResponseDoc"
+                            "$ref": "#/definitions/MeResponseDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -8783,7 +9628,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.DeleteAccountRequest"
+                            "$ref": "#/definitions/DeleteAccountRequest"
                         }
                     }
                 ],
@@ -8791,25 +9636,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.DeleteAccountResponseDoc"
+                            "$ref": "#/definitions/DeleteAccountResponseDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -8838,7 +9683,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.PatchMeRequest"
+                            "$ref": "#/definitions/PatchMeRequest"
                         }
                     }
                 ],
@@ -8846,25 +9691,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.PatchMeResponseDoc"
+                            "$ref": "#/definitions/PatchMeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -8894,7 +9739,7 @@ const docTemplate = `{
                         "name": "payload",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.SecurityVerificationStartRequest"
+                            "$ref": "#/definitions/SecurityVerificationStartRequest"
                         }
                     }
                 ],
@@ -8902,25 +9747,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.EmailVerificationStartResponseDoc"
+                            "$ref": "#/definitions/EmailVerificationStartResponseDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -8948,25 +9793,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.PatchMeResponseDoc"
+                            "$ref": "#/definitions/PatchMeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -8997,7 +9842,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.PatchUsernameRequest"
+                            "$ref": "#/definitions/PatchUsernameRequest"
                         }
                     }
                 ],
@@ -9005,31 +9850,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.PatchMeResponseDoc"
+                            "$ref": "#/definitions/PatchMeResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_auth.ErrorDoc"
+                            "$ref": "#/definitions/AuthErrorDoc"
                         }
                     }
                 }
@@ -9057,13 +9902,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_memory.UserMemoryListResponseDoc"
+                            "$ref": "#/definitions/UserMemoryListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_memory.ErrorDoc"
+                            "$ref": "#/definitions/MemoryErrorDoc"
                         }
                     }
                 }
@@ -9092,7 +9937,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_memory.UpsertUserMemoryRequest"
+                            "$ref": "#/definitions/UpsertUserMemoryRequest"
                         }
                     }
                 ],
@@ -9100,19 +9945,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_memory.UpsertUserMemoryResponseDoc"
+                            "$ref": "#/definitions/UpsertUserMemoryResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_memory.ErrorDoc"
+                            "$ref": "#/definitions/MemoryErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_memory.ErrorDoc"
+                            "$ref": "#/definitions/MemoryErrorDoc"
                         }
                     }
                 }
@@ -9149,19 +9994,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_memory.UpsertUserMemoryResponseDoc"
+                            "$ref": "#/definitions/UpsertUserMemoryResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_memory.ErrorDoc"
+                            "$ref": "#/definitions/MemoryErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_memory.ErrorDoc"
+                            "$ref": "#/definitions/MemoryErrorDoc"
                         }
                     }
                 }
@@ -9199,7 +10044,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.UpdateMessageRequest"
+                            "$ref": "#/definitions/UpdateMessageRequest"
                         }
                     }
                 ],
@@ -9207,25 +10052,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.MessageResponseDoc"
+                            "$ref": "#/definitions/MessageResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -9263,7 +10108,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.SetMessageFeedbackRequest"
+                            "$ref": "#/definitions/SetMessageFeedbackRequest"
                         }
                     }
                 ],
@@ -9271,25 +10116,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.MessageFeedbackResponseDoc"
+                            "$ref": "#/definitions/MessageFeedbackResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -9317,13 +10162,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.PublicModelListResponseDoc"
+                            "$ref": "#/definitions/PublicModelListResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_channel.ErrorDoc"
+                            "$ref": "#/definitions/ChannelErrorDoc"
                         }
                     }
                 }
@@ -9371,13 +10216,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetPageResponseDoc"
+                            "$ref": "#/definitions/PromptPresetPageResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     }
                 }
@@ -9431,13 +10276,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetPageResponseDoc"
+                            "$ref": "#/definitions/PromptPresetPageResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     }
                 }
@@ -9465,7 +10310,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.WritePromptPresetRequest"
+                            "$ref": "#/definitions/WritePromptPresetRequest"
                         }
                     }
                 ],
@@ -9473,25 +10318,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetResponseDoc"
+                            "$ref": "#/definitions/PromptPresetResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     }
                 }
@@ -9527,25 +10372,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetDeleteResponseDoc"
+                            "$ref": "#/definitions/PromptPresetDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     }
                 }
@@ -9580,7 +10425,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.PatchPromptPresetRequest"
+                            "$ref": "#/definitions/PatchPromptPresetRequest"
                         }
                     }
                 ],
@@ -9588,31 +10433,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetResponseDoc"
+                            "$ref": "#/definitions/PromptPresetResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_promptpreset.ErrorDoc"
+                            "$ref": "#/definitions/PromptPresetErrorDoc"
                         }
                     }
                 }
@@ -9636,7 +10481,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -9655,7 +10500,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -9679,7 +10524,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -9703,7 +10548,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -9735,25 +10580,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.PublicSharedConversationResponseDoc"
+                            "$ref": "#/definitions/PublicSharedConversationResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -9790,31 +10635,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ConversationUpdateResponseDoc"
+                            "$ref": "#/definitions/ConversationUpdateResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -9856,19 +10701,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_conversation.ErrorDoc"
+                            "$ref": "#/definitions/ConversationErrorDoc"
                         }
                     }
                 }
@@ -9900,6 +10745,16 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "按技能 ID 筛选，可重复传递",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "页码",
                         "name": "page",
@@ -9916,13 +10771,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.SkillSummaryPageResponseDoc"
+                            "$ref": "#/definitions/SkillSummaryPageResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     }
                 }
@@ -9975,13 +10836,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.SkillPageResponseDoc"
+                            "$ref": "#/definitions/SkillPageResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     }
                 }
@@ -10009,7 +10870,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.WriteSkillRequest"
+                            "$ref": "#/definitions/WriteSkillRequest"
                         }
                     }
                 ],
@@ -10017,25 +10878,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.SkillResponseDoc"
+                            "$ref": "#/definitions/SkillResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     }
                 }
@@ -10071,25 +10932,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.SkillDeleteResponseDoc"
+                            "$ref": "#/definitions/SkillDeleteResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     }
                 }
@@ -10124,7 +10985,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.PatchSkillRequest"
+                            "$ref": "#/definitions/PatchSkillRequest"
                         }
                     }
                 ],
@@ -10132,31 +10993,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.SkillResponseDoc"
+                            "$ref": "#/definitions/SkillResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     }
                 }
@@ -10193,25 +11054,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.SkillResponseDoc"
+                            "$ref": "#/definitions/SkillResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_skill.ErrorDoc"
+                            "$ref": "#/definitions/SkillErrorDoc"
                         }
                     }
                 }
@@ -10236,13 +11097,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_usersettings.UserSettingsResponseDoc"
+                            "$ref": "#/definitions/UserSettingsResponseDoc"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -10271,7 +11132,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_usersettings.PatchSettingsRequest"
+                            "$ref": "#/definitions/UserSettingsPatchSettingsRequest"
                         }
                     }
                 ],
@@ -10279,19 +11140,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_usersettings.UserSettingsResponseDoc"
+                            "$ref": "#/definitions/UserSettingsResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope"
+                            "$ref": "#/definitions/Envelope"
                         }
                     }
                 }
@@ -10322,7 +11183,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_openapi.ChatCompletionRequestDoc"
+                            "$ref": "#/definitions/ChatCompletionRequestDoc"
                         }
                     }
                 ],
@@ -10330,31 +11191,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_openapi.ChatCompletionResponseDoc"
+                            "$ref": "#/definitions/ChatCompletionResponseDoc"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                            "$ref": "#/definitions/openAIErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                            "$ref": "#/definitions/openAIErrorResponse"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                            "$ref": "#/definitions/openAIErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                            "$ref": "#/definitions/openAIErrorResponse"
                         }
                     }
                 }
@@ -10382,25 +11243,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_openapi.ModelListResponseDoc"
+                            "$ref": "#/definitions/OpenapiModelListResponseDoc"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                            "$ref": "#/definitions/openAIErrorResponse"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                            "$ref": "#/definitions/openAIErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_transport_http_openapi.openAIErrorResponse"
+                            "$ref": "#/definitions/openAIErrorResponse"
                         }
                     }
                 }
@@ -10408,51 +11269,178 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.Envelope": {
+        "ActiveSessionListResponse": {
             "type": "object",
+            "required": [
+                "results",
+                "total"
+            ],
             "properties": {
-                "data": {},
-                "details": {},
-                "errorCode": {
-                    "type": "string"
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ActiveSessionResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ActiveSessionListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ActiveSessionListResponse"
                 },
                 "errorMsg": {
-                    "type": "string"
-                },
-                "requestId": {
                     "type": "string"
                 }
             }
         },
-        "github_com_DEEIX-AI_DEEIX-Chat_backend_internal_shared_response.SuccessDoc": {
+        "ActiveSessionResponse": {
             "type": "object",
+            "required": [
+                "browserName",
+                "cityName",
+                "clientIP",
+                "countryCode",
+                "createdAt",
+                "current",
+                "deviceLabel",
+                "deviceName",
+                "deviceType",
+                "expiresAt",
+                "geoAccuracy",
+                "geoSource",
+                "ipLatitude",
+                "ipLongitude",
+                "lastSeenAt",
+                "locationLabel",
+                "osName",
+                "preciseAccuracyMeters",
+                "preciseLatitude",
+                "preciseLocatedAt",
+                "preciseLongitude",
+                "regionName",
+                "sessionID",
+                "timezoneName",
+                "updatedAt"
+            ],
             "properties": {
-                "data": {},
-                "details": {},
-                "errorCode": {
-                    "type": "string",
-                    "example": ""
+                "browserName": {
+                    "type": "string"
                 },
-                "errorMsg": {
-                    "type": "string",
-                    "example": ""
+                "cityName": {
+                    "type": "string"
                 },
-                "requestId": {
+                "clientIP": {
+                    "type": "string"
+                },
+                "countryCode": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "current": {
+                    "type": "boolean"
+                },
+                "deviceLabel": {
+                    "type": "string"
+                },
+                "deviceName": {
+                    "type": "string"
+                },
+                "deviceType": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "geoAccuracy": {
+                    "type": "string"
+                },
+                "geoSource": {
+                    "type": "string"
+                },
+                "ipLatitude": {
+                    "type": "number",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "ipLongitude": {
+                    "type": "number",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "lastSeenAt": {
                     "type": "string",
-                    "example": ""
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "locationLabel": {
+                    "type": "string"
+                },
+                "osName": {
+                    "type": "string"
+                },
+                "preciseAccuracyMeters": {
+                    "type": "number",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "preciseLatitude": {
+                    "type": "number",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "preciseLocatedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "preciseLongitude": {
+                    "type": "number",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "regionName": {
+                    "type": "string"
+                },
+                "sessionID": {
+                    "type": "string"
+                },
+                "timezoneName": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
                 }
             }
         },
-        "internal_transport_http_admin.AuditLogListResponseDoc": {
+        "AdminAnnouncementListResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
                     "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
                     "properties": {
                         "results": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_transport_http_admin.AuditLogResponse"
+                                "$ref": "#/definitions/AnnouncementResponse"
                             }
                         },
                         "total": {
@@ -10465,8 +11453,476 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_admin.AuditLogResponse": {
+        "AdminErrorDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {},
+                "details": {},
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                }
+            }
+        },
+        "AdminUserIdentityProviderSummaryResponse": {
+            "type": "object",
+            "required": [
+                "id",
+                "logoURL",
+                "name",
+                "slug",
+                "type"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "logoURL": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "AdminUserResponse": {
+            "type": "object",
+            "required": [
+                "appearancePreferences",
+                "avatarURL",
+                "billingAccountCurrency",
+                "billingAccountStatus",
+                "billingBalanceNanousd",
+                "billingBalanceUSD",
+                "createdAt",
+                "displayName",
+                "email",
+                "emailVerifiedAt",
+                "id",
+                "identityProviders",
+                "lastActiveAt",
+                "lastLoginAt",
+                "locale",
+                "phone",
+                "phoneVerifiedAt",
+                "profilePreferences",
+                "publicID",
+                "role",
+                "status",
+                "subscriptionExpiresAt",
+                "subscriptionPlanID",
+                "subscriptionPlanName",
+                "subscriptionStatus",
+                "subscriptionTier",
+                "timezone",
+                "twoFactorAvailable",
+                "twoFactorEnabled",
+                "twoFactorRecoveryCount",
+                "twoFactorRequired",
+                "updatedAt",
+                "username"
+            ],
+            "properties": {
+                "appearancePreferences": {
+                    "type": "string"
+                },
+                "avatarURL": {
+                    "type": "string"
+                },
+                "billingAccountCurrency": {
+                    "type": "string"
+                },
+                "billingAccountStatus": {
+                    "type": "string"
+                },
+                "billingBalanceNanousd": {
+                    "type": "integer"
+                },
+                "billingBalanceUSD": {
+                    "type": "number"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "emailVerifiedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identityProviders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AdminUserIdentityProviderSummaryResponse"
+                    }
+                },
+                "lastActiveAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "lastLoginAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "locale": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "phoneVerifiedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "profilePreferences": {
+                    "type": "string"
+                },
+                "publicID": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "subscriptionExpiresAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "subscriptionPlanID": {
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "subscriptionPlanName": {
+                    "type": "string"
+                },
+                "subscriptionStatus": {
+                    "type": "string"
+                },
+                "subscriptionTier": {
+                    "type": "string"
+                },
+                "timezone": {
+                    "type": "string"
+                },
+                "twoFactorAvailable": {
+                    "type": "boolean"
+                },
+                "twoFactorEnabled": {
+                    "type": "boolean"
+                },
+                "twoFactorRecoveryCount": {
+                    "type": "integer"
+                },
+                "twoFactorRequired": {
+                    "type": "boolean"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "AnnouncementCloseDataResponse": {
+            "type": "object",
+            "required": [
+                "closed"
+            ],
+            "properties": {
+                "closed": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "AnnouncementCloseResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/AnnouncementCloseDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "AnnouncementDataResponse": {
+            "type": "object",
+            "required": [
+                "announcement"
+            ],
+            "properties": {
+                "announcement": {
+                    "$ref": "#/definitions/AnnouncementResponse"
+                }
+            }
+        },
+        "AnnouncementDeleteDataResponse": {
+            "type": "object",
+            "required": [
+                "deleted"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "AnnouncementDeleteResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/AnnouncementDeleteDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "AnnouncementDismissDataResponse": {
+            "type": "object",
+            "required": [
+                "dismissed"
+            ],
+            "properties": {
+                "dismissed": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "AnnouncementDismissResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/AnnouncementDismissDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "AnnouncementErrorDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {},
+                "details": {},
+                "errorCode": {
+                    "type": "string",
+                    "example": "invalid_request"
+                },
+                "errorMsg": {
+                    "type": "string",
+                    "example": "invalid request"
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "AnnouncementListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AnnouncementResponse"
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "AnnouncementResponse": {
+            "type": "object",
+            "required": [
+                "closedAt",
+                "contentMarkdown",
+                "createdAt",
+                "createdByUserID",
+                "expiresAt",
+                "id",
+                "pinned",
+                "priority",
+                "startsAt",
+                "status",
+                "title",
+                "type",
+                "updatedAt"
+            ],
+            "properties": {
+                "closedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "contentMarkdown": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdByUserID": {
+                    "type": "integer"
+                },
+                "expiresAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "pinned": {
+                    "type": "boolean"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "startsAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "AnnouncementResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/AnnouncementDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "AnnouncementStateRequest": {
+            "type": "object",
+            "required": [
+                "updatedAt"
+            ],
+            "properties": {
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "AuditLogListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/AuditLogResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "AuditLogResponse": {
+            "type": "object",
+            "required": [
+                "action",
+                "actorDisplayName",
+                "actorLabel",
+                "actorUserID",
+                "actorUsername",
+                "createdAt",
+                "detailJSON",
+                "id",
+                "ip",
+                "requestID",
+                "resource",
+                "resourceID",
+                "updatedAt",
+                "userAgent"
+            ],
             "properties": {
                 "action": {
                     "type": "string"
@@ -10512,8 +11968,45 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_admin.AuthEventResponse": {
+        "AuthErrorDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {},
+                "details": {},
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                }
+            }
+        },
+        "AuthEventResponse": {
+            "type": "object",
+            "required": [
+                "clientIP",
+                "createdAt",
+                "detailJSON",
+                "eventType",
+                "id",
+                "occurredAt",
+                "reason",
+                "requestID",
+                "result",
+                "updatedAt",
+                "userAgent",
+                "userDisplayName",
+                "userID",
+                "userLabel",
+                "username"
+            ],
             "properties": {
                 "clientIP": {
                     "type": "string"
@@ -10562,1120 +12055,16 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_admin.CleanupLogsRequest": {
+        "AuthUserIdentityProviderSummaryResponse": {
             "type": "object",
             "required": [
-                "before",
+                "id",
+                "logoURL",
+                "name",
+                "slug",
                 "type"
             ],
             "properties": {
-                "before": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.CleanupLogsResponse": {
-            "type": "object",
-            "properties": {
-                "before": {
-                    "type": "string"
-                },
-                "deletedCount": {
-                    "type": "integer"
-                },
-                "type": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.CleanupLogsResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.CleanupLogsResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.ConversationEventListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_admin.ConversationEventResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.ConversationEventResponse": {
-            "type": "object",
-            "properties": {
-                "contentMarkdown": {
-                    "type": "string"
-                },
-                "conversationID": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "endedAt": {
-                    "type": "string"
-                },
-                "errorJSON": {
-                    "type": "string"
-                },
-                "eventID": {
-                    "type": "string"
-                },
-                "eventScope": {
-                    "type": "string"
-                },
-                "eventType": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "inputJSON": {
-                    "type": "string"
-                },
-                "latencyMS": {
-                    "type": "integer"
-                },
-                "messageID": {
-                    "type": "integer"
-                },
-                "outputJSON": {
-                    "type": "string"
-                },
-                "parentEventID": {
-                    "type": "string"
-                },
-                "payloadJSON": {
-                    "type": "string"
-                },
-                "phase": {
-                    "type": "string"
-                },
-                "roundID": {
-                    "type": "string"
-                },
-                "runID": {
-                    "type": "string"
-                },
-                "seq": {
-                    "type": "integer"
-                },
-                "stage": {
-                    "type": "string"
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "toolCallID": {
-                    "type": "string"
-                },
-                "toolName": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "userDisplayName": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                },
-                "userLabel": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.CreatePermissionGroupRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 512
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "rateMultiplierPercent": {
-                    "type": "integer",
-                    "maximum": 10000,
-                    "minimum": 0
-                }
-            }
-        },
-        "internal_transport_http_admin.CreateUserRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "avatarURL": {
-                    "type": "string",
-                    "maxLength": 2048
-                },
-                "displayName": {
-                    "type": "string",
-                    "maxLength": 16,
-                    "minLength": 3
-                },
-                "email": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "locale": {
-                    "type": "string",
-                    "maxLength": 16
-                },
-                "password": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 8
-                },
-                "phone": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "subscriptionExpiresAt": {
-                    "type": "string"
-                },
-                "subscriptionTier": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "timezone": {
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 16,
-                    "minLength": 3
-                }
-            }
-        },
-        "internal_transport_http_admin.CreateUserResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.UserDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.DeletePermissionGroupResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
-                },
-                "summary": {
-                    "$ref": "#/definitions/internal_transport_http_admin.PermissionGroupDeleteSummaryResponse"
-                }
-            }
-        },
-        "internal_transport_http_admin.DeletePermissionGroupResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.DeletePermissionGroupResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.DeleteUserResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_admin.DeleteUserResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.DeleteUserResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.ErrorDoc": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "details": {},
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMsg": {
-                    "type": "string"
-                },
-                "requestId": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.GroupModelsResponse": {
-            "type": "object",
-            "properties": {
-                "modelIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "rules": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_admin.PermissionGroupModelRuleResponse"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_admin.GroupModelsResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.GroupModelsResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.GroupUsersResponse": {
-            "type": "object",
-            "properties": {
-                "userIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_admin.GroupUsersResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.GroupUsersResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.ImportOpenWebUIUsersRequest": {
-            "type": "object",
-            "required": [
-                "creditMultiplier",
-                "dsn"
-            ],
-            "properties": {
-                "creditMultiplier": {
-                    "type": "number"
-                },
-                "dryRun": {
-                    "type": "boolean"
-                },
-                "dsn": {
-                    "type": "string",
-                    "maxLength": 2048
-                },
-                "importPasswords": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_admin.ImportOpenWebUIUsersResponse": {
-            "type": "object",
-            "properties": {
-                "dedupeField": {
-                    "type": "string"
-                },
-                "dedupeRule": {
-                    "type": "string"
-                },
-                "imported": {
-                    "type": "integer"
-                },
-                "passwordsGenerated": {
-                    "type": "integer"
-                },
-                "passwordsImported": {
-                    "type": "integer"
-                },
-                "passwordsInvalidHash": {
-                    "type": "integer"
-                },
-                "passwordsUnavailable": {
-                    "type": "integer"
-                },
-                "scanned": {
-                    "type": "integer"
-                },
-                "skippedDuplicateSourceEmail": {
-                    "type": "integer"
-                },
-                "skippedExistingEmail": {
-                    "type": "integer"
-                },
-                "skippedInvalidEmail": {
-                    "type": "integer"
-                },
-                "skippedInvalidRow": {
-                    "type": "integer"
-                },
-                "source": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.ImportOpenWebUIUsersResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.ImportOpenWebUIUsersResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.ModelPermissionGroupsResponse": {
-            "type": "object",
-            "properties": {
-                "effectiveGroupIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "manualGroupIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "matchedGroupIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "unassigned": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_admin.ModelPermissionGroupsResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.ModelPermissionGroupsResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.PatchUserRequest": {
-            "type": "object",
-            "properties": {
-                "avatarURL": {
-                    "type": "string",
-                    "maxLength": 2048
-                },
-                "displayName": {
-                    "type": "string",
-                    "maxLength": 16,
-                    "minLength": 3
-                },
-                "email": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "locale": {
-                    "type": "string",
-                    "maxLength": 16
-                },
-                "phone": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "profilePreferences": {
-                    "type": "string",
-                    "maxLength": 1024
-                },
-                "reason": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "role": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "status": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "subscriptionExpiresAt": {
-                    "type": "string"
-                },
-                "subscriptionTier": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "timezone": {
-                    "type": "string",
-                    "maxLength": 64
-                }
-            }
-        },
-        "internal_transport_http_admin.PaymentOrderListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_admin.PaymentOrderResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.PaymentOrderResponse": {
-            "type": "object",
-            "properties": {
-                "baseAmountCents": {
-                    "type": "integer"
-                },
-                "baseCurrency": {
-                    "type": "string"
-                },
-                "billingInterval": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "creditNanousd": {
-                    "type": "integer"
-                },
-                "creditUSD": {
-                    "type": "number"
-                },
-                "cycles": {
-                    "type": "integer"
-                },
-                "expiredAt": {
-                    "type": "string"
-                },
-                "externalCheckoutID": {
-                    "type": "string"
-                },
-                "externalPaymentID": {
-                    "type": "string"
-                },
-                "fxRate": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "orderNo": {
-                    "type": "string"
-                },
-                "orderType": {
-                    "type": "string"
-                },
-                "paidAt": {
-                    "type": "string"
-                },
-                "payAmountCents": {
-                    "type": "integer"
-                },
-                "payCurrency": {
-                    "type": "string"
-                },
-                "planID": {
-                    "type": "integer"
-                },
-                "priceID": {
-                    "type": "integer"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "snapshotJSON": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "userDisplayName": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                },
-                "userLabel": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.PermissionGroupDataResponse": {
-            "type": "object",
-            "properties": {
-                "group": {
-                    "$ref": "#/definitions/internal_transport_http_admin.PermissionGroupResponse"
-                }
-            }
-        },
-        "internal_transport_http_admin.PermissionGroupDataResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.PermissionGroupDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.PermissionGroupDeleteSummaryResponse": {
-            "type": "object",
-            "properties": {
-                "manualModelCount": {
-                    "type": "integer"
-                },
-                "manualUserCount": {
-                    "type": "integer"
-                },
-                "planCount": {
-                    "type": "integer"
-                },
-                "ruleCount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_admin.PermissionGroupListResponse": {
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_admin.PermissionGroupResponse"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_admin.PermissionGroupListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.PermissionGroupListResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.PermissionGroupModelRuleRequest": {
-            "type": "object",
-            "required": [
-                "type"
-            ],
-            "properties": {
-                "type": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "value": {
-                    "type": "string",
-                    "maxLength": 128
-                }
-            }
-        },
-        "internal_transport_http_admin.PermissionGroupModelRuleResponse": {
-            "type": "object",
-            "properties": {
-                "type": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.PermissionGroupResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "isDefault": {
-                    "type": "boolean"
-                },
-                "manualModelCount": {
-                    "type": "integer"
-                },
-                "manualUserCount": {
-                    "type": "integer"
-                },
-                "modelCount": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "rateMultiplierPercent": {
-                    "type": "integer"
-                },
-                "ruleModelCount": {
-                    "type": "integer"
-                },
-                "subscriptionUserCount": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "userCount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_admin.ResetUserPasswordRequest": {
-            "type": "object",
-            "required": [
-                "newPassword"
-            ],
-            "properties": {
-                "mustResetPassword": {
-                    "type": "boolean"
-                },
-                "newPassword": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 8
-                }
-            }
-        },
-        "internal_transport_http_admin.ResetUserPasswordResponse": {
-            "type": "object",
-            "properties": {
-                "reset": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_admin.ResetUserPasswordResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.ResetUserPasswordResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.RevokeUserSessionsResponse": {
-            "type": "object",
-            "properties": {
-                "revoked": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_admin.RevokeUserSessionsResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.RevokeUserSessionsResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.SetGroupModelsRequest": {
-            "type": "object",
-            "properties": {
-                "modelIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "rules": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_admin.PermissionGroupModelRuleRequest"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_admin.SetGroupUsersRequest": {
-            "type": "object",
-            "properties": {
-                "userIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_admin.SetModelPermissionGroupsRequest": {
-            "type": "object",
-            "properties": {
-                "groupIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_admin.SystemEventListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_admin.SystemEventResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.SystemEventResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "detailJSON": {
-                    "type": "string"
-                },
-                "event": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "level": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "requestID": {
-                    "type": "string"
-                },
-                "resource": {
-                    "type": "string"
-                },
-                "resourceID": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "traceID": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.UpdatePermissionGroupRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 512
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "rateMultiplierPercent": {
-                    "type": "integer",
-                    "maximum": 10000,
-                    "minimum": 0
-                }
-            }
-        },
-        "internal_transport_http_admin.UpdateUserStatusRequest": {
-            "type": "object",
-            "required": [
-                "status"
-            ],
-            "properties": {
-                "reason": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "status": {
-                    "type": "string",
-                    "maxLength": 32
-                }
-            }
-        },
-        "internal_transport_http_admin.UpdateUserStatusResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_admin.UserDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.UsageLogListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_admin.UsageLogResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.UsageLogResponse": {
-            "type": "object",
-            "properties": {
-                "billedCurrency": {
-                    "type": "string"
-                },
-                "billedNanousd": {
-                    "type": "integer"
-                },
-                "billedUSD": {
-                    "type": "number"
-                },
-                "billingAt": {
-                    "type": "string"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWrite1hTokens": {
-                    "type": "integer"
-                },
-                "cacheWrite5mTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "callCount": {
-                    "type": "integer"
-                },
-                "conversationID": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "durationSeconds": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "isFreeModel": {
-                    "type": "boolean"
-                },
-                "latencyMS": {
-                    "type": "integer"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "pricingSnapshotJSON": {
-                    "type": "string"
-                },
-                "providerProtocol": {
-                    "type": "string"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "routedBindingCode": {
-                    "type": "string"
-                },
-                "serviceTier": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                },
-                "upstreamName": {
-                    "type": "string"
-                },
-                "usageDate": {
-                    "type": "string"
-                },
-                "usageSpeed": {
-                    "type": "string"
-                },
-                "userDisplayName": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                },
-                "userLabel": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.UserAuthEventListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_admin.AuthEventResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.UserDataResponse": {
-            "type": "object",
-            "properties": {
-                "user": {
-                    "$ref": "#/definitions/internal_transport_http_admin.UserResponse"
-                }
-            }
-        },
-        "internal_transport_http_admin.UserIdentityProviderSummaryResponse": {
-            "type": "object",
-            "properties": {
                 "id": {
                     "type": "integer"
                 },
@@ -11693,1101 +12082,49 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_admin.UserListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_admin.UserResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_admin.UserResponse": {
-            "type": "object",
-            "properties": {
-                "appearancePreferences": {
-                    "type": "string"
-                },
-                "avatarURL": {
-                    "type": "string"
-                },
-                "billingAccountCurrency": {
-                    "type": "string"
-                },
-                "billingAccountStatus": {
-                    "type": "string"
-                },
-                "billingBalanceNanousd": {
-                    "type": "integer"
-                },
-                "billingBalanceUSD": {
-                    "type": "number"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "displayName": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "emailVerifiedAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "identityProviders": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_admin.UserIdentityProviderSummaryResponse"
-                    }
-                },
-                "lastActiveAt": {
-                    "type": "string"
-                },
-                "lastLoginAt": {
-                    "type": "string"
-                },
-                "locale": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "phoneVerifiedAt": {
-                    "type": "string"
-                },
-                "profilePreferences": {
-                    "type": "string"
-                },
-                "publicID": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "subscriptionExpiresAt": {
-                    "type": "string"
-                },
-                "subscriptionPlanID": {
-                    "type": "integer"
-                },
-                "subscriptionPlanName": {
-                    "type": "string"
-                },
-                "subscriptionStatus": {
-                    "type": "string"
-                },
-                "subscriptionTier": {
-                    "type": "string"
-                },
-                "timezone": {
-                    "type": "string"
-                },
-                "twoFactorAvailable": {
-                    "type": "boolean"
-                },
-                "twoFactorEnabled": {
-                    "type": "boolean"
-                },
-                "twoFactorRecoveryCount": {
-                    "type": "integer"
-                },
-                "twoFactorRequired": {
-                    "type": "boolean"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AdminAnnouncementListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AnnouncementCloseDataResponse": {
-            "type": "object",
-            "properties": {
-                "closed": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AnnouncementCloseResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementCloseDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AnnouncementDataResponse": {
-            "type": "object",
-            "properties": {
-                "announcement": {
-                    "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementResponse"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AnnouncementDeleteDataResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AnnouncementDeleteResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementDeleteDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AnnouncementDismissDataResponse": {
-            "type": "object",
-            "properties": {
-                "dismissed": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AnnouncementDismissResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementDismissDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AnnouncementListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementResponse"
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AnnouncementResponse": {
-            "type": "object",
-            "properties": {
-                "closedAt": {
-                    "type": "string"
-                },
-                "contentMarkdown": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "createdByUserID": {
-                    "type": "integer"
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "pinned": {
-                    "type": "boolean"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "startsAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AnnouncementResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_announcement.AnnouncementDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_announcement.AnnouncementStateRequest": {
+        "AuthUserResponse": {
             "type": "object",
             "required": [
-                "updatedAt"
-            ],
-            "properties": {
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_announcement.CreateAnnouncementRequest": {
-            "type": "object",
-            "required": [
-                "contentMarkdown",
-                "title"
-            ],
-            "properties": {
-                "contentMarkdown": {
-                    "type": "string",
-                    "maxLength": 20000,
-                    "minLength": 1
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "pinned": {
-                    "type": "boolean"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "startsAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 120,
-                    "minLength": 1
-                },
-                "type": {
-                    "type": "string",
-                    "enum": [
-                        "critical",
-                        "warning",
-                        "info",
-                        "normal",
-                        "general"
-                    ]
-                }
-            }
-        },
-        "internal_transport_http_announcement.ErrorDoc": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "details": {},
-                "errorCode": {
-                    "type": "string",
-                    "example": "invalid_request"
-                },
-                "errorMsg": {
-                    "type": "string",
-                    "example": "invalid request"
-                },
-                "requestId": {
-                    "type": "string",
-                    "example": ""
-                }
-            }
-        },
-        "internal_transport_http_announcement.PatchAnnouncementRequestDoc": {
-            "type": "object",
-            "properties": {
-                "contentMarkdown": {
-                    "type": "string",
-                    "maxLength": 20000
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "pinned": {
-                    "type": "boolean"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "startsAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 120
-                },
-                "type": {
-                    "type": "string",
-                    "enum": [
-                        "critical",
-                        "warning",
-                        "info",
-                        "normal",
-                        "general"
-                    ]
-                }
-            }
-        },
-        "internal_transport_http_auth.ActiveSessionListResponse": {
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_auth.ActiveSessionResponse"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_auth.ActiveSessionListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.ActiveSessionListResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.ActiveSessionResponse": {
-            "type": "object",
-            "properties": {
-                "browserName": {
-                    "type": "string"
-                },
-                "cityName": {
-                    "type": "string"
-                },
-                "clientIP": {
-                    "type": "string"
-                },
-                "countryCode": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "current": {
-                    "type": "boolean"
-                },
-                "deviceLabel": {
-                    "type": "string"
-                },
-                "deviceName": {
-                    "type": "string"
-                },
-                "deviceType": {
-                    "type": "string"
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "geoAccuracy": {
-                    "type": "string"
-                },
-                "geoSource": {
-                    "type": "string"
-                },
-                "ipLatitude": {
-                    "type": "number"
-                },
-                "ipLongitude": {
-                    "type": "number"
-                },
-                "lastSeenAt": {
-                    "type": "string"
-                },
-                "locationLabel": {
-                    "type": "string"
-                },
-                "osName": {
-                    "type": "string"
-                },
-                "preciseAccuracyMeters": {
-                    "type": "number"
-                },
-                "preciseLatitude": {
-                    "type": "number"
-                },
-                "preciseLocatedAt": {
-                    "type": "string"
-                },
-                "preciseLongitude": {
-                    "type": "number"
-                },
-                "regionName": {
-                    "type": "string"
-                },
-                "sessionID": {
-                    "type": "string"
-                },
-                "timezoneName": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.DeleteAccountRequest": {
-            "type": "object",
-            "required": [
-                "code",
-                "verificationMethod"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "minLength": 6
-                },
-                "verificationMethod": {
-                    "type": "string",
-                    "enum": [
-                        "two_factor",
-                        "email"
-                    ]
-                }
-            }
-        },
-        "internal_transport_http_auth.DeleteAccountResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_auth.DeleteAccountResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.DeleteAccountResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.EmailRegistrationCompleteRequest": {
-            "type": "object",
-            "required": [
+                "appearancePreferences",
+                "avatarURL",
+                "createdAt",
+                "displayName",
                 "email",
-                "password"
+                "emailBootstrapUsedAt",
+                "emailSource",
+                "emailVerifiedAt",
+                "id",
+                "identityProviders",
+                "initialSecurityRequired",
+                "initialUsernameRequired",
+                "lastActiveAt",
+                "lastLoginAt",
+                "locale",
+                "mustResetPassword",
+                "onboardingCompletedAt",
+                "passwordEnabled",
+                "passwordOrigin",
+                "passwordSetAt",
+                "phone",
+                "phoneVerifiedAt",
+                "profilePreferences",
+                "publicID",
+                "role",
+                "status",
+                "subscriptionExpiresAt",
+                "subscriptionPlanID",
+                "subscriptionPlanName",
+                "subscriptionStatus",
+                "subscriptionTier",
+                "timezone",
+                "twoFactorAvailable",
+                "twoFactorEnabled",
+                "twoFactorRecoveryCount",
+                "twoFactorRequired",
+                "updatedAt",
+                "username",
+                "usernameChangedAt"
             ],
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "locale": {
-                    "type": "string",
-                    "maxLength": 16
-                },
-                "password": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 8
-                },
-                "turnstileToken": {
-                    "type": "string",
-                    "maxLength": 2048
-                }
-            }
-        },
-        "internal_transport_http_auth.EmailRegistrationStartRequest": {
-            "type": "object",
-            "required": [
-                "email"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "locale": {
-                    "type": "string",
-                    "maxLength": 16
-                },
-                "turnstileToken": {
-                    "type": "string",
-                    "maxLength": 2048
-                }
-            }
-        },
-        "internal_transport_http_auth.EmailRegistrationStartResponse": {
-            "type": "object",
-            "properties": {
-                "expiresAt": {
-                    "type": "string"
-                },
-                "sent": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_auth.EmailRegistrationStartResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.EmailRegistrationStartResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.EmailVerificationStartResponse": {
-            "type": "object",
-            "properties": {
-                "availableMethods": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "sent": {
-                    "type": "boolean"
-                },
-                "verificationMethod": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.EmailVerificationStartResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.EmailVerificationStartResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.ErrorDoc": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "details": {},
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMsg": {
-                    "type": "string"
-                },
-                "requestId": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.IdentityProviderResponse": {
-            "type": "object",
-            "properties": {
-                "authURL": {
-                    "type": "string"
-                },
-                "avatarField": {
-                    "type": "string"
-                },
-                "clientID": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "defaultRole": {
-                    "type": "string"
-                },
-                "discoveryURL": {
-                    "type": "string"
-                },
-                "emailField": {
-                    "type": "string"
-                },
-                "emailVerifiedField": {
-                    "type": "string"
-                },
-                "issuerURL": {
-                    "type": "string"
-                },
-                "jwksURL": {
-                    "type": "string"
-                },
-                "loginEnabled": {
-                    "type": "boolean"
-                },
-                "logoURL": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "nameField": {
-                    "type": "string"
-                },
-                "publicID": {
-                    "type": "string"
-                },
-                "registrationEnabled": {
-                    "type": "boolean"
-                },
-                "scopes": {
-                    "type": "string"
-                },
-                "slug": {
-                    "type": "string"
-                },
-                "subjectField": {
-                    "type": "string"
-                },
-                "tokenURL": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "userinfoURL": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.LoginOptionsResponse": {
-            "type": "object",
-            "properties": {
-                "emailEnabled": {
-                    "type": "boolean"
-                },
-                "emailRegistrationEnabled": {
-                    "type": "boolean"
-                },
-                "emailVerificationEnabled": {
-                    "type": "boolean"
-                },
-                "passwordResetEnabled": {
-                    "type": "boolean"
-                },
-                "providers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_auth.IdentityProviderResponse"
-                    }
-                },
-                "turnstileRegistrationEnabled": {
-                    "type": "boolean"
-                },
-                "turnstileSiteKey": {
-                    "type": "string"
-                },
-                "usernameEnabled": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_auth.LoginOptionsResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.LoginOptionsResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.LoginRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 6
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 3
-                }
-            }
-        },
-        "internal_transport_http_auth.LoginResponse": {
-            "type": "object",
-            "properties": {
-                "accessToken": {
-                    "type": "string"
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "refreshExpiresAt": {
-                    "type": "string"
-                },
-                "sessionID": {
-                    "type": "string"
-                },
-                "twoFactorChallengeToken": {
-                    "type": "string"
-                },
-                "twoFactorRequired": {
-                    "type": "boolean"
-                },
-                "user": {
-                    "$ref": "#/definitions/internal_transport_http_auth.UserResponse"
-                },
-                "verificationMethods": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_auth.LoginResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.LoginResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.LogoutResponse": {
-            "type": "object",
-            "properties": {
-                "revoked": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_auth.LogoutResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.LogoutResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.MeResponse": {
-            "type": "object",
-            "properties": {
-                "user": {
-                    "$ref": "#/definitions/internal_transport_http_auth.UserResponse"
-                }
-            }
-        },
-        "internal_transport_http_auth.MeResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.MeResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.PasswordResetCompleteRequest": {
-            "type": "object",
-            "required": [
-                "code",
-                "email",
-                "newPassword"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "newPassword": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 8
-                }
-            }
-        },
-        "internal_transport_http_auth.PasswordResetCompleteResponse": {
-            "type": "object",
-            "properties": {
-                "changed": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_auth.PasswordResetCompleteResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.PasswordResetCompleteResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.PasswordResetStartRequest": {
-            "type": "object",
-            "required": [
-                "email"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "maxLength": 128
-                }
-            }
-        },
-        "internal_transport_http_auth.PasswordResetStartResponse": {
-            "type": "object",
-            "properties": {
-                "expiresAt": {
-                    "type": "string"
-                },
-                "sent": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_auth.PasswordResetStartResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.PasswordResetStartResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.PatchMeRequest": {
-            "type": "object",
-            "properties": {
-                "appearancePreferences": {
-                    "type": "string",
-                    "maxLength": 2048
-                },
-                "avatarURL": {
-                    "type": "string",
-                    "maxLength": 2048
-                },
-                "displayName": {
-                    "type": "string",
-                    "maxLength": 16,
-                    "minLength": 3
-                },
-                "locale": {
-                    "type": "string",
-                    "maxLength": 16
-                },
-                "profilePreferences": {
-                    "type": "string",
-                    "maxLength": 1024
-                },
-                "timezone": {
-                    "type": "string",
-                    "maxLength": 64
-                }
-            }
-        },
-        "internal_transport_http_auth.PatchMeResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.MeResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.PatchUsernameRequest": {
-            "type": "object",
-            "required": [
-                "username"
-            ],
-            "properties": {
-                "username": {
-                    "type": "string",
-                    "maxLength": 16,
-                    "minLength": 3
-                }
-            }
-        },
-        "internal_transport_http_auth.RefreshTokenResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.LoginResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.SecurityVerificationStartRequest": {
-            "type": "object",
-            "properties": {
-                "verificationMethod": {
-                    "type": "string",
-                    "enum": [
-                        "none",
-                        "two_factor",
-                        "email"
-                    ]
-                }
-            }
-        },
-        "internal_transport_http_auth.UpdateCurrentSessionLocationRequest": {
-            "type": "object",
-            "required": [
-                "latitude",
-                "longitude"
-            ],
-            "properties": {
-                "accuracyMeters": {
-                    "type": "number",
-                    "maximum": 1000000,
-                    "minimum": 0
-                },
-                "latitude": {
-                    "type": "number"
-                },
-                "longitude": {
-                    "type": "number"
-                },
-                "timezone": {
-                    "type": "string",
-                    "maxLength": 64
-                }
-            }
-        },
-        "internal_transport_http_auth.UpdateCurrentSessionLocationResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_auth.ActiveSessionResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.UserIdentityProviderSummaryResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "logoURL": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "slug": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_auth.UserResponse": {
-            "type": "object",
             "properties": {
                 "appearancePreferences": {
                     "type": "string"
@@ -12805,13 +12142,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "emailBootstrapUsedAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "emailSource": {
                     "type": "string"
                 },
                 "emailVerifiedAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "id": {
                     "type": "integer"
@@ -12819,7 +12160,7 @@ const docTemplate = `{
                 "identityProviders": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_auth.UserIdentityProviderSummaryResponse"
+                        "$ref": "#/definitions/AuthUserIdentityProviderSummaryResponse"
                     }
                 },
                 "initialSecurityRequired": {
@@ -12829,10 +12170,14 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "lastActiveAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "lastLoginAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "locale": {
                     "type": "string"
@@ -12841,7 +12186,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "onboardingCompletedAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "passwordEnabled": {
                     "type": "boolean"
@@ -12850,13 +12197,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "passwordSetAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "phone": {
                     "type": "string"
                 },
                 "phoneVerifiedAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "profilePreferences": {
                     "type": "string"
@@ -12871,10 +12222,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "subscriptionExpiresAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "subscriptionPlanID": {
-                    "type": "integer"
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "subscriptionPlanName": {
                     "type": "string"
@@ -12907,12 +12262,21 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "usernameChangedAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 }
             }
         },
-        "internal_transport_http_billing.BatchDeleteRedemptionCodeDataResponse": {
+        "BatchDeleteRedemptionCodeDataResponse": {
             "type": "object",
+            "required": [
+                "failedCount",
+                "notFoundCount",
+                "results",
+                "successCount",
+                "total"
+            ],
             "properties": {
                 "failedCount": {
                     "type": "integer"
@@ -12923,7 +12287,7 @@ const docTemplate = `{
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.BatchDeleteRedemptionCodeResultResponse"
+                        "$ref": "#/definitions/BatchDeleteRedemptionCodeResultResponse"
                     }
                 },
                 "successCount": {
@@ -12934,7 +12298,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_billing.BatchDeleteRedemptionCodeRequest": {
+        "BatchDeleteRedemptionCodeRequest": {
             "type": "object",
             "required": [
                 "ids"
@@ -12949,19 +12313,27 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_billing.BatchDeleteRedemptionCodeResponseDoc": {
+        "BatchDeleteRedemptionCodeResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BatchDeleteRedemptionCodeDataResponse"
+                    "$ref": "#/definitions/BatchDeleteRedemptionCodeDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_billing.BatchDeleteRedemptionCodeResultResponse": {
+        "BatchDeleteRedemptionCodeResultResponse": {
             "type": "object",
+            "required": [
+                "id",
+                "status"
+            ],
             "properties": {
                 "error": {
                     "type": "string"
@@ -12974,16 +12346,150 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_billing.BillingAccountDataResponse": {
+        "BatchDeleteRequest": {
             "type": "object",
+            "required": [
+                "ids"
+            ],
             "properties": {
-                "account": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingAccountResponse"
+                "ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
-        "internal_transport_http_billing.BillingAccountResponse": {
+        "BatchDeleteResponse": {
             "type": "object",
+            "required": [
+                "failedCount",
+                "notFoundCount",
+                "results",
+                "successCount",
+                "total"
+            ],
+            "properties": {
+                "failedCount": {
+                    "type": "integer"
+                },
+                "notFoundCount": {
+                    "type": "integer"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BatchDeleteResultResponse"
+                    }
+                },
+                "successCount": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "BatchDeleteResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/BatchDeleteResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "BatchDeleteResultResponse": {
+            "type": "object",
+            "required": [
+                "id",
+                "status"
+            ],
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "BatchSetConversationProjectRequest": {
+            "type": "object",
+            "required": [
+                "conversationPublicIDs"
+            ],
+            "properties": {
+                "conversationPublicIDs": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "projectID": {
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "BatchSetConversationProjectResponse": {
+            "type": "object",
+            "required": [
+                "updated"
+            ],
+            "properties": {
+                "updated": {
+                    "type": "integer"
+                }
+            }
+        },
+        "BatchSetConversationProjectResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/BatchSetConversationProjectResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "BillingAccountDataResponse": {
+            "type": "object",
+            "required": [
+                "account"
+            ],
+            "properties": {
+                "account": {
+                    "$ref": "#/definitions/BillingAccountResponse"
+                }
+            }
+        },
+        "BillingAccountResponse": {
+            "type": "object",
+            "required": [
+                "balanceNanousd",
+                "balanceUSD",
+                "currency",
+                "status",
+                "updatedAt",
+                "userID"
+            ],
             "properties": {
                 "balanceNanousd": {
                     "type": "integer"
@@ -13005,26 +12511,33 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_billing.BillingAccountResponseDoc": {
+        "BillingAccountResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingAccountDataResponse"
+                    "$ref": "#/definitions/BillingAccountDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_billing.BillingConfigDataResponse": {
+        "BillingConfigDataResponse": {
             "type": "object",
+            "required": [
+                "config"
+            ],
             "properties": {
                 "config": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingConfigResponse"
+                    "$ref": "#/definitions/BillingConfigResponse"
                 }
             }
         },
-        "internal_transport_http_billing.BillingConfigRequest": {
+        "BillingConfigRequest": {
             "type": "object",
             "required": [
                 "mode"
@@ -13065,7 +12578,7 @@ const docTemplate = `{
                 "nativeToolPricing": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.NativeToolPricingRequest"
+                        "$ref": "#/definitions/NativeToolPricingRequest"
                     }
                 },
                 "prepaidAmountUSD": {
@@ -13077,8 +12590,22 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_billing.BillingConfigResponse": {
+        "BillingConfigResponse": {
             "type": "object",
+            "required": [
+                "displayCurrency",
+                "epayTypes",
+                "freeModelDailyLimit",
+                "freeModelRateLimitExemptModels",
+                "freeModelRateLimitRPM",
+                "mode",
+                "nativeToolBillingEnabled",
+                "nativeToolPricing",
+                "paymentProviders",
+                "prepaidAmountNanousd",
+                "prepaidAmountUSD",
+                "usdToCNYRate"
+            ],
             "properties": {
                 "displayCurrency": {
                     "type": "string"
@@ -13086,7 +12613,7 @@ const docTemplate = `{
                 "epayTypes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.PaymentTypeResponse"
+                        "$ref": "#/definitions/PaymentTypeResponse"
                     }
                 },
                 "freeModelDailyLimit": {
@@ -13110,7 +12637,7 @@ const docTemplate = `{
                 "nativeToolPricing": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.NativeToolPricingResponse"
+                        "$ref": "#/definitions/NativeToolPricingResponse"
                     }
                 },
                 "paymentProviders": {
@@ -13130,30 +12657,77 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_billing.BillingConfigResponseDoc": {
+        "BillingConfigResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingConfigDataResponse"
+                    "$ref": "#/definitions/BillingConfigDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_billing.BillingOverviewDataResponse": {
+        "BillingErrorDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
-                "overview": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingOverviewResponse"
+                "data": {},
+                "details": {},
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
                 }
             }
         },
-        "internal_transport_http_billing.BillingOverviewResponse": {
+        "BillingOverviewDataResponse": {
             "type": "object",
+            "required": [
+                "overview"
+            ],
+            "properties": {
+                "overview": {
+                    "$ref": "#/definitions/BillingOverviewResponse"
+                }
+            }
+        },
+        "BillingOverviewResponse": {
+            "type": "object",
+            "required": [
+                "account",
+                "mode",
+                "periodCreditNanousd",
+                "periodCreditUSD",
+                "periodEndAt",
+                "periodRemainingNanousd",
+                "periodRemainingUSD",
+                "periodStartAt",
+                "periodUsedNanousd",
+                "periodUsedUSD",
+                "plan",
+                "subscriptionEntitlements"
+            ],
             "properties": {
                 "account": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingAccountResponse"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/BillingAccountResponse"
+                        }
+                    ],
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "mode": {
                     "type": "string"
@@ -13165,7 +12739,9 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "periodEndAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "periodRemainingNanousd": {
                     "type": "integer"
@@ -13174,7 +12750,9 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "periodStartAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "periodUsedNanousd": {
                     "type": "integer"
@@ -13183,37 +12761,64 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "plan": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingPlanResponse"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/BillingPlanResponse"
+                        }
+                    ],
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "subscriptionEntitlements": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.SubscriptionEntitlementResponse"
+                        "$ref": "#/definitions/SubscriptionEntitlementResponse"
                     }
                 }
             }
         },
-        "internal_transport_http_billing.BillingOverviewResponseDoc": {
+        "BillingOverviewResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingOverviewDataResponse"
+                    "$ref": "#/definitions/BillingOverviewDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_billing.BillingPlanDataResponse": {
+        "BillingPlanDataResponse": {
             "type": "object",
+            "required": [
+                "plan"
+            ],
             "properties": {
                 "plan": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingPlanResponse"
+                    "$ref": "#/definitions/BillingPlanResponse"
                 }
             }
         },
-        "internal_transport_http_billing.BillingPlanResponse": {
+        "BillingPlanResponse": {
             "type": "object",
+            "required": [
+                "code",
+                "description",
+                "discountPercent",
+                "featureJSON",
+                "id",
+                "isActive",
+                "name",
+                "periodCreditNanousd",
+                "periodCreditUSD",
+                "permissionGroupID",
+                "prices",
+                "sortOrder"
+            ],
             "properties": {
                 "code": {
                     "type": "string"
@@ -13243,12 +12848,14 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "permissionGroupID": {
-                    "type": "integer"
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "prices": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.BillingPriceResponse"
+                        "$ref": "#/definitions/BillingPriceResponse"
                     }
                 },
                 "sortOrder": {
@@ -13256,19 +12863,32 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_billing.BillingPlanResponseDoc": {
+        "BillingPlanResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingPlanDataResponse"
+                    "$ref": "#/definitions/BillingPlanDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_billing.BillingPriceResponse": {
+        "BillingPriceResponse": {
             "type": "object",
+            "required": [
+                "amountCents",
+                "billingInterval",
+                "code",
+                "currency",
+                "id",
+                "isDefault",
+                "planID"
+            ],
             "properties": {
                 "amountCents": {
                     "type": "integer"
@@ -13293,16 +12913,460 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_billing.CheckoutDataResponse": {
+        "BindModelUpstreamSourceRequest": {
             "type": "object",
+            "required": [
+                "upstreamID",
+                "upstreamModelID"
+            ],
             "properties": {
-                "checkout": {
-                    "$ref": "#/definitions/internal_transport_http_billing.CheckoutResponse"
+                "cbDurationMin": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "cbFailureThreshold": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "cbWindowMin": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                },
+                "upstreamID": {
+                    "type": "integer"
+                },
+                "upstreamModelID": {
+                    "type": "integer"
+                },
+                "weight": {
+                    "type": "integer"
                 }
             }
         },
-        "internal_transport_http_billing.CheckoutResponse": {
+        "BrandingManifestIcon": {
             "type": "object",
+            "required": [
+                "purpose",
+                "sizes",
+                "src",
+                "type"
+            ],
+            "properties": {
+                "purpose": {
+                    "type": "string"
+                },
+                "sizes": {
+                    "type": "string"
+                },
+                "src": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "BrandingManifestResponse": {
+            "type": "object",
+            "required": [
+                "background_color",
+                "categories",
+                "description",
+                "display",
+                "icons",
+                "id",
+                "lang",
+                "name",
+                "orientation",
+                "scope",
+                "short_name",
+                "start_url",
+                "theme_color"
+            ],
+            "properties": {
+                "background_color": {
+                    "type": "string"
+                },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "display": {
+                    "type": "string"
+                },
+                "icons": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BrandingManifestIcon"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lang": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "orientation": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "short_name": {
+                    "type": "string"
+                },
+                "start_url": {
+                    "type": "string"
+                },
+                "theme_color": {
+                    "type": "string"
+                }
+            }
+        },
+        "BrandingResponse": {
+            "type": "object",
+            "required": [
+                "appleTouchIcon180URL",
+                "description",
+                "faviconURL",
+                "logoURL",
+                "pwaIcon192URL",
+                "pwaIcon512URL",
+                "pwaMaskableIcon512URL",
+                "shortName",
+                "title"
+            ],
+            "properties": {
+                "appleTouchIcon180URL": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "faviconURL": {
+                    "type": "string"
+                },
+                "logoURL": {
+                    "type": "string"
+                },
+                "pwaIcon192URL": {
+                    "type": "string"
+                },
+                "pwaIcon512URL": {
+                    "type": "string"
+                },
+                "pwaMaskableIcon512URL": {
+                    "type": "string"
+                },
+                "shortName": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "BrandingResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/BrandingResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ChannelErrorDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {},
+                "details": {},
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                }
+            }
+        },
+        "ChannelModelListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ModelResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ChatCompletionChoiceDoc": {
+            "type": "object",
+            "required": [
+                "finish_reason",
+                "index",
+                "message"
+            ],
+            "properties": {
+                "finish_reason": {
+                    "type": "string",
+                    "example": "tool_calls"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "message": {
+                    "$ref": "#/definitions/ChatMessageDoc"
+                }
+            }
+        },
+        "ChatCompletionRequestDoc": {
+            "type": "object",
+            "required": [
+                "messages",
+                "model"
+            ],
+            "properties": {
+                "function_call": {
+                    "type": "object"
+                },
+                "functions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LegacyFunctionDoc"
+                    }
+                },
+                "max_completion_tokens": {
+                    "description": "OpenAI Chat Completions output token limit.",
+                    "type": "integer"
+                },
+                "max_output_tokens": {
+                    "description": "Gemini output token limit.",
+                    "type": "integer"
+                },
+                "max_tokens": {
+                    "description": "Legacy OpenAI-compatible output token limit. Official OpenAI Chat Completions routes normalize this to max_completion_tokens; Gemini routes normalize it to max_output_tokens.",
+                    "type": "integer"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ChatMessageDoc"
+                    }
+                },
+                "model": {
+                    "type": "string",
+                    "example": "gpt-5"
+                },
+                "parallel_tool_calls": {
+                    "type": "boolean"
+                },
+                "reasoning_effort": {
+                    "description": "Official OpenAI Chat Completions routes drop reasoning_effort when function tools are present because upstream rejects that combination.",
+                    "type": "string",
+                    "example": "medium"
+                },
+                "stream": {
+                    "type": "boolean"
+                },
+                "temperature": {
+                    "type": "number"
+                },
+                "tool_choice": {
+                    "type": "object"
+                },
+                "tools": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ChatToolDoc"
+                    }
+                }
+            }
+        },
+        "ChatCompletionResponseDoc": {
+            "type": "object",
+            "required": [
+                "choices",
+                "created",
+                "id",
+                "model",
+                "object"
+            ],
+            "properties": {
+                "choices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ChatCompletionChoiceDoc"
+                    }
+                },
+                "created": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "chatcmpl-openapi"
+                },
+                "model": {
+                    "type": "string",
+                    "example": "gpt-5"
+                },
+                "object": {
+                    "type": "string",
+                    "example": "chat.completion"
+                },
+                "usage": {
+                    "type": "object"
+                }
+            }
+        },
+        "ChatMessageDoc": {
+            "type": "object",
+            "required": [
+                "role"
+            ],
+            "properties": {
+                "content": {
+                    "type": "object"
+                },
+                "function_call": {
+                    "$ref": "#/definitions/LegacyFunctionCallDoc"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "user"
+                },
+                "tool_call_id": {
+                    "type": "string"
+                },
+                "tool_calls": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ChatToolCallDoc"
+                    }
+                }
+            }
+        },
+        "ChatToolCallDoc": {
+            "type": "object",
+            "required": [
+                "function",
+                "type"
+            ],
+            "properties": {
+                "function": {
+                    "$ref": "#/definitions/LegacyFunctionCallDoc"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "call_1"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "function"
+                }
+            }
+        },
+        "ChatToolDoc": {
+            "type": "object",
+            "required": [
+                "function",
+                "type"
+            ],
+            "properties": {
+                "function": {
+                    "$ref": "#/definitions/LegacyFunctionDoc"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "function"
+                }
+            }
+        },
+        "CheckoutDataResponse": {
+            "type": "object",
+            "required": [
+                "checkout"
+            ],
+            "properties": {
+                "checkout": {
+                    "$ref": "#/definitions/CheckoutResponse"
+                }
+            }
+        },
+        "CheckoutResponse": {
+            "type": "object",
+            "required": [
+                "baseAmountCents",
+                "baseCurrency",
+                "checkoutURL",
+                "creditNanousd",
+                "creditUSD",
+                "expiredAt",
+                "externalCheckoutID",
+                "fxRate",
+                "orderNo",
+                "orderType",
+                "payAmountCents",
+                "payCurrency",
+                "provider",
+                "status"
+            ],
             "properties": {
                 "baseAmountCents": {
                     "type": "integer"
@@ -13320,7 +13384,9 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "expiredAt": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "externalCheckoutID": {
                     "type": "string"
@@ -13348,18 +13414,1440 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_billing.CheckoutResponseDoc": {
+        "CheckoutResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.CheckoutDataResponse"
+                    "$ref": "#/definitions/CheckoutDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_billing.CreateCheckoutRequest": {
+        "CircuitResetResponse": {
+            "type": "object",
+            "required": [
+                "reset"
+            ],
+            "properties": {
+                "reset": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "CleanupLogsRequest": {
+            "type": "object",
+            "required": [
+                "before",
+                "type"
+            ],
+            "properties": {
+                "before": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "CleanupLogsResponse": {
+            "type": "object",
+            "required": [
+                "before",
+                "deletedCount",
+                "type"
+            ],
+            "properties": {
+                "before": {
+                    "type": "string"
+                },
+                "deletedCount": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "CleanupLogsResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/CleanupLogsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ContextArtifactResponse": {
+            "type": "object",
+            "required": [
+                "content",
+                "createdAt",
+                "id",
+                "kind",
+                "messageID",
+                "metadataJSON",
+                "runID",
+                "score",
+                "sourceID",
+                "sourceTitle",
+                "sourceType",
+                "tokenEstimate"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "messageID": {
+                    "type": "integer"
+                },
+                "metadataJSON": {
+                    "type": "string"
+                },
+                "runID": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "sourceID": {
+                    "type": "string"
+                },
+                "sourceTitle": {
+                    "type": "string"
+                },
+                "sourceType": {
+                    "type": "string"
+                },
+                "tokenEstimate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ContextArtifactResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ContextArtifactResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationArchiveAttachmentDoc": {
+            "type": "object",
+            "required": [
+                "fileName",
+                "fileSize",
+                "kind",
+                "mimeType"
+            ],
+            "properties": {
+                "detectedMIME": {
+                    "type": "string"
+                },
+                "fileCategory": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "fileSize": {
+                    "type": "integer"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "mimeType": {
+                    "type": "string"
+                },
+                "processingErrorCode": {
+                    "type": "string"
+                },
+                "processingErrorMessage": {
+                    "type": "string"
+                },
+                "processingReady": {
+                    "type": "boolean"
+                },
+                "processingStatus": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationArchiveDoc": {
+            "type": "object",
+            "required": [
+                "conversation",
+                "exportedAt",
+                "messages",
+                "schema"
+            ],
+            "properties": {
+                "conversation": {
+                    "$ref": "#/definitions/ConversationArchiveMetadataDoc"
+                },
+                "exportedAt": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConversationArchiveMessageDoc"
+                    }
+                },
+                "runs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConversationArchiveRunDoc"
+                    }
+                },
+                "schema": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationArchiveMessageDoc": {
+            "type": "object",
+            "required": [
+                "branchReason",
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "content",
+                "contentType",
+                "createdAt",
+                "errorCode",
+                "errorMessage",
+                "inputTokens",
+                "latencyMS",
+                "originalPublicID",
+                "outputTokens",
+                "reasoningTokens",
+                "role",
+                "status",
+                "tokenUsage",
+                "updatedAt"
+            ],
+            "properties": {
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConversationArchiveAttachmentDoc"
+                    }
+                },
+                "branchReason": {
+                    "type": "string"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "latencyMS": {
+                    "type": "integer"
+                },
+                "originalPublicID": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "parentPublicID": {
+                    "type": "string"
+                },
+                "processTrace": {
+                    "$ref": "#/definitions/ConversationArchiveProcessTraceDoc"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "runID": {
+                    "type": "string"
+                },
+                "sourcePublicID": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tokenUsage": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationArchiveMetadataDoc": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "isStarred",
+                "labelsJSON",
+                "messageCount",
+                "model",
+                "provider",
+                "status",
+                "title",
+                "updatedAt"
+            ],
+            "properties": {
+                "contextPolicyJSON": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "isStarred": {
+                    "type": "boolean"
+                },
+                "labelsJSON": {
+                    "type": "string"
+                },
+                "messageCount": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "originalProjectName": {
+                    "type": "string"
+                },
+                "originalPublicID": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationArchiveProcessTraceDoc": {
+            "type": "object",
+            "required": [
+                "enabled",
+                "status"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConversationArchiveTraceEventDoc"
+                    }
+                },
+                "process": {
+                    "$ref": "#/definitions/ConversationArchiveTraceBlockDoc"
+                },
+                "promptTrace": {
+                    "$ref": "#/definitions/ConversationArchivePromptTraceDoc"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tools": {
+                    "$ref": "#/definitions/ConversationArchiveTraceBlockDoc"
+                },
+                "upstreamThink": {
+                    "$ref": "#/definitions/ConversationArchiveTraceBlockDoc"
+                }
+            }
+        },
+        "ConversationArchivePromptBlockDoc": {
+            "type": "object",
+            "required": [
+                "cacheable",
+                "kind",
+                "sourceCount",
+                "title",
+                "tokenEstimate"
+            ],
+            "properties": {
+                "cacheable": {
+                    "type": "boolean"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "sourceCount": {
+                    "type": "integer"
+                },
+                "sourceRefs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConversationArchivePromptSourceRefDoc"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tokenEstimate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ConversationArchivePromptSourceRefDoc": {
+            "type": "object",
+            "required": [
+                "sourceID",
+                "sourceType",
+                "title"
+            ],
+            "properties": {
+                "sourceID": {
+                    "type": "string"
+                },
+                "sourceType": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationArchivePromptTraceDoc": {
+            "type": "object",
+            "required": [
+                "blocks",
+                "fullMessageCount",
+                "mode",
+                "promptFingerprint",
+                "sentMessageCount",
+                "sentTokenEstimate",
+                "statefulDisabledReason",
+                "statefulSavedMessages",
+                "statefulSavedTokens",
+                "statefulUsed",
+                "totalTokenEstimate"
+            ],
+            "properties": {
+                "blocks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConversationArchivePromptBlockDoc"
+                    }
+                },
+                "fullMessageCount": {
+                    "type": "integer"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "promptFingerprint": {
+                    "type": "string"
+                },
+                "sentMessageCount": {
+                    "type": "integer"
+                },
+                "sentTokenEstimate": {
+                    "type": "integer"
+                },
+                "statefulDisabledReason": {
+                    "type": "string"
+                },
+                "statefulSavedMessages": {
+                    "type": "integer"
+                },
+                "statefulSavedTokens": {
+                    "type": "integer"
+                },
+                "statefulUsed": {
+                    "type": "boolean"
+                },
+                "totalTokenEstimate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ConversationArchiveRequest": {
+            "type": "object",
+            "required": [
+                "conversation",
+                "exportedAt",
+                "messages",
+                "schema"
+            ],
+            "properties": {
+                "conversation": {
+                    "$ref": "#/definitions/ConversationArchiveMetadataDoc"
+                },
+                "exportedAt": {
+                    "type": "string"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConversationArchiveMessageDoc"
+                    }
+                },
+                "runs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConversationArchiveRunDoc"
+                    }
+                },
+                "schema": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationArchiveResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ConversationArchiveDoc"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationArchiveRunDoc": {
+            "type": "object",
+            "required": [
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "createdAt",
+                "endpoint",
+                "errorCode",
+                "errorMessage",
+                "firstTokenLatencyMS",
+                "inputTokens",
+                "modelIcon",
+                "modelVendor",
+                "originalRunID",
+                "outputTokens",
+                "platformModelName",
+                "provider",
+                "providerProtocol",
+                "reasoningTokens",
+                "requestedModelName",
+                "startedAt",
+                "status",
+                "taskType",
+                "toolCallsCount",
+                "totalLatencyMS",
+                "updatedAt",
+                "upstreamModelName"
+            ],
+            "properties": {
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "endedAt": {
+                    "type": "string"
+                },
+                "endpoint": {
+                    "type": "string"
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "firstTokenLatencyMS": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "originalRunID": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "providerProtocol": {
+                    "type": "string"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "requestedModelName": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "taskType": {
+                    "type": "string"
+                },
+                "toolCallsCount": {
+                    "type": "integer"
+                },
+                "totalLatencyMS": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationArchiveTraceBlockDoc": {
+            "type": "object",
+            "required": [
+                "contentMarkdown",
+                "status",
+                "summary",
+                "title",
+                "updatedAt"
+            ],
+            "properties": {
+                "contentMarkdown": {
+                    "type": "string"
+                },
+                "parentEventID": {
+                    "type": "string"
+                },
+                "payloadJSON": {
+                    "type": "string"
+                },
+                "roundID": {
+                    "type": "string"
+                },
+                "stage": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationArchiveTraceEventDoc": {
+            "type": "object",
+            "required": [
+                "contentMarkdown",
+                "eventID",
+                "eventType",
+                "phase",
+                "seq",
+                "startedAt",
+                "status",
+                "summary",
+                "title",
+                "updatedAt"
+            ],
+            "properties": {
+                "contentMarkdown": {
+                    "type": "string"
+                },
+                "endedAt": {
+                    "type": "string"
+                },
+                "eventID": {
+                    "type": "string"
+                },
+                "eventType": {
+                    "type": "string"
+                },
+                "parentEventID": {
+                    "type": "string"
+                },
+                "payloadJSON": {
+                    "type": "string"
+                },
+                "phase": {
+                    "type": "string"
+                },
+                "roundID": {
+                    "type": "string"
+                },
+                "seq": {
+                    "type": "integer"
+                },
+                "stage": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationCreateResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ConversationResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationDefaultModelCandidateResponse": {
+            "type": "object",
+            "required": [
+                "platformModelName",
+                "source",
+                "usedAt"
+            ],
+            "properties": {
+                "platformModelName": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "usedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                }
+            }
+        },
+        "ConversationDefaultModelCandidateResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ConversationDefaultModelCandidateResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationDeleteResponse": {
+            "type": "object",
+            "required": [
+                "deleted"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                },
+                "deletedFileCount": {
+                    "type": "integer"
+                },
+                "quota": {
+                    "$ref": "#/definitions/StorageQuotaResponse"
+                }
+            }
+        },
+        "ConversationDeleteResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ConversationDeleteResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationErrorDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {},
+                "details": {},
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationEventListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ConversationEventResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationEventResponse": {
+            "type": "object",
+            "required": [
+                "contentMarkdown",
+                "conversationID",
+                "createdAt",
+                "endedAt",
+                "errorJSON",
+                "eventID",
+                "eventScope",
+                "eventType",
+                "id",
+                "inputJSON",
+                "latencyMS",
+                "messageID",
+                "outputJSON",
+                "parentEventID",
+                "payloadJSON",
+                "phase",
+                "platformModelName",
+                "providerProtocol",
+                "roundID",
+                "routedBindingCode",
+                "runID",
+                "seq",
+                "stage",
+                "startedAt",
+                "status",
+                "summary",
+                "title",
+                "toolCallID",
+                "toolName",
+                "updatedAt",
+                "upstreamModelName",
+                "upstreamName",
+                "userDisplayName",
+                "userID",
+                "userLabel",
+                "username"
+            ],
+            "properties": {
+                "contentMarkdown": {
+                    "type": "string"
+                },
+                "conversationID": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "endedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "errorJSON": {
+                    "type": "string"
+                },
+                "eventID": {
+                    "type": "string"
+                },
+                "eventScope": {
+                    "type": "string"
+                },
+                "eventType": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inputJSON": {
+                    "type": "string"
+                },
+                "latencyMS": {
+                    "type": "integer"
+                },
+                "messageID": {
+                    "type": "integer"
+                },
+                "outputJSON": {
+                    "type": "string"
+                },
+                "parentEventID": {
+                    "type": "string"
+                },
+                "payloadJSON": {
+                    "type": "string"
+                },
+                "phase": {
+                    "type": "string"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "providerProtocol": {
+                    "type": "string"
+                },
+                "roundID": {
+                    "type": "string"
+                },
+                "routedBindingCode": {
+                    "type": "string"
+                },
+                "runID": {
+                    "type": "string"
+                },
+                "seq": {
+                    "type": "integer"
+                },
+                "stage": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "toolCallID": {
+                    "type": "string"
+                },
+                "toolName": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                },
+                "upstreamName": {
+                    "type": "string"
+                },
+                "userDisplayName": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                },
+                "userLabel": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ConversationResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationProjectListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConversationProjectResponse"
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationProjectResponse": {
+            "type": "object",
+            "required": [
+                "color",
+                "createdAt",
+                "defaultMCPToolIDs",
+                "defaultSkillIDs",
+                "description",
+                "icon",
+                "mcpDefaultMode",
+                "name",
+                "publicID",
+                "sortOrder",
+                "status",
+                "systemPrompt",
+                "updatedAt"
+            ],
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "defaultMCPToolIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "defaultSkillIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "mcpDefaultMode": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "publicID": {
+                    "type": "string"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systemPrompt": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationProjectResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ConversationProjectResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationResponse": {
+            "type": "object",
+            "required": [
+                "contextPolicyJSON",
+                "createdAt",
+                "isStarred",
+                "labelsJSON",
+                "lastCompactedAt",
+                "lastResponseID",
+                "lastShareAccessedAt",
+                "messageCount",
+                "model",
+                "projectID",
+                "projectName",
+                "provider",
+                "publicID",
+                "sessionKey",
+                "shareID",
+                "shareStatus",
+                "sharedAt",
+                "starredAt",
+                "status",
+                "title",
+                "updatedAt",
+                "userID"
+            ],
+            "properties": {
+                "contextPolicyJSON": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "isStarred": {
+                    "type": "boolean"
+                },
+                "labelsJSON": {
+                    "type": "string"
+                },
+                "lastCompactedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "lastResponseID": {
+                    "type": "string"
+                },
+                "lastShareAccessedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "messageCount": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "projectID": {
+                    "type": "string"
+                },
+                "projectName": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "publicID": {
+                    "type": "string"
+                },
+                "sessionKey": {
+                    "type": "string"
+                },
+                "shareID": {
+                    "type": "string"
+                },
+                "shareStatus": {
+                    "type": "string"
+                },
+                "sharedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "starredAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ConversationRunListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/RunResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationShareResponse": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "lastAccessedAt",
+                "messageCount",
+                "modelSnapshot",
+                "revokedAt",
+                "shareID",
+                "status",
+                "titleSnapshot",
+                "updatedAt"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "lastAccessedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "messageCount": {
+                    "type": "integer"
+                },
+                "modelSnapshot": {
+                    "type": "string"
+                },
+                "revokedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "shareID": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "titleSnapshot": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationShareResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ConversationShareResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConversationUpdateResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ConversationResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "CreateAnnouncementRequest": {
+            "type": "object",
+            "required": [
+                "contentMarkdown",
+                "title"
+            ],
+            "properties": {
+                "contentMarkdown": {
+                    "type": "string",
+                    "maxLength": 20000,
+                    "minLength": 1
+                },
+                "expiresAt": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "pinned": {
+                    "type": "boolean"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "startsAt": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "minLength": 1
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "critical",
+                        "warning",
+                        "info",
+                        "normal",
+                        "general"
+                    ]
+                }
+            }
+        },
+        "CreateCheckoutRequest": {
             "type": "object",
             "properties": {
                 "amountMinorUnits": {
@@ -13407,1221 +14895,85 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_billing.CreateRedemptionCodeRequest": {
+        "CreateConversationProjectRequest": {
             "type": "object",
             "required": [
-                "mode"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 3
-                },
-                "creditUSD": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "durationDays": {
-                    "type": "integer",
-                    "maximum": 3660,
-                    "minimum": 0
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "maxRedemptions": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "mode": {
-                    "type": "string",
-                    "enum": [
-                        "usage",
-                        "period"
-                    ]
-                },
-                "perUserLimit": {
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 1
-                },
-                "planID": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "quantity": {
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 1
-                }
-            }
-        },
-        "internal_transport_http_billing.ErrorDoc": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "details": {},
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMsg": {
-                    "type": "string"
-                },
-                "requestId": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.ModelPricingDataResponse": {
-            "type": "object",
-            "properties": {
-                "modelPricing": {
-                    "$ref": "#/definitions/internal_transport_http_billing.ModelPricingResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.ModelPricingListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_billing.ModelPricingResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.ModelPricingResponse": {
-            "type": "object",
-            "properties": {
-                "cacheReadNanousdPerMTokens": {
-                    "type": "integer"
-                },
-                "cacheReadUSDPerMTokens": {
-                    "type": "number"
-                },
-                "cacheWriteNanousdPerMTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteUSDPerMTokens": {
-                    "type": "number"
-                },
-                "callNanousdPerCall": {
-                    "type": "integer"
-                },
-                "callUSDPerCall": {
-                    "type": "number"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "durationNanousdPerSecond": {
-                    "type": "integer"
-                },
-                "durationUSDPerSecond": {
-                    "type": "number"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "inputNanousdPerMTokens": {
-                    "type": "integer"
-                },
-                "inputUSDPerMTokens": {
-                    "type": "number"
-                },
-                "isFree": {
-                    "type": "boolean"
-                },
-                "modelIcon": {
-                    "type": "string"
-                },
-                "modelVendor": {
-                    "type": "string"
-                },
-                "outputNanousdPerMTokens": {
-                    "type": "integer"
-                },
-                "outputUSDPerMTokens": {
-                    "type": "number"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "pricingMode": {
-                    "type": "string"
-                },
-                "tieredPricingJSON": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.NativeToolPricingRequest": {
-            "type": "object",
-            "required": [
-                "toolKey"
-            ],
-            "properties": {
-                "billable": {
-                    "type": "boolean"
-                },
-                "priceLabel": {
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "priceNanousd": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "priceUSD": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "toolKey": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "unit": {
-                    "type": "string",
-                    "maxLength": 32
-                }
-            }
-        },
-        "internal_transport_http_billing.NativeToolPricingResponse": {
-            "type": "object",
-            "properties": {
-                "billable": {
-                    "type": "boolean"
-                },
-                "customized": {
-                    "type": "boolean"
-                },
-                "defaultPriceNanousd": {
-                    "type": "integer"
-                },
-                "defaultPriceUSD": {
-                    "type": "number"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "priceLabel": {
-                    "type": "string"
-                },
-                "priceNanousd": {
-                    "type": "integer"
-                },
-                "priceUSD": {
-                    "type": "number"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "toolKey": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "unit": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.OpenRouterOfficialPricingDataResponse": {
-            "type": "object",
-            "properties": {
-                "cached": {
-                    "type": "boolean"
-                },
-                "fetchedAt": {
-                    "type": "string"
-                },
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.OpenRouterOfficialPricingItemResponse"
-                    }
-                },
-                "stale": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_billing.OpenRouterOfficialPricingItemResponse": {
-            "type": "object",
-            "properties": {
-                "canonicalSlug": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "pricing": {
-                    "$ref": "#/definitions/internal_transport_http_billing.OpenRouterOfficialPricingUnitPricingResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.OpenRouterOfficialPricingResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.OpenRouterOfficialPricingDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.OpenRouterOfficialPricingUnitPricingResponse": {
-            "type": "object",
-            "properties": {
-                "completion": {
-                    "type": "string"
-                },
-                "inputCacheRead": {
-                    "type": "string"
-                },
-                "inputCacheWrite": {
-                    "type": "string"
-                },
-                "prompt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.PatchRedemptionCodeRequestDoc": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "maxRedemptions": {
-                    "type": "integer"
-                },
-                "perUserLimit": {
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 1
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                }
-            }
-        },
-        "internal_transport_http_billing.PaymentTypeResponse": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.PlanListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.BillingPlanResponse"
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedeemCodeRequest": {
-            "type": "object",
-            "required": [
-                "code"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 3
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionApplyDataResponse": {
-            "type": "object",
-            "properties": {
-                "account": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingAccountResponse"
-                },
-                "overview": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingOverviewResponse"
-                },
-                "redemption": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionResponse"
-                },
-                "subscription": {
-                    "$ref": "#/definitions/internal_transport_http_billing.SubscriptionResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionApplyResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionApplyDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeCreateDataResponse": {
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeResponse"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeCreateResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeCreateDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeDataResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeDeleteDataResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeDeleteResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeDeleteDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeListDataResponse": {
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeResponse"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeListDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "codeHint": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "createdByUserID": {
-                    "type": "integer"
-                },
-                "creditNanousd": {
-                    "type": "integer"
-                },
-                "creditUSD": {
-                    "type": "number"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "durationDays": {
-                    "type": "integer"
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "maxRedemptions": {
-                    "type": "integer"
-                },
-                "mode": {
-                    "type": "string"
-                },
-                "perUserLimit": {
-                    "type": "integer"
-                },
-                "planID": {
-                    "type": "integer"
-                },
-                "redeemedCount": {
-                    "type": "integer"
-                },
-                "remainingRedemptions": {
-                    "type": "integer"
-                },
-                "rewardType": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionCodeResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.RedemptionCodeDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.RedemptionResponse": {
-            "type": "object",
-            "properties": {
-                "balanceTransactionID": {
-                    "type": "integer"
-                },
-                "codeID": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "creditNanousd": {
-                    "type": "integer"
-                },
-                "creditUSD": {
-                    "type": "number"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "mode": {
-                    "type": "string"
-                },
-                "planID": {
-                    "type": "integer"
-                },
-                "rewardType": {
-                    "type": "string"
-                },
-                "subscriptionID": {
-                    "type": "integer"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.SubscribeRequest": {
-            "type": "object",
-            "required": [
-                "priceID"
-            ],
-            "properties": {
-                "cycles": {
-                    "type": "integer",
-                    "maximum": 120,
-                    "minimum": 1
-                },
-                "priceID": {
-                    "type": "integer",
-                    "minimum": 1
-                }
-            }
-        },
-        "internal_transport_http_billing.SubscribeResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_billing.SubscriptionDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.SubscriptionDataResponse": {
-            "type": "object",
-            "properties": {
-                "subscription": {
-                    "$ref": "#/definitions/internal_transport_http_billing.SubscriptionResponse"
-                }
-            }
-        },
-        "internal_transport_http_billing.SubscriptionEntitlementResponse": {
-            "type": "object",
-            "properties": {
-                "autoRenew": {
-                    "type": "boolean"
-                },
-                "cancelAtPeriodEnd": {
-                    "type": "boolean"
-                },
-                "currentPeriodEndAt": {
-                    "type": "string"
-                },
-                "currentPeriodStartAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "isCurrent": {
-                    "type": "boolean"
-                },
-                "plan": {
-                    "$ref": "#/definitions/internal_transport_http_billing.BillingPlanResponse"
-                },
-                "planID": {
-                    "type": "integer"
-                },
-                "priceID": {
-                    "type": "integer"
-                },
-                "startAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.SubscriptionResponse": {
-            "type": "object",
-            "properties": {
-                "autoRenew": {
-                    "type": "boolean"
-                },
-                "cancelAtPeriodEnd": {
-                    "type": "boolean"
-                },
-                "currentPeriodEndAt": {
-                    "type": "string"
-                },
-                "currentPeriodStartAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "planID": {
-                    "type": "integer"
-                },
-                "priceID": {
-                    "type": "integer"
-                },
-                "startAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.UpdateBillingAccountBalanceRequest": {
-            "type": "object",
-            "properties": {
-                "balanceUSD": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 255
-                }
-            }
-        },
-        "internal_transport_http_billing.UpdateBillingPlanRequest": {
-            "type": "object",
-            "required": [
-                "billingInterval",
                 "name"
             ],
             "properties": {
-                "amountUSD": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "billingInterval": {
+                "color": {
                     "type": "string",
-                    "enum": [
-                        "month",
-                        "year",
-                        "lifetime"
-                    ]
+                    "maxLength": 32
                 },
-                "currency": {
-                    "type": "string",
-                    "maxLength": 16
+                "defaultMCPToolIDs": {
+                    "type": "array",
+                    "maxItems": 128,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "defaultSkillIDs": {
+                    "type": "array",
+                    "maxItems": 128,
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "description": {
                     "type": "string",
                     "maxLength": 255
                 },
-                "discountPercent": {
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 0
+                "icon": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "mcpDefaultMode": {
+                    "type": "string",
+                    "enum": [
+                        "inherit",
+                        "custom"
+                    ]
                 },
                 "name": {
                     "type": "string",
-                    "maxLength": 64,
-                    "minLength": 1
+                    "maxLength": 80
                 },
-                "periodCreditUSD": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "permissionGroupID": {
-                    "type": "integer"
+                "systemPrompt": {
+                    "type": "string",
+                    "maxLength": 12000
                 }
             }
         },
-        "internal_transport_http_billing.UpsertModelPricingRequest": {
+        "CreateConversationRequest": {
             "type": "object",
-            "required": [
-                "platformModelName"
-            ],
             "properties": {
-                "cacheReadUSDPerMTokens": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "cacheWriteUSDPerMTokens": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "callUSDPerCall": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "currency": {
-                    "type": "string",
-                    "maxLength": 16
-                },
-                "durationUSDPerSecond": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "inputUSDPerMTokens": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "isFree": {
-                    "type": "boolean"
-                },
-                "outputUSDPerMTokens": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "platformModelName": {
+                "model": {
                     "type": "string",
                     "maxLength": 128
                 },
-                "pricingMode": {
+                "projectID": {
                     "type": "string",
-                    "enum": [
-                        "token",
-                        "call",
-                        "duration",
-                        "tiered"
-                    ]
+                    "maxLength": 32
                 },
-                "tieredPricingJSON": {
+                "title": {
                     "type": "string",
-                    "maxLength": 20000
+                    "maxLength": 255
                 }
             }
         },
-        "internal_transport_http_billing.UsageDailyListResponseDoc": {
+        "CreateConversationShareRequest": {
             "type": "object",
             "properties": {
-                "data": {
+                "defaultMessagePublicIDs": {
                     "type": "array",
+                    "maxItems": 1000,
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.UsageDailyResponse"
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageDailyModelResponse": {
-            "type": "object",
-            "properties": {
-                "avgLatencyMS": {
-                    "type": "integer"
-                },
-                "billedNanousd": {
-                    "type": "integer"
-                },
-                "billedUSD": {
-                    "type": "number"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "callCount": {
-                    "type": "integer"
-                },
-                "durationSeconds": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "recordCount": {
-                    "type": "integer"
-                },
-                "totalTokens": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageDailyResponse": {
-            "type": "object",
-            "properties": {
-                "avgLatencyMS": {
-                    "type": "integer"
-                },
-                "billedNanousd": {
-                    "type": "integer"
-                },
-                "billedUSD": {
-                    "type": "number"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "callCount": {
-                    "type": "integer"
-                },
-                "durationSeconds": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "models": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.UsageDailyModelResponse"
-                    }
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "recordCount": {
-                    "type": "integer"
-                },
-                "totalTokens": {
-                    "type": "integer"
-                },
-                "usageDate": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageLedgerListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_billing.UsageLedgerResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageLedgerResponse": {
-            "type": "object",
-            "properties": {
-                "billedCurrency": {
-                    "type": "string"
-                },
-                "billedNanousd": {
-                    "type": "integer"
-                },
-                "billedUSD": {
-                    "type": "number"
-                },
-                "billingAt": {
-                    "type": "string"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWrite1hTokens": {
-                    "type": "integer"
-                },
-                "cacheWrite5mTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "callCount": {
-                    "type": "integer"
-                },
-                "conversationID": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "durationSeconds": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "isFreeModel": {
-                    "type": "boolean"
-                },
-                "latencyMS": {
-                    "type": "integer"
-                },
-                "modelIcon": {
-                    "type": "string"
-                },
-                "modelVendor": {
-                    "type": "string"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "pricingSnapshotJSON": {
-                    "type": "string"
-                },
-                "providerProtocol": {
-                    "type": "string"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "routedBindingCode": {
-                    "type": "string"
-                },
-                "serviceTier": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                },
-                "usageDate": {
-                    "type": "string"
-                },
-                "usageSpeed": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageMonthlyListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_billing.UsageMonthlyResponse"
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_billing.UsageMonthlyResponse": {
-            "type": "object",
-            "properties": {
-                "avgLatencyMS": {
-                    "type": "integer"
-                },
-                "billedNanousd": {
-                    "type": "integer"
-                },
-                "billedUSD": {
-                    "type": "number"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "callCount": {
-                    "type": "integer"
-                },
-                "durationSeconds": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "monthStartAt": {
-                    "type": "string"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "recordCount": {
-                    "type": "integer"
-                },
-                "totalTokens": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.BatchDeleteRequest": {
-            "type": "object",
-            "required": [
-                "ids"
-            ],
-            "properties": {
-                "ids": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "type": "integer"
+                        "type": "string"
                     }
                 }
             }
         },
-        "internal_transport_http_channel.BatchDeleteResponse": {
-            "type": "object",
-            "properties": {
-                "failedCount": {
-                    "type": "integer"
-                },
-                "notFoundCount": {
-                    "type": "integer"
-                },
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteResultResponse"
-                    }
-                },
-                "successCount": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.BatchDeleteResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.BatchDeleteResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.BatchDeleteResultResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_channel.BindModelUpstreamSourceRequest": {
-            "type": "object",
-            "required": [
-                "upstreamID",
-                "upstreamModelID"
-            ],
-            "properties": {
-                "cbDurationMin": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "cbFailureThreshold": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "cbWindowMin": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "protocol": {
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive"
-                    ]
-                },
-                "upstreamID": {
-                    "type": "integer"
-                },
-                "upstreamModelID": {
-                    "type": "integer"
-                },
-                "weight": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_channel.CircuitResetResponse": {
-            "type": "object",
-            "properties": {
-                "reset": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_channel.CreateModelRequest": {
+        "CreateModelRequest": {
             "type": "object",
             "required": [
                 "platformModelName"
@@ -14691,18 +15043,122 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.CreateModelResponseDoc": {
+        "CreateModelResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelDataResponse"
+                    "$ref": "#/definitions/ModelDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.CreateUpstreamRequest": {
+        "CreatePermissionGroupRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "rateMultiplierPercent": {
+                    "type": "integer",
+                    "maximum": 10000,
+                    "minimum": 0
+                }
+            }
+        },
+        "CreateRedemptionCodeRequest": {
+            "type": "object",
+            "required": [
+                "mode"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 3
+                },
+                "creditUSD": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "durationDays": {
+                    "type": "integer",
+                    "maximum": 3660,
+                    "minimum": 0
+                },
+                "expiresAt": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "maxRedemptions": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "usage",
+                        "period"
+                    ]
+                },
+                "perUserLimit": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                },
+                "planID": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "quantity": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                }
+            }
+        },
+        "CreateServerRequest": {
+            "type": "object",
+            "required": [
+                "baseURL",
+                "name"
+            ],
+            "properties": {
+                "authToken": {
+                    "type": "string"
+                },
+                "baseURL": {
+                    "type": "string"
+                },
+                "headersJSON": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "CreateUpstreamRequest": {
             "type": "object",
             "required": [
                 "apiKeys",
@@ -14780,19 +15236,376 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.CreateUpstreamResponseDoc": {
+        "CreateUpstreamResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamDataResponse"
+                    "$ref": "#/definitions/UpstreamDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.ErrorDoc": {
+        "CreateUserRequest": {
             "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "avatarURL": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "displayName": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "minLength": 3
+                },
+                "email": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "locale": {
+                    "type": "string",
+                    "maxLength": 16
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 8
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "subscriptionExpiresAt": {
+                    "type": "string"
+                },
+                "subscriptionTier": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "timezone": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "minLength": 3
+                }
+            }
+        },
+        "CreateUserResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/UserDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "DeleteAccountRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "verificationMethod"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 6
+                },
+                "verificationMethod": {
+                    "type": "string",
+                    "enum": [
+                        "two_factor",
+                        "email"
+                    ]
+                }
+            }
+        },
+        "DeleteAccountResponse": {
+            "type": "object",
+            "required": [
+                "deleted"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "DeleteAccountResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/DeleteAccountResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "DeleteFileResponse": {
+            "type": "object",
+            "required": [
+                "deleted",
+                "fileID",
+                "quota"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                },
+                "fileID": {
+                    "type": "string"
+                },
+                "quota": {
+                    "$ref": "#/definitions/StorageQuotaResponse"
+                }
+            }
+        },
+        "DeleteFileResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/DeleteFileResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "DeletePermissionGroupResponse": {
+            "type": "object",
+            "required": [
+                "deleted",
+                "summary"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                },
+                "summary": {
+                    "$ref": "#/definitions/PermissionGroupDeleteSummaryResponse"
+                }
+            }
+        },
+        "DeletePermissionGroupResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/DeletePermissionGroupResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "DeleteServerResponse": {
+            "type": "object",
+            "required": [
+                "deleted"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "DeleteServerResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/DeleteServerResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "DeleteUserResponse": {
+            "type": "object",
+            "required": [
+                "deleted"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "DeleteUserResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/DeleteUserResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "EmailRegistrationCompleteRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "locale": {
+                    "type": "string",
+                    "maxLength": 16
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 8
+                },
+                "turnstileToken": {
+                    "type": "string",
+                    "maxLength": 2048
+                }
+            }
+        },
+        "EmailRegistrationStartRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "locale": {
+                    "type": "string",
+                    "maxLength": 16
+                },
+                "turnstileToken": {
+                    "type": "string",
+                    "maxLength": 2048
+                }
+            }
+        },
+        "EmailRegistrationStartResponse": {
+            "type": "object",
+            "required": [
+                "expiresAt",
+                "sent"
+            ],
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "sent": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "EmailRegistrationStartResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/EmailRegistrationStartResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "EmailVerificationStartResponse": {
+            "type": "object",
+            "required": [
+                "availableMethods",
+                "expiresAt",
+                "sent",
+                "verificationMethod"
+            ],
+            "properties": {
+                "availableMethods": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "sent": {
+                    "type": "boolean"
+                },
+                "verificationMethod": {
+                    "type": "string"
+                }
+            }
+        },
+        "EmailVerificationStartResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/EmailVerificationStartResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "Envelope": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {},
                 "details": {},
@@ -14807,7 +15620,539 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ImportUpstreamModelItemRequest": {
+        "FileListResponse": {
+            "type": "object",
+            "required": [
+                "quota",
+                "results",
+                "total"
+            ],
+            "properties": {
+                "quota": {
+                    "$ref": "#/definitions/StorageQuotaResponse"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FileObjectResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "FileListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/FileListResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "FileObjectResponse": {
+            "type": "object",
+            "required": [
+                "chunkCount",
+                "createdAt",
+                "detectedMIME",
+                "embedError",
+                "embedStatus",
+                "expiresAt",
+                "extractStatus",
+                "fileCategory",
+                "fileID",
+                "fileName",
+                "lastAccessedAt",
+                "mimeType",
+                "processingErrorCode",
+                "processingErrorMessage",
+                "processingReady",
+                "processingStatus",
+                "purpose",
+                "ragOptOut",
+                "sha256",
+                "sizeBytes",
+                "status",
+                "updatedAt"
+            ],
+            "properties": {
+                "chunkCount": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "detectedMIME": {
+                    "type": "string"
+                },
+                "embedError": {
+                    "type": "string"
+                },
+                "embedStatus": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "extractStatus": {
+                    "type": "string"
+                },
+                "fileCategory": {
+                    "type": "string"
+                },
+                "fileID": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "lastAccessedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "mimeType": {
+                    "type": "string"
+                },
+                "processingErrorCode": {
+                    "type": "string"
+                },
+                "processingErrorMessage": {
+                    "type": "string"
+                },
+                "processingReady": {
+                    "type": "boolean"
+                },
+                "processingStatus": {
+                    "type": "string"
+                },
+                "purpose": {
+                    "type": "string"
+                },
+                "ragOptOut": {
+                    "type": "boolean"
+                },
+                "sha256": {
+                    "type": "string"
+                },
+                "sizeBytes": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "FileUpdateResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/FileObjectResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "FileUploadResponse": {
+            "type": "object",
+            "required": [
+                "file",
+                "quota",
+                "reused"
+            ],
+            "properties": {
+                "file": {
+                    "$ref": "#/definitions/FileObjectResponse"
+                },
+                "quota": {
+                    "$ref": "#/definitions/StorageQuotaResponse"
+                },
+                "reused": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "GroupModelsResponse": {
+            "type": "object",
+            "required": [
+                "modelIDs",
+                "rules"
+            ],
+            "properties": {
+                "modelIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PermissionGroupModelRuleResponse"
+                    }
+                }
+            }
+        },
+        "GroupModelsResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/GroupModelsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "GroupUsersResponse": {
+            "type": "object",
+            "required": [
+                "userIDs"
+            ],
+            "properties": {
+                "userIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "GroupUsersResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/GroupUsersResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "IdentityProviderDeleteResponse": {
+            "type": "object",
+            "required": [
+                "deleted"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "IdentityProviderDeleteResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/IdentityProviderDeleteResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "IdentityProviderListResponse": {
+            "type": "object",
+            "required": [
+                "results",
+                "total"
+            ],
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/IdentityProviderResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "IdentityProviderListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/IdentityProviderListResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "IdentityProviderReorderResponse": {
+            "type": "object",
+            "required": [
+                "updated"
+            ],
+            "properties": {
+                "updated": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "IdentityProviderReorderResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/IdentityProviderReorderResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "IdentityProviderResponse": {
+            "type": "object",
+            "required": [
+                "avatarField",
+                "createdAt",
+                "defaultRole",
+                "emailField",
+                "emailVerifiedField",
+                "loginEnabled",
+                "logoURL",
+                "name",
+                "nameField",
+                "publicID",
+                "registrationEnabled",
+                "scopes",
+                "slug",
+                "subjectField",
+                "type",
+                "updatedAt"
+            ],
+            "properties": {
+                "authURL": {
+                    "type": "string"
+                },
+                "avatarField": {
+                    "type": "string"
+                },
+                "clientID": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "defaultRole": {
+                    "type": "string",
+                    "enum": [
+                        "user",
+                        "admin",
+                        "superadmin"
+                    ]
+                },
+                "discoveryURL": {
+                    "type": "string"
+                },
+                "emailField": {
+                    "type": "string"
+                },
+                "emailVerifiedField": {
+                    "type": "string"
+                },
+                "issuerURL": {
+                    "type": "string"
+                },
+                "jwksURL": {
+                    "type": "string"
+                },
+                "loginEnabled": {
+                    "type": "boolean"
+                },
+                "logoURL": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nameField": {
+                    "type": "string"
+                },
+                "publicID": {
+                    "type": "string"
+                },
+                "registrationEnabled": {
+                    "type": "boolean"
+                },
+                "scopes": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "subjectField": {
+                    "type": "string"
+                },
+                "tokenURL": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "oidc",
+                        "oauth2"
+                    ]
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userinfoURL": {
+                    "type": "string"
+                }
+            }
+        },
+        "IdentityProviderResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/IdentityProviderResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ImportOpenWebUIUsersRequest": {
+            "type": "object",
+            "required": [
+                "creditMultiplier",
+                "dsn"
+            ],
+            "properties": {
+                "creditMultiplier": {
+                    "type": "number"
+                },
+                "dryRun": {
+                    "type": "boolean"
+                },
+                "dsn": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "importPasswords": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ImportOpenWebUIUsersResponse": {
+            "type": "object",
+            "required": [
+                "dedupeField",
+                "dedupeRule",
+                "imported",
+                "passwordsGenerated",
+                "passwordsImported",
+                "passwordsInvalidHash",
+                "passwordsUnavailable",
+                "scanned",
+                "skippedDuplicateSourceEmail",
+                "skippedExistingEmail",
+                "skippedInvalidEmail",
+                "skippedInvalidRow",
+                "source"
+            ],
+            "properties": {
+                "dedupeField": {
+                    "type": "string"
+                },
+                "dedupeRule": {
+                    "type": "string"
+                },
+                "imported": {
+                    "type": "integer"
+                },
+                "passwordsGenerated": {
+                    "type": "integer"
+                },
+                "passwordsImported": {
+                    "type": "integer"
+                },
+                "passwordsInvalidHash": {
+                    "type": "integer"
+                },
+                "passwordsUnavailable": {
+                    "type": "integer"
+                },
+                "scanned": {
+                    "type": "integer"
+                },
+                "skippedDuplicateSourceEmail": {
+                    "type": "integer"
+                },
+                "skippedExistingEmail": {
+                    "type": "integer"
+                },
+                "skippedInvalidEmail": {
+                    "type": "integer"
+                },
+                "skippedInvalidRow": {
+                    "type": "integer"
+                },
+                "source": {
+                    "type": "string"
+                }
+            }
+        },
+        "ImportOpenWebUIUsersResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ImportOpenWebUIUsersResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ImportUpstreamModelItemRequest": {
             "type": "object",
             "required": [
                 "platformModelName",
@@ -14850,8 +16195,19 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ImportUpstreamModelResultResponse": {
+        "ImportUpstreamModelResultResponse": {
             "type": "object",
+            "required": [
+                "bindingCode",
+                "createdPlatform",
+                "createdRoute",
+                "createdRoutes",
+                "existingRoutes",
+                "platformModelName",
+                "protocols",
+                "status",
+                "upstreamModelName"
+            ],
             "properties": {
                 "bindingCode": {
                     "type": "string"
@@ -14888,7 +16244,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ImportUpstreamModelsRequest": {
+        "ImportUpstreamModelsRequest": {
             "type": "object",
             "required": [
                 "items"
@@ -14898,7 +16254,7 @@ const docTemplate = `{
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.ImportUpstreamModelItemRequest"
+                        "$ref": "#/definitions/ImportUpstreamModelItemRequest"
                     }
                 },
                 "permissionGroupIDs": {
@@ -14909,8 +16265,17 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ImportUpstreamModelsResponse": {
+        "ImportUpstreamModelsResponse": {
             "type": "object",
+            "required": [
+                "createdPlatform",
+                "createdRoutes",
+                "existingRoutes",
+                "failedCount",
+                "importedCount",
+                "results",
+                "total"
+            ],
             "properties": {
                 "createdPlatform": {
                     "type": "integer"
@@ -14930,7 +16295,7 @@ const docTemplate = `{
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.ImportUpstreamModelResultResponse"
+                        "$ref": "#/definitions/ImportUpstreamModelResultResponse"
                     }
                 },
                 "total": {
@@ -14938,35 +16303,358 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ImportUpstreamModelsResponseDoc": {
+        "ImportUpstreamModelsResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ImportUpstreamModelsResponse"
+                    "$ref": "#/definitions/ImportUpstreamModelsResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.ModelDataResponse": {
+        "LegacyFunctionCallDoc": {
             "type": "object",
+            "required": [
+                "arguments",
+                "name"
+            ],
             "properties": {
-                "model": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelResponse"
+                "arguments": {
+                    "type": "string",
+                    "example": "{\"city\":\"Paris\"}"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "get_weather"
                 }
             }
         },
-        "internal_transport_http_channel.ModelListResponseDoc": {
+        "LegacyFunctionDoc": {
             "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Get weather for a city"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "get_weather"
+                },
+                "parameters": {
+                    "type": "object"
+                }
+            }
+        },
+        "LoginOptionsResponse": {
+            "type": "object",
+            "required": [
+                "emailEnabled",
+                "emailRegistrationEnabled",
+                "emailVerificationEnabled",
+                "passwordResetEnabled",
+                "providers",
+                "turnstileRegistrationEnabled",
+                "turnstileSiteKey",
+                "usernameEnabled"
+            ],
+            "properties": {
+                "emailEnabled": {
+                    "type": "boolean"
+                },
+                "emailRegistrationEnabled": {
+                    "type": "boolean"
+                },
+                "emailVerificationEnabled": {
+                    "type": "boolean"
+                },
+                "passwordResetEnabled": {
+                    "type": "boolean"
+                },
+                "providers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/IdentityProviderResponse"
+                    }
+                },
+                "turnstileRegistrationEnabled": {
+                    "type": "boolean"
+                },
+                "turnstileSiteKey": {
+                    "type": "string"
+                },
+                "usernameEnabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "LoginOptionsResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/LoginOptionsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 6
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 3
+                }
+            }
+        },
+        "LoginResponse": {
+            "type": "object",
+            "required": [
+                "accessToken",
+                "expiresAt",
+                "refreshExpiresAt",
+                "sessionID",
+                "twoFactorRequired",
+                "user"
+            ],
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "refreshExpiresAt": {
+                    "type": "string"
+                },
+                "sessionID": {
+                    "type": "string"
+                },
+                "twoFactorChallengeToken": {
+                    "type": "string"
+                },
+                "twoFactorRequired": {
+                    "type": "boolean"
+                },
+                "user": {
+                    "$ref": "#/definitions/AuthUserResponse"
+                },
+                "verificationMethods": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "LoginResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/LoginResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "LogoutResponse": {
+            "type": "object",
+            "required": [
+                "revoked"
+            ],
+            "properties": {
+                "revoked": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "LogoutResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/LogoutResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "McpErrorDoc": {
+            "type": "object",
+            "required": [
+                "errorMsg"
+            ],
+            "properties": {
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "MeResponse": {
+            "type": "object",
+            "required": [
+                "user"
+            ],
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/AuthUserResponse"
+                }
+            }
+        },
+        "MeResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/MeResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "MemoryErrorDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {},
+                "details": {},
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                }
+            }
+        },
+        "MessageBillingCostResponse": {
+            "type": "object",
+            "required": [
+                "billedCurrency",
+                "billedNanousd",
+                "billedUSD",
+                "billingMode",
+                "pricingSnapshotJSON"
+            ],
+            "properties": {
+                "billedCurrency": {
+                    "type": "string"
+                },
+                "billedNanousd": {
+                    "type": "integer"
+                },
+                "billedUSD": {
+                    "type": "number"
+                },
+                "billingMode": {
+                    "type": "string"
+                },
+                "pricingSnapshotJSON": {
+                    "type": "string"
+                }
+            }
+        },
+        "MessageFeedbackResponse": {
+            "type": "object",
+            "required": [
+                "messageID",
+                "messagePublicID",
+                "myFeedback",
+                "thumbsDownCount",
+                "thumbsUpCount"
+            ],
+            "properties": {
+                "messageID": {
+                    "type": "integer"
+                },
+                "messagePublicID": {
+                    "type": "string"
+                },
+                "myFeedback": {
+                    "type": "string"
+                },
+                "thumbsDownCount": {
+                    "type": "integer"
+                },
+                "thumbsUpCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "MessageFeedbackResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/MessageFeedbackResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "MessageListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
                     "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
                     "properties": {
                         "results": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_transport_http_channel.ModelResponse"
+                                "$ref": "#/definitions/MessageResponse"
                             }
                         },
                         "total": {
@@ -14979,8 +16667,659 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ModelProbeBatchResponse": {
+        "MessageProcessTraceResponse": {
             "type": "object",
+            "required": [
+                "enabled",
+                "status"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MessageTraceEventResponse"
+                    }
+                },
+                "process": {
+                    "$ref": "#/definitions/MessageTraceBlockResponse"
+                },
+                "promptTrace": {
+                    "$ref": "#/definitions/MessagePromptTraceResponse"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tools": {
+                    "$ref": "#/definitions/MessageTraceBlockResponse"
+                },
+                "upstreamThink": {
+                    "$ref": "#/definitions/MessageTraceBlockResponse"
+                }
+            }
+        },
+        "MessagePromptTraceBlockResponse": {
+            "type": "object",
+            "required": [
+                "cacheable",
+                "kind",
+                "sourceCount",
+                "title",
+                "tokenEstimate"
+            ],
+            "properties": {
+                "cacheable": {
+                    "type": "boolean"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "sourceCount": {
+                    "type": "integer"
+                },
+                "sourceRefs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MessagePromptTraceSourceResponse"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tokenEstimate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "MessagePromptTraceResponse": {
+            "type": "object",
+            "required": [
+                "blocks",
+                "fullMessageCount",
+                "mode",
+                "promptFingerprint",
+                "sentMessageCount",
+                "sentTokenEstimate",
+                "statefulDisabledReason",
+                "statefulSavedMessages",
+                "statefulSavedTokens",
+                "statefulUsed",
+                "totalTokenEstimate"
+            ],
+            "properties": {
+                "blocks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MessagePromptTraceBlockResponse"
+                    }
+                },
+                "fullMessageCount": {
+                    "type": "integer"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "promptFingerprint": {
+                    "type": "string"
+                },
+                "sentMessageCount": {
+                    "type": "integer"
+                },
+                "sentTokenEstimate": {
+                    "type": "integer"
+                },
+                "statefulDisabledReason": {
+                    "type": "string"
+                },
+                "statefulSavedMessages": {
+                    "type": "integer"
+                },
+                "statefulSavedTokens": {
+                    "type": "integer"
+                },
+                "statefulUsed": {
+                    "type": "boolean"
+                },
+                "totalTokenEstimate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "MessagePromptTraceSourceResponse": {
+            "type": "object",
+            "required": [
+                "sourceID",
+                "sourceType",
+                "title"
+            ],
+            "properties": {
+                "artifactID": {
+                    "type": "integer"
+                },
+                "sourceID": {
+                    "type": "string"
+                },
+                "sourceType": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "MessageResponse": {
+            "type": "object",
+            "required": [
+                "attachments",
+                "branchReason",
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "content",
+                "contentType",
+                "conversationID",
+                "createdAt",
+                "editedAt",
+                "errorCode",
+                "errorMessage",
+                "id",
+                "inputTokens",
+                "latencyMS",
+                "modelIcon",
+                "modelVendor",
+                "myFeedback",
+                "outputTokens",
+                "parentMessageID",
+                "parentPublicID",
+                "platformModelName",
+                "publicID",
+                "reasoningTokens",
+                "role",
+                "runID",
+                "sourceMessageID",
+                "sourcePublicID",
+                "status",
+                "thumbsDownCount",
+                "thumbsUpCount",
+                "tokenUsage",
+                "updatedAt",
+                "upstreamModelName",
+                "userID"
+            ],
+            "properties": {
+                "attachments": {
+                    "type": "string"
+                },
+                "billingCost": {
+                    "$ref": "#/definitions/MessageBillingCostResponse"
+                },
+                "branchReason": {
+                    "type": "string"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "conversationID": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "editedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "latencyMS": {
+                    "type": "integer"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "myFeedback": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "parentMessageID": {
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "parentPublicID": {
+                    "type": "string"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "processTrace": {
+                    "$ref": "#/definitions/MessageProcessTraceResponse"
+                },
+                "publicID": {
+                    "type": "string"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "runID": {
+                    "type": "string"
+                },
+                "sourceMessageID": {
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "sourcePublicID": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "thumbsDownCount": {
+                    "type": "integer"
+                },
+                "thumbsUpCount": {
+                    "type": "integer"
+                },
+                "tokenUsage": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "MessageResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/MessageResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "MessageTraceBlockResponse": {
+            "type": "object",
+            "required": [
+                "contentMarkdown",
+                "status",
+                "summary",
+                "title",
+                "updatedAt"
+            ],
+            "properties": {
+                "contentMarkdown": {
+                    "type": "string"
+                },
+                "parentEventID": {
+                    "type": "string"
+                },
+                "payloadJSON": {
+                    "type": "string"
+                },
+                "roundID": {
+                    "type": "string"
+                },
+                "stage": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "MessageTraceEventResponse": {
+            "type": "object",
+            "required": [
+                "contentMarkdown",
+                "eventID",
+                "eventType",
+                "phase",
+                "seq",
+                "startedAt",
+                "status",
+                "summary",
+                "title",
+                "updatedAt"
+            ],
+            "properties": {
+                "contentMarkdown": {
+                    "type": "string"
+                },
+                "endedAt": {
+                    "type": "string"
+                },
+                "eventID": {
+                    "type": "string"
+                },
+                "eventType": {
+                    "type": "string"
+                },
+                "parentEventID": {
+                    "type": "string"
+                },
+                "payloadJSON": {
+                    "type": "string"
+                },
+                "phase": {
+                    "type": "string"
+                },
+                "roundID": {
+                    "type": "string"
+                },
+                "seq": {
+                    "type": "integer"
+                },
+                "stage": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ModelDataResponse": {
+            "type": "object",
+            "required": [
+                "model"
+            ],
+            "properties": {
+                "model": {
+                    "$ref": "#/definitions/ModelResponse"
+                }
+            }
+        },
+        "ModelItemDoc": {
+            "type": "object",
+            "required": [
+                "created",
+                "id",
+                "object",
+                "owned_by",
+                "supported_endpoint_types"
+            ],
+            "properties": {
+                "created": {
+                    "type": "integer",
+                    "example": 1626777600
+                },
+                "id": {
+                    "type": "string",
+                    "example": "gpt-5"
+                },
+                "object": {
+                    "type": "string",
+                    "example": "model"
+                },
+                "owned_by": {
+                    "type": "string",
+                    "example": "deeix"
+                },
+                "supported_endpoint_types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "openai"
+                    ]
+                }
+            }
+        },
+        "ModelPermissionGroupsResponse": {
+            "type": "object",
+            "required": [
+                "effectiveGroupIDs",
+                "manualGroupIDs",
+                "matchedGroupIDs",
+                "unassigned"
+            ],
+            "properties": {
+                "effectiveGroupIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "manualGroupIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "matchedGroupIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "unassigned": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ModelPermissionGroupsResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ModelPermissionGroupsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ModelPricingDataResponse": {
+            "type": "object",
+            "required": [
+                "modelPricing"
+            ],
+            "properties": {
+                "modelPricing": {
+                    "$ref": "#/definitions/ModelPricingResponse"
+                }
+            }
+        },
+        "ModelPricingListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ModelPricingResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ModelPricingResponse": {
+            "type": "object",
+            "required": [
+                "cacheReadNanousdPerMTokens",
+                "cacheReadUSDPerMTokens",
+                "cacheWriteNanousdPerMTokens",
+                "cacheWriteUSDPerMTokens",
+                "callNanousdPerCall",
+                "callUSDPerCall",
+                "createdAt",
+                "currency",
+                "durationNanousdPerSecond",
+                "durationUSDPerSecond",
+                "id",
+                "inputNanousdPerMTokens",
+                "inputUSDPerMTokens",
+                "isFree",
+                "modelIcon",
+                "modelVendor",
+                "outputNanousdPerMTokens",
+                "outputUSDPerMTokens",
+                "platformModelName",
+                "pricingMode",
+                "tieredPricingJSON",
+                "updatedAt"
+            ],
+            "properties": {
+                "cacheReadNanousdPerMTokens": {
+                    "type": "integer"
+                },
+                "cacheReadUSDPerMTokens": {
+                    "type": "number"
+                },
+                "cacheWriteNanousdPerMTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteUSDPerMTokens": {
+                    "type": "number"
+                },
+                "callNanousdPerCall": {
+                    "type": "integer"
+                },
+                "callUSDPerCall": {
+                    "type": "number"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "durationNanousdPerSecond": {
+                    "type": "integer"
+                },
+                "durationUSDPerSecond": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inputNanousdPerMTokens": {
+                    "type": "integer"
+                },
+                "inputUSDPerMTokens": {
+                    "type": "number"
+                },
+                "isFree": {
+                    "type": "boolean"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "outputNanousdPerMTokens": {
+                    "type": "integer"
+                },
+                "outputUSDPerMTokens": {
+                    "type": "number"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "pricingMode": {
+                    "type": "string"
+                },
+                "tieredPricingJSON": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ModelProbeBatchResponse": {
+            "type": "object",
+            "required": [
+                "failedCount",
+                "results",
+                "successCount",
+                "totalCount",
+                "unsupportedCount"
+            ],
             "properties": {
                 "failedCount": {
                     "type": "integer"
@@ -14988,7 +17327,7 @@ const docTemplate = `{
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.ModelProbeResponse"
+                        "$ref": "#/definitions/ModelProbeResponse"
                     }
                 },
                 "successCount": {
@@ -15002,19 +17341,28 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ModelProbeBatchResponseDoc": {
+        "ModelProbeBatchResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelProbeBatchResponse"
+                    "$ref": "#/definitions/ModelProbeBatchResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.ModelProbeDebugRequestResponse": {
+        "ModelProbeDebugRequestResponse": {
             "type": "object",
+            "required": [
+                "body",
+                "method",
+                "path"
+            ],
             "properties": {
                 "body": {
                     "type": "string"
@@ -15033,19 +17381,27 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ModelProbeDebugResponse": {
+        "ModelProbeDebugResponse": {
             "type": "object",
+            "required": [
+                "request",
+                "response"
+            ],
             "properties": {
                 "request": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelProbeDebugRequestResponse"
+                    "$ref": "#/definitions/ModelProbeDebugRequestResponse"
                 },
                 "response": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelProbeDebugResponseResponse"
+                    "$ref": "#/definitions/ModelProbeDebugResponseResponse"
                 }
             }
         },
-        "internal_transport_http_channel.ModelProbeDebugResponseResponse": {
+        "ModelProbeDebugResponseResponse": {
             "type": "object",
+            "required": [
+                "body",
+                "statusCode"
+            ],
             "properties": {
                 "body": {
                     "type": "string"
@@ -15061,7 +17417,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ModelProbeRequest": {
+        "ModelProbeRequest": {
             "type": "object",
             "properties": {
                 "taskType": {
@@ -15075,14 +17431,29 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ModelProbeResponse": {
+        "ModelProbeResponse": {
             "type": "object",
+            "required": [
+                "bindingCode",
+                "endpoint",
+                "latencyMS",
+                "platformModelID",
+                "platformModelName",
+                "protocol",
+                "routeID",
+                "status",
+                "success",
+                "upstreamID",
+                "upstreamModelID",
+                "upstreamModelName",
+                "upstreamName"
+            ],
             "properties": {
                 "bindingCode": {
                     "type": "string"
                 },
                 "debug": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelProbeDebugResponse"
+                    "$ref": "#/definitions/ModelProbeDebugResponse"
                 },
                 "endpoint": {
                     "type": "string"
@@ -15131,19 +17502,46 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ModelProbeResponseDoc": {
+        "ModelProbeResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelProbeResponse"
+                    "$ref": "#/definitions/ModelProbeResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.ModelResponse": {
+        "ModelResponse": {
             "type": "object",
+            "required": [
+                "accessScope",
+                "activeSourceCount",
+                "capabilitiesJSON",
+                "cbDurationMin",
+                "cbFailureThreshold",
+                "cbPolicyMode",
+                "cbWindowMin",
+                "createdAt",
+                "description",
+                "icon",
+                "id",
+                "kindsJSON",
+                "platformModelName",
+                "protocolsJSON",
+                "sortOrder",
+                "sourceCount",
+                "status",
+                "systemPrompt",
+                "updatedAt",
+                "upstreamNamesJSON",
+                "vendor"
+            ],
             "properties": {
                 "accessScope": {
                     "type": "string"
@@ -15210,24 +17608,35 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ModelUpstreamSourceDataResponse": {
+        "ModelUpstreamSourceDataResponse": {
             "type": "object",
+            "required": [
+                "source"
+            ],
             "properties": {
                 "source": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelUpstreamSourceResponse"
+                    "$ref": "#/definitions/ModelUpstreamSourceResponse"
                 }
             }
         },
-        "internal_transport_http_channel.ModelUpstreamSourceListResponseDoc": {
+        "ModelUpstreamSourceListResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
                     "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
                     "properties": {
                         "results": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_transport_http_channel.ModelUpstreamSourceResponse"
+                                "$ref": "#/definitions/ModelUpstreamSourceResponse"
                             }
                         },
                         "total": {
@@ -15240,8 +17649,36 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ModelUpstreamSourceResponse": {
+        "ModelUpstreamSourceResponse": {
             "type": "object",
+            "required": [
+                "baseURL",
+                "bindingCode",
+                "cbDurationMin",
+                "cbFailureThreshold",
+                "cbWindowMin",
+                "circuitOpen",
+                "circuitScope",
+                "circuitUntil",
+                "createdAt",
+                "headersJSON",
+                "id",
+                "priority",
+                "protocol",
+                "source",
+                "status",
+                "suggestedProtocol",
+                "updatedAt",
+                "upstreamID",
+                "upstreamModelIcon",
+                "upstreamModelKindsJSON",
+                "upstreamModelName",
+                "upstreamModelStatus",
+                "upstreamModelVendor",
+                "upstreamName",
+                "upstreamStatus",
+                "weight"
+            ],
             "properties": {
                 "baseURL": {
                     "type": "string"
@@ -15323,13 +17760,579 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.PublicModelListResponseDoc": {
+        "NativeToolPricingRequest": {
             "type": "object",
+            "required": [
+                "toolKey"
+            ],
+            "properties": {
+                "billable": {
+                    "type": "boolean"
+                },
+                "priceLabel": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "priceNanousd": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "priceUSD": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "toolKey": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "unit": {
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "NativeToolPricingResponse": {
+            "type": "object",
+            "required": [
+                "billable",
+                "customized",
+                "defaultPriceNanousd",
+                "defaultPriceUSD",
+                "description",
+                "label",
+                "priceLabel",
+                "priceNanousd",
+                "priceUSD",
+                "provider",
+                "toolKey",
+                "type",
+                "unit"
+            ],
+            "properties": {
+                "billable": {
+                    "type": "boolean"
+                },
+                "customized": {
+                    "type": "boolean"
+                },
+                "defaultPriceNanousd": {
+                    "type": "integer"
+                },
+                "defaultPriceUSD": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "priceLabel": {
+                    "type": "string"
+                },
+                "priceNanousd": {
+                    "type": "integer"
+                },
+                "priceUSD": {
+                    "type": "number"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "toolKey": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "OpenRouterOfficialPricingDataResponse": {
+            "type": "object",
+            "required": [
+                "cached",
+                "fetchedAt",
+                "items",
+                "stale"
+            ],
+            "properties": {
+                "cached": {
+                    "type": "boolean"
+                },
+                "fetchedAt": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OpenRouterOfficialPricingItemResponse"
+                    }
+                },
+                "stale": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "OpenRouterOfficialPricingItemResponse": {
+            "type": "object",
+            "required": [
+                "canonicalSlug",
+                "id",
+                "name",
+                "pricing"
+            ],
+            "properties": {
+                "canonicalSlug": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pricing": {
+                    "$ref": "#/definitions/OpenRouterOfficialPricingUnitPricingResponse"
+                }
+            }
+        },
+        "OpenRouterOfficialPricingResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/OpenRouterOfficialPricingDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "OpenRouterOfficialPricingUnitPricingResponse": {
+            "type": "object",
+            "required": [
+                "completion",
+                "inputCacheRead",
+                "inputCacheWrite",
+                "prompt"
+            ],
+            "properties": {
+                "completion": {
+                    "type": "string"
+                },
+                "inputCacheRead": {
+                    "type": "string"
+                },
+                "inputCacheWrite": {
+                    "type": "string"
+                },
+                "prompt": {
+                    "type": "string"
+                }
+            }
+        },
+        "OpenapiModelListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "object",
+                "success"
+            ],
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.PublicModelResponse"
+                        "$ref": "#/definitions/ModelItemDoc"
+                    }
+                },
+                "object": {
+                    "type": "string",
+                    "example": "list"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "PasswordResetCompleteRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "email",
+                "newPassword"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "newPassword": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 8
+                }
+            }
+        },
+        "PasswordResetCompleteResponse": {
+            "type": "object",
+            "required": [
+                "changed"
+            ],
+            "properties": {
+                "changed": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "PasswordResetCompleteResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/PasswordResetCompleteResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PasswordResetStartRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 128
+                }
+            }
+        },
+        "PasswordResetStartResponse": {
+            "type": "object",
+            "required": [
+                "expiresAt",
+                "sent"
+            ],
+            "properties": {
+                "expiresAt": {
+                    "type": "string"
+                },
+                "sent": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "PasswordResetStartResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/PasswordResetStartResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PatchAnnouncementRequestDoc": {
+            "type": "object",
+            "properties": {
+                "contentMarkdown": {
+                    "type": "string",
+                    "maxLength": 20000
+                },
+                "expiresAt": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "pinned": {
+                    "type": "boolean"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "startsAt": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 120
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "critical",
+                        "warning",
+                        "info",
+                        "normal",
+                        "general"
+                    ]
+                }
+            }
+        },
+        "PatchItem": {
+            "type": "object",
+            "required": [
+                "key",
+                "namespace"
+            ],
+            "properties": {
+                "clear": {
+                    "type": "boolean"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "PatchMeRequest": {
+            "type": "object",
+            "properties": {
+                "appearancePreferences": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "avatarURL": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "displayName": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "minLength": 3
+                },
+                "locale": {
+                    "type": "string",
+                    "maxLength": 16
+                },
+                "profilePreferences": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "timezone": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "PatchMeResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/MeResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PatchPromptPresetRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "trigger": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "PatchRedemptionCodeRequestDoc": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "expiresAt": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "maxRedemptions": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "perUserLimit": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                }
+            }
+        },
+        "PatchSkillRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "markdown": {
+                    "type": "string",
+                    "maxLength": 10000
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "trigger": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "PatchUserRequest": {
+            "type": "object",
+            "properties": {
+                "avatarURL": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "displayName": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "minLength": 3
+                },
+                "email": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "locale": {
+                    "type": "string",
+                    "maxLength": 16
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "profilePreferences": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "role": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "status": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "subscriptionExpiresAt": {
+                    "type": "string"
+                },
+                "subscriptionTier": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "timezone": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "PatchUsernameRequest": {
+            "type": "object",
+            "required": [
+                "username"
+            ],
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "maxLength": 16,
+                    "minLength": 3
+                }
+            }
+        },
+        "PaymentOrderListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/PaymentOrderResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
                     }
                 },
                 "errorMsg": {
@@ -15337,8 +18340,506 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.PublicModelPricingResponse": {
+        "PaymentOrderResponse": {
             "type": "object",
+            "required": [
+                "baseAmountCents",
+                "baseCurrency",
+                "billingInterval",
+                "createdAt",
+                "creditNanousd",
+                "creditUSD",
+                "cycles",
+                "expiredAt",
+                "externalCheckoutID",
+                "externalPaymentID",
+                "fxRate",
+                "id",
+                "orderNo",
+                "orderType",
+                "paidAt",
+                "payAmountCents",
+                "payCurrency",
+                "planID",
+                "priceID",
+                "provider",
+                "snapshotJSON",
+                "status",
+                "updatedAt",
+                "userDisplayName",
+                "userID",
+                "userLabel",
+                "username"
+            ],
+            "properties": {
+                "baseAmountCents": {
+                    "type": "integer"
+                },
+                "baseCurrency": {
+                    "type": "string"
+                },
+                "billingInterval": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "creditNanousd": {
+                    "type": "integer"
+                },
+                "creditUSD": {
+                    "type": "number"
+                },
+                "cycles": {
+                    "type": "integer"
+                },
+                "expiredAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "externalCheckoutID": {
+                    "type": "string"
+                },
+                "externalPaymentID": {
+                    "type": "string"
+                },
+                "fxRate": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "orderNo": {
+                    "type": "string"
+                },
+                "orderType": {
+                    "type": "string"
+                },
+                "paidAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "payAmountCents": {
+                    "type": "integer"
+                },
+                "payCurrency": {
+                    "type": "string"
+                },
+                "planID": {
+                    "type": "integer"
+                },
+                "priceID": {
+                    "type": "integer"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "snapshotJSON": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userDisplayName": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                },
+                "userLabel": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "PaymentTypeResponse": {
+            "type": "object",
+            "required": [
+                "name",
+                "type"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "PermissionGroupDataResponse": {
+            "type": "object",
+            "required": [
+                "group"
+            ],
+            "properties": {
+                "group": {
+                    "$ref": "#/definitions/PermissionGroupResponse"
+                }
+            }
+        },
+        "PermissionGroupDataResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/PermissionGroupDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PermissionGroupDeleteSummaryResponse": {
+            "type": "object",
+            "required": [
+                "manualModelCount",
+                "manualUserCount",
+                "planCount",
+                "ruleCount"
+            ],
+            "properties": {
+                "manualModelCount": {
+                    "type": "integer"
+                },
+                "manualUserCount": {
+                    "type": "integer"
+                },
+                "planCount": {
+                    "type": "integer"
+                },
+                "ruleCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "PermissionGroupListResponse": {
+            "type": "object",
+            "required": [
+                "results"
+            ],
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PermissionGroupResponse"
+                    }
+                }
+            }
+        },
+        "PermissionGroupListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/PermissionGroupListResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PermissionGroupModelRuleRequest": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "value": {
+                    "type": "string",
+                    "maxLength": 128
+                }
+            }
+        },
+        "PermissionGroupModelRuleResponse": {
+            "type": "object",
+            "required": [
+                "type",
+                "value"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "PermissionGroupResponse": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "description",
+                "id",
+                "isDefault",
+                "manualModelCount",
+                "manualUserCount",
+                "modelCount",
+                "name",
+                "rateMultiplierPercent",
+                "ruleModelCount",
+                "subscriptionUserCount",
+                "updatedAt",
+                "userCount"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isDefault": {
+                    "type": "boolean"
+                },
+                "manualModelCount": {
+                    "type": "integer"
+                },
+                "manualUserCount": {
+                    "type": "integer"
+                },
+                "modelCount": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rateMultiplierPercent": {
+                    "type": "integer"
+                },
+                "ruleModelCount": {
+                    "type": "integer"
+                },
+                "subscriptionUserCount": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "PlanListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BillingPlanResponse"
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PromptPresetDataResponse": {
+            "type": "object",
+            "required": [
+                "promptPreset"
+            ],
+            "properties": {
+                "promptPreset": {
+                    "$ref": "#/definitions/PromptPresetResponse"
+                }
+            }
+        },
+        "PromptPresetDeleteDataResponse": {
+            "type": "object",
+            "required": [
+                "deleted"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "PromptPresetDeleteResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/PromptPresetDeleteDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PromptPresetErrorDoc": {
+            "type": "object",
+            "required": [
+                "errorMsg"
+            ],
+            "properties": {
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PromptPresetPageResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/PromptPresetResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PromptPresetResponse": {
+            "type": "object",
+            "required": [
+                "content",
+                "createdAt",
+                "createdByUserID",
+                "description",
+                "enabled",
+                "id",
+                "scope",
+                "sortOrder",
+                "title",
+                "trigger",
+                "updatedAt",
+                "updatedByUserID"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdByUserID": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "trigger": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "updatedByUserID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "PromptPresetResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/PromptPresetDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PublicModelListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PublicModelResponse"
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PublicModelPricingResponse": {
+            "type": "object",
+            "required": [
+                "cacheReadUSDPerMTokens",
+                "cacheWriteUSDPerMTokens",
+                "callUSDPerCall",
+                "currency",
+                "durationUSDPerSecond",
+                "inputUSDPerMTokens",
+                "isFree",
+                "mode",
+                "outputUSDPerMTokens",
+                "tiers"
+            ],
             "properties": {
                 "cacheReadUSDPerMTokens": {
                     "type": "number"
@@ -15370,13 +18871,21 @@ const docTemplate = `{
                 "tiers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.PublicModelPricingTierResponse"
+                        "$ref": "#/definitions/PublicModelPricingTierResponse"
                     }
                 }
             }
         },
-        "internal_transport_http_channel.PublicModelPricingTierResponse": {
+        "PublicModelPricingTierResponse": {
             "type": "object",
+            "required": [
+                "cacheReadUSDPerMTokens",
+                "cacheWriteUSDPerMTokens",
+                "fromTokens",
+                "inputUSDPerMTokens",
+                "outputUSDPerMTokens",
+                "upToTokens"
+            ],
             "properties": {
                 "cacheReadUSDPerMTokens": {
                     "type": "number"
@@ -15394,12 +18903,25 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "upToTokens": {
-                    "type": "integer"
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": false
                 }
             }
         },
-        "internal_transport_http_channel.PublicModelResponse": {
+        "PublicModelResponse": {
             "type": "object",
+            "required": [
+                "capabilitiesJSON",
+                "description",
+                "icon",
+                "kindsJSON",
+                "platformModelName",
+                "pricing",
+                "protocolsJSON",
+                "sortOrder",
+                "vendor"
+            ],
             "properties": {
                 "capabilitiesJSON": {
                     "type": "string"
@@ -15417,7 +18939,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pricing": {
-                    "$ref": "#/definitions/internal_transport_http_channel.PublicModelPricingResponse"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/PublicModelPricingResponse"
+                        }
+                    ],
+                    "x-nullable": true,
+                    "x-omitempty": false
                 },
                 "protocolsJSON": {
                     "type": "string"
@@ -15430,7 +18958,539 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ReorderModelsRequest": {
+        "PublicSharedConversationResponse": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "defaultMessagePublicIDs",
+                "lastAccessedAt",
+                "messages",
+                "model",
+                "shareID",
+                "title"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "defaultMessagePublicIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "lastAccessedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PublicSharedMessageResponse"
+                    }
+                },
+                "model": {
+                    "type": "string"
+                },
+                "shareID": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "PublicSharedConversationResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/PublicSharedConversationResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PublicSharedMessageResponse": {
+            "type": "object",
+            "required": [
+                "attachments",
+                "branchReason",
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "content",
+                "contentType",
+                "createdAt",
+                "editedAt",
+                "errorCode",
+                "errorMessage",
+                "inputTokens",
+                "latencyMS",
+                "modelIcon",
+                "modelVendor",
+                "outputTokens",
+                "parentPublicID",
+                "platformModelName",
+                "publicID",
+                "reasoningTokens",
+                "role",
+                "runID",
+                "sourcePublicID",
+                "status",
+                "tokenUsage",
+                "updatedAt",
+                "upstreamModelName"
+            ],
+            "properties": {
+                "attachments": {
+                    "type": "string"
+                },
+                "branchReason": {
+                    "type": "string"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "editedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "latencyMS": {
+                    "type": "integer"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "parentPublicID": {
+                    "type": "string"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "processTrace": {
+                    "$ref": "#/definitions/MessageProcessTraceResponse"
+                },
+                "publicID": {
+                    "type": "string"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "runID": {
+                    "type": "string"
+                },
+                "sourcePublicID": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tokenUsage": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                }
+            }
+        },
+        "RedeemCodeRequest": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 3
+                }
+            }
+        },
+        "RedemptionApplyDataResponse": {
+            "type": "object",
+            "required": [
+                "overview",
+                "redemption"
+            ],
+            "properties": {
+                "account": {
+                    "$ref": "#/definitions/BillingAccountResponse"
+                },
+                "overview": {
+                    "$ref": "#/definitions/BillingOverviewResponse"
+                },
+                "redemption": {
+                    "$ref": "#/definitions/RedemptionResponse"
+                },
+                "subscription": {
+                    "$ref": "#/definitions/SubscriptionResponse"
+                }
+            }
+        },
+        "RedemptionApplyResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/RedemptionApplyDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "RedemptionCodeCreateDataResponse": {
+            "type": "object",
+            "required": [
+                "results"
+            ],
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/RedemptionCodeResponse"
+                    }
+                }
+            }
+        },
+        "RedemptionCodeCreateResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/RedemptionCodeCreateDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "RedemptionCodeDataResponse": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "$ref": "#/definitions/RedemptionCodeResponse"
+                }
+            }
+        },
+        "RedemptionCodeDeleteDataResponse": {
+            "type": "object",
+            "required": [
+                "deleted"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "RedemptionCodeDeleteResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/RedemptionCodeDeleteDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "RedemptionCodeListDataResponse": {
+            "type": "object",
+            "required": [
+                "results",
+                "total"
+            ],
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/RedemptionCodeResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "RedemptionCodeListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/RedemptionCodeListDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "RedemptionCodeResponse": {
+            "type": "object",
+            "required": [
+                "codeHint",
+                "createdAt",
+                "createdByUserID",
+                "creditNanousd",
+                "creditUSD",
+                "description",
+                "durationDays",
+                "expiresAt",
+                "id",
+                "maxRedemptions",
+                "mode",
+                "perUserLimit",
+                "planID",
+                "redeemedCount",
+                "remainingRedemptions",
+                "rewardType",
+                "status",
+                "updatedAt"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "codeHint": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdByUserID": {
+                    "type": "integer"
+                },
+                "creditNanousd": {
+                    "type": "integer"
+                },
+                "creditUSD": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "durationDays": {
+                    "type": "integer"
+                },
+                "expiresAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "maxRedemptions": {
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "perUserLimit": {
+                    "type": "integer"
+                },
+                "planID": {
+                    "type": "integer"
+                },
+                "redeemedCount": {
+                    "type": "integer"
+                },
+                "remainingRedemptions": {
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "rewardType": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "RedemptionCodeResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/RedemptionCodeDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "RedemptionResponse": {
+            "type": "object",
+            "required": [
+                "balanceTransactionID",
+                "codeID",
+                "createdAt",
+                "creditNanousd",
+                "creditUSD",
+                "id",
+                "mode",
+                "planID",
+                "rewardType",
+                "subscriptionID",
+                "userID"
+            ],
+            "properties": {
+                "balanceTransactionID": {
+                    "type": "integer"
+                },
+                "codeID": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "creditNanousd": {
+                    "type": "integer"
+                },
+                "creditUSD": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "planID": {
+                    "type": "integer"
+                },
+                "rewardType": {
+                    "type": "string"
+                },
+                "subscriptionID": {
+                    "type": "integer"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "RefreshTokenResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/LoginResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "RenameConversationRequest": {
+            "type": "object",
+            "required": [
+                "title"
+            ],
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "ReorderConversationProjectsRequest": {
+            "type": "object",
+            "required": [
+                "projectIDs"
+            ],
+            "properties": {
+                "projectIDs": {
+                    "type": "array",
+                    "maxItems": 200,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "ReorderIdentityProvidersRequest": {
+            "type": "object",
+            "required": [
+                "providerIDs"
+            ],
+            "properties": {
+                "providerIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "ReorderModelsRequest": {
             "type": "object",
             "required": [
                 "modelIDs"
@@ -15445,19 +19505,1110 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.ResetUpstreamCircuitResponseDoc": {
+        "ReorderServerOrderItem": {
             "type": "object",
+            "required": [
+                "serverID",
+                "toolIDs"
+            ],
+            "properties": {
+                "serverID": {
+                    "type": "integer"
+                },
+                "toolIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "ReorderServersRequest": {
+            "type": "object",
+            "required": [
+                "servers"
+            ],
+            "properties": {
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ReorderServerOrderItem"
+                    }
+                }
+            }
+        },
+        "ResetUpstreamCircuitResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.CircuitResetResponse"
+                    "$ref": "#/definitions/CircuitResetResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.SyncUpstreamModelsResponse": {
+        "ResetUserPasswordRequest": {
             "type": "object",
+            "required": [
+                "newPassword"
+            ],
+            "properties": {
+                "mustResetPassword": {
+                    "type": "boolean"
+                },
+                "newPassword": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 8
+                }
+            }
+        },
+        "ResetUserPasswordResponse": {
+            "type": "object",
+            "required": [
+                "reset"
+            ],
+            "properties": {
+                "reset": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ResetUserPasswordResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ResetUserPasswordResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "RevokeConversationSharesRequest": {
+            "type": "object",
+            "properties": {
+                "conversationPublicIDs": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "RevokeConversationSharesResponse": {
+            "type": "object",
+            "required": [
+                "revoked"
+            ],
+            "properties": {
+                "revoked": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "RevokeConversationSharesResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/RevokeConversationSharesResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "RevokeUserSessionsResponse": {
+            "type": "object",
+            "required": [
+                "revoked"
+            ],
+            "properties": {
+                "revoked": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "RevokeUserSessionsResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/RevokeUserSessionsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "RunResponse": {
+            "type": "object",
+            "required": [
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "conversationID",
+                "createdAt",
+                "endedAt",
+                "endpoint",
+                "errorCode",
+                "errorMessage",
+                "firstTokenLatencyMS",
+                "id",
+                "inputTokens",
+                "modelIcon",
+                "modelVendor",
+                "outputTokens",
+                "platformModelName",
+                "provider",
+                "providerProtocol",
+                "reasoningTokens",
+                "requestID",
+                "requestedModelName",
+                "routedBindingCode",
+                "runID",
+                "startedAt",
+                "status",
+                "taskType",
+                "toolCallsCount",
+                "totalLatencyMS",
+                "updatedAt",
+                "upstreamID",
+                "upstreamModelID",
+                "upstreamModelName",
+                "userID"
+            ],
+            "properties": {
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "conversationID": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "endedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "endpoint": {
+                    "type": "string"
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "errorMessage": {
+                    "type": "string"
+                },
+                "firstTokenLatencyMS": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "platformModelName": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "providerProtocol": {
+                    "type": "string"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "requestID": {
+                    "type": "string"
+                },
+                "requestedModelName": {
+                    "type": "string"
+                },
+                "routedBindingCode": {
+                    "type": "string"
+                },
+                "runID": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "taskType": {
+                    "type": "string"
+                },
+                "toolCallsCount": {
+                    "type": "integer"
+                },
+                "totalLatencyMS": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamID": {
+                    "type": "integer"
+                },
+                "upstreamModelID": {
+                    "type": "integer"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "SecurityVerificationStartRequest": {
+            "type": "object",
+            "properties": {
+                "verificationMethod": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "two_factor",
+                        "email"
+                    ]
+                }
+            }
+        },
+        "SendMessageRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "contentType"
+            ],
+            "properties": {
+                "branchReason": {
+                    "type": "string",
+                    "enum": [
+                        "default",
+                        "retry",
+                        "edit"
+                    ]
+                },
+                "clientRunID": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string",
+                    "enum": [
+                        "text",
+                        "markdown",
+                        "image",
+                        "file",
+                        "mixed"
+                    ]
+                },
+                "fileIDs": {
+                    "type": "array",
+                    "maxItems": 20,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "htmlVisualPrompt": {
+                    "type": "boolean"
+                },
+                "model": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "options": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "parentMessagePublicID": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "selectedToolIDs": {
+                    "type": "array",
+                    "maxItems": 128,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "skillIDs": {
+                    "type": "array",
+                    "maxItems": 128,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "sourceMessagePublicID": {
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "SendMessageResponse": {
+            "type": "object",
+            "required": [
+                "assistantMessage",
+                "userMessage"
+            ],
+            "properties": {
+                "assistantMessage": {
+                    "$ref": "#/definitions/MessageResponse"
+                },
+                "metadataRefreshHint": {
+                    "type": "string"
+                },
+                "userMessage": {
+                    "$ref": "#/definitions/MessageResponse"
+                }
+            }
+        },
+        "SendMessageResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/SendMessageResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ServerDataResponse": {
+            "type": "object",
+            "required": [
+                "server"
+            ],
+            "properties": {
+                "server": {
+                    "$ref": "#/definitions/ServerResponse"
+                }
+            }
+        },
+        "ServerDataResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ServerDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ServerListResponse": {
+            "type": "object",
+            "required": [
+                "results"
+            ],
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ServerResponse"
+                    }
+                }
+            }
+        },
+        "ServerListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ServerListResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ServerResponse": {
+            "type": "object",
+            "required": [
+                "activeToolCount",
+                "baseURL",
+                "createdAt",
+                "headersJSON",
+                "id",
+                "lastError",
+                "lastSyncedAt",
+                "name",
+                "sortOrder",
+                "status",
+                "toolCount",
+                "updatedAt"
+            ],
+            "properties": {
+                "activeToolCount": {
+                    "type": "integer"
+                },
+                "baseURL": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "headersJSON": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastError": {
+                    "type": "string"
+                },
+                "lastSyncedAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "toolCount": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ServerToolOrderListResponse": {
+            "type": "object",
+            "required": [
+                "results"
+            ],
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ServerToolOrderResponse"
+                    }
+                }
+            }
+        },
+        "ServerToolOrderListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ServerToolOrderListResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ServerToolOrderResponse": {
+            "type": "object",
+            "required": [
+                "server",
+                "tools"
+            ],
+            "properties": {
+                "server": {
+                    "$ref": "#/definitions/ServerResponse"
+                },
+                "tools": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ToolResponse"
+                    }
+                }
+            }
+        },
+        "SetConversationArchiveRequest": {
+            "type": "object",
+            "required": [
+                "archived"
+            ],
+            "properties": {
+                "archived": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "SetConversationProjectRequest": {
+            "type": "object",
+            "properties": {
+                "projectID": {
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "SetConversationStarRequest": {
+            "type": "object",
+            "required": [
+                "starred"
+            ],
+            "properties": {
+                "starred": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "SetGroupModelsRequest": {
+            "type": "object",
+            "properties": {
+                "modelIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PermissionGroupModelRuleRequest"
+                    }
+                }
+            }
+        },
+        "SetGroupUsersRequest": {
+            "type": "object",
+            "properties": {
+                "userIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "SetMessageFeedbackRequest": {
+            "type": "object",
+            "properties": {
+                "feedback": {
+                    "type": "string",
+                    "enum": [
+                        "up",
+                        "down"
+                    ]
+                }
+            }
+        },
+        "SetModelPermissionGroupsRequest": {
+            "type": "object",
+            "properties": {
+                "groupIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "SettingsPatchSettingsRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/PatchItem"
+                    }
+                }
+            }
+        },
+        "SkillDataResponse": {
+            "type": "object",
+            "required": [
+                "skill"
+            ],
+            "properties": {
+                "skill": {
+                    "$ref": "#/definitions/SkillResponse"
+                }
+            }
+        },
+        "SkillDeleteDataResponse": {
+            "type": "object",
+            "required": [
+                "deleted"
+            ],
+            "properties": {
+                "deleted": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "SkillDeleteResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/SkillDeleteDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "SkillErrorDoc": {
+            "type": "object",
+            "required": [
+                "errorMsg"
+            ],
+            "properties": {
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "SkillPageResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/SkillResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "SkillResponse": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "createdByUserID",
+                "description",
+                "enabled",
+                "id",
+                "markdown",
+                "scope",
+                "sortOrder",
+                "title",
+                "trigger",
+                "updatedAt",
+                "updatedByUserID"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdByUserID": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "markdown": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "trigger": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "updatedByUserID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "SkillResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/SkillDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "SkillSummaryPageResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/SkillSummaryResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "SkillSummaryResponse": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "description",
+                "enabled",
+                "id",
+                "scope",
+                "sortOrder",
+                "title",
+                "trigger",
+                "updatedAt"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "trigger": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "StorageQuotaResponse": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "id",
+                "quotaBytes",
+                "reservedBytes",
+                "updatedAt",
+                "usedBytes",
+                "userID"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "quotaBytes": {
+                    "type": "integer"
+                },
+                "reservedBytes": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "usedBytes": {
+                    "type": "integer"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "SubscribeRequest": {
+            "type": "object",
+            "required": [
+                "priceID"
+            ],
+            "properties": {
+                "cycles": {
+                    "type": "integer",
+                    "maximum": 120,
+                    "minimum": 1
+                },
+                "priceID": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "SubscribeResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/SubscriptionDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "SubscriptionDataResponse": {
+            "type": "object",
+            "required": [
+                "subscription"
+            ],
+            "properties": {
+                "subscription": {
+                    "$ref": "#/definitions/SubscriptionResponse"
+                }
+            }
+        },
+        "SubscriptionEntitlementResponse": {
+            "type": "object",
+            "required": [
+                "autoRenew",
+                "cancelAtPeriodEnd",
+                "currentPeriodEndAt",
+                "currentPeriodStartAt",
+                "id",
+                "isCurrent",
+                "plan",
+                "planID",
+                "priceID",
+                "startAt",
+                "status",
+                "userID"
+            ],
+            "properties": {
+                "autoRenew": {
+                    "type": "boolean"
+                },
+                "cancelAtPeriodEnd": {
+                    "type": "boolean"
+                },
+                "currentPeriodEndAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "currentPeriodStartAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isCurrent": {
+                    "type": "boolean"
+                },
+                "plan": {
+                    "$ref": "#/definitions/BillingPlanResponse"
+                },
+                "planID": {
+                    "type": "integer"
+                },
+                "priceID": {
+                    "type": "integer"
+                },
+                "startAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "SubscriptionResponse": {
+            "type": "object",
+            "required": [
+                "autoRenew",
+                "cancelAtPeriodEnd",
+                "currentPeriodEndAt",
+                "currentPeriodStartAt",
+                "id",
+                "planID",
+                "priceID",
+                "startAt",
+                "status",
+                "userID"
+            ],
+            "properties": {
+                "autoRenew": {
+                    "type": "boolean"
+                },
+                "cancelAtPeriodEnd": {
+                    "type": "boolean"
+                },
+                "currentPeriodEndAt": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "currentPeriodStartAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "planID": {
+                    "type": "integer"
+                },
+                "priceID": {
+                    "type": "integer"
+                },
+                "startAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
+                }
+            }
+        },
+        "SuccessDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {},
+                "details": {},
+                "errorCode": {
+                    "type": "string",
+                    "example": ""
+                },
+                "errorMsg": {
+                    "type": "string",
+                    "example": ""
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "SyncUpstreamModelsResponse": {
+            "type": "object",
+            "required": [
+                "createdUpstreamModels",
+                "existingUpstreamModels",
+                "inactivatedModels",
+                "skippedUpstreamModels",
+                "syncedModels",
+                "totalUpstream"
+            ],
             "properties": {
                 "createdUpstreamModels": {
                     "type": "integer"
@@ -15474,7 +20625,7 @@ const docTemplate = `{
                 "syncedModels": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.UpstreamSyncModelResponse"
+                        "$ref": "#/definitions/UpstreamSyncModelResponse"
                     }
                 },
                 "totalUpstream": {
@@ -15482,18 +20633,383 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.SyncUpstreamModelsResponseDoc": {
+        "SyncUpstreamModelsResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.SyncUpstreamModelsResponse"
+                    "$ref": "#/definitions/SyncUpstreamModelsResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.UpdateModelRequest": {
+        "SystemEventListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/SystemEventResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "SystemEventResponse": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "detailJSON",
+                "event",
+                "id",
+                "level",
+                "message",
+                "requestID",
+                "resource",
+                "resourceID",
+                "source",
+                "traceID",
+                "updatedAt"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "detailJSON": {
+                    "type": "string"
+                },
+                "event": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "requestID": {
+                    "type": "string"
+                },
+                "resource": {
+                    "type": "string"
+                },
+                "resourceID": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "traceID": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ToolListResponse": {
+            "type": "object",
+            "required": [
+                "results"
+            ],
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ToolResponse"
+                    }
+                }
+            }
+        },
+        "ToolListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ToolListResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ToolResponse": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "description",
+                "displayName",
+                "id",
+                "inputSchemaJSON",
+                "name",
+                "serverID",
+                "serverName",
+                "sortOrder",
+                "status",
+                "updatedAt"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inputSchemaJSON": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "serverID": {
+                    "type": "integer"
+                },
+                "serverName": {
+                    "type": "string"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "ToolResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ToolResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "UpdateBillingAccountBalanceRequest": {
+            "type": "object",
+            "required": [
+                "balanceUSD"
+            ],
+            "properties": {
+                "balanceUSD": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "UpdateBillingPlanRequest": {
+            "type": "object",
+            "required": [
+                "amountUSD",
+                "billingInterval",
+                "description",
+                "discountPercent",
+                "name",
+                "periodCreditUSD"
+            ],
+            "properties": {
+                "amountUSD": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "billingInterval": {
+                    "type": "string",
+                    "enum": [
+                        "month",
+                        "year",
+                        "lifetime"
+                    ]
+                },
+                "currency": {
+                    "type": "string",
+                    "maxLength": 16
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "discountPercent": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "periodCreditUSD": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "permissionGroupID": {
+                    "type": "integer",
+                    "x-nullable": true
+                }
+            }
+        },
+        "UpdateConversationProjectRequest": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "defaultMCPToolIDs": {
+                    "type": "array",
+                    "maxItems": 128,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "defaultSkillIDs": {
+                    "type": "array",
+                    "maxItems": 128,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "icon": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "mcpDefaultMode": {
+                    "type": "string",
+                    "enum": [
+                        "inherit",
+                        "custom"
+                    ]
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 80
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "archived"
+                    ]
+                },
+                "systemPrompt": {
+                    "type": "string",
+                    "maxLength": 12000
+                }
+            }
+        },
+        "UpdateCurrentSessionLocationRequest": {
+            "type": "object",
+            "required": [
+                "latitude",
+                "longitude"
+            ],
+            "properties": {
+                "accuracyMeters": {
+                    "type": "number",
+                    "maximum": 1000000,
+                    "minimum": 0
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "timezone": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "UpdateCurrentSessionLocationResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ActiveSessionResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "UpdateFileRequest": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "ragOptOut": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "UpdateMessageRequest": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                }
+            }
+        },
+        "UpdateModelRequest": {
             "type": "object",
             "properties": {
                 "accessScope": {
@@ -15560,18 +21076,22 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.UpdateModelResponseDoc": {
+        "UpdateModelResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelDataResponse"
+                    "$ref": "#/definitions/ModelDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.UpdateModelUpstreamSourceRequest": {
+        "UpdateModelUpstreamSourceRequest": {
             "type": "object",
             "properties": {
                 "cbDurationMin": {
@@ -15605,18 +21125,75 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.UpdateModelUpstreamSourceResponseDoc": {
+        "UpdateModelUpstreamSourceResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.ModelUpstreamSourceDataResponse"
+                    "$ref": "#/definitions/ModelUpstreamSourceDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.UpdateUpstreamRequest": {
+        "UpdatePermissionGroupRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "rateMultiplierPercent": {
+                    "type": "integer",
+                    "maximum": 10000,
+                    "minimum": 0
+                }
+            }
+        },
+        "UpdateServerToolsStatusRequest": {
+            "type": "object",
+            "required": [
+                "status",
+                "toolIDs"
+            ],
+            "properties": {
+                "status": {
+                    "type": "string"
+                },
+                "toolIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "UpdateToolRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "UpdateUpstreamRequest": {
             "type": "object",
             "properties": {
                 "addAPIKeys": {
@@ -15700,18 +21277,242 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.UpdateUpstreamResponseDoc": {
+        "UpdateUpstreamResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamDataResponse"
+                    "$ref": "#/definitions/UpstreamDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.UpsertUpstreamModelRequest": {
+        "UpdateUserStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "status": {
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "UpdateUserStatusResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/UserDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "UploadFileResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/FileUploadResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "UpsertIdentityProviderRequest": {
+            "type": "object",
+            "required": [
+                "clientID",
+                "name",
+                "type"
+            ],
+            "properties": {
+                "authURL": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "avatarField": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "clientID": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "clientSecret": {
+                    "type": "string",
+                    "maxLength": 4096
+                },
+                "defaultRole": {
+                    "type": "string",
+                    "enum": [
+                        "user",
+                        "admin",
+                        "superadmin"
+                    ]
+                },
+                "discoveryURL": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "emailField": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "emailVerifiedField": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "issuerURL": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "jwksURL": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "loginEnabled": {
+                    "type": "boolean"
+                },
+                "logoURL": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 80
+                },
+                "nameField": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "registrationEnabled": {
+                    "type": "boolean"
+                },
+                "scopes": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "subjectField": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "tokenURL": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "oidc",
+                        "oauth2"
+                    ]
+                },
+                "userinfoURL": {
+                    "type": "string",
+                    "maxLength": 512
+                }
+            }
+        },
+        "UpsertMemoryResponse": {
+            "type": "object",
+            "required": [
+                "saved"
+            ],
+            "properties": {
+                "saved": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "UpsertModelPricingRequest": {
+            "type": "object",
+            "required": [
+                "cacheReadUSDPerMTokens",
+                "cacheWriteUSDPerMTokens",
+                "callUSDPerCall",
+                "durationUSDPerSecond",
+                "inputUSDPerMTokens",
+                "isFree",
+                "outputUSDPerMTokens",
+                "platformModelName",
+                "pricingMode"
+            ],
+            "properties": {
+                "cacheReadUSDPerMTokens": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cacheWriteUSDPerMTokens": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "callUSDPerCall": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "currency": {
+                    "type": "string",
+                    "maxLength": 16
+                },
+                "durationUSDPerSecond": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "inputUSDPerMTokens": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "isFree": {
+                    "type": "boolean"
+                },
+                "outputUSDPerMTokens": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "platformModelName": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "pricingMode": {
+                    "type": "string",
+                    "enum": [
+                        "token",
+                        "call",
+                        "duration",
+                        "tiered"
+                    ]
+                },
+                "tieredPricingJSON": {
+                    "type": "string",
+                    "maxLength": 20000
+                }
+            }
+        },
+        "UpsertUpstreamModelRequest": {
             "type": "object",
             "required": [
                 "platformModelName",
@@ -15771,19 +21572,71 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.UpsertUpstreamModelResponseDoc": {
+        "UpsertUpstreamModelResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamModelDataResponse"
+                    "$ref": "#/definitions/UpstreamModelDataResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.UpstreamAPIKeyResponse": {
+        "UpsertUserMemoryRequest": {
             "type": "object",
+            "required": [
+                "memoryKey",
+                "scope",
+                "value"
+            ],
+            "properties": {
+                "memoryKey": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "scope": {
+                    "type": "string",
+                    "enum": [
+                        "profile",
+                        "preference",
+                        "custom"
+                    ]
+                },
+                "value": {
+                    "type": "string",
+                    "maxLength": 10000
+                }
+            }
+        },
+        "UpsertUserMemoryResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/UpsertMemoryResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "UpstreamAPIKeyResponse": {
+            "type": "object",
+            "required": [
+                "id",
+                "index",
+                "keyMasked",
+                "note",
+                "status"
+            ],
             "properties": {
                 "id": {
                     "type": "string"
@@ -15802,24 +21655,35 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.UpstreamDataResponse": {
+        "UpstreamDataResponse": {
             "type": "object",
+            "required": [
+                "upstream"
+            ],
             "properties": {
                 "upstream": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamResponse"
+                    "$ref": "#/definitions/UpstreamResponse"
                 }
             }
         },
-        "internal_transport_http_channel.UpstreamListResponseDoc": {
+        "UpstreamListResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
                     "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
                     "properties": {
                         "results": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_transport_http_channel.UpstreamResponse"
+                                "$ref": "#/definitions/UpstreamResponse"
                             }
                         },
                         "total": {
@@ -15832,24 +21696,35 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.UpstreamModelDataResponse": {
+        "UpstreamModelDataResponse": {
             "type": "object",
+            "required": [
+                "binding"
+            ],
             "properties": {
                 "binding": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamModelResponse"
+                    "$ref": "#/definitions/UpstreamModelResponse"
                 }
             }
         },
-        "internal_transport_http_channel.UpstreamModelListResponseDoc": {
+        "UpstreamModelListResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
                     "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
                     "properties": {
                         "results": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_transport_http_channel.UpstreamModelResponse"
+                                "$ref": "#/definitions/UpstreamModelResponse"
                             }
                         },
                         "total": {
@@ -15862,8 +21737,38 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.UpstreamModelResponse": {
+        "UpstreamModelResponse": {
             "type": "object",
+            "required": [
+                "bindingCode",
+                "cbDurationMin",
+                "cbFailureThreshold",
+                "cbWindowMin",
+                "circuitOpen",
+                "circuitUntil",
+                "createdAt",
+                "headersJSON",
+                "id",
+                "modelIcon",
+                "modelKindsJSON",
+                "modelVendor",
+                "platformModelID",
+                "platformModelName",
+                "priority",
+                "protocol",
+                "routeID",
+                "routeStatus",
+                "source",
+                "suggestedProtocol",
+                "updatedAt",
+                "upstreamID",
+                "upstreamModelIcon",
+                "upstreamModelKindsJSON",
+                "upstreamModelName",
+                "upstreamModelStatus",
+                "upstreamModelVendor",
+                "weight"
+            ],
             "properties": {
                 "bindingCode": {
                     "type": "string"
@@ -15951,8 +21856,20 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.UpstreamRemoteModelResponse": {
+        "UpstreamRemoteModelResponse": {
             "type": "object",
+            "required": [
+                "alreadyBound",
+                "alreadySynced",
+                "bindingCode",
+                "boundPlatformModels",
+                "suggestedKindsJSON",
+                "suggestedPlatformModelName",
+                "suggestedProtocol",
+                "suggestedProtocols",
+                "upstreamModelName",
+                "upstreamModelStatus"
+            ],
             "properties": {
                 "alreadyBound": {
                     "type": "boolean"
@@ -15992,13 +21909,17 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.UpstreamRemoteModelsResponse": {
+        "UpstreamRemoteModelsResponse": {
             "type": "object",
+            "required": [
+                "items",
+                "total"
+            ],
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.UpstreamRemoteModelResponse"
+                        "$ref": "#/definitions/UpstreamRemoteModelResponse"
                     }
                 },
                 "total": {
@@ -16006,19 +21927,48 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.UpstreamRemoteModelsResponseDoc": {
+        "UpstreamRemoteModelsResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_channel.UpstreamRemoteModelsResponse"
+                    "$ref": "#/definitions/UpstreamRemoteModelsResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_channel.UpstreamResponse": {
+        "UpstreamResponse": {
             "type": "object",
+            "required": [
+                "activeModelsCount",
+                "apiKeyItems",
+                "apiKeysMasked",
+                "baseURL",
+                "cbDurationMin",
+                "cbFailureThreshold",
+                "cbModelThreshold",
+                "cbThresholdLogic",
+                "cbWindowMin",
+                "circuitOpen",
+                "circuitUntil",
+                "compatible",
+                "connectTimeoutMS",
+                "createdAt",
+                "headersJSON",
+                "id",
+                "modelsCount",
+                "name",
+                "protocolDefaultsJSON",
+                "readTimeoutMS",
+                "status",
+                "streamIdleTimeoutMS",
+                "updatedAt"
+            ],
             "properties": {
                 "activeModelsCount": {
                     "type": "integer"
@@ -16026,7 +21976,7 @@ const docTemplate = `{
                 "apiKeyItems": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_channel.UpstreamAPIKeyResponse"
+                        "$ref": "#/definitions/UpstreamAPIKeyResponse"
                     }
                 },
                 "apiKeysMasked": {
@@ -16094,8 +22044,16 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_channel.UpstreamSyncModelResponse": {
+        "UpstreamSyncModelResponse": {
             "type": "object",
+            "required": [
+                "bindingCode",
+                "created",
+                "kindsJSON",
+                "status",
+                "suggestedProtocol",
+                "upstreamModelName"
+            ],
             "properties": {
                 "bindingCode": {
                     "type": "string"
@@ -16117,460 +22075,65 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_conversation.BatchSetConversationProjectRequest": {
+        "UsageDailyListResponseDoc": {
             "type": "object",
             "required": [
-                "conversationPublicIDs"
+                "data",
+                "errorMsg"
             ],
             "properties": {
-                "conversationPublicIDs": {
-                    "type": "array",
-                    "maxItems": 1000,
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "projectID": {
-                    "type": "string",
-                    "maxLength": 32
-                }
-            }
-        },
-        "internal_transport_http_conversation.BatchSetConversationProjectResponse": {
-            "type": "object",
-            "properties": {
-                "updated": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.BatchSetConversationProjectResponseDoc": {
-            "type": "object",
-            "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.BatchSetConversationProjectResponse"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UsageDailyResponse"
+                    }
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_conversation.ContextArtifactResponse": {
+        "UsageDailyModelResponse": {
             "type": "object",
+            "required": [
+                "avgLatencyMS",
+                "billedNanousd",
+                "billedUSD",
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "callCount",
+                "durationSeconds",
+                "inputTokens",
+                "outputTokens",
+                "platformModelName",
+                "reasoningTokens",
+                "recordCount",
+                "totalTokens"
+            ],
             "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "id": {
+                "avgLatencyMS": {
                     "type": "integer"
                 },
-                "kind": {
-                    "type": "string"
-                },
-                "messageID": {
+                "billedNanousd": {
                     "type": "integer"
                 },
-                "metadataJSON": {
-                    "type": "string"
-                },
-                "runID": {
-                    "type": "string"
-                },
-                "score": {
+                "billedUSD": {
                     "type": "number"
                 },
-                "sourceID": {
-                    "type": "string"
-                },
-                "sourceTitle": {
-                    "type": "string"
-                },
-                "sourceType": {
-                    "type": "string"
-                },
-                "tokenEstimate": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ContextArtifactResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ContextArtifactResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveAttachmentDoc": {
-            "type": "object",
-            "properties": {
-                "detectedMIME": {
-                    "type": "string"
-                },
-                "fileCategory": {
-                    "type": "string"
-                },
-                "fileName": {
-                    "type": "string"
-                },
-                "fileSize": {
-                    "type": "integer"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "mimeType": {
-                    "type": "string"
-                },
-                "processingErrorCode": {
-                    "type": "string"
-                },
-                "processingErrorMessage": {
-                    "type": "string"
-                },
-                "processingReady": {
-                    "type": "boolean"
-                },
-                "processingStatus": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveDoc": {
-            "type": "object",
-            "properties": {
-                "conversation": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveMetadataDoc"
-                },
-                "exportedAt": {
-                    "type": "string"
-                },
-                "messages": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveMessageDoc"
-                    }
-                },
-                "runs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveRunDoc"
-                    }
-                },
-                "schema": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveMessageDoc": {
-            "type": "object",
-            "properties": {
-                "attachments": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveAttachmentDoc"
-                    }
-                },
-                "branchReason": {
-                    "type": "string"
-                },
                 "cacheReadTokens": {
                     "type": "integer"
                 },
                 "cacheWriteTokens": {
                     "type": "integer"
                 },
-                "content": {
-                    "type": "string"
-                },
-                "contentType": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMessage": {
-                    "type": "string"
-                },
-                "inputTokens": {
+                "callCount": {
                     "type": "integer"
                 },
-                "latencyMS": {
-                    "type": "integer"
-                },
-                "originalPublicID": {
-                    "type": "string"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "parentPublicID": {
-                    "type": "string"
-                },
-                "processTrace": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveProcessTraceDoc"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "runID": {
-                    "type": "string"
-                },
-                "sourcePublicID": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tokenUsage": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveMetadataDoc": {
-            "type": "object",
-            "properties": {
-                "contextPolicyJSON": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "isStarred": {
-                    "type": "boolean"
-                },
-                "labelsJSON": {
-                    "type": "string"
-                },
-                "messageCount": {
-                    "type": "integer"
-                },
-                "model": {
-                    "type": "string"
-                },
-                "originalProjectName": {
-                    "type": "string"
-                },
-                "originalPublicID": {
-                    "type": "string"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveProcessTraceDoc": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveTraceEventDoc"
-                    }
-                },
-                "process": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveTraceBlockDoc"
-                },
-                "promptTrace": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchivePromptTraceDoc"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tools": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveTraceBlockDoc"
-                },
-                "upstreamThink": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveTraceBlockDoc"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchivePromptBlockDoc": {
-            "type": "object",
-            "properties": {
-                "cacheable": {
-                    "type": "boolean"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "sourceCount": {
-                    "type": "integer"
-                },
-                "sourceRefs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchivePromptSourceRefDoc"
-                    }
-                },
-                "title": {
-                    "type": "string"
-                },
-                "tokenEstimate": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchivePromptSourceRefDoc": {
-            "type": "object",
-            "properties": {
-                "sourceID": {
-                    "type": "string"
-                },
-                "sourceType": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchivePromptTraceDoc": {
-            "type": "object",
-            "properties": {
-                "blocks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchivePromptBlockDoc"
-                    }
-                },
-                "fullMessageCount": {
-                    "type": "integer"
-                },
-                "mode": {
-                    "type": "string"
-                },
-                "promptFingerprint": {
-                    "type": "string"
-                },
-                "sentMessageCount": {
-                    "type": "integer"
-                },
-                "sentTokenEstimate": {
-                    "type": "integer"
-                },
-                "statefulDisabledReason": {
-                    "type": "string"
-                },
-                "statefulSavedMessages": {
-                    "type": "integer"
-                },
-                "statefulSavedTokens": {
-                    "type": "integer"
-                },
-                "statefulUsed": {
-                    "type": "boolean"
-                },
-                "totalTokenEstimate": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveRequest": {
-            "type": "object",
-            "properties": {
-                "conversation": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveMetadataDoc"
-                },
-                "exportedAt": {
-                    "type": "string"
-                },
-                "messages": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveMessageDoc"
-                    }
-                },
-                "runs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveRunDoc"
-                    }
-                },
-                "schema": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationArchiveDoc"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveRunDoc": {
-            "type": "object",
-            "properties": {
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "endedAt": {
-                    "type": "string"
-                },
-                "endpoint": {
-                    "type": "string"
-                },
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMessage": {
-                    "type": "string"
-                },
-                "firstTokenLatencyMS": {
+                "durationSeconds": {
                     "type": "integer"
                 },
                 "inputTokens": {
                     "type": "integer"
-                },
-                "modelIcon": {
-                    "type": "string"
-                },
-                "modelVendor": {
-                    "type": "string"
-                },
-                "originalRunID": {
-                    "type": "string"
                 },
                 "outputTokens": {
                     "type": "integer"
@@ -16578,637 +22141,147 @@ const docTemplate = `{
                 "platformModelName": {
                     "type": "string"
                 },
-                "provider": {
-                    "type": "string"
-                },
-                "providerProtocol": {
-                    "type": "string"
-                },
                 "reasoningTokens": {
                     "type": "integer"
                 },
-                "requestedModelName": {
-                    "type": "string"
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "taskType": {
-                    "type": "string"
-                },
-                "toolCallsCount": {
+                "recordCount": {
                     "type": "integer"
                 },
-                "totalLatencyMS": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveTraceBlockDoc": {
-            "type": "object",
-            "properties": {
-                "contentMarkdown": {
-                    "type": "string"
-                },
-                "parentEventID": {
-                    "type": "string"
-                },
-                "payloadJSON": {
-                    "type": "string"
-                },
-                "roundID": {
-                    "type": "string"
-                },
-                "stage": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationArchiveTraceEventDoc": {
-            "type": "object",
-            "properties": {
-                "contentMarkdown": {
-                    "type": "string"
-                },
-                "endedAt": {
-                    "type": "string"
-                },
-                "eventID": {
-                    "type": "string"
-                },
-                "eventType": {
-                    "type": "string"
-                },
-                "parentEventID": {
-                    "type": "string"
-                },
-                "payloadJSON": {
-                    "type": "string"
-                },
-                "phase": {
-                    "type": "string"
-                },
-                "roundID": {
-                    "type": "string"
-                },
-                "seq": {
-                    "type": "integer"
-                },
-                "stage": {
-                    "type": "string"
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationCreateResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationDefaultModelCandidateResponse": {
-            "type": "object",
-            "properties": {
-                "platformModelName": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "usedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationDefaultModelCandidateResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationDefaultModelCandidateResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationDeleteResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
-                },
-                "deletedFileCount": {
-                    "type": "integer"
-                },
-                "quota": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.StorageQuotaResponse"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationDeleteResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationDeleteResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_conversation.ConversationResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationProjectListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectResponse"
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationProjectResponse": {
-            "type": "object",
-            "properties": {
-                "color": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "icon": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "publicID": {
-                    "type": "string"
-                },
-                "sortOrder": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "systemPrompt": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationProjectResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationProjectResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationResponse": {
-            "type": "object",
-            "properties": {
-                "contextPolicyJSON": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "isStarred": {
-                    "type": "boolean"
-                },
-                "labelsJSON": {
-                    "type": "string"
-                },
-                "lastCompactedAt": {
-                    "type": "string"
-                },
-                "lastResponseID": {
-                    "type": "string"
-                },
-                "lastShareAccessedAt": {
-                    "type": "string"
-                },
-                "messageCount": {
-                    "type": "integer"
-                },
-                "model": {
-                    "type": "string"
-                },
-                "projectID": {
-                    "type": "string"
-                },
-                "projectName": {
-                    "type": "string"
-                },
-                "provider": {
-                    "type": "string"
-                },
-                "publicID": {
-                    "type": "string"
-                },
-                "sessionKey": {
-                    "type": "string"
-                },
-                "shareID": {
-                    "type": "string"
-                },
-                "shareStatus": {
-                    "type": "string"
-                },
-                "sharedAt": {
-                    "type": "string"
-                },
-                "starredAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "userID": {
+                "totalTokens": {
                     "type": "integer"
                 }
             }
         },
-        "internal_transport_http_conversation.ConversationRunListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_conversation.RunResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationShareResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "lastAccessedAt": {
-                    "type": "string"
-                },
-                "messageCount": {
-                    "type": "integer"
-                },
-                "modelSnapshot": {
-                    "type": "string"
-                },
-                "revokedAt": {
-                    "type": "string"
-                },
-                "shareID": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "titleSnapshot": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationShareResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationShareResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ConversationUpdateResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.ConversationResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.CreateConversationProjectRequest": {
+        "UsageDailyResponse": {
             "type": "object",
             "required": [
-                "name"
+                "avgLatencyMS",
+                "billedNanousd",
+                "billedUSD",
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "callCount",
+                "durationSeconds",
+                "inputTokens",
+                "models",
+                "outputTokens",
+                "reasoningTokens",
+                "recordCount",
+                "totalTokens",
+                "usageDate"
             ],
             "properties": {
-                "color": {
-                    "type": "string",
-                    "maxLength": 32
+                "avgLatencyMS": {
+                    "type": "integer"
                 },
-                "description": {
-                    "type": "string",
-                    "maxLength": 255
+                "billedNanousd": {
+                    "type": "integer"
                 },
-                "icon": {
-                    "type": "string",
-                    "maxLength": 32
+                "billedUSD": {
+                    "type": "number"
                 },
-                "name": {
-                    "type": "string",
-                    "maxLength": 80
+                "cacheReadTokens": {
+                    "type": "integer"
                 },
-                "systemPrompt": {
-                    "type": "string",
-                    "maxLength": 12000
-                }
-            }
-        },
-        "internal_transport_http_conversation.CreateConversationRequest": {
-            "type": "object",
-            "properties": {
-                "model": {
-                    "type": "string",
-                    "maxLength": 128
+                "cacheWriteTokens": {
+                    "type": "integer"
                 },
-                "projectID": {
-                    "type": "string",
-                    "maxLength": 32
+                "callCount": {
+                    "type": "integer"
                 },
-                "title": {
-                    "type": "string",
-                    "maxLength": 255
-                }
-            }
-        },
-        "internal_transport_http_conversation.CreateConversationShareRequest": {
-            "type": "object",
-            "properties": {
-                "defaultMessagePublicIDs": {
-                    "type": "array",
-                    "maxItems": 1000,
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_conversation.DeleteFileResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
+                "durationSeconds": {
+                    "type": "integer"
                 },
-                "fileID": {
-                    "type": "string"
+                "inputTokens": {
+                    "type": "integer"
                 },
-                "quota": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.StorageQuotaResponse"
-                }
-            }
-        },
-        "internal_transport_http_conversation.DeleteFileResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.DeleteFileResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.ErrorDoc": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "details": {},
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMsg": {
-                    "type": "string"
-                },
-                "requestId": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.FileListResponse": {
-            "type": "object",
-            "properties": {
-                "quota": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.StorageQuotaResponse"
-                },
-                "results": {
+                "models": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.FileObjectResponse"
+                        "$ref": "#/definitions/UsageDailyModelResponse"
                     }
                 },
-                "total": {
+                "outputTokens": {
                     "type": "integer"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "recordCount": {
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "type": "integer"
+                },
+                "usageDate": {
+                    "type": "string"
                 }
             }
         },
-        "internal_transport_http_conversation.FileListResponseDoc": {
+        "UsageLedgerListResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.FileListResponse"
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/UsageLedgerResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_conversation.FileObjectResponse": {
+        "UsageLedgerResponse": {
             "type": "object",
-            "properties": {
-                "chunkCount": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "detectedMIME": {
-                    "type": "string"
-                },
-                "embedError": {
-                    "type": "string"
-                },
-                "embedStatus": {
-                    "type": "string"
-                },
-                "expiresAt": {
-                    "type": "string"
-                },
-                "extractStatus": {
-                    "type": "string"
-                },
-                "fileCategory": {
-                    "type": "string"
-                },
-                "fileID": {
-                    "type": "string"
-                },
-                "fileName": {
-                    "type": "string"
-                },
-                "lastAccessedAt": {
-                    "type": "string"
-                },
-                "mimeType": {
-                    "type": "string"
-                },
-                "processingErrorCode": {
-                    "type": "string"
-                },
-                "processingErrorMessage": {
-                    "type": "string"
-                },
-                "processingReady": {
-                    "type": "boolean"
-                },
-                "processingStatus": {
-                    "type": "string"
-                },
-                "purpose": {
-                    "type": "string"
-                },
-                "ragOptOut": {
-                    "type": "boolean"
-                },
-                "sha256": {
-                    "type": "string"
-                },
-                "sizeBytes": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.FileUpdateResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.FileObjectResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.FileUploadResponse": {
-            "type": "object",
-            "properties": {
-                "file": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.FileObjectResponse"
-                },
-                "quota": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.StorageQuotaResponse"
-                },
-                "reused": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageBillingCostResponse": {
-            "type": "object",
+            "required": [
+                "billedCurrency",
+                "billedNanousd",
+                "billedUSD",
+                "billingAt",
+                "cacheReadTokens",
+                "cacheWrite1hTokens",
+                "cacheWrite5mTokens",
+                "cacheWriteTokens",
+                "callCount",
+                "conversationID",
+                "createdAt",
+                "durationSeconds",
+                "id",
+                "inputTokens",
+                "isFreeModel",
+                "latencyMS",
+                "modelIcon",
+                "modelVendor",
+                "outputTokens",
+                "platformModelName",
+                "pricingSnapshotJSON",
+                "providerProtocol",
+                "reasoningTokens",
+                "routedBindingCode",
+                "serviceTier",
+                "updatedAt",
+                "upstreamModelName",
+                "usageDate",
+                "usageSpeed",
+                "userID"
+            ],
             "properties": {
                 "billedCurrency": {
                     "type": "string"
@@ -17219,55 +22292,107 @@ const docTemplate = `{
                 "billedUSD": {
                     "type": "number"
                 },
-                "billingMode": {
+                "billingAt": {
+                    "type": "string"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWrite1hTokens": {
+                    "type": "integer"
+                },
+                "cacheWrite5mTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "callCount": {
+                    "type": "integer"
+                },
+                "conversationID": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "durationSeconds": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "isFreeModel": {
+                    "type": "boolean"
+                },
+                "latencyMS": {
+                    "type": "integer"
+                },
+                "modelIcon": {
+                    "type": "string"
+                },
+                "modelVendor": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "platformModelName": {
                     "type": "string"
                 },
                 "pricingSnapshotJSON": {
                     "type": "string"
+                },
+                "providerProtocol": {
+                    "type": "string"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "routedBindingCode": {
+                    "type": "string"
+                },
+                "serviceTier": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "upstreamModelName": {
+                    "type": "string"
+                },
+                "usageDate": {
+                    "type": "string"
+                },
+                "usageSpeed": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "integer"
                 }
             }
         },
-        "internal_transport_http_conversation.MessageFeedbackResponse": {
+        "UsageLogListResponseDoc": {
             "type": "object",
-            "properties": {
-                "messageID": {
-                    "type": "integer"
-                },
-                "messagePublicID": {
-                    "type": "string"
-                },
-                "myFeedback": {
-                    "type": "string"
-                },
-                "thumbsDownCount": {
-                    "type": "integer"
-                },
-                "thumbsUpCount": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageFeedbackResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageFeedbackResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageListResponseDoc": {
-            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
                     "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
                     "properties": {
                         "results": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_transport_http_conversation.MessageResponse"
+                                "$ref": "#/definitions/UsageLogResponse"
                             }
                         },
                         "total": {
@@ -17280,519 +22405,68 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_conversation.MessageProcessTraceResponse": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.MessageTraceEventResponse"
-                    }
-                },
-                "process": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageTraceBlockResponse"
-                },
-                "promptTrace": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessagePromptTraceResponse"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tools": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageTraceBlockResponse"
-                },
-                "upstreamThink": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageTraceBlockResponse"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessagePromptTraceBlockResponse": {
-            "type": "object",
-            "properties": {
-                "cacheable": {
-                    "type": "boolean"
-                },
-                "kind": {
-                    "type": "string"
-                },
-                "sourceCount": {
-                    "type": "integer"
-                },
-                "sourceRefs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.MessagePromptTraceSourceResponse"
-                    }
-                },
-                "title": {
-                    "type": "string"
-                },
-                "tokenEstimate": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessagePromptTraceResponse": {
-            "type": "object",
-            "properties": {
-                "blocks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.MessagePromptTraceBlockResponse"
-                    }
-                },
-                "fullMessageCount": {
-                    "type": "integer"
-                },
-                "mode": {
-                    "type": "string"
-                },
-                "promptFingerprint": {
-                    "type": "string"
-                },
-                "sentMessageCount": {
-                    "type": "integer"
-                },
-                "sentTokenEstimate": {
-                    "type": "integer"
-                },
-                "statefulDisabledReason": {
-                    "type": "string"
-                },
-                "statefulSavedMessages": {
-                    "type": "integer"
-                },
-                "statefulSavedTokens": {
-                    "type": "integer"
-                },
-                "statefulUsed": {
-                    "type": "boolean"
-                },
-                "totalTokenEstimate": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessagePromptTraceSourceResponse": {
-            "type": "object",
-            "properties": {
-                "artifactID": {
-                    "type": "integer"
-                },
-                "sourceID": {
-                    "type": "string"
-                },
-                "sourceType": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageResponse": {
-            "type": "object",
-            "properties": {
-                "attachments": {
-                    "type": "string"
-                },
-                "billingCost": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageBillingCostResponse"
-                },
-                "branchReason": {
-                    "type": "string"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "content": {
-                    "type": "string"
-                },
-                "contentType": {
-                    "type": "string"
-                },
-                "conversationID": {
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "editedAt": {
-                    "type": "string"
-                },
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMessage": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "latencyMS": {
-                    "type": "integer"
-                },
-                "modelIcon": {
-                    "type": "string"
-                },
-                "modelVendor": {
-                    "type": "string"
-                },
-                "myFeedback": {
-                    "type": "string"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "parentMessageID": {
-                    "type": "integer"
-                },
-                "parentPublicID": {
-                    "type": "string"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "processTrace": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageProcessTraceResponse"
-                },
-                "publicID": {
-                    "type": "string"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "runID": {
-                    "type": "string"
-                },
-                "sourceMessageID": {
-                    "type": "integer"
-                },
-                "sourcePublicID": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "thumbsDownCount": {
-                    "type": "integer"
-                },
-                "thumbsUpCount": {
-                    "type": "integer"
-                },
-                "tokenUsage": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                },
-                "userID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageTraceBlockResponse": {
-            "type": "object",
-            "properties": {
-                "contentMarkdown": {
-                    "type": "string"
-                },
-                "parentEventID": {
-                    "type": "string"
-                },
-                "payloadJSON": {
-                    "type": "string"
-                },
-                "roundID": {
-                    "type": "string"
-                },
-                "stage": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.MessageTraceEventResponse": {
-            "type": "object",
-            "properties": {
-                "contentMarkdown": {
-                    "type": "string"
-                },
-                "endedAt": {
-                    "type": "string"
-                },
-                "eventID": {
-                    "type": "string"
-                },
-                "eventType": {
-                    "type": "string"
-                },
-                "parentEventID": {
-                    "type": "string"
-                },
-                "payloadJSON": {
-                    "type": "string"
-                },
-                "phase": {
-                    "type": "string"
-                },
-                "roundID": {
-                    "type": "string"
-                },
-                "seq": {
-                    "type": "integer"
-                },
-                "stage": {
-                    "type": "string"
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.PublicSharedConversationResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "defaultMessagePublicIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "lastAccessedAt": {
-                    "type": "string"
-                },
-                "messages": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_conversation.PublicSharedMessageResponse"
-                    }
-                },
-                "model": {
-                    "type": "string"
-                },
-                "shareID": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.PublicSharedConversationResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.PublicSharedConversationResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.PublicSharedMessageResponse": {
-            "type": "object",
-            "properties": {
-                "attachments": {
-                    "type": "string"
-                },
-                "branchReason": {
-                    "type": "string"
-                },
-                "cacheReadTokens": {
-                    "type": "integer"
-                },
-                "cacheWriteTokens": {
-                    "type": "integer"
-                },
-                "content": {
-                    "type": "string"
-                },
-                "contentType": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "editedAt": {
-                    "type": "string"
-                },
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMessage": {
-                    "type": "string"
-                },
-                "inputTokens": {
-                    "type": "integer"
-                },
-                "latencyMS": {
-                    "type": "integer"
-                },
-                "modelIcon": {
-                    "type": "string"
-                },
-                "modelVendor": {
-                    "type": "string"
-                },
-                "outputTokens": {
-                    "type": "integer"
-                },
-                "parentPublicID": {
-                    "type": "string"
-                },
-                "platformModelName": {
-                    "type": "string"
-                },
-                "processTrace": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageProcessTraceResponse"
-                },
-                "publicID": {
-                    "type": "string"
-                },
-                "reasoningTokens": {
-                    "type": "integer"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "runID": {
-                    "type": "string"
-                },
-                "sourcePublicID": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tokenUsage": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "upstreamModelName": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.RenameConversationRequest": {
+        "UsageLogResponse": {
             "type": "object",
             "required": [
-                "title"
+                "billedCurrency",
+                "billedNanousd",
+                "billedUSD",
+                "billingAt",
+                "cacheReadTokens",
+                "cacheWrite1hTokens",
+                "cacheWrite5mTokens",
+                "cacheWriteTokens",
+                "callCount",
+                "conversationID",
+                "createdAt",
+                "durationSeconds",
+                "id",
+                "inputTokens",
+                "isFreeModel",
+                "latencyMS",
+                "outputTokens",
+                "platformModelName",
+                "pricingSnapshotJSON",
+                "providerProtocol",
+                "reasoningTokens",
+                "routedBindingCode",
+                "serviceTier",
+                "updatedAt",
+                "upstreamModelName",
+                "upstreamName",
+                "usageDate",
+                "usageSpeed",
+                "userDisplayName",
+                "userID",
+                "userLabel",
+                "username"
             ],
             "properties": {
-                "title": {
-                    "type": "string",
-                    "maxLength": 255
-                }
-            }
-        },
-        "internal_transport_http_conversation.ReorderConversationProjectsRequest": {
-            "type": "object",
-            "required": [
-                "projectIDs"
-            ],
-            "properties": {
-                "projectIDs": {
-                    "type": "array",
-                    "maxItems": 200,
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_conversation.RevokeConversationSharesRequest": {
-            "type": "object",
-            "properties": {
-                "conversationPublicIDs": {
-                    "type": "array",
-                    "maxItems": 1000,
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_conversation.RevokeConversationSharesResponse": {
-            "type": "object",
-            "properties": {
-                "revoked": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_conversation.RevokeConversationSharesResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.RevokeConversationSharesResponse"
-                },
-                "errorMsg": {
+                "billedCurrency": {
                     "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.RunResponse": {
-            "type": "object",
-            "properties": {
+                },
+                "billedNanousd": {
+                    "type": "integer"
+                },
+                "billedUSD": {
+                    "type": "number"
+                },
+                "billingAt": {
+                    "type": "string"
+                },
                 "cacheReadTokens": {
                     "type": "integer"
                 },
+                "cacheWrite1hTokens": {
+                    "type": "integer"
+                },
+                "cacheWrite5mTokens": {
+                    "type": "integer"
+                },
                 "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "callCount": {
                     "type": "integer"
                 },
                 "conversationID": {
@@ -17801,19 +22475,7 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
-                "endedAt": {
-                    "type": "string"
-                },
-                "endpoint": {
-                    "type": "string"
-                },
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMessage": {
-                    "type": "string"
-                },
-                "firstTokenLatencyMS": {
+                "durationSeconds": {
                     "type": "integer"
                 },
                 "id": {
@@ -17822,11 +22484,11 @@ const docTemplate = `{
                 "inputTokens": {
                     "type": "integer"
                 },
-                "modelIcon": {
-                    "type": "string"
+                "isFreeModel": {
+                    "type": "boolean"
                 },
-                "modelVendor": {
-                    "type": "string"
+                "latencyMS": {
+                    "type": "integer"
                 },
                 "outputTokens": {
                     "type": "integer"
@@ -17834,7 +22496,7 @@ const docTemplate = `{
                 "platformModelName": {
                     "type": "string"
                 },
-                "provider": {
+                "pricingSnapshotJSON": {
                     "type": "string"
                 },
                 "providerProtocol": {
@@ -17843,361 +22505,532 @@ const docTemplate = `{
                 "reasoningTokens": {
                     "type": "integer"
                 },
-                "requestID": {
-                    "type": "string"
-                },
-                "requestedModelName": {
-                    "type": "string"
-                },
                 "routedBindingCode": {
                     "type": "string"
                 },
-                "runID": {
+                "serviceTier": {
                     "type": "string"
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "taskType": {
-                    "type": "string"
-                },
-                "toolCallsCount": {
-                    "type": "integer"
-                },
-                "totalLatencyMS": {
-                    "type": "integer"
                 },
                 "updatedAt": {
                     "type": "string"
-                },
-                "upstreamID": {
-                    "type": "integer"
-                },
-                "upstreamModelID": {
-                    "type": "integer"
                 },
                 "upstreamModelName": {
                     "type": "string"
                 },
+                "upstreamName": {
+                    "type": "string"
+                },
+                "usageDate": {
+                    "type": "string"
+                },
+                "usageSpeed": {
+                    "type": "string"
+                },
+                "userDisplayName": {
+                    "type": "string"
+                },
                 "userID": {
+                    "type": "integer"
+                },
+                "userLabel": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "UsageMonthlyListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UsageMonthlyResponse"
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "UsageMonthlyResponse": {
+            "type": "object",
+            "required": [
+                "avgLatencyMS",
+                "billedNanousd",
+                "billedUSD",
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "callCount",
+                "durationSeconds",
+                "inputTokens",
+                "monthStartAt",
+                "outputTokens",
+                "reasoningTokens",
+                "recordCount",
+                "totalTokens"
+            ],
+            "properties": {
+                "avgLatencyMS": {
+                    "type": "integer"
+                },
+                "billedNanousd": {
+                    "type": "integer"
+                },
+                "billedUSD": {
+                    "type": "number"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "callCount": {
+                    "type": "integer"
+                },
+                "durationSeconds": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "monthStartAt": {
+                    "type": "string"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "recordCount": {
+                    "type": "integer"
+                },
+                "totalTokens": {
                     "type": "integer"
                 }
             }
         },
-        "internal_transport_http_conversation.SendMessageRequest": {
+        "UsageStatisticsMetricsResponse": {
             "type": "object",
             "required": [
-                "content",
-                "contentType"
+                "avgLatencyMS",
+                "billedNanousd",
+                "billedUSD",
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "callCount",
+                "inputTokens",
+                "outputTokens",
+                "reasoningTokens",
+                "recordCount",
+                "totalTokens"
             ],
             "properties": {
-                "branchReason": {
-                    "type": "string",
-                    "enum": [
-                        "default",
-                        "retry",
-                        "edit"
-                    ]
+                "avgLatencyMS": {
+                    "type": "integer"
                 },
-                "clientRunID": {
-                    "type": "string",
-                    "maxLength": 64
+                "billedNanousd": {
+                    "type": "integer"
                 },
-                "content": {
+                "billedUSD": {
+                    "type": "number"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "callCount": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "recordCount": {
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "type": "integer"
+                }
+            }
+        },
+        "UsageStatisticsModelRankResponse": {
+            "type": "object",
+            "required": [
+                "avgLatencyMS",
+                "billedNanousd",
+                "billedUSD",
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "callCount",
+                "inputTokens",
+                "outputTokens",
+                "platformModelName",
+                "reasoningTokens",
+                "recordCount",
+                "totalTokens",
+                "trend"
+            ],
+            "properties": {
+                "avgLatencyMS": {
+                    "type": "integer"
+                },
+                "billedNanousd": {
+                    "type": "integer"
+                },
+                "billedUSD": {
+                    "type": "number"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "callCount": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "platformModelName": {
                     "type": "string"
                 },
-                "contentType": {
-                    "type": "string",
-                    "enum": [
-                        "text",
-                        "markdown",
-                        "image",
-                        "file",
-                        "mixed"
-                    ]
+                "reasoningTokens": {
+                    "type": "integer"
                 },
-                "fileIDs": {
+                "recordCount": {
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "type": "integer"
+                },
+                "trend": {
                     "type": "array",
-                    "maxItems": 20,
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/UsageStatisticsTrendResponse"
                     }
-                },
-                "htmlVisualColorMode": {
-                    "type": "string",
-                    "enum": [
-                        "light",
-                        "dark"
-                    ]
-                },
-                "htmlVisualPrompt": {
-                    "type": "boolean"
-                },
-                "model": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "options": {
+                }
+            }
+        },
+        "UsageStatisticsResponse": {
+            "type": "object",
+            "required": [
+                "range",
+                "section",
+                "topModels",
+                "topUsers",
+                "totals",
+                "trend"
+            ],
+            "properties": {
+                "range": {
                     "type": "object",
-                    "additionalProperties": true
-                },
-                "parentMessagePublicID": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "selectedToolIDs": {
-                    "type": "array",
-                    "maxItems": 128,
-                    "items": {
-                        "type": "integer"
+                    "required": [
+                        "endDate",
+                        "granularity",
+                        "startDate"
+                    ],
+                    "properties": {
+                        "endDate": {
+                            "type": "string"
+                        },
+                        "granularity": {
+                            "type": "string"
+                        },
+                        "startDate": {
+                            "type": "string"
+                        }
                     }
                 },
-                "skillIDs": {
-                    "type": "array",
-                    "maxItems": 128,
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "sourceMessagePublicID": {
-                    "type": "string",
-                    "maxLength": 32
-                }
-            }
-        },
-        "internal_transport_http_conversation.SendMessageResponse": {
-            "type": "object",
-            "properties": {
-                "assistantMessage": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageResponse"
-                },
-                "metadataRefreshHint": {
+                "section": {
                     "type": "string"
                 },
-                "userMessage": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.MessageResponse"
+                "topModels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UsageStatisticsModelRankResponse"
+                    }
+                },
+                "topUsers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UsageStatisticsUserRankResponse"
+                    }
+                },
+                "totals": {
+                    "$ref": "#/definitions/UsageStatisticsMetricsResponse"
+                },
+                "trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UsageStatisticsTrendResponse"
+                    }
                 }
             }
         },
-        "internal_transport_http_conversation.SendMessageResponseDoc": {
+        "UsageStatisticsResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.SendMessageResponse"
+                    "$ref": "#/definitions/UsageStatisticsResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_conversation.SetConversationArchiveRequest": {
+        "UsageStatisticsTrendResponse": {
             "type": "object",
+            "required": [
+                "avgLatencyMS",
+                "billedNanousd",
+                "billedUSD",
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "callCount",
+                "inputTokens",
+                "outputTokens",
+                "periodStart",
+                "reasoningTokens",
+                "recordCount",
+                "totalTokens"
+            ],
             "properties": {
-                "archived": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_conversation.SetConversationProjectRequest": {
-            "type": "object",
-            "properties": {
-                "projectID": {
-                    "type": "string",
-                    "maxLength": 32
-                }
-            }
-        },
-        "internal_transport_http_conversation.SetConversationStarRequest": {
-            "type": "object",
-            "properties": {
-                "starred": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_conversation.SetMessageFeedbackRequest": {
-            "type": "object",
-            "properties": {
-                "feedback": {
-                    "type": "string",
-                    "enum": [
-                        "up",
-                        "down"
-                    ]
-                }
-            }
-        },
-        "internal_transport_http_conversation.StorageQuotaResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
+                "avgLatencyMS": {
+                    "type": "integer"
+                },
+                "billedNanousd": {
+                    "type": "integer"
+                },
+                "billedUSD": {
+                    "type": "number"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "callCount": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "periodStart": {
                     "type": "string"
                 },
-                "id": {
+                "reasoningTokens": {
                     "type": "integer"
                 },
-                "quotaBytes": {
+                "recordCount": {
                     "type": "integer"
                 },
-                "reservedBytes": {
+                "totalTokens": {
+                    "type": "integer"
+                }
+            }
+        },
+        "UsageStatisticsUserRankResponse": {
+            "type": "object",
+            "required": [
+                "avgLatencyMS",
+                "billedNanousd",
+                "billedUSD",
+                "cacheReadTokens",
+                "cacheWriteTokens",
+                "callCount",
+                "inputTokens",
+                "outputTokens",
+                "reasoningTokens",
+                "recordCount",
+                "totalTokens",
+                "trend",
+                "userDisplayName",
+                "userID",
+                "userLabel",
+                "username"
+            ],
+            "properties": {
+                "avgLatencyMS": {
                     "type": "integer"
                 },
-                "updatedAt": {
+                "billedNanousd": {
+                    "type": "integer"
+                },
+                "billedUSD": {
+                    "type": "number"
+                },
+                "cacheReadTokens": {
+                    "type": "integer"
+                },
+                "cacheWriteTokens": {
+                    "type": "integer"
+                },
+                "callCount": {
+                    "type": "integer"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                },
+                "recordCount": {
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "type": "integer"
+                },
+                "trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UsageStatisticsTrendResponse"
+                    }
+                },
+                "userDisplayName": {
                     "type": "string"
-                },
-                "usedBytes": {
-                    "type": "integer"
                 },
                 "userID": {
                     "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_conversation.UpdateConversationProjectRequest": {
-            "type": "object",
-            "properties": {
-                "color": {
-                    "type": "string",
-                    "maxLength": 32
                 },
-                "description": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "icon": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 80
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "archived"
-                    ]
-                },
-                "systemPrompt": {
-                    "type": "string",
-                    "maxLength": 12000
-                }
-            }
-        },
-        "internal_transport_http_conversation.UpdateFileRequest": {
-            "type": "object",
-            "properties": {
-                "fileName": {
+                "userLabel": {
                     "type": "string"
                 },
-                "ragOptOut": {
-                    "type": "boolean"
+                "username": {
+                    "type": "string"
                 }
             }
         },
-        "internal_transport_http_conversation.UpdateMessageRequest": {
+        "UserAuthEventListResponseDoc": {
             "type": "object",
             "required": [
-                "content"
+                "data",
+                "errorMsg"
             ],
             "properties": {
-                "content": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_conversation.UploadFileResponseDoc": {
-            "type": "object",
-            "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_conversation.FileUploadResponse"
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/AuthEventResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_memory.ErrorDoc": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "details": {},
-                "errorCode": {
-                    "type": "string"
-                },
-                "errorMsg": {
-                    "type": "string"
-                },
-                "requestId": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_memory.UpsertMemoryResponse": {
-            "type": "object",
-            "properties": {
-                "saved": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_memory.UpsertUserMemoryRequest": {
+        "UserDataResponse": {
             "type": "object",
             "required": [
+                "user"
+            ],
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/AdminUserResponse"
+                }
+            }
+        },
+        "UserListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "results",
+                        "total"
+                    ],
+                    "properties": {
+                        "results": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/AdminUserResponse"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "UserMemoryListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UserMemoryResponse"
+                    }
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "UserMemoryResponse": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "id",
                 "memoryKey",
                 "scope",
+                "updatedAt",
+                "updatedBy",
+                "userID",
                 "value"
             ],
-            "properties": {
-                "memoryKey": {
-                    "type": "string",
-                    "maxLength": 128
-                },
-                "scope": {
-                    "type": "string",
-                    "enum": [
-                        "profile",
-                        "preference",
-                        "custom"
-                    ]
-                },
-                "value": {
-                    "type": "string",
-                    "maxLength": 10000
-                }
-            }
-        },
-        "internal_transport_http_memory.UpsertUserMemoryResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_memory.UpsertMemoryResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_memory.UserMemoryListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_memory.UserMemoryResponse"
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_memory.UserMemoryResponse": {
-            "type": "object",
             "properties": {
                 "createdAt": {
                     "type": "string"
@@ -18225,401 +23058,50 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_openapi.ChatCompletionChoiceDoc": {
+        "UserSettingsPatchSettingsRequest": {
             "type": "object",
+            "required": [
+                "settings"
+            ],
             "properties": {
-                "finish_reason": {
-                    "type": "string",
-                    "example": "tool_calls"
-                },
-                "index": {
-                    "type": "integer"
-                },
-                "message": {
-                    "$ref": "#/definitions/internal_transport_http_openapi.ChatMessageDoc"
-                }
-            }
-        },
-        "internal_transport_http_openapi.ChatCompletionRequestDoc": {
-            "type": "object",
-            "properties": {
-                "function_call": {
-                    "type": "object"
-                },
-                "functions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_openapi.LegacyFunctionDoc"
-                    }
-                },
-                "max_completion_tokens": {
-                    "description": "OpenAI Chat Completions output token limit.",
-                    "type": "integer"
-                },
-                "max_output_tokens": {
-                    "description": "Gemini output token limit.",
-                    "type": "integer"
-                },
-                "max_tokens": {
-                    "description": "Legacy OpenAI-compatible output token limit. Official OpenAI Chat Completions routes normalize this to max_completion_tokens; Gemini routes normalize it to max_output_tokens.",
-                    "type": "integer"
-                },
-                "messages": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_openapi.ChatMessageDoc"
-                    }
-                },
-                "model": {
-                    "type": "string",
-                    "example": "gpt-5"
-                },
-                "parallel_tool_calls": {
-                    "type": "boolean"
-                },
-                "reasoning_effort": {
-                    "description": "Official OpenAI Chat Completions routes drop reasoning_effort when function tools are present because upstream rejects that combination.",
-                    "type": "string",
-                    "example": "medium"
-                },
-                "stream": {
-                    "type": "boolean"
-                },
-                "temperature": {
-                    "type": "number"
-                },
-                "tool_choice": {
-                    "type": "object"
-                },
-                "tools": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_openapi.ChatToolDoc"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_openapi.ChatCompletionResponseDoc": {
-            "type": "object",
-            "properties": {
-                "choices": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_openapi.ChatCompletionChoiceDoc"
-                    }
-                },
-                "created": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "chatcmpl-openapi"
-                },
-                "model": {
-                    "type": "string",
-                    "example": "gpt-5"
-                },
-                "object": {
-                    "type": "string",
-                    "example": "chat.completion"
-                },
-                "usage": {
-                    "type": "object"
-                }
-            }
-        },
-        "internal_transport_http_openapi.ChatMessageDoc": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "object"
-                },
-                "function_call": {
-                    "$ref": "#/definitions/internal_transport_http_openapi.LegacyFunctionCallDoc"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string",
-                    "example": "user"
-                },
-                "tool_call_id": {
-                    "type": "string"
-                },
-                "tool_calls": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_openapi.ChatToolCallDoc"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_openapi.ChatToolCallDoc": {
-            "type": "object",
-            "properties": {
-                "function": {
-                    "$ref": "#/definitions/internal_transport_http_openapi.LegacyFunctionCallDoc"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "call_1"
-                },
-                "type": {
-                    "type": "string",
-                    "example": "function"
-                }
-            }
-        },
-        "internal_transport_http_openapi.ChatToolDoc": {
-            "type": "object",
-            "properties": {
-                "function": {
-                    "$ref": "#/definitions/internal_transport_http_openapi.LegacyFunctionDoc"
-                },
-                "type": {
-                    "type": "string",
-                    "example": "function"
-                }
-            }
-        },
-        "internal_transport_http_openapi.LegacyFunctionCallDoc": {
-            "type": "object",
-            "properties": {
-                "arguments": {
-                    "type": "string",
-                    "example": "{\"city\":\"Paris\"}"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "get_weather"
-                }
-            }
-        },
-        "internal_transport_http_openapi.LegacyFunctionDoc": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Get weather for a city"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "get_weather"
-                },
-                "parameters": {
-                    "type": "object"
-                }
-            }
-        },
-        "internal_transport_http_openapi.ModelItemDoc": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "integer",
-                    "example": 1626777600
-                },
-                "id": {
-                    "type": "string",
-                    "example": "gpt-5"
-                },
-                "object": {
-                    "type": "string",
-                    "example": "model"
-                },
-                "owned_by": {
-                    "type": "string",
-                    "example": "deeix"
-                },
-                "supported_endpoint_types": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "openai"
-                    ]
-                }
-            }
-        },
-        "internal_transport_http_openapi.ModelListResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_openapi.ModelItemDoc"
-                    }
-                },
-                "object": {
-                    "type": "string",
-                    "example": "list"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "internal_transport_http_openapi.openAIError": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_openapi.openAIErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "$ref": "#/definitions/internal_transport_http_openapi.openAIError"
-                }
-            }
-        },
-        "internal_transport_http_promptpreset.ErrorDoc": {
-            "type": "object",
-            "properties": {
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_promptpreset.PatchPromptPresetRequest": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string",
-                    "maxLength": 10000
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 256
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "sortOrder": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "trigger": {
-                    "type": "string",
-                    "maxLength": 64
-                }
-            }
-        },
-        "internal_transport_http_promptpreset.PromptPresetDataResponse": {
-            "type": "object",
-            "properties": {
-                "promptPreset": {
-                    "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetResponse"
-                }
-            }
-        },
-        "internal_transport_http_promptpreset.PromptPresetDeleteDataResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_promptpreset.PromptPresetDeleteResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetDeleteDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_promptpreset.PromptPresetPageResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
+                "settings": {
                     "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
+                    "additionalProperties": {
+                        "type": "string"
                     }
-                },
-                "errorMsg": {
-                    "type": "string"
                 }
             }
         },
-        "internal_transport_http_promptpreset.PromptPresetResponse": {
+        "UserSettingsResponse": {
             "type": "object",
+            "required": [
+                "settings"
+            ],
             "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "createdByUserID": {
-                    "type": "integer"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "scope": {
-                    "type": "string"
-                },
-                "sortOrder": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "trigger": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "updatedByUserID": {
-                    "type": "integer"
+                "settings": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 }
             }
         },
-        "internal_transport_http_promptpreset.PromptPresetResponseDoc": {
+        "UserSettingsResponseDoc": {
             "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_transport_http_promptpreset.PromptPresetDataResponse"
+                    "$ref": "#/definitions/UserSettingsResponse"
                 },
                 "errorMsg": {
                     "type": "string"
                 }
             }
         },
-        "internal_transport_http_promptpreset.WritePromptPresetRequest": {
+        "WritePromptPresetRequest": {
             "type": "object",
             "required": [
                 "content",
@@ -18651,233 +23133,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_settings.PatchItem": {
-            "type": "object",
-            "required": [
-                "key",
-                "namespace"
-            ],
-            "properties": {
-                "clear": {
-                    "type": "boolean"
-                },
-                "key": {
-                    "type": "string"
-                },
-                "namespace": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_settings.PatchSettingsRequest": {
-            "type": "object",
-            "required": [
-                "items"
-            ],
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/internal_transport_http_settings.PatchItem"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_skill.ErrorDoc": {
-            "type": "object",
-            "properties": {
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_skill.PatchSkillRequest": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 256
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "markdown": {
-                    "type": "string",
-                    "maxLength": 10000
-                },
-                "sortOrder": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "trigger": {
-                    "type": "string",
-                    "maxLength": 64
-                }
-            }
-        },
-        "internal_transport_http_skill.SkillDataResponse": {
-            "type": "object",
-            "properties": {
-                "skill": {
-                    "$ref": "#/definitions/internal_transport_http_skill.SkillResponse"
-                }
-            }
-        },
-        "internal_transport_http_skill.SkillDeleteDataResponse": {
-            "type": "object",
-            "properties": {
-                "deleted": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_transport_http_skill.SkillDeleteResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_skill.SkillDeleteDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_skill.SkillPageResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_skill.SkillResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_skill.SkillResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "createdByUserID": {
-                    "type": "integer"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "markdown": {
-                    "type": "string"
-                },
-                "scope": {
-                    "type": "string"
-                },
-                "sortOrder": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "trigger": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "updatedByUserID": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_transport_http_skill.SkillResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_skill.SkillDataResponse"
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_skill.SkillSummaryPageResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "results": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_transport_http_skill.SkillSummaryResponse"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "errorMsg": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_skill.SkillSummaryResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "scope": {
-                    "type": "string"
-                },
-                "sortOrder": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "trigger": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_transport_http_skill.WriteSkillRequest": {
+        "WriteSkillRequest": {
             "type": "object",
             "required": [
                 "markdown",
@@ -18909,39 +23165,32 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transport_http_usersettings.PatchSettingsRequest": {
+        "openAIError": {
             "type": "object",
             "required": [
-                "settings"
+                "message",
+                "type"
             ],
             "properties": {
-                "settings": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_usersettings.UserSettingsResponse": {
-            "type": "object",
-            "properties": {
-                "settings": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "internal_transport_http_usersettings.UserSettingsResponseDoc": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/internal_transport_http_usersettings.UserSettingsResponse"
-                },
-                "errorMsg": {
+                "code": {
                     "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "openAIErrorResponse": {
+            "type": "object",
+            "required": [
+                "error"
+            ],
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/openAIError"
                 }
             }
         }
@@ -18957,7 +23206,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "0.3.1",
+	Version:          "0.3.3",
 	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},

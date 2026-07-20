@@ -720,11 +720,12 @@ function ChatInputComponent({
           dropActive && "border-dashed border-foreground/30 bg-muted/20 shadow-none",
         )}
       >
-        {inlineSelectedSkills ? (
-          <div className="flex w-full max-h-14 flex-wrap items-center justify-start gap-x-3 gap-y-1 overflow-y-auto px-5 pt-3">
-            {renderSkillChips()}
-          </div>
-        ) : null}
+        <div ref={inputGroupMeasureRef} className="flex w-full flex-col">
+          {inlineSelectedSkills ? (
+            <div className="flex w-full max-h-14 flex-wrap items-center justify-start gap-x-3 gap-y-1 overflow-y-auto px-5 pt-3">
+              {renderSkillChips()}
+            </div>
+          ) : null}
 
         {hasComposerAttachments ? (
           <div className="w-full space-y-2 px-2.5 pt-2">
@@ -1167,6 +1168,7 @@ function ChatInputComponent({
             </InputGroupButton>
           </div>
         </InputGroupAddon>
+        </div>
       </InputGroup>
     </div>
   );

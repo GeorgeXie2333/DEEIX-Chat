@@ -307,7 +307,10 @@ func (s *Service) finishSuccessfulMessageGeneration(ctx context.Context, input p
 		return err
 	}
 
-	s.updateStatefulResponseAsync(input.SendInput.ConversationID, input.ResponseID, input.StatefulPromptFingerprint)
+	// 非默认分支不代表会话主链，不能覆盖后续默认消息使用的 Responses 状态。
+	if normalizeBranchReason(input.SendInput.BranchReason) == "default" {
+		s.updateStatefulResponseAsync(input.SendInput.ConversationID, input.ResponseID, input.StatefulPromptFingerprint)
+	}
 	if input.ReuseUserMessage {
 		s.embedMessagePairAsync(input.SendInput, nil, input.AssistantMessage)
 	} else {

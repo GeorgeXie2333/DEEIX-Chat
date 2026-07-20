@@ -8,6 +8,7 @@ const publicDir = join(rootDir, "public");
 const sourceDir = join(publicDir, "pwa");
 const generatedDir = join(sourceDir, "generated");
 const manifestFile = join(rootDir, "shared", "generated", "pwa-assets.ts");
+const version = readFileSync(join(rootDir, "..", "VERSION"), "utf8").trim();
 
 const assets = [
   { source: "icon.svg", path: "/pwa/icon.svg" },
@@ -68,6 +69,10 @@ writeFileSync(
 
 const serviceWorkerFile = join(publicDir, "sw.js");
 const serviceWorker = readFileSync(serviceWorkerFile, "utf8")
+  .replace(
+    /const PWA_ASSET_VERSION = "[^"]+";/u,
+    `const PWA_ASSET_VERSION = ${JSON.stringify(version)};`,
+  )
   .replace(
     /const PWA_ASSET_CACHE_KEY = "[^"]+";/u,
     `const PWA_ASSET_CACHE_KEY = ${JSON.stringify(pwaAssetCacheKey)};`,

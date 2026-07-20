@@ -360,6 +360,13 @@ func TestMapStreamErrorDoesNotExposeUpstreamUnauthorizedAsPlatformUnauthorized(t
 	}
 }
 
+func TestMapBillingStreamErrorReturnsConcurrencyLimit(t *testing.T) {
+	mapped := mapBillingStreamError(appbilling.ErrUsageConcurrencyLimitExceeded)
+	if mapped.Status != http.StatusTooManyRequests || mapped.Code != "billing.concurrency_limit_exceeded" {
+		t.Fatalf("billing stream error = %#v", mapped)
+	}
+}
+
 func TestStreamErrorPayloadClassifiesImageStreamConfigurationFailure(t *testing.T) {
 	err := errors.Join(appconversation.ErrUpstreamRequestFailed, &llm.UpstreamError{
 		StatusCode: 500,

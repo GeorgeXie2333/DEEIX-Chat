@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
-import { brandAssets, brandText } from "@/shared/lib/branding";
+import { useBranding } from "@/shared/config/branding-provider";
 
 import {
   appLogoMaskImage,
@@ -19,7 +19,7 @@ type AppLogoProps = {
   className?: string;
 };
 
-function logoStyle(height: number, width: number | undefined): CSSProperties {
+function logoStyle(height: number, width: number | undefined, logoURL: string): CSSProperties {
   return {
     width: width ?? appLogoVisualWidth(height),
     height: width ? height : appLogoVisualHeight(height),
@@ -31,7 +31,7 @@ function logoStyle(height: number, width: number | undefined): CSSProperties {
     WebkitMaskPosition: "center",
     WebkitMaskRepeat: "no-repeat",
     WebkitMaskSize: "contain",
-    backgroundImage: brandAssets.logo ? `url("${brandAssets.logo}")` : undefined,
+    backgroundImage: logoURL ? `url("${logoURL}")` : undefined,
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
     backgroundSize: "contain",
@@ -39,27 +39,29 @@ function logoStyle(height: number, width: number | undefined): CSSProperties {
 }
 
 export function AppLogo({
-  alt = brandText.title,
+  alt,
   width,
   height,
   priority: _priority,
   className,
 }: AppLogoProps) {
+  const branding = useBranding();
+  const label = alt ?? branding.title;
   return (
     <span
       role="img"
-      aria-label={alt}
-      title={alt}
+      aria-label={label}
+      title={label}
       className={cn(
         "inline-block shrink-0 bg-current text-foreground align-middle leading-none",
         className,
       )}
-      style={logoStyle(height, width)}
+      style={logoStyle(height, width, branding.logoURL)}
     />
   );
 }
 
 // Kept as a compatibility alias for older callers; it uses the Comi-configured asset.
-export function DeeixLogo({ alt = brandText.title, ...props }: AppLogoProps) {
+export function DeeixLogo({ alt, ...props }: AppLogoProps) {
   return <AppLogo {...props} alt={alt} />;
 }

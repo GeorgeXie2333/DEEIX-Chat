@@ -1,0 +1,62 @@
+{
+  "title": "利用統計",
+  "refresh": "更新",
+  "empty": "選択した条件に一致する利用データはありません。",
+  "unknownModel": "不明なモデル",
+  "unknownUser": "ユーザー #{id}",
+  "filters": {
+    "last7Days": "過去7日間",
+    "last30Days": "過去30日間",
+    "last90Days": "過去90日間",
+    "custom": "カスタム",
+    "subject": "対象",
+    "model": "モデル",
+    "allModels": "すべてのモデル",
+    "billingScope": "課金タイプ",
+    "billingAll": "すべての呼び出し",
+    "billingFree": "無料モデル",
+    "billingBillable": "課金モデル",
+    "clear": "フィルターをクリア",
+    "rangeErrors": {
+      "incomplete": "開始日と終了日の両方を選択してください。",
+      "invalid": "終了日は開始日以降にしてください。",
+      "tooLong": "選択できる期間は366日以内です。"
+    },
+    "subjectSelect": {
+      "allUsers": "すべてのユーザー",
+      "users": "ユーザー",
+      "permissionGroups": "権限グループ",
+      "searchUsers": "ユーザー名、表示名、メールアドレスを検索",
+      "searchPermissionGroups": "権限グループを検索",
+      "emptyUsers": "一致するユーザーはありません。",
+      "emptyPermissionGroups": "一致する権限グループはありません。",
+      "memberCount": "{count} ユーザー",
+      "loadFailed": "ユーザーを読み込めませんでした"
+    }
+  },
+  "metrics": {
+    "cost": "総費用",
+    "tokens": "総トークン",
+    "calls": "総呼び出し数",
+    "latency": "平均レイテンシ"
+  },
+  "rankBy": {
+    "cost": "費用",
+    "tokens": "トークン",
+    "calls": "呼び出し数"
+  },
+  "trend": {
+    "title": "利用推移"
+  },
+  "rankings": {
+    "models": "上位モデル",
+    "users": "上位ユーザー",
+    "total": "合計"
+  },
+  "toasts": {
+    "loadFailed": "利用統計を読み込めませんでした",
+    "referenceLoadFailed": "ダッシュボードのフィルターを読み込めませんでした",
+    "sessionExpired": "セッションの有効期限が切れました",
+    "signInAgain": "再度ログインしてお試しください。"
+  }
+}

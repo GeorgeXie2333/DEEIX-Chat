@@ -888,15 +888,22 @@ type billingStub struct {
 	recorded *domainbilling.UsageLedger
 }
 
-func (b *billingStub) EnsureModelUsable(context.Context, uint, string, time.Time) error {
+func (b *billingStub) AuthorizeUsage(context.Context, uint, string, string) (*domainbilling.UsageAuthorization, error) {
+	return &domainbilling.UsageAuthorization{
+		Mode:        "usage",
+		Reservation: &domainbilling.UsageBalanceReservation{UserID: 42, AmountNanousd: 1, RefNo: "req_1"},
+	}, nil
+}
+
+func (b *billingStub) ReleaseUsageAuthorization(context.Context, *domainbilling.UsageAuthorization) error {
 	return nil
 }
 
-func (b *billingStub) ReserveUsageBalance(context.Context, uint, string, string) (*domainbilling.UsageBalanceReservation, error) {
-	return &domainbilling.UsageBalanceReservation{UserID: 42, AmountNanousd: 1, RefNo: "req_1"}, nil
+func (b *billingStub) RenewUsageAuthorization(context.Context, *domainbilling.UsageAuthorization) error {
+	return nil
 }
 
-func (b *billingStub) ReleaseUsageBalanceReservation(context.Context, *domainbilling.UsageBalanceReservation, string) error {
+func (b *billingStub) MarkUsageAuthorizationForReconciliation(context.Context, *domainbilling.UsageAuthorization, string) error {
 	return nil
 }
 
@@ -910,7 +917,7 @@ func (b *billingStub) BuildUsageLedger(_ context.Context, input appbilling.Usage
 	}, nil
 }
 
-func (b *billingStub) RecordUsageWithReservation(_ context.Context, ledger *domainbilling.UsageLedger, _ *domainbilling.UsageBalanceReservation) error {
+func (b *billingStub) RecordUsageWithAuthorization(_ context.Context, ledger *domainbilling.UsageLedger, _ *domainbilling.UsageAuthorization) error {
 	b.recorded = ledger
 	return nil
 }

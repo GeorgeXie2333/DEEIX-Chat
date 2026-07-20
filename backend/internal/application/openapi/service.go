@@ -12,6 +12,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -28,9 +29,10 @@ const (
 	// APIKeyPlaintextPrefix 是用户看到的开放 API Key 明文前缀。
 	APIKeyPlaintextPrefix = "dxsk_"
 
-	openAPISettingsNamespace     = "openapi"
-	openAPISettingModelAllowlist = "model_allowlist"
-	openAPISettingRateLimitRPM   = "rate_limit_rpm"
+	openAPISettingsNamespace                 = "openapi"
+	openAPISettingModelAllowlist             = "model_allowlist"
+	openAPISettingRateLimitRPM               = "rate_limit_rpm"
+	openAPIUsageAuthorizationRenewalInterval = 30 * time.Minute
 )
 
 var (
@@ -74,11 +76,12 @@ type channelService interface {
 }
 
 type billingService interface {
-	EnsureModelUsable(ctx context.Context, userID uint, platformModelName string, now time.Time) error
-	ReserveUsageBalance(ctx context.Context, userID uint, platformModelName string, refNo string) (*domainbilling.UsageBalanceReservation, error)
-	ReleaseUsageBalanceReservation(ctx context.Context, reservation *domainbilling.UsageBalanceReservation, description string) error
+	AuthorizeUsage(ctx context.Context, userID uint, platformModelName string, refNo string) (*domainbilling.UsageAuthorization, error)
+	ReleaseUsageAuthorization(ctx context.Context, authorization *domainbilling.UsageAuthorization) error
+	RenewUsageAuthorization(ctx context.Context, authorization *domainbilling.UsageAuthorization) error
+	MarkUsageAuthorizationForReconciliation(ctx context.Context, authorization *domainbilling.UsageAuthorization, failureCode string) error
 	BuildUsageLedger(ctx context.Context, input appbilling.UsagePricingInput) (*domainbilling.UsageLedger, error)
-	RecordUsageWithReservation(ctx context.Context, usage *domainbilling.UsageLedger, reservation *domainbilling.UsageBalanceReservation) error
+	RecordUsageWithAuthorization(ctx context.Context, usage *domainbilling.UsageLedger, authorization *domainbilling.UsageAuthorization) error
 }
 
 type rawChatProvider interface {
@@ -186,7 +189,7 @@ type PreparedChatCompletion struct {
 	stream            bool
 	route             *appchannel.ResolvedRoute
 	routeConfig       llm.RouteConfig
-	reservation       *domainbilling.UsageBalanceReservation
+	authorization     *domainbilling.UsageAuthorization
 	startedAt         time.Time
 	platformModelName string
 	publicModelID     string
@@ -414,15 +417,9 @@ func (s *Service) PrepareChatCompletion(
 		return nil, ErrModelNotAllowed
 	}
 	startedAt := s.now()
+	var authorization *domainbilling.UsageAuthorization
 	if s.billing != nil {
-		if err := s.billing.EnsureModelUsable(ctx, key.UserID, platformModelName, startedAt); err != nil {
-			return nil, err
-		}
-	}
-
-	var reservation *domainbilling.UsageBalanceReservation
-	if s.billing != nil {
-		reservation, err = s.billing.ReserveUsageBalance(ctx, key.UserID, platformModelName, strings.TrimSpace(requestID))
+		authorization, err = s.billing.AuthorizeUsage(ctx, key.UserID, platformModelName, strings.TrimSpace(requestID))
 		if err != nil {
 			return nil, err
 		}
@@ -439,7 +436,7 @@ func (s *Service) PrepareChatCompletion(
 		stream:            stream,
 		route:             route,
 		routeConfig:       routeConfigFromResolvedRoute(route),
-		reservation:       reservation,
+		authorization:     authorization,
 		startedAt:         startedAt,
 		platformModelName: platformModelName,
 		publicModelID:     publicModelID,
@@ -517,6 +514,8 @@ func (s *Service) CompleteChatCompletion(ctx context.Context, prepared *Prepared
 	if prepared == nil {
 		return nil, ErrInvalidRequest
 	}
+	stopAuthorizationRenewal := s.startUsageAuthorizationRenewal(prepared)
+	defer stopAuthorizationRenewal()
 	result, err := s.chatProvider.CompleteChat(ctx, prepared.routeConfig, prepared.request)
 	if err != nil {
 		s.markRouteFailure(ctx, prepared, err)
@@ -537,7 +536,6 @@ func (s *Service) CompleteChatCompletion(ctx context.Context, prepared *Prepared
 	}
 	ensureUsageInBody(body, usage)
 	if err := s.recordBilling(ctx, prepared, usage); err != nil {
-		s.releaseReservation(ctx, prepared, "open api billing failed")
 		return nil, err
 	}
 	return body, nil
@@ -548,6 +546,8 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 	if prepared == nil {
 		return ErrInvalidRequest
 	}
+	stopAuthorizationRenewal := s.startUsageAuthorizationRenewal(prepared)
+	defer stopAuthorizationRenewal()
 	var outputText strings.Builder
 	var reasoningText strings.Builder
 	var usage llm.Usage
@@ -601,7 +601,6 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 		usage = fallbackUsage(prepared.request, outputText.String(), reasoningText.String())
 	}
 	if err := s.recordBilling(ctx, prepared, usage); err != nil {
-		s.releaseReservation(ctx, prepared, "open api billing failed")
 		return err
 	}
 	if !usageSent {
@@ -826,11 +825,48 @@ func (s *Service) markRouteFailure(ctx context.Context, prepared *PreparedChatCo
 	}
 }
 
-func (s *Service) releaseReservation(ctx context.Context, prepared *PreparedChatCompletion, description string) {
-	if s == nil || s.billing == nil || prepared == nil || prepared.reservation == nil {
+func (s *Service) releaseReservation(_ context.Context, prepared *PreparedChatCompletion, _ string) {
+	if s == nil || s.billing == nil || prepared == nil || prepared.authorization == nil {
 		return
 	}
-	_ = s.billing.ReleaseUsageBalanceReservation(ctx, prepared.reservation, description)
+	releaseCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = s.billing.ReleaseUsageAuthorization(releaseCtx, prepared.authorization)
+}
+
+func (s *Service) startUsageAuthorizationRenewal(prepared *PreparedChatCompletion) func() {
+	if s == nil || s.billing == nil || prepared == nil || prepared.authorization == nil || prepared.authorization.Reservation == nil {
+		return func() {}
+	}
+	stop := make(chan struct{})
+	var once sync.Once
+	go func() {
+		ticker := time.NewTicker(openAPIUsageAuthorizationRenewalInterval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				renewCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				_ = s.billing.RenewUsageAuthorization(renewCtx, prepared.authorization)
+				cancel()
+			case <-stop:
+				return
+			}
+		}
+	}()
+	return func() { once.Do(func() { close(stop) }) }
+}
+
+func (s *Service) markAuthorizationForReconciliation(prepared *PreparedChatCompletion, failureCode string, cause error) error {
+	if s == nil || s.billing == nil || prepared == nil || prepared.authorization == nil || prepared.authorization.Reservation == nil {
+		return cause
+	}
+	reconcileCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := s.billing.MarkUsageAuthorizationForReconciliation(reconcileCtx, prepared.authorization, failureCode); err != nil {
+		return errors.Join(cause, fmt.Errorf("mark open api usage reconciliation: %w", err))
+	}
+	return cause
 }
 
 func (s *Service) recordBilling(ctx context.Context, prepared *PreparedChatCompletion, usage llm.Usage) error {
@@ -858,12 +894,15 @@ func (s *Service) recordBilling(ctx context.Context, prepared *PreparedChatCompl
 		UsageServiceTier:   usage.ServiceTier,
 	})
 	if err != nil {
-		return err
+		return s.markAuthorizationForReconciliation(prepared, "open_api_build_usage_failed", err)
 	}
 	if ledger == nil {
 		return nil
 	}
-	return s.billing.RecordUsageWithReservation(ctx, ledger, prepared.reservation)
+	if err = s.billing.RecordUsageWithAuthorization(ctx, ledger, prepared.authorization); err != nil {
+		return s.markAuthorizationForReconciliation(prepared, "open_api_record_usage_failed", err)
+	}
+	return nil
 }
 
 func cloneMap(raw map[string]interface{}) map[string]interface{} {

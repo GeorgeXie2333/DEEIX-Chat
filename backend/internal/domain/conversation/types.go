@@ -2,6 +2,11 @@ package conversation
 
 import "time"
 
+const (
+	ConversationProjectMCPDefaultModeInherit = "inherit"
+	ConversationProjectMCPDefaultModeCustom  = "custom"
+)
+
 // Conversation 表示会话元信息。
 type Conversation struct {
 	ID                    uint
@@ -34,28 +39,34 @@ type Conversation struct {
 
 // ConversationProject 表示用户会话项目分组。
 type ConversationProject struct {
-	ID           uint
-	UserID       uint
-	PublicID     string
-	Name         string
-	Description  string
-	SystemPrompt string
-	Color        string
-	Icon         string
-	SortOrder    int
-	Status       string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID                uint
+	UserID            uint
+	PublicID          string
+	Name              string
+	Description       string
+	SystemPrompt      string
+	MCPDefaultMode    string
+	DefaultMCPToolIDs []uint
+	DefaultSkillIDs   []uint
+	Color             string
+	Icon              string
+	SortOrder         int
+	Status            string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 // ConversationProjectPatch 表示项目分组的局部更新。
 type ConversationProjectPatch struct {
-	Name         *string
-	Description  *string
-	SystemPrompt *string
-	Color        *string
-	Icon         *string
-	Status       *string
+	Name              *string
+	Description       *string
+	SystemPrompt      *string
+	MCPDefaultMode    *string
+	DefaultMCPToolIDs *[]uint
+	DefaultSkillIDs   *[]uint
+	Color             *string
+	Icon              *string
+	Status            *string
 }
 
 // ConversationShare 表示会话公开分享快照。
@@ -409,34 +420,39 @@ type MessageTraceEventRow struct {
 
 // EventLog 表示后台日志中心展示的对话运行事件。
 type EventLog struct {
-	ID              uint
-	MessageID       uint
-	ConversationID  uint
-	UserID          uint
-	RunID           string
-	EventScope      string
-	EventID         string
-	EventType       string
-	Phase           string
-	Stage           string
-	RoundID         string
-	ParentEventID   string
-	Status          string
-	Title           string
-	Summary         string
-	ContentMarkdown string
-	PayloadJSON     string
-	Seq             int
-	ToolCallID      string
-	ToolName        string
-	LatencyMS       int64
-	InputJSON       string
-	OutputJSON      string
-	ErrorJSON       string
-	StartedAt       time.Time
-	EndedAt         *time.Time
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID                uint
+	MessageID         uint
+	ConversationID    uint
+	UserID            uint
+	RunID             string
+	ProviderProtocol  string
+	UpstreamName      string
+	PlatformModelName string
+	RoutedBindingCode string
+	UpstreamModelName string
+	EventScope        string
+	EventID           string
+	EventType         string
+	Phase             string
+	Stage             string
+	RoundID           string
+	ParentEventID     string
+	Status            string
+	Title             string
+	Summary           string
+	ContentMarkdown   string
+	PayloadJSON       string
+	Seq               int
+	ToolCallID        string
+	ToolName          string
+	LatencyMS         int64
+	InputJSON         string
+	OutputJSON        string
+	ErrorJSON         string
+	StartedAt         time.Time
+	EndedAt           *time.Time
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 // ToolCall 表示工具调用记录。

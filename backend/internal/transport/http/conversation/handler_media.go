@@ -9,7 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
 	appconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/conversation"
 	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
@@ -56,19 +55,17 @@ func (h *Handler) StreamVideoGeneration(c *gin.Context) {
 		handleSendMessageError(c, err)
 		return
 	}
-	if err = h.ensureMediaVideoBillingModelAccess(c, conversation, &req); err != nil {
-		return
-	}
-	reservation, err := h.reserveMediaVideoUsageBalance(c, conversation, &req)
+	authorization, err := h.authorizeUsage(c, mediaVideoBillingInput(userID, conversation, &req, nil))
 	if err != nil {
 		return
 	}
+	stopAuthorizationRenewal := h.startUsageAuthorizationRenewal(authorization)
+	defer stopAuthorizationRenewal()
 
 	h.streamMediaTask(
 		c,
 		req.ClientRunID,
-		reservation,
-		"视频生成失败退回预扣",
+		authorization,
 		func(onEvent func(string, map[string]interface{}) error) (*appconversation.SendMessageResult, error) {
 			return h.service.StreamMediaVideo(c.Request.Context(), appconversation.MediaVideoInput{
 				UserID:                userID,
@@ -91,7 +88,7 @@ func (h *Handler) StreamVideoGeneration(c *gin.Context) {
 	)
 }
 
-// streamMediaImage 只负责 HTTP 绑定、计费预扣和 NDJSON 事件转发，图片业务由 application 执行。
+// streamMediaImage 只负责 HTTP 绑定、计费预算预留和 NDJSON 事件转发，图片业务由 application 执行。
 func (h *Handler) streamMediaImage(c *gin.Context, taskType appconversation.MediaImageTaskType) {
 	userID := middleware.MustUserID(c)
 	publicID, err := stringParam(c, "id")
@@ -119,19 +116,17 @@ func (h *Handler) streamMediaImage(c *gin.Context, taskType appconversation.Medi
 		handleSendMessageError(c, err)
 		return
 	}
-	if err = h.ensureMediaImageBillingModelAccess(c, conversation, &req); err != nil {
-		return
-	}
-	reservation, err := h.reserveMediaImageUsageBalance(c, conversation, &req)
+	authorization, err := h.authorizeUsage(c, mediaImageBillingInput(userID, conversation, &req, nil))
 	if err != nil {
 		return
 	}
+	stopAuthorizationRenewal := h.startUsageAuthorizationRenewal(authorization)
+	defer stopAuthorizationRenewal()
 
 	h.streamMediaTask(
 		c,
 		req.ClientRunID,
-		reservation,
-		"图片生成失败退回预扣",
+		authorization,
 		func(onEvent func(string, map[string]interface{}) error) (*appconversation.SendMessageResult, error) {
 			return h.service.StreamMediaImage(c.Request.Context(), appconversation.MediaImageInput{
 				UserID:                userID,
@@ -159,8 +154,7 @@ func (h *Handler) streamMediaImage(c *gin.Context, taskType appconversation.Medi
 func (h *Handler) streamMediaTask(
 	c *gin.Context,
 	clientRunID string,
-	reservation *domainbilling.UsageBalanceReservation,
-	failureReleaseReason string,
+	authorization *domainbilling.UsageAuthorization,
 	run func(onEvent func(string, map[string]interface{}) error) (*appconversation.SendMessageResult, error),
 	billingInput func(result *appconversation.SendMessageResult) appconversation.SendMessageBillingInput,
 ) {
@@ -193,37 +187,31 @@ func (h *Handler) streamMediaTask(
 		return nil
 	})
 	if err != nil {
-		if result != nil && result.Billable {
-			billingCtx, billingCancel := context.WithTimeout(context.Background(), 10*time.Second)
-			usageLedger, billingErr := h.service.RecordSendMessageBilling(
-				billingCtx,
-				billingInput(result),
-				reservation,
-			)
-			billingCancel()
-			if billingErr != nil {
-				if shouldReleaseReservationAfterBillingError(billingErr) {
-					_ = h.releaseSendMessageUsageReservation(reservation, failureReleaseReason)
-				}
-				payload := billingStreamErrorPayload(billingErr)
-				payload["data"] = toSendMessageResponse(result)
-				_ = flushStreamEvent(payload)
+		if result == nil || !result.Billable {
+			if releaseErr := h.releaseSendMessageUsageAuthorization(authorization); releaseErr != nil {
+				_ = flushStreamEvent(billingStreamErrorPayload(releaseErr))
 				h.service.FinishMessageGeneration(clientRunID)
 				return
 			}
-			appconversation.ApplyUsageBilling(&result.AssistantMessage, usageLedger)
-			payload := streamErrorPayload(err)
+			_ = flushStreamEvent(streamErrorPayload(err))
+			h.service.FinishMessageGeneration(clientRunID)
+			return
+		}
+
+		billingCtx, billingCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		usageLedger, billingErr := h.service.RecordSendMessageBilling(billingCtx, billingInput(result), authorization)
+		billingCancel()
+		if billingErr != nil {
+			payload := billingStreamErrorPayload(billingErr)
 			payload["data"] = toSendMessageResponse(result)
 			_ = flushStreamEvent(payload)
 			h.service.FinishMessageGeneration(clientRunID)
 			return
 		}
-		if releaseErr := h.releaseSendMessageUsageReservation(reservation, failureReleaseReason); releaseErr != nil {
-			_ = flushStreamEvent(billingStreamErrorPayload(releaseErr))
-			h.service.FinishMessageGeneration(clientRunID)
-			return
-		}
-		_ = flushStreamEvent(streamErrorPayload(err))
+		appconversation.ApplyUsageBilling(&result.AssistantMessage, usageLedger)
+		payload := streamErrorPayload(err)
+		payload["data"] = toSendMessageResponse(result)
+		_ = flushStreamEvent(payload)
 		h.service.FinishMessageGeneration(clientRunID)
 		return
 	}
@@ -232,13 +220,10 @@ func (h *Handler) streamMediaTask(
 	usageLedger, billingErr := h.service.RecordSendMessageBilling(
 		billingCtx,
 		billingInput(result),
-		reservation,
+		authorization,
 	)
 	billingCancel()
 	if billingErr != nil {
-		if shouldReleaseReservationAfterBillingError(billingErr) {
-			_ = h.releaseSendMessageUsageReservation(reservation, "计费失败退回预扣")
-		}
 		_ = flushStreamEvent(billingStreamErrorPayload(billingErr))
 		h.service.FinishMessageGeneration(clientRunID)
 		return
@@ -276,6 +261,7 @@ func mediaImageBillingInput(
 	if conversation != nil {
 		input.ConversationID = conversation.ID
 		input.ConversationModel = conversation.Model
+		input.Conversation = conversation
 	}
 	return input
 }
@@ -296,104 +282,7 @@ func mediaVideoBillingInput(
 	if conversation != nil {
 		input.ConversationID = conversation.ID
 		input.ConversationModel = conversation.Model
+		input.Conversation = conversation
 	}
 	return input
-}
-
-// ensureMediaImageBillingModelAccess 在进入流式响应前校验模型是否可计费使用。
-func (h *Handler) ensureMediaImageBillingModelAccess(c *gin.Context, conversation *model.Conversation, req *MediaImageRequest) error {
-	if err := h.service.EnsureSendMessageBillingAccess(
-		c.Request.Context(),
-		mediaImageBillingInput(middleware.MustUserID(c), conversation, req, nil),
-	); err != nil {
-		if errors.Is(err, billing.ErrPeriodCreditExceeded) {
-			response.Error(c, http.StatusPaymentRequired, "period usage credit exceeded")
-			return err
-		}
-		if errors.Is(err, billing.ErrModelPricingRequired) {
-			response.Error(c, http.StatusPaymentRequired, "model pricing is required")
-			return err
-		}
-		if errors.Is(err, billing.ErrUsageBalanceInsufficient) {
-			response.Error(c, http.StatusPaymentRequired, "usage balance is insufficient")
-			return err
-		}
-		if errors.Is(err, billing.ErrFreeModelRateLimitExceeded) {
-			response.Error(c, http.StatusTooManyRequests, "free model rate limit exceeded")
-			return err
-		}
-		if errors.Is(err, billing.ErrFreeModelDailyLimitExceeded) {
-			response.Error(c, http.StatusTooManyRequests, "free model daily limit exceeded")
-			return err
-		}
-		response.Error(c, http.StatusInternalServerError, "billing access check failed")
-		return err
-	}
-	return nil
-}
-
-// ensureMediaVideoBillingModelAccess 在进入流式响应前校验模型是否可计费使用。
-func (h *Handler) ensureMediaVideoBillingModelAccess(c *gin.Context, conversation *model.Conversation, req *MediaVideoRequest) error {
-	if err := h.service.EnsureSendMessageBillingAccess(
-		c.Request.Context(),
-		mediaVideoBillingInput(middleware.MustUserID(c), conversation, req, nil),
-	); err != nil {
-		if errors.Is(err, billing.ErrPeriodCreditExceeded) {
-			response.Error(c, http.StatusPaymentRequired, "period usage credit exceeded")
-			return err
-		}
-		if errors.Is(err, billing.ErrModelPricingRequired) {
-			response.Error(c, http.StatusPaymentRequired, "model pricing is required")
-			return err
-		}
-		if errors.Is(err, billing.ErrUsageBalanceInsufficient) {
-			response.Error(c, http.StatusPaymentRequired, "usage balance is insufficient")
-			return err
-		}
-		response.Error(c, http.StatusInternalServerError, "billing access check failed")
-		return err
-	}
-	return nil
-}
-
-// reserveMediaImageUsageBalance 在上游调用前预扣余额，失败直接返回 HTTP 错误。
-func (h *Handler) reserveMediaImageUsageBalance(c *gin.Context, conversation *model.Conversation, req *MediaImageRequest) (*domainbilling.UsageBalanceReservation, error) {
-	reservation, err := h.service.ReserveSendMessageUsageBalance(
-		c.Request.Context(),
-		mediaImageBillingInput(middleware.MustUserID(c), conversation, req, nil),
-	)
-	if err != nil {
-		if errors.Is(err, billing.ErrUsageBalanceInsufficient) {
-			response.Error(c, http.StatusPaymentRequired, "usage balance is insufficient")
-			return nil, err
-		}
-		if errors.Is(err, billing.ErrModelPricingRequired) {
-			response.Error(c, http.StatusPaymentRequired, "model pricing is required")
-			return nil, err
-		}
-		response.Error(c, http.StatusInternalServerError, "usage balance reservation failed")
-		return nil, err
-	}
-	return reservation, nil
-}
-
-// reserveMediaVideoUsageBalance 在上游调用前预扣余额，失败直接返回 HTTP 错误。
-func (h *Handler) reserveMediaVideoUsageBalance(c *gin.Context, conversation *model.Conversation, req *MediaVideoRequest) (*domainbilling.UsageBalanceReservation, error) {
-	reservation, err := h.service.ReserveSendMessageUsageBalance(
-		c.Request.Context(),
-		mediaVideoBillingInput(middleware.MustUserID(c), conversation, req, nil),
-	)
-	if err != nil {
-		if errors.Is(err, billing.ErrUsageBalanceInsufficient) {
-			response.Error(c, http.StatusPaymentRequired, "usage balance is insufficient")
-			return nil, err
-		}
-		if errors.Is(err, billing.ErrModelPricingRequired) {
-			response.Error(c, http.StatusPaymentRequired, "model pricing is required")
-			return nil, err
-		}
-		response.Error(c, http.StatusInternalServerError, "usage balance reservation failed")
-		return nil, err
-	}
-	return reservation, nil
 }

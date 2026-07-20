@@ -19,6 +19,10 @@ var (
 	ErrPaymentProviderUnavailable = errors.New("payment provider is unavailable")
 	// ErrUsageBalanceInsufficient 按量余额不足。
 	ErrUsageBalanceInsufficient = errors.New("usage balance is insufficient")
+	// ErrUsageReservationConflict 表示调用编号已被使用，不能重复消费同一预算。
+	ErrUsageReservationConflict = errors.New("usage reservation already exists")
+	// ErrUsageConcurrencyLimitExceeded 表示用户同时运行的付费调用数量达到上限。
+	ErrUsageConcurrencyLimitExceeded = errors.New("usage concurrency limit exceeded")
 	// ErrInvalidSubscriptionTier 非法订阅套餐。
 	ErrInvalidSubscriptionTier = errors.New("invalid subscription tier")
 	// ErrFreeModelRateLimitExceeded 免费模型分钟请求限流已触发。
@@ -35,6 +39,8 @@ var (
 	ErrBillingPlanNotFound = errors.New("billing plan not found")
 	// ErrInvalidPermissionGroup 非法权限组。
 	ErrInvalidPermissionGroup = errors.New("invalid permission group")
+	// ErrInvalidUsageStatisticsSubject 表示用量统计的用户与权限组筛选条件冲突。
+	ErrInvalidUsageStatisticsSubject = errors.New("user and permission group filters are mutually exclusive")
 	// ErrPermissionGroupReferenceCounterUnavailable 权限组套餐引用检查能力不可用。
 	ErrPermissionGroupReferenceCounterUnavailable = errors.New("permission group reference counter unavailable")
 	// ErrSubscriptionEntitlementActive 当前仍存在有效付费订阅权益。

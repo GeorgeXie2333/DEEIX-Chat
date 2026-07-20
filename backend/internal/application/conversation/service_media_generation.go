@@ -315,7 +315,6 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		userMessage.ParentPublicID = branchState.ParentPublicID
 		userMessage.SourcePublicID = branchState.SourcePublicID
 		assistantMessage.ParentPublicID = userMessage.PublicID
-		s.maybeGenerateConversationMetadataAsync(*conversation, *userMessage)
 	}
 	traceRecorder := newMessageTraceRecorder(s, ctx, assistantMessage, input.OnEvent)
 	defer func() {
@@ -350,6 +349,19 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		filteredOptions = withGeminiInteractionResponseType(filteredOptions, "image")
 		routeConfig.Endpoint = llm.EndpointInteractions
 		run.Endpoint = llm.EndpointInteractions
+	}
+	buildBillableFailure := func(failure error, usage llm.Usage) *SendMessageResult {
+		result := buildFailedMediaBillingResult(failedMediaBillingResultInput{
+			UserMessage:      userMessage,
+			AssistantMessage: assistantMessage,
+			Route:            *route,
+			EffectiveOptions: filteredOptions,
+			Usage:            usage,
+			StartedAt:        startedAt,
+			Failure:          failure,
+		})
+		applyMediaRunUsage(run, result)
+		return result
 	}
 
 	emitMediaEvent(input.OnEvent, "running", mediaImageRunningMessage(input.TaskType))
@@ -436,7 +448,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 				retErr = cancelErr
 				return nil, cancelErr
 			}
-			applyCanceledMediaRunUsage(run, result)
+			applyMediaRunUsage(run, result)
 			return result, nil
 		}
 		s.routeResolver.MarkRouteFailure(ctx, route, err)
@@ -476,7 +488,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 	if output == nil || len(output.GeneratedImages) == 0 {
 		retErr = ErrUpstreamEmptyResponse
 		_ = s.repo.UpdateMessageState(ctx, assistantMessage.ID, "error", classifyRunErrorCode(retErr), truncateError(messageErrorSummary(retErr), 255))
-		return nil, retErr
+		return buildBillableFailure(retErr, mediaOutputUsage(output)), retErr
 	}
 
 	emitMediaEvent(input.OnEvent, "saving_artifact", "saving image")
@@ -488,7 +500,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		if readErr != nil {
 			retErr = readErr
 			_ = s.repo.UpdateMessageState(ctx, assistantMessage.ID, "error", classifyRunErrorCode(retErr), truncateError(messageErrorSummary(retErr), 255))
-			return nil, readErr
+			return buildBillableFailure(readErr, output.Usage), readErr
 		}
 		fileName := generatedImageFileName(route.PlatformModelName, now, i, len(output.GeneratedImages), mimeType)
 		uploadResult, uploadErr := s.UploadFile(ctx, appupload.UploadFileInput{
@@ -502,7 +514,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		if uploadErr != nil {
 			retErr = uploadErr
 			_ = s.repo.UpdateMessageState(ctx, assistantMessage.ID, "error", classifyRunErrorCode(retErr), truncateError(messageErrorSummary(retErr), 255))
-			return nil, uploadErr
+			return buildBillableFailure(uploadErr, output.Usage), uploadErr
 		}
 		file := uploadResult.File
 		uploaded = append(uploaded, file)
@@ -553,7 +565,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 			attachmentRows,
 		); err != nil {
 			retErr = err
-			return nil, err
+			return buildBillableFailure(err, output.Usage), err
 		}
 	} else {
 		if err = s.repo.CompleteAssistantMessageWithAttachments(ctx,
@@ -575,7 +587,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 			attachmentRows,
 		); err != nil {
 			retErr = err
-			return nil, err
+			return buildBillableFailure(err, output.Usage), err
 		}
 	}
 	assistantMessage.Content = content
@@ -598,6 +610,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		UserMessage:         *userMessage,
 		AssistantMessage:    *assistantMessage,
 		MetadataRefreshHint: conversationMetadataRefreshHint(*conversation, *userMessage),
+		Billable:            true,
 		UpstreamID:          route.UpstreamID,
 		UpstreamName:        route.UpstreamName,
 		PlatformModelName:   route.PlatformModelName,
@@ -620,6 +633,14 @@ func mediaUserContentType(taskType MediaImageTaskType, hasAttachments bool) stri
 		return "mixed"
 	}
 	return "text"
+}
+
+// mediaOutputUsage 安全提取允许为空的媒体响应 usage。
+func mediaOutputUsage(output *llm.GenerateOutput) llm.Usage {
+	if output == nil {
+		return llm.Usage{}
+	}
+	return output.Usage
 }
 
 func mediaImageRunningMessage(taskType MediaImageTaskType) string {

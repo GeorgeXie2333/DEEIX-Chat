@@ -1,10 +1,10 @@
 "use client";
 
-import { format } from "date-fns";
+import { differenceInCalendarDays, format } from "date-fns";
 import { enUS, ja, zhCN } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import type { DateRange } from "react-day-picker";
+import type { DateRange, Matcher } from "react-day-picker";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -20,7 +20,9 @@ type AdminDateRangeFilterProps = {
   onFromChange: (value: string) => void;
   onToChange: (value: string) => void;
   disabled?: boolean;
+  maxRangeDays?: number;
   placeholder?: string;
+  triggerClassName?: string;
 };
 
 function parseDateValue(value: string): Date | undefined {
@@ -52,7 +54,9 @@ export function AdminDateRangeFilter({
   onFromChange,
   onToChange,
   disabled = false,
+  maxRangeDays,
   placeholder,
+  triggerClassName,
 }: AdminDateRangeFilterProps) {
   const locale = useLocale();
   const t = useTranslations("common.dateRange");
@@ -63,6 +67,10 @@ export function AdminDateRangeFilter({
         to: parseDateValue(toValue),
       }
     : undefined;
+  const rangeStart = selectedRange?.from;
+  const disabledDates: Matcher | undefined = maxRangeDays && rangeStart && !selectedRange?.to
+    ? (date) => Math.abs(differenceInCalendarDays(date, rangeStart)) >= maxRangeDays
+    : undefined;
   const triggerLabel = selectedRange?.from
     ? selectedRange.to
       ? `${format(selectedRange.from, "yyyy-MM-dd")} - ${format(selectedRange.to, "yyyy-MM-dd")}`
@@ -70,7 +78,7 @@ export function AdminDateRangeFilter({
     : (placeholder ?? t("placeholder"));
 
   return (
-    <div className="space-y-2">
+    <div className="w-full min-w-0 space-y-2">
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -79,6 +87,7 @@ export function AdminDateRangeFilter({
             className={cn(
               ADMIN_DATE_PICKER_TRIGGER_CLASSNAME,
               "px-2.5 h-7",
+              triggerClassName,
               !selectedRange?.from && "text-muted-foreground",
             )}
             disabled={disabled}
@@ -92,6 +101,9 @@ export function AdminDateRangeFilter({
             mode="range"
             defaultMonth={selectedRange?.from}
             selected={selectedRange}
+            disabled={disabledDates}
+            max={maxRangeDays ? maxRangeDays - 1 : undefined}
+            resetOnSelect={Boolean(maxRangeDays)}
             locale={resolveCalendarLocale(locale)}
             onSelect={(range) => {
               onFromChange(range?.from ? format(range.from, "yyyy-MM-dd") : "");

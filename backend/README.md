@@ -1,6 +1,6 @@
-# DEEIX Chat Backend
+# Comi AI Backend
 
-DEEIX Chat 后端是 Go API 服务，负责认证、用户、对话、模型渠道、模型能力、文件处理、MCP 工具、官方原生工具、记忆、计费、支付、系统设置、审计日志与可观测性等核心业务。
+Comi AI 后端是 Go API 服务，负责认证、用户、对话、模型渠道、模型能力、文件处理、MCP 工具、官方原生工具、记忆、计费、支付、系统设置、审计日志与可观测性等核心业务。
 
 ## 技术栈
 
@@ -26,8 +26,10 @@ DEEIX Chat 后端是 Go API 服务，负责认证、用户、对话、模型渠�
 - Application 层承载用例编排，不直接依赖 Gorm、Redis、Docker 等基础设施实现。
 - Repository 接口位于 `internal/repository`，具体实现位于 `internal/infra/persistence`。
 - 共享基础设施位于 `internal/infra`，通用响应、请求元数据等位于 `internal/shared`。
+- HTTP DTO 和 Swagger annotation 是传输契约唯一事实源；Handler 在 HTTP 边界把 DTO 转换为 Application Input，不向领域层或基础设施层泄漏 Gin DTO。
+- JSON、校验标签和指针类型必须准确表达必填、可选、可空以及显式 `0`/`false`；不要让前端修补错误的 Swagger 语义。
 - 模型能力 JSON 是请求参数、可视化控件、官方原生工具和图像流式能力的后端事实源。
-- 不新增兼容 helper，不保留无意义历史字段；项目早期允许直接重构。
+- 只为明确支持的公开契约保留兼容行为，不增加推测性的兼容 helper；破坏性 API 或数据变更必须说明迁移与兼容影响。
 
 ## HTTP 响应
 
@@ -61,8 +63,10 @@ DEEIX Chat 后端是 Go API 服务，负责认证、用户、对话、模型渠�
 
 ```bash
 cp config.example.yaml config.yaml
-# or
-cp config.docker.example.yaml config.yaml
+# Docker Compose full stack
+cp config.full.example.yaml config.yaml
+# SQLite + memory cache
+cp config.sqlite.example.yaml config.yaml
 ```
 
 关键配置：
@@ -312,11 +316,21 @@ go mod tidy
 make swagger
 ```
 
+该命令会调用根工作区的 `pnpm api:generate`，使用 `backend/go.mod` 中锁定的 `swag` 版本，并同时更新：
+
+- `backend/docs/docs.go`
+- `backend/docs/swagger.json`
+- `backend/docs/swagger.yaml`
+- `packages/api-contract/src/types.generated.ts`
+
+这些文件全部由生成器维护，不允许手工修改。仅检查漂移时，在仓库根目录运行 `pnpm api:check`。
+
 ## 提交前验证
 
 ```bash
 go build ./cmd/server
 go test ./...
 go vet ./...
-make swagger
+cd ..
+pnpm api:check
 ```

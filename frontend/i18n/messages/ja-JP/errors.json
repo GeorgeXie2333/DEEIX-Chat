@@ -114,7 +114,9 @@
     "paymentRequired": "支払いが必要です。",
     "periodCreditExceeded": "期間クレジットを使い切りました。",
     "pricingRequired": "モデル料金が必要です。",
-    "subscriptionExpiryRequired": "サブスクリプション期限が必要です。"
+    "subscriptionExpiryRequired": "サブスクリプション期限が必要です。",
+    "concurrencyLimitExceeded": "同時生成数の上限に達しました。",
+    "reservationConflict": "課金予約が競合しました。もう一度お試しください。"
   },
   "config": {
     "invalidJson": "JSON設定が無効です。"

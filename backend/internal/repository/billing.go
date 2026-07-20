@@ -24,11 +24,12 @@ type BillingRepository interface {
 	GetPaymentOrderByOrderNo(ctx context.Context, orderNo string) (*domainbilling.PaymentOrder, error)
 	MarkPaymentOrderPaidAndGrantSubscription(ctx context.Context, orderNo string, externalPaymentID string, paidAt time.Time, subscription *domainbilling.Subscription) (*domainbilling.PaymentOrder, bool, error)
 	AddUsage(ctx context.Context, usage *domainbilling.UsageLedger) error
-	AddUsageAndDebitBalance(ctx context.Context, usage *domainbilling.UsageLedger) error
 	AddUsageAndSettleBalance(ctx context.Context, usage *domainbilling.UsageLedger, reservation *domainbilling.UsageBalanceReservation) error
 	AddPeriodUsageAndSettleOverage(ctx context.Context, usage *domainbilling.UsageLedger, periodStart time.Time, periodEnd time.Time, periodCreditNanousd int64, reservation *domainbilling.UsageBalanceReservation) error
-	ReserveUsageBalance(ctx context.Context, userID uint, amountNanousd int64, refNo string) (*domainbilling.UsageBalanceReservation, error)
-	ReleaseUsageBalanceReservation(ctx context.Context, userID uint, refNo string, description string) error
+	ReserveUsageBalance(ctx context.Context, input domainbilling.UsageBalanceReservationRequest) (*domainbilling.UsageBalanceReservation, error)
+	RenewUsageBalanceReservation(ctx context.Context, userID uint, refNo string) error
+	ReleaseUsageBalanceReservation(ctx context.Context, userID uint, refNo string) error
+	MarkUsageReservationReconciliationRequired(ctx context.Context, userID uint, refNo string, failureCode string) error
 	GetOrCreateBillingAccount(ctx context.Context, userID uint) (*domainbilling.BillingAccount, error)
 	ListBillingAccountsByUserIDs(ctx context.Context, userIDs []uint) ([]domainbilling.BillingAccount, error)
 	SetBillingAccountBalance(ctx context.Context, userID uint, balanceNanousd int64, refNo string, description string) (*domainbilling.BillingAccount, error)
@@ -109,6 +110,28 @@ type UsageLogListFilter struct {
 	CreatedFrom       *time.Time
 	CreatedTo         *time.Time
 	Sort              string
+}
+
+// UsageStatisticsFilter 描述管理员用量统计的聚合范围和维度。
+type UsageStatisticsFilter struct {
+	StartDate         time.Time
+	EndDateExclusive  time.Time
+	UserID            uint
+	PermissionGroupID uint
+	MembershipAt      time.Time
+	PlatformModelName string
+	BillingScope      string
+	Granularity       string
+	Section           string
+	ModelRankBy       string
+	UserRankBy        string
+	RankLimit         int
+}
+
+// UsageStatisticsRepository 提供独立于计费写入仓储的管理员统计能力。
+// 独立接口可避免为统计功能扩大 BillingRepository 及其测试桩。
+type UsageStatisticsRepository interface {
+	GetUsageStatistics(ctx context.Context, filter UsageStatisticsFilter) (domainbilling.UsageStatistics, error)
 }
 
 // PaymentOrderListFilter 描述管理员支付订单列表筛选和排序条件。
