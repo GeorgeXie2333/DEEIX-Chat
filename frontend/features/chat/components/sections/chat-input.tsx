@@ -401,8 +401,10 @@ function ChatInputComponent({
   const stablePreviewAttachment = useDialogSnapshot(previewAttachment);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const inputGroupRef = React.useRef<HTMLDivElement | null>(null);
+  const inputGroupMeasureRef = React.useRef<HTMLDivElement | null>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
   const composingRef = React.useRef(false);
+  const [inputGroupHeight, setInputGroupHeight] = React.useState<number | null>(null);
   const hasDraftText = draft.trim().length > 0;
   const hasSubmitContent = hasDraftText || attachments.length > 0;
   const canSend = hasSubmitContent && !loading && !uploading;
@@ -463,6 +465,44 @@ function ChatInputComponent({
     if (!open) {
       setToolsMenuView("main");
     }
+  }, []);
+
+  React.useLayoutEffect(() => {
+    const node = inputGroupMeasureRef.current;
+    if (!node || typeof ResizeObserver === "undefined") {
+      setInputGroupHeight(null);
+      return;
+    }
+
+    let frameID = 0;
+    const measure = () => {
+      const inputGroupNode = inputGroupRef.current;
+      const inputGroupStyle = inputGroupNode ? window.getComputedStyle(inputGroupNode) : null;
+      const borderHeight =
+        (Number.parseFloat(inputGroupStyle?.borderTopWidth ?? "") || 0) +
+        (Number.parseFloat(inputGroupStyle?.borderBottomWidth ?? "") || 0);
+      const contentHeight = node.scrollHeight || node.offsetHeight || node.getBoundingClientRect().height;
+      const nextHeight = Math.ceil(contentHeight + borderHeight);
+      if (nextHeight <= 0) {
+        return;
+      }
+      setInputGroupHeight((previousHeight) => (previousHeight === nextHeight ? previousHeight : nextHeight));
+    };
+
+    measure();
+    const scheduleMeasure = () => {
+      window.cancelAnimationFrame(frameID);
+      frameID = window.requestAnimationFrame(measure);
+    };
+    const resizeObserver = new ResizeObserver(scheduleMeasure);
+    resizeObserver.observe(node);
+    window.addEventListener("resize", scheduleMeasure);
+
+    return () => {
+      window.cancelAnimationFrame(frameID);
+      window.removeEventListener("resize", scheduleMeasure);
+      resizeObserver.disconnect();
+    };
   }, []);
   const {
     activeIndex: mentionActiveIndex,
@@ -716,9 +756,11 @@ function ChatInputComponent({
       <InputGroup
         ref={inputGroupRef}
         className={cn(
-          "relative bg-pure rounded-3xl border-[0.5px] border-border/70 shadow-xs has-[[data-slot=input-group-control]:focus-visible]:ring-0 has-[[data-slot=input-group-control]:focus-visible]:border-border",
+          "relative z-10 flex-col items-stretch overflow-hidden rounded-3xl border-[0.5px] border-border/70 bg-pure shadow-xs transition-[height,border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none has-[[data-slot=input-group-control]:focus-visible]:border-border has-[[data-slot=input-group-control]:focus-visible]:ring-0",
+          inputGroupHeight === null && "h-auto",
           dropActive && "border-dashed border-foreground/30 bg-muted/20 shadow-none",
         )}
+        style={inputGroupHeight === null ? undefined : { height: inputGroupHeight }}
       >
         <div ref={inputGroupMeasureRef} className="flex w-full flex-col">
           {inlineSelectedSkills ? (

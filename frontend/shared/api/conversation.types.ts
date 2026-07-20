@@ -4,7 +4,6 @@ import type {
   ContextArtifactResponse,
   ConversationDefaultModelCandidateResponse,
   ConversationDeleteResponse,
-  ConversationExportResponse,
   ConversationProjectResponse,
   ConversationResponse,
   ConversationShareResponse,
@@ -74,16 +73,6 @@ export type MessageDTO = Omit<
 };
 
 export type ConversationRunDTO = Omit<RunResponse, "taskType">;
-
-export type ConversationExportDTO = Omit<
-  ConversationExportResponse,
-  "compatibility" | "conversation" | "messages" | "runs"
-> & {
-  conversation: ConversationDTO;
-  messages: MessageDTO[];
-  runs: ConversationRunDTO[];
-  compatibility: ConversationExportResponse["compatibility"];
-};
 
 export type ConversationArchiveAttachmentDTO = {
   kind: "file" | "image" | string;
@@ -188,6 +177,8 @@ export type ConversationArchiveDTO = {
   runs?: ConversationArchiveRunDTO[];
   messages: ConversationArchiveMessageDTO[];
 };
+
+export type ConversationExportDTO = ConversationArchiveDTO;
 
 export type MessageBillingCostDTO = MessageBillingCostResponse;
 

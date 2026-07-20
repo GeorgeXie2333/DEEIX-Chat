@@ -28,8 +28,8 @@ function formatExportTimestamp(value: string) {
 }
 
 function resolveConversationExportFileName(data: ConversationExportDTO) {
-  const title = data.conversation?.title?.trim() || data.conversation?.publicID || "conversation";
-  return `conversation-${safeFileNamePart(title)}-${formatExportTimestamp(data.exportedAt)}.json`;
+  const title = data.conversation?.title?.trim() || data.conversation?.originalPublicID || "conversation";
+  return `conversation-${safeFileNamePart(title)}-${formatExportTimestamp(data.exportedAt ?? "")}.json`;
 }
 
 export function downloadConversationExport(data: ConversationExportDTO) {
