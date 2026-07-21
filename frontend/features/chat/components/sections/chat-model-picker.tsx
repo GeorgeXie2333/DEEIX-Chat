@@ -13,6 +13,7 @@ import type { ChatModelOption } from "@/features/chat/types/chat-runtime";
 import {
   MODEL_MENU_AUXILIARY_LONG_PRESS_MS,
   shouldCancelModelMenuAuxiliaryLongPress,
+  stopModelMenuClickPropagation,
 } from "@/features/chat/model/chat-model-picker-events";
 import { useIsMobile } from "@/shared/hooks/use-mobile";
 import { LobeHubIcon } from "@/shared/components/lobehub-icon";
@@ -26,7 +27,6 @@ import type { BillingDisplayCurrency, BillingDisplayLabels, BillingDisplayOption
 import { resolveLobeHubIconURL, resolveModelIdentity, resolveVendorIdentity } from "@/shared/lib/model-identity";
 import { cn } from "@/lib/utils";
 
-const MODEL_MENU_SCROLL_MORE_THRESHOLD = 8;
 const PRICING_TOOLTIP_TITLE_CLASS = "font-sans text-xs font-medium leading-4 text-background";
 const PRICING_TOOLTIP_BODY_CLASS = "font-sans text-[11px] leading-4 text-background/80";
 const MODEL_MENU_AUXILIARY_POPOVER_GAP = 8;
@@ -576,7 +576,6 @@ function ModelMenuAuxiliaryButton({
               transform: layout.placeAbove ? "translateY(-100%)" : undefined,
             }}
             onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => event.stopPropagation()}
           >
             {children}
           </div>,
@@ -1059,6 +1058,7 @@ export function ChatModelPicker({
                 event.preventDefault();
               }
             }}
+            onClick={stopModelMenuClickPropagation}
           >
             {isMobile ? (
               <>

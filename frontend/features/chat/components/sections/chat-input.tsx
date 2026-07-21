@@ -46,7 +46,7 @@ import {
 import { ChatMentionMenuPortal } from "@/features/chat/components/shared/chat-mention-menu";
 import { ChatModelPicker } from "@/features/chat/components/sections/chat-model-picker";
 import { ChatModelConfig } from "@/features/chat/components/sections/chat-model-config";
-import { formatBytes, resolveFileExtension, resolveFileIcon } from "@/shared/lib/file-display";
+import { formatBytes, resolveFileIcon } from "@/shared/lib/file-display";
 import type { ChatSubmitDecision } from "@/features/chat/model/chat-task";
 import { isMediaSubmitTask, resolveChatSubmitDecision } from "@/features/chat/model/chat-task";
 import { ChatMCPPanel } from "@/features/chat/components/sections/chat-mcp";
@@ -319,14 +319,6 @@ function clipboardFilesFromPaste(event: React.ClipboardEvent<HTMLTextAreaElement
       lastModified: file.lastModified,
     });
   });
-}
-
-function formatAttachmentFileType(fileName: string) {
-  return resolveFileExtension(fileName).toUpperCase() || "FILE";
-}
-
-function formatAttachmentMeta(fileName: string, sizeBytes: number) {
-  return `${formatAttachmentFileType(fileName)} 路 ${formatBytes(sizeBytes)}`;
 }
 
 function ChatInputComponent({
@@ -979,6 +971,9 @@ function ChatInputComponent({
                 side="bottom"
                 align="start"
                 sideOffset={8}
+                onPointerDown={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
                 className={cn(
                   "overflow-hidden rounded-xl border-[0.5px] border-border p-1.5 shadow-xs",
                   toolsMenuView === "mcp" ? "w-[min(calc(100vw-2rem),22rem)]" : "w-[min(calc(100vw-2rem),13rem)]",

@@ -204,28 +204,6 @@ export function ChatMCPPanel({
     [defaultToolIDs, defaultToolIDSet, onDefaultToolsChange, selectionLimit, showToolLimitToast],
   );
 
-  const toggleDefaultToolGroup = React.useCallback(
-    (tools: MCPToolDTO[]) => {
-      const toolIDs = tools.map((tool) => tool.id);
-      if (toolIDs.length === 0) {
-        return;
-      }
-      const allDefault = toolIDs.every((toolID) => defaultToolIDSet.has(toolID));
-      if (allDefault) {
-        const removeSet = new Set(toolIDs);
-        void onDefaultToolsChange(defaultToolIDs.filter((id) => !removeSet.has(id)));
-        return;
-      }
-      const missingIDs = toolIDs.filter((toolID) => !defaultToolIDSet.has(toolID));
-      if (defaultToolIDs.length + missingIDs.length > selectionLimit) {
-        showToolLimitToast();
-        return;
-      }
-      void onDefaultToolsChange([...defaultToolIDs, ...missingIDs]);
-    },
-    [defaultToolIDs, defaultToolIDSet, onDefaultToolsChange, selectionLimit, showToolLimitToast],
-  );
-
   const toggleServerExpanded = React.useCallback((serverKey: string) => {
     setExpandedServerKeys((current) => {
       const next = new Set(current);
@@ -266,12 +244,7 @@ export function ChatMCPPanel({
           ) : null}
         </div>
       ) : null}
-        <div
-          className="px-0.5 py-1"
-          onPointerDown={(event) => event.stopPropagation()}
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
-        >
+        <div className="px-0.5 py-1">
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}

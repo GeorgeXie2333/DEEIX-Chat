@@ -36,6 +36,19 @@ test("model picker keeps desktop tooltips and adds mobile long press popovers", 
   assert.match(pickerSource, /shouldCancelModelMenuAuxiliaryLongPress/);
 });
 
+test("model picker popover stops clicks before composer focus handling", () => {
+  assert.match(pickerSource, /onClick=\{stopModelMenuClickPropagation\}/);
+
+  const auxiliaryPopoverIndex = pickerSource.indexOf('data-model-menu-auxiliary-popover="true"');
+  const auxiliaryPopoverTagEnd = pickerSource.indexOf(">", auxiliaryPopoverIndex);
+  assert.ok(auxiliaryPopoverIndex >= 0);
+  assert.ok(auxiliaryPopoverTagEnd > auxiliaryPopoverIndex);
+  assert.doesNotMatch(
+    pickerSource.slice(auxiliaryPopoverIndex, auxiliaryPopoverTagEnd),
+    /onClick=/,
+  );
+});
+
 test("tiered pricing headings render complete closed and open token ranges", () => {
   assert.match(pickerSource, /return `\$\{formatTokenQuantity\(fromTokens\)\}～∞`;/);
   assert.match(pickerSource, /return `\$\{formatTokenQuantity\(fromTokens\)\}～\$\{formatTokenQuantity\(upToTokens\)\}`;/);

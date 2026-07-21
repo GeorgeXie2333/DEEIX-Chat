@@ -14,7 +14,7 @@ test("ChatModelConfig keeps the local advanced settings popover", () => {
   assert.match(configSource, /resolveAdvancedSettings/);
   assert.match(configSource, /resetAdvancedSettings/);
   assert.match(configSource, /aria-label=\{tComposer\("advancedSettings"\)\}/);
-  assert.doesNotMatch(configSource, /DialogTitle[^]*tComposer\("modelOptions"\)/);
+  assert.doesNotMatch(configSource, /DialogTitle[\s\S]*tComposer\("modelOptions"\)/);
 });
 
 test("ChatModelConfig hides temperature from rendered advanced settings", () => {
