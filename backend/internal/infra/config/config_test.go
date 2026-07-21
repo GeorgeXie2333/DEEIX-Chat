@@ -211,6 +211,8 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T)
 		t.Fatalf("expected normalized Google image allowlist to include thinking level, got %#v", normalized["google_image_generation"])
 	}
 	if !containsString(normalized["gemini_interactions"], "generation_config.thinking_level") ||
+		!containsString(normalized["gemini_interactions"], "response_format.aspect_ratio") ||
+		!containsString(normalized["gemini_interactions"], "response_format.duration") ||
 		!containsString(normalized["gemini_interactions"], "generation_config.video_config.task") {
 		t.Fatalf("expected normalized Gemini Interactions allowlist to include advanced settings, got %#v", normalized["gemini_interactions"])
 	}
@@ -328,6 +330,8 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesPreOpenRouterDefault(t *tes
 		t.Fatalf("parse normalized pre-OpenRouter model option paths: %v", err)
 	}
 	if !containsString(normalized["gemini_interactions"], "generation_config.thinking_level") ||
+		!containsString(normalized["gemini_interactions"], "response_format.aspect_ratio") ||
+		!containsString(normalized["gemini_interactions"], "response_format.duration") ||
 		!containsString(normalized["gemini_interactions"], "generation_config.video_config.task") {
 		t.Fatalf("expected pre-OpenRouter allowlist to gain Gemini Interactions settings, got %#v", normalized["gemini_interactions"])
 	}
@@ -357,6 +361,32 @@ func TestNormalizeModelOptionAllowedPathsJSONKeepsCustomPolicy(t *testing.T) {
 	custom := `{"default":["temperature"],"anthropic_messages":["speed"]}`
 	if got := NormalizeModelOptionAllowedPathsJSON(custom); got != custom {
 		t.Fatalf("expected custom allowlist unchanged, got %s", got)
+	}
+}
+
+func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyGeminiInteractionsDuration(t *testing.T) {
+	legacy := legacyGeminiInteractionsAllowedPaths()
+	rawLegacy, err := json.Marshal(map[string][]string{"gemini_interactions": legacy})
+	if err != nil {
+		t.Fatalf("marshal legacy Gemini Interactions paths: %v", err)
+	}
+
+	var normalized map[string][]string
+	if err = json.Unmarshal([]byte(NormalizeModelOptionAllowedPathsJSON(string(rawLegacy))), &normalized); err != nil {
+		t.Fatalf("parse normalized Gemini Interactions paths: %v", err)
+	}
+	if !containsString(normalized["gemini_interactions"], "response_format.duration") ||
+		!containsString(normalized["gemini_interactions"], "responseFormat.duration") {
+		t.Fatalf("expected legacy Gemini Interactions allowlist to gain duration paths, got %#v", normalized["gemini_interactions"])
+	}
+
+	custom := append(append([]string{}, legacy...), "metadata.tenant")
+	rawCustom, err := json.Marshal(map[string][]string{"gemini_interactions": custom})
+	if err != nil {
+		t.Fatalf("marshal custom Gemini Interactions paths: %v", err)
+	}
+	if got := NormalizeModelOptionAllowedPathsJSON(string(rawCustom)); got != string(rawCustom) {
+		t.Fatalf("expected custom Gemini Interactions allowlist unchanged, got %s", got)
 	}
 }
 

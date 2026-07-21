@@ -1069,6 +1069,7 @@ func TestFilterModelOptionsGeminiInteractionsAllowsVideoParams(t *testing.T) {
 	filtered := filterModelOptions(map[string]interface{}{
 		"response_format": map[string]interface{}{
 			"aspect_ratio": "16:9",
+			"duration":     "7s",
 			"image_size":   "1K",
 			"mime_type":    "image/png",
 			"delivery":     "b64_json",
@@ -1089,7 +1090,7 @@ func TestFilterModelOptionsGeminiInteractionsAllowsVideoParams(t *testing.T) {
 	})
 
 	responseFormat, ok := filtered["response_format"].(map[string]interface{})
-	if !ok || responseFormat["aspect_ratio"] != "16:9" || responseFormat["image_size"] != "1K" || responseFormat["mime_type"] != "image/png" {
+	if !ok || responseFormat["aspect_ratio"] != "16:9" || responseFormat["duration"] != "7s" || responseFormat["image_size"] != "1K" || responseFormat["mime_type"] != "image/png" {
 		t.Fatalf("expected Gemini response_format aspect ratio to pass, got %#v", filtered)
 	}
 	if _, ok := responseFormat["delivery"]; ok {

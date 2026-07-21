@@ -17,6 +17,8 @@ export type AdvancedSettingKind =
   | "imageSize"
   | "responseFormat"
   | "thinkingLevel"
+  | "videoAspectRatio"
+  | "videoDuration"
   | "videoResolution"
   | "videoSeconds"
   | "videoTask";
@@ -250,6 +252,24 @@ const XAI_IMAGE_RESPONSE_FORMAT: AdvancedSettingDefinition = {
   valueType: "select",
   fallbackValue: "b64_json",
   values: ["url", "b64_json"],
+};
+
+const GEMINI_INTERACTIONS_VIDEO_ASPECT_RATIO: AdvancedSettingDefinition = {
+  kind: "videoAspectRatio",
+  path: ["response_format", "aspect_ratio"],
+  valueType: "select",
+  fallbackValue: "auto",
+  values: ["auto", "16:9", "9:16"],
+  omitValues: ["auto"],
+};
+
+const GEMINI_INTERACTIONS_VIDEO_DURATION: AdvancedSettingDefinition = {
+  kind: "videoDuration",
+  path: ["response_format", "duration"],
+  valueType: "select",
+  fallbackValue: "auto",
+  values: ["auto", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"],
+  omitValues: ["auto"],
 };
 
 const GEMINI_INTERACTIONS_THINKING_LEVEL: AdvancedSettingDefinition = {
@@ -510,7 +530,12 @@ export function resolveAdvancedSettingDefinitions(
         return [GEMINI_INTERACTIONS_THINKING_LEVEL, GEMINI_INTERACTIONS_IMAGE_SIZE];
       }
       if (submitTask === "video_generation") {
-        return [GEMINI_INTERACTIONS_THINKING_LEVEL, GEMINI_INTERACTIONS_VIDEO_TASK];
+        return [
+          GEMINI_INTERACTIONS_VIDEO_ASPECT_RATIO,
+          GEMINI_INTERACTIONS_VIDEO_DURATION,
+          GEMINI_INTERACTIONS_THINKING_LEVEL,
+          GEMINI_INTERACTIONS_VIDEO_TASK,
+        ];
       }
       return [GEMINI_INTERACTIONS_THINKING_LEVEL];
     default:

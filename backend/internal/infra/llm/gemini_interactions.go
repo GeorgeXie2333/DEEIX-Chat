@@ -370,6 +370,11 @@ func normalizeGeminiInteractionResponseFormat(route RouteConfig, raw map[string]
 	if aspectRatio := geminiInteractionAspectRatio(getString(raw["aspectRatio"]), responseType); aspectRatio != "" {
 		format["aspect_ratio"] = aspectRatio
 	}
+	if responseType == "video" {
+		if duration := strings.TrimSpace(getString(raw["duration"])); duration != "" {
+			format["duration"] = duration
+		}
+	}
 	if imageSize := geminiInteractionImageSize(getString(raw["image_size"])); imageSize != "" {
 		format["image_size"] = imageSize
 	}

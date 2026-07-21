@@ -164,15 +164,21 @@ const GEMINI_INTERACTIONS_ALLOWED_PATHS = [
   "generation_config.thinking_level",
   "response_format.type",
   "response_format.aspect_ratio",
+  "response_format.duration",
   "response_format.image_size",
   "response_format.mime_type",
   "responseFormat.type",
   "responseFormat.aspectRatio",
+  "responseFormat.duration",
   "responseFormat.imageSize",
   "responseFormat.mimeType",
   "generationConfig.videoConfig.task",
   "generation_config.video_config.task",
 ];
+
+const LEGACY_GEMINI_INTERACTIONS_ALLOWED_PATHS = GEMINI_INTERACTIONS_ALLOWED_PATHS.filter(
+  (path) => path !== "response_format.duration" && path !== "responseFormat.duration",
+);
 
 const LEGACY_GOOGLE_IMAGE_GENERATION_ALLOWED_PATHS = [
   "aspect_ratio",
@@ -314,6 +320,14 @@ export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
   let changed = false;
   if (matchesLegacyBuiltInPolicyWithoutGeminiInteractions(next)) {
     next.gemini_interactions = [...GEMINI_INTERACTIONS_ALLOWED_PATHS];
+    changed = true;
+  }
+  const geminiInteractionsPaths = next.gemini_interactions;
+  if (
+    geminiInteractionsPaths &&
+    modelOptionPathSetMatches(geminiInteractionsPaths, LEGACY_GEMINI_INTERACTIONS_ALLOWED_PATHS)
+  ) {
+    geminiInteractionsPaths.push("response_format.duration", "responseFormat.duration");
     changed = true;
   }
   const legacyOpenAIChatPaths = [

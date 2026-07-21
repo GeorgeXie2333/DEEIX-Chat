@@ -80,6 +80,10 @@ function labelKeyForSetting(setting: AdvancedSettingItem): string {
       return "response_format";
     case "thinkingLevel":
       return "thinking_level";
+    case "videoAspectRatio":
+      return "aspect_ratio";
+    case "videoDuration":
+      return "video_duration";
     case "videoResolution":
       return "videoResolution";
     case "videoSeconds":

@@ -133,10 +133,12 @@ func DefaultModelOptionAllowedPathsJSON() string {
     "generation_config.thinking_level",
     "response_format.type",
     "response_format.aspect_ratio",
+    "response_format.duration",
     "response_format.image_size",
     "response_format.mime_type",
     "responseFormat.type",
     "responseFormat.aspectRatio",
+    "responseFormat.duration",
     "responseFormat.imageSize",
     "responseFormat.mimeType",
     "generationConfig.videoConfig.task",
@@ -220,6 +222,9 @@ func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 	changed := false
 	if matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules) {
 		rules["gemini_interactions"] = defaultGeminiInteractionsAllowedPaths()
+		changed = true
+	}
+	if upgradeLegacyGeminiInteractionsAllowedPaths(rules) {
 		changed = true
 	}
 	if upgradeLegacyOpenAIChatAllowedPaths(rules) {
@@ -309,15 +314,38 @@ func defaultGeminiInteractionsAllowedPaths() []string {
 		"generation_config.thinking_level",
 		"response_format.type",
 		"response_format.aspect_ratio",
+		"response_format.duration",
 		"response_format.image_size",
 		"response_format.mime_type",
 		"responseFormat.type",
 		"responseFormat.aspectRatio",
+		"responseFormat.duration",
 		"responseFormat.imageSize",
 		"responseFormat.mimeType",
 		"generationConfig.videoConfig.task",
 		"generation_config.video_config.task",
 	}
+}
+
+func legacyGeminiInteractionsAllowedPaths() []string {
+	paths := defaultGeminiInteractionsAllowedPaths()
+	legacy := make([]string, 0, len(paths)-2)
+	for _, path := range paths {
+		if path == "response_format.duration" || path == "responseFormat.duration" {
+			continue
+		}
+		legacy = append(legacy, path)
+	}
+	return legacy
+}
+
+func upgradeLegacyGeminiInteractionsAllowedPaths(rules map[string][]string) bool {
+	paths, ok := rules["gemini_interactions"]
+	if !ok || !modelOptionPathSetMatches(paths, legacyGeminiInteractionsAllowedPaths(), nil) {
+		return false
+	}
+	rules["gemini_interactions"] = append(paths, "response_format.duration", "responseFormat.duration")
+	return true
 }
 
 func legacyGoogleImageGenerationAllowedPaths() []string {

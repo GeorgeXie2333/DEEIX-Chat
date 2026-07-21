@@ -41,7 +41,7 @@ func TestBuildGeminiInteractionRequestBody(t *testing.T) {
 			},
 		}},
 		Options: map[string]interface{}{
-			"response_format": map[string]interface{}{"type": "video", "aspect_ratio": "16:9", "delivery": "b64_json"},
+			"response_format": map[string]interface{}{"type": "video", "aspect_ratio": "16:9", "duration": "7s", "delivery": "b64_json"},
 			"generation_config": map[string]interface{}{
 				"video_config": map[string]interface{}{"task": "IMAGE_TO_VIDEO"},
 			},
@@ -63,6 +63,9 @@ func TestBuildGeminiInteractionRequestBody(t *testing.T) {
 	}
 	if responseFormat["aspect_ratio"] != "16:9" {
 		t.Fatalf("expected response_format aspect ratio, got %#v", payload["response_format"])
+	}
+	if responseFormat["duration"] != "7s" {
+		t.Fatalf("expected response_format duration, got %#v", payload["response_format"])
 	}
 	config, ok := payload["generation_config"].(map[string]interface{})
 	if !ok {
@@ -226,7 +229,7 @@ func TestBuildGeminiInteractionRequestBodyNormalizesVideoOptions(t *testing.T) {
 	}, GenerateInput{
 		Messages: []Message{{Role: "user", Content: "Edit this video."}},
 		Options: map[string]interface{}{
-			"response_format": map[string]interface{}{"type": "video", "aspect_ratio": "1:1"},
+			"response_format": map[string]interface{}{"type": "video", "aspect_ratio": "1:1", "duration": " 10s "},
 			"generation_config": map[string]interface{}{
 				"video_config": map[string]interface{}{"task": "edit"},
 			},
@@ -238,6 +241,9 @@ func TestBuildGeminiInteractionRequestBodyNormalizesVideoOptions(t *testing.T) {
 	responseFormat := asMap(payload["response_format"])
 	if _, ok := responseFormat["aspect_ratio"]; ok {
 		t.Fatalf("unsupported video aspect ratio should be dropped, got %#v", responseFormat)
+	}
+	if responseFormat["duration"] != "10s" {
+		t.Fatalf("expected video duration to be normalized, got %#v", responseFormat)
 	}
 	videoConfig := asMap(asMap(payload["generation_config"])["video_config"])
 	if videoConfig["task"] != "edit" {

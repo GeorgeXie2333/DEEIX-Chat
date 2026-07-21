@@ -36,6 +36,8 @@ const allowAdvancedPolicy: ModelOptionPolicy = {
     xai_image_edits: ["aspect_ratio", "resolution", "response_format"],
     gemini_interactions: [
       "generation_config.thinking_level",
+      "response_format.aspect_ratio",
+      "response_format.duration",
       "response_format.image_size",
       "generation_config.video_config.task",
     ],
@@ -501,13 +503,33 @@ test("Gemini Interactions exposes media settings only for the active task", () =
   assert.deepEqual(
     videoSettings.map((item) => [item.kind, item.key, item.value]),
     [
+      ["videoAspectRatio", "response_format.aspect_ratio", "auto"],
+      ["videoDuration", "response_format.duration", "auto"],
       ["thinkingLevel", "generation_config.thinking_level", "high"],
       ["videoTask", "generation_config.video_config.task", "auto"],
     ],
   );
+  const videoAspectRatio = videoSettings.find((item) => item.kind === "videoAspectRatio");
+  const videoDuration = videoSettings.find((item) => item.kind === "videoDuration");
   const videoTask = videoSettings.find((item) => item.kind === "videoTask");
+  assert.ok(videoAspectRatio);
+  assert.ok(videoDuration);
   assert.ok(videoTask);
+  assert.deepEqual(videoAspectRatio.values, ["auto", "16:9", "9:16"]);
+  assert.deepEqual(videoDuration.values, ["auto", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"]);
   assert.deepEqual(videoTask.values, ["auto", "text_to_video", "image_to_video", "reference_to_video", "edit"]);
+  assert.deepEqual(
+    setAdvancedSettingValue(
+      { response_format: { type: "video", aspect_ratio: "9:16", duration: "7s" } },
+      videoDuration,
+      "auto",
+    ),
+    { response_format: { type: "video", aspect_ratio: "9:16" } },
+  );
+  assert.deepEqual(
+    setAdvancedSettingValue({ response_format: { aspect_ratio: "9:16", duration: "7s" } }, videoAspectRatio, "auto"),
+    { response_format: { duration: "7s" } },
+  );
   assert.deepEqual(
     setAdvancedSettingValue({ generation_config: { thinking_level: "low", video_config: { task: "edit" } } }, videoTask, "auto"),
     { generation_config: { thinking_level: "low" } },
@@ -520,6 +542,8 @@ test("legacy built-in policy restores Gemini Interactions advanced settings with
   const legacyJSON = JSON.stringify(legacy);
   const normalized = JSON.parse(normalizeModelOptionAllowedPathsJSON(legacyJSON)) as Record<string, string[]>;
   assert.ok(normalized.gemini_interactions.includes("generation_config.thinking_level"));
+  assert.ok(normalized.gemini_interactions.includes("response_format.aspect_ratio"));
+  assert.ok(normalized.gemini_interactions.includes("response_format.duration"));
   assert.ok(normalized.gemini_interactions.includes("generation_config.video_config.task"));
 
   const policy: ModelOptionPolicy = {
@@ -534,7 +558,12 @@ test("legacy built-in policy restores Gemini Interactions advanced settings with
       defaultOptions: {},
       policy,
     }).map((item) => item.key),
-    ["generation_config.thinking_level", "generation_config.video_config.task"],
+    [
+      "response_format.aspect_ratio",
+      "response_format.duration",
+      "generation_config.thinking_level",
+      "generation_config.video_config.task",
+    ],
   );
 
   legacy.openai_chat_completions.push("metadata.tenant");
@@ -560,6 +589,8 @@ test("pre-OpenRouter built-in policy restores Gemini Interactions video settings
     normalizeModelOptionAllowedPathsJSON(legacyJSON),
   ) as Record<string, string[]>;
   assert.ok(normalized.gemini_interactions.includes("generation_config.thinking_level"));
+  assert.ok(normalized.gemini_interactions.includes("response_format.aspect_ratio"));
+  assert.ok(normalized.gemini_interactions.includes("response_format.duration"));
   assert.ok(normalized.gemini_interactions.includes("generation_config.video_config.task"));
 
   const policy: ModelOptionPolicy = {
@@ -574,7 +605,12 @@ test("pre-OpenRouter built-in policy restores Gemini Interactions video settings
       defaultOptions: {},
       policy,
     }).map((item) => item.key),
-    ["generation_config.thinking_level", "generation_config.video_config.task"],
+    [
+      "response_format.aspect_ratio",
+      "response_format.duration",
+      "generation_config.thinking_level",
+      "generation_config.video_config.task",
+    ],
   );
 
   const custom = JSON.parse(legacyJSON) as Record<string, string[]>;
@@ -584,6 +620,20 @@ test("pre-OpenRouter built-in policy restores Gemini Interactions video settings
   ) as Record<string, string[]>;
   assert.equal(normalizedCustom.gemini_interactions, undefined);
   assert.ok(normalizedCustom.openai_chat_completions.includes("metadata.tenant"));
+});
+
+test("previous Gemini Interactions built-in policy gains video duration without changing custom policies", () => {
+  const current = JSON.parse(DEFAULT_MODEL_OPTION_ALLOWED_PATHS) as Record<string, string[]>;
+  const legacyPaths = current.gemini_interactions.filter(
+    (path) => path !== "response_format.duration" && path !== "responseFormat.duration",
+  );
+  const legacyJSON = JSON.stringify({ gemini_interactions: legacyPaths });
+  const normalized = JSON.parse(normalizeModelOptionAllowedPathsJSON(legacyJSON)) as Record<string, string[]>;
+  assert.ok(normalized.gemini_interactions.includes("response_format.duration"));
+  assert.ok(normalized.gemini_interactions.includes("responseFormat.duration"));
+
+  const customJSON = JSON.stringify({ gemini_interactions: [...legacyPaths, "metadata.tenant"] });
+  assert.equal(normalizeModelOptionAllowedPathsJSON(customJSON), customJSON);
 });
 
 test("resolveAdvancedSettings exposes Gemini image resolution, aspect ratio, and thinking controls", () => {
