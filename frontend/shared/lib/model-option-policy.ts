@@ -174,6 +174,21 @@ const GEMINI_INTERACTIONS_ALLOWED_PATHS = [
   "generation_config.video_config.task",
 ];
 
+const LEGACY_GOOGLE_IMAGE_GENERATION_ALLOWED_PATHS = [
+  "aspect_ratio",
+  "aspectRatio",
+  "image_size",
+  "imageSize",
+  "imageConfig.aspectRatio",
+  "imageConfig.imageSize",
+  "responseFormat.image.aspectRatio",
+  "responseFormat.image.imageSize",
+  "generationConfig.imageConfig.aspectRatio",
+  "generationConfig.imageConfig.imageSize",
+  "generationConfig.responseFormat.image.aspectRatio",
+  "generationConfig.responseFormat.image.imageSize",
+];
+
 const LEGACY_BUILT_IN_POLICY_PATHS: Record<string, { required: string[]; optional?: string[] }> = {
   default: {
     required: ["temperature", "top_p", "max_tokens", "max_output_tokens", "max_completion_tokens", "stop", "response_format.type"],
@@ -182,9 +197,6 @@ const LEGACY_BUILT_IN_POLICY_PATHS: Record<string, { required: string[]; optiona
   openai_chat_completions: {
     required: ["service_tier", "presence_penalty", "frequency_penalty", "reasoning_effort", "verbosity", "thinking.type", "stream_options.include_usage"],
     optional: ["reasoning_summary"],
-  },
-  openrouter_chat_completions: {
-    required: ["presence_penalty", "frequency_penalty", "reasoning_effort", "reasoning.effort", "reasoning.summary", "verbosity", "thinking.type", "stream_options.include_usage"],
   },
   openai_responses: {
     required: ["service_tier", "reasoning.effort", "reasoning.summary", "text.verbosity"],
@@ -221,6 +233,9 @@ const LEGACY_BUILT_IN_POLICY_PATHS: Record<string, { required: string[]; optiona
 };
 
 const LEGACY_BUILT_IN_OPTIONAL_PROTOCOL_PATHS: Record<string, { required: string[]; optional?: string[] }> = {
+  openrouter_chat_completions: {
+    required: ["presence_penalty", "frequency_penalty", "reasoning_effort", "reasoning.effort", "reasoning.summary", "verbosity", "thinking.type", "stream_options.include_usage"],
+  },
   openrouter_responses: {
     required: ["reasoning.effort", "reasoning.summary"],
   },
@@ -238,15 +253,41 @@ function modelOptionPathSetMatches(paths: string[], required: string[], optional
   return paths.every((path) => allowed.has(path));
 }
 
+function builtInModelOptionPathSetMatches(
+  protocol: string,
+  paths: string[],
+  required: string[],
+  optional: string[] = [],
+): boolean {
+  if (modelOptionPathSetMatches(paths, required, optional)) {
+    return true;
+  }
+  return protocol === "google_image_generation" && modelOptionPathSetMatches(
+    paths,
+    LEGACY_GOOGLE_IMAGE_GENERATION_ALLOWED_PATHS,
+    ["generationConfig.thinkingConfig.thinkingLevel"],
+  );
+}
+
 function matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules: ModelOptionRuleMap): boolean {
   if (rules.gemini_interactions) {
+    return false;
+  }
+  if (
+    !rules.openrouter_chat_completions &&
+    !modelOptionPathSetMatches(
+      rules.google_image_generation ?? [],
+      LEGACY_GOOGLE_IMAGE_GENERATION_ALLOWED_PATHS,
+      ["generationConfig.thinkingConfig.thinkingLevel"],
+    )
+  ) {
     return false;
   }
   let allowedProtocolCount = Object.keys(LEGACY_BUILT_IN_POLICY_PATHS).length;
   for (const [protocol, spec] of Object.entries(LEGACY_BUILT_IN_OPTIONAL_PROTOCOL_PATHS)) {
     const paths = rules[protocol];
     if (paths) {
-      if (!modelOptionPathSetMatches(paths, spec.required, spec.optional)) {
+      if (!builtInModelOptionPathSetMatches(protocol, paths, spec.required, spec.optional)) {
         return false;
       }
       allowedProtocolCount++;
@@ -257,7 +298,7 @@ function matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules: ModelOptionR
   }
   return Object.entries(LEGACY_BUILT_IN_POLICY_PATHS).every(([protocol, spec]) => {
     const paths = rules[protocol];
-    return Boolean(paths && modelOptionPathSetMatches(paths, spec.required, spec.optional));
+    return Boolean(paths && builtInModelOptionPathSetMatches(protocol, paths, spec.required, spec.optional));
   });
 }
 

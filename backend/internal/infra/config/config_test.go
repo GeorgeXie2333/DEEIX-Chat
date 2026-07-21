@@ -219,6 +219,140 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T)
 	}
 }
 
+const preOpenRouterModelOptionAllowedPathsJSON = `{
+  "anthropic_messages": [
+    "speed",
+    "top_k",
+    "thinking.type",
+    "thinking.budget_tokens",
+    "output_config.effort"
+  ],
+  "default": [
+    "temperature",
+    "top_p",
+    "max_tokens",
+    "max_output_tokens",
+    "max_completion_tokens",
+    "stop",
+    "response_format.type"
+  ],
+  "gemini_generate_content": [
+    "generationConfig.temperature",
+    "generationConfig.topP",
+    "generationConfig.maxOutputTokens",
+    "generationConfig.responseMimeType",
+    "thinkingConfig.includeThoughts",
+    "thinkingConfig.thinkingLevel"
+  ],
+  "google_image_generation": [
+    "aspect_ratio",
+    "aspectRatio",
+    "image_size",
+    "imageSize",
+    "imageConfig.aspectRatio",
+    "imageConfig.imageSize",
+    "responseFormat.image.aspectRatio",
+    "responseFormat.image.imageSize",
+    "generationConfig.imageConfig.aspectRatio",
+    "generationConfig.imageConfig.imageSize",
+    "generationConfig.responseFormat.image.aspectRatio",
+    "generationConfig.responseFormat.image.imageSize",
+    "generationConfig.thinkingConfig.thinkingLevel"
+  ],
+  "openai_chat_completions": [
+    "service_tier",
+    "presence_penalty",
+    "frequency_penalty",
+    "reasoning_effort",
+    "verbosity",
+    "thinking.type",
+    "stream_options.include_usage",
+    "reasoning_summary"
+  ],
+  "openai_image_edits": [
+    "background",
+    "input_fidelity",
+    "n",
+    "output_compression",
+    "output_format",
+    "partial_images",
+    "quality",
+    "response_format",
+    "size",
+    "user"
+  ],
+  "openai_image_generations": [
+    "background",
+    "moderation",
+    "n",
+    "output_compression",
+    "output_format",
+    "partial_images",
+    "quality",
+    "response_format",
+    "size",
+    "style",
+    "user"
+  ],
+  "openai_responses": [
+    "service_tier",
+    "reasoning.effort",
+    "reasoning.summary",
+    "text.verbosity",
+    "reasoning.mode"
+  ],
+  "openai_video_generations": [
+    "seconds",
+    "size"
+  ],
+  "xai_image": [
+    "aspect_ratio",
+    "n",
+    "resolution",
+    "response_format"
+  ],
+  "xai_image_edits": [
+    "aspect_ratio",
+    "n",
+    "resolution",
+    "response_format"
+  ],
+  "xai_responses": [
+    "reasoning.effort"
+  ]
+}`
+
+func TestNormalizeModelOptionAllowedPathsJSONUpgradesPreOpenRouterDefault(t *testing.T) {
+	var normalized map[string][]string
+	if err := json.Unmarshal([]byte(NormalizeModelOptionAllowedPathsJSON(preOpenRouterModelOptionAllowedPathsJSON)), &normalized); err != nil {
+		t.Fatalf("parse normalized pre-OpenRouter model option paths: %v", err)
+	}
+	if !containsString(normalized["gemini_interactions"], "generation_config.thinking_level") ||
+		!containsString(normalized["gemini_interactions"], "generation_config.video_config.task") {
+		t.Fatalf("expected pre-OpenRouter allowlist to gain Gemini Interactions settings, got %#v", normalized["gemini_interactions"])
+	}
+
+	var custom map[string][]string
+	if err := json.Unmarshal([]byte(preOpenRouterModelOptionAllowedPathsJSON), &custom); err != nil {
+		t.Fatalf("parse pre-OpenRouter model option paths: %v", err)
+	}
+	custom["openai_chat_completions"] = append(custom["openai_chat_completions"], "metadata.tenant")
+	rawCustom, err := json.Marshal(custom)
+	if err != nil {
+		t.Fatalf("marshal customized pre-OpenRouter model option paths: %v", err)
+	}
+	var normalizedCustom map[string][]string
+	if err = json.Unmarshal([]byte(NormalizeModelOptionAllowedPathsJSON(string(rawCustom))), &normalizedCustom); err != nil {
+		t.Fatalf("parse normalized customized model option paths: %v", err)
+	}
+	if _, exists := normalizedCustom["gemini_interactions"]; exists {
+		t.Fatalf("expected customized pre-OpenRouter allowlist to remain without Gemini Interactions")
+	}
+	if !containsString(normalizedCustom["openai_chat_completions"], "metadata.tenant") {
+		t.Fatalf("expected customized path to be preserved, got %#v", normalizedCustom["openai_chat_completions"])
+	}
+}
+
 func TestNormalizeModelOptionAllowedPathsJSONKeepsCustomPolicy(t *testing.T) {
 	custom := `{"default":["temperature"],"anthropic_messages":["speed"]}`
 	if got := NormalizeModelOptionAllowedPathsJSON(custom); got != custom {
@@ -246,6 +380,26 @@ func TestNormalizeModelOptionAllowedPathsJSONKeepsCustomizedLegacyPolicyWithoutG
 	}
 	if got := NormalizeModelOptionAllowedPathsJSON(string(rawCustom)); got != string(rawCustom) {
 		t.Fatalf("expected customized legacy allowlist unchanged, got %s", got)
+	}
+}
+
+func TestNormalizeModelOptionAllowedPathsJSONKeepsCurrentPolicyWithOpenRouterChatRemoved(t *testing.T) {
+	var custom map[string][]string
+	if err := json.Unmarshal([]byte(DefaultModelOptionAllowedPathsJSON()), &custom); err != nil {
+		t.Fatalf("parse default model option paths: %v", err)
+	}
+	delete(custom, "gemini_interactions")
+	delete(custom, "openrouter_chat_completions")
+	rawCustom, err := json.Marshal(custom)
+	if err != nil {
+		t.Fatalf("marshal customized model option paths: %v", err)
+	}
+	var normalized map[string][]string
+	if err = json.Unmarshal([]byte(NormalizeModelOptionAllowedPathsJSON(string(rawCustom))), &normalized); err != nil {
+		t.Fatalf("parse normalized customized model option paths: %v", err)
+	}
+	if _, exists := normalized["gemini_interactions"]; exists {
+		t.Fatalf("expected current allowlist with OpenRouter Chat removed to remain without Gemini Interactions")
 	}
 }
 

@@ -44,6 +44,94 @@ const allowAdvancedPolicy: ModelOptionPolicy = {
   nativeToolAllowedTypesJSON: "{}",
 };
 
+const preOpenRouterModelOptionAllowedPaths = {
+  anthropic_messages: [
+    "speed",
+    "top_k",
+    "thinking.type",
+    "thinking.budget_tokens",
+    "output_config.effort",
+  ],
+  default: [
+    "temperature",
+    "top_p",
+    "max_tokens",
+    "max_output_tokens",
+    "max_completion_tokens",
+    "stop",
+    "response_format.type",
+  ],
+  gemini_generate_content: [
+    "generationConfig.temperature",
+    "generationConfig.topP",
+    "generationConfig.maxOutputTokens",
+    "generationConfig.responseMimeType",
+    "thinkingConfig.includeThoughts",
+    "thinkingConfig.thinkingLevel",
+  ],
+  google_image_generation: [
+    "aspect_ratio",
+    "aspectRatio",
+    "image_size",
+    "imageSize",
+    "imageConfig.aspectRatio",
+    "imageConfig.imageSize",
+    "responseFormat.image.aspectRatio",
+    "responseFormat.image.imageSize",
+    "generationConfig.imageConfig.aspectRatio",
+    "generationConfig.imageConfig.imageSize",
+    "generationConfig.responseFormat.image.aspectRatio",
+    "generationConfig.responseFormat.image.imageSize",
+    "generationConfig.thinkingConfig.thinkingLevel",
+  ],
+  openai_chat_completions: [
+    "service_tier",
+    "presence_penalty",
+    "frequency_penalty",
+    "reasoning_effort",
+    "verbosity",
+    "thinking.type",
+    "stream_options.include_usage",
+    "reasoning_summary",
+  ],
+  openai_image_edits: [
+    "background",
+    "input_fidelity",
+    "n",
+    "output_compression",
+    "output_format",
+    "partial_images",
+    "quality",
+    "response_format",
+    "size",
+    "user",
+  ],
+  openai_image_generations: [
+    "background",
+    "moderation",
+    "n",
+    "output_compression",
+    "output_format",
+    "partial_images",
+    "quality",
+    "response_format",
+    "size",
+    "style",
+    "user",
+  ],
+  openai_responses: [
+    "service_tier",
+    "reasoning.effort",
+    "reasoning.summary",
+    "text.verbosity",
+    "reasoning.mode",
+  ],
+  openai_video_generations: ["seconds", "size"],
+  xai_image: ["aspect_ratio", "n", "resolution", "response_format"],
+  xai_image_edits: ["aspect_ratio", "n", "resolution", "response_format"],
+  xai_responses: ["reasoning.effort"],
+} satisfies Record<string, string[]>;
+
 test("resolveAdvancedSettings maps settings to protocol-specific option paths", () => {
   assert.deepEqual(
     resolveAdvancedSettings({
@@ -453,6 +541,46 @@ test("legacy built-in policy restores Gemini Interactions advanced settings with
   const customizedJSON = JSON.stringify(legacy);
   const normalizedCustom = JSON.parse(
     normalizeModelOptionAllowedPathsJSON(customizedJSON),
+  ) as Record<string, string[]>;
+  assert.equal(normalizedCustom.gemini_interactions, undefined);
+  assert.ok(normalizedCustom.openai_chat_completions.includes("metadata.tenant"));
+
+  const protocolCustomized = JSON.parse(DEFAULT_MODEL_OPTION_ALLOWED_PATHS) as Record<string, string[]>;
+  delete protocolCustomized.gemini_interactions;
+  delete protocolCustomized.openrouter_chat_completions;
+  const normalizedProtocolCustom = JSON.parse(
+    normalizeModelOptionAllowedPathsJSON(JSON.stringify(protocolCustomized)),
+  ) as Record<string, string[]>;
+  assert.equal(normalizedProtocolCustom.gemini_interactions, undefined);
+});
+
+test("pre-OpenRouter built-in policy restores Gemini Interactions video settings", () => {
+  const legacyJSON = JSON.stringify(preOpenRouterModelOptionAllowedPaths);
+  const normalized = JSON.parse(
+    normalizeModelOptionAllowedPathsJSON(legacyJSON),
+  ) as Record<string, string[]>;
+  assert.ok(normalized.gemini_interactions.includes("generation_config.thinking_level"));
+  assert.ok(normalized.gemini_interactions.includes("generation_config.video_config.task"));
+
+  const policy: ModelOptionPolicy = {
+    ...allowAdvancedPolicy,
+    allowedPathsJSON: legacyJSON,
+  };
+  assert.deepEqual(
+    resolveAdvancedSettings({
+      protocol: "gemini_interactions",
+      submitTask: "video_generation",
+      options: {},
+      defaultOptions: {},
+      policy,
+    }).map((item) => item.key),
+    ["generation_config.thinking_level", "generation_config.video_config.task"],
+  );
+
+  const custom = JSON.parse(legacyJSON) as Record<string, string[]>;
+  custom.openai_chat_completions.push("metadata.tenant");
+  const normalizedCustom = JSON.parse(
+    normalizeModelOptionAllowedPathsJSON(JSON.stringify(custom)),
   ) as Record<string, string[]>;
   assert.equal(normalizedCustom.gemini_interactions, undefined);
   assert.ok(normalizedCustom.openai_chat_completions.includes("metadata.tenant"));

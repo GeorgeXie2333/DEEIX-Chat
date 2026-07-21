@@ -320,6 +320,23 @@ func defaultGeminiInteractionsAllowedPaths() []string {
 	}
 }
 
+func legacyGoogleImageGenerationAllowedPaths() []string {
+	return []string{
+		"aspect_ratio",
+		"aspectRatio",
+		"image_size",
+		"imageSize",
+		"imageConfig.aspectRatio",
+		"imageConfig.imageSize",
+		"responseFormat.image.aspectRatio",
+		"responseFormat.image.imageSize",
+		"generationConfig.imageConfig.aspectRatio",
+		"generationConfig.imageConfig.imageSize",
+		"generationConfig.responseFormat.image.aspectRatio",
+		"generationConfig.responseFormat.image.imageSize",
+	}
+}
+
 func matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules map[string][]string) bool {
 	if _, exists := rules["gemini_interactions"]; exists {
 		return false
@@ -336,9 +353,6 @@ func matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules map[string][]stri
 		"openai_chat_completions": {
 			required: []string{"service_tier", "presence_penalty", "frequency_penalty", "reasoning_effort", "verbosity", "thinking.type", "stream_options.include_usage"},
 			optional: []string{"reasoning_summary"},
-		},
-		"openrouter_chat_completions": {
-			required: []string{"presence_penalty", "frequency_penalty", "reasoning_effort", "reasoning.effort", "reasoning.summary", "verbosity", "thinking.type", "stream_options.include_usage"},
 		},
 		"openai_responses": {
 			required: []string{"service_tier", "reasoning.effort", "reasoning.summary", "text.verbosity"},
@@ -374,6 +388,9 @@ func matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules map[string][]stri
 		},
 	}
 	optionalSpecs := map[string]pathSpec{
+		"openrouter_chat_completions": {
+			required: []string{"presence_penalty", "frequency_penalty", "reasoning_effort", "reasoning.effort", "reasoning.summary", "verbosity", "thinking.type", "stream_options.include_usage"},
+		},
 		"openrouter_responses": {
 			required: []string{"reasoning.effort", "reasoning.summary"},
 		},
@@ -381,10 +398,19 @@ func matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules map[string][]stri
 			required: []string{"seconds", "size"},
 		},
 	}
+	if _, hasOpenRouterChat := rules["openrouter_chat_completions"]; !hasOpenRouterChat {
+		if !modelOptionPathSetMatches(
+			rules["google_image_generation"],
+			legacyGoogleImageGenerationAllowedPaths(),
+			[]string{"generationConfig.thinkingConfig.thinkingLevel"},
+		) {
+			return false
+		}
+	}
 	allowedProtocolCount := len(specs)
 	for protocol, spec := range optionalSpecs {
 		if paths, exists := rules[protocol]; exists {
-			if !modelOptionPathSetMatches(paths, spec.required, spec.optional) {
+			if !builtInModelOptionPathSetMatches(protocol, paths, spec.required, spec.optional) {
 				return false
 			}
 			allowedProtocolCount++
@@ -395,11 +421,25 @@ func matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules map[string][]stri
 	}
 	for protocol, spec := range specs {
 		paths, exists := rules[protocol]
-		if !exists || !modelOptionPathSetMatches(paths, spec.required, spec.optional) {
+		if !exists || !builtInModelOptionPathSetMatches(protocol, paths, spec.required, spec.optional) {
 			return false
 		}
 	}
 	return true
+}
+
+func builtInModelOptionPathSetMatches(protocol string, paths []string, required []string, optional []string) bool {
+	if modelOptionPathSetMatches(paths, required, optional) {
+		return true
+	}
+	if protocol != "google_image_generation" {
+		return false
+	}
+	return modelOptionPathSetMatches(
+		paths,
+		legacyGoogleImageGenerationAllowedPaths(),
+		[]string{"generationConfig.thinkingConfig.thinkingLevel"},
+	)
 }
 
 func modelOptionPathSetMatches(paths []string, required []string, optional []string) bool {
