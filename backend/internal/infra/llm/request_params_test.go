@@ -48,19 +48,30 @@ func TestBuildOpenAIResponsesMinimalRequestHasOnlyProtocolDefaults(t *testing.T)
 
 func TestBuildOpenAIResponsesReasoningSummaryDefaultAndOverrides(t *testing.T) {
 	tests := []struct {
-		name             string
-		options          map[string]interface{}
-		wantSummary      string
-		wantSummaryField bool
+		name               string
+		options            map[string]interface{}
+		wantReasoningField bool
+		wantSummary        string
+		wantSummaryField   bool
 	}{
-		{name: "default auto", wantSummary: "auto", wantSummaryField: true},
+		{name: "default auto", wantReasoningField: true, wantSummary: "auto", wantSummaryField: true},
+		{
+			name: "nested auto",
+			options: map[string]interface{}{
+				"reasoning": map[string]interface{}{"summary": "auto"},
+			},
+			wantReasoningField: true,
+			wantSummary:        "auto",
+			wantSummaryField:   true,
+		},
 		{
 			name: "nested concise",
 			options: map[string]interface{}{
 				"reasoning": map[string]interface{}{"summary": "concise"},
 			},
-			wantSummary:      "concise",
-			wantSummaryField: true,
+			wantReasoningField: true,
+			wantSummary:        "concise",
+			wantSummaryField:   true,
 		},
 		{
 			name: "top level detailed overrides nested",
@@ -68,15 +79,29 @@ func TestBuildOpenAIResponsesReasoningSummaryDefaultAndOverrides(t *testing.T) {
 				"reasoning":         map[string]interface{}{"summary": "concise"},
 				"reasoning_summary": "detailed",
 			},
-			wantSummary:      "detailed",
-			wantSummaryField: true,
+			wantReasoningField: true,
+			wantSummary:        "detailed",
+			wantSummaryField:   true,
+		},
+		{
+			name: "nested none prunes empty reasoning",
+			options: map[string]interface{}{
+				"reasoning": map[string]interface{}{"summary": "none"},
+			},
 		},
 		{
 			name: "nested none disables default",
 			options: map[string]interface{}{
 				"reasoning": map[string]interface{}{"effort": "low", "summary": "none"},
 			},
-			wantSummaryField: false,
+			wantReasoningField: true,
+			wantSummaryField:   false,
+		},
+		{
+			name: "top level none prunes empty reasoning",
+			options: map[string]interface{}{
+				"reasoning_summary": "none",
+			},
 		},
 		{
 			name: "top level none disables default",
@@ -84,7 +109,8 @@ func TestBuildOpenAIResponsesReasoningSummaryDefaultAndOverrides(t *testing.T) {
 				"reasoning":         map[string]interface{}{"effort": "low", "summary": "auto"},
 				"reasoning_summary": "none",
 			},
-			wantSummaryField: false,
+			wantReasoningField: true,
+			wantSummaryField:   false,
 		},
 	}
 
@@ -95,8 +121,11 @@ func TestBuildOpenAIResponsesReasoningSummaryDefaultAndOverrides(t *testing.T) {
 				Options:  tt.options,
 			}, true)
 			reasoning, ok := payload["reasoning"].(map[string]interface{})
+			if ok != tt.wantReasoningField {
+				t.Fatalf("expected reasoning field presence %v, got %#v", tt.wantReasoningField, payload["reasoning"])
+			}
 			if !ok {
-				t.Fatalf("expected reasoning config, got %#v", payload["reasoning"])
+				return
 			}
 			summary, hasSummary := reasoning["summary"]
 			if hasSummary != tt.wantSummaryField {

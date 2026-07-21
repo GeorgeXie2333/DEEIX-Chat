@@ -107,6 +107,15 @@ const RESPONSES_REASONING_EFFORT: AdvancedSettingDefinition = {
   values: ["none", "low", "medium", "high", "xhigh", "max"],
 };
 
+const RESPONSES_REASONING_SUMMARY: AdvancedSettingDefinition = {
+  kind: "reasoningSummary",
+  path: ["reasoning", "summary"],
+  valueType: "select",
+  fallbackValue: "auto",
+  values: CHAT_REASONING_SUMMARY_VALUES,
+  omitValues: ["none"],
+};
+
 const RESPONSES_REASONING_MODE: AdvancedSettingDefinition = {
   kind: "reasoningMode",
   path: ["reasoning", "mode"],
@@ -469,7 +478,13 @@ export function resolveAdvancedSettingDefinitions(
         CHAT_VERBOSITY,
       ];
     case "openai_responses":
-      return [TEMPERATURE_SETTING, RESPONSES_REASONING_MODE, RESPONSES_REASONING_EFFORT, RESPONSES_VERBOSITY];
+      return [
+        TEMPERATURE_SETTING,
+        RESPONSES_REASONING_MODE,
+        RESPONSES_REASONING_EFFORT,
+        RESPONSES_REASONING_SUMMARY,
+        RESPONSES_VERBOSITY,
+      ];
     case "openrouter_responses":
       return [TEMPERATURE_SETTING, RESPONSES_REASONING_EFFORT];
     case "xai_responses":

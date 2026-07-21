@@ -656,6 +656,13 @@ func consumeOpenAIGenerateStream(
 	onEvent func(GenerateStreamEvent) error,
 	allowTextEncodedToolCalls bool,
 ) error {
+	if normalizeEndpoint(endpoint) != EndpointChatCompletions {
+		defer func() {
+			if result != nil {
+				result.responsesReasoningState = nil
+			}
+		}()
+	}
 	scanner := bufio.NewScanner(reader)
 	scanner.Buffer(make([]byte, 0, 256*1024), 64*1024*1024)
 

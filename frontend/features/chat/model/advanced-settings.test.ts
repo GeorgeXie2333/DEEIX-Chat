@@ -19,7 +19,7 @@ const allowAdvancedPolicy: ModelOptionPolicy = {
     default: ["temperature"],
     openai_chat_completions: ["reasoning_effort", "reasoning_summary", "verbosity"],
     openrouter_chat_completions: ["reasoning.effort", "reasoning.summary", "verbosity"],
-    openai_responses: ["reasoning.mode", "reasoning.effort", "text.verbosity"],
+    openai_responses: ["reasoning.mode", "reasoning.effort", "reasoning.summary", "text.verbosity"],
     openrouter_responses: ["reasoning.effort"],
     xai_responses: ["reasoning.effort"],
     anthropic_messages: ["output_config.effort", "speed"],
@@ -63,7 +63,7 @@ test("resolveAdvancedSettings maps settings to protocol-specific option paths", 
   assert.deepEqual(
     resolveAdvancedSettings({
       protocol: "openai_responses",
-      options: { temperature: 0.2, reasoning: { effort: "low" }, text: { verbosity: "high" } },
+      options: { temperature: 0.2, reasoning: { effort: "low", summary: "auto" }, text: { verbosity: "high" } },
       defaultOptions: {},
       policy: allowAdvancedPolicy,
     }).map((item) => [item.kind, item.key, item.value]),
@@ -71,6 +71,7 @@ test("resolveAdvancedSettings maps settings to protocol-specific option paths", 
       ["temperature", "temperature", 0.2],
       ["reasoningMode", "reasoning.mode", "standard"],
       ["reasoningEffort", "reasoning.effort", "low"],
+      ["reasoningSummary", "reasoning.summary", "auto"],
       ["verbosity", "text.verbosity", "high"],
     ],
   );
@@ -214,6 +215,23 @@ test("resolveAdvancedSettings maps Anthropic effort with high default", () => {
       effort: "max",
     },
   });
+});
+
+test("OpenAI Responses reasoning summary defaults to auto and none prunes only the selected nested value", () => {
+  const summary = resolveAdvancedSettings({
+    protocol: "openai_responses",
+    options: {},
+    defaultOptions: {},
+    policy: allowAdvancedPolicy,
+  }).find((item) => item.kind === "reasoningSummary");
+  assert.ok(summary);
+  assert.equal(summary.value, "auto");
+  assert.deepEqual(summary.values, ["none", "auto", "concise", "detailed"]);
+
+  const configured = setAdvancedSettingValue({ reasoning: { effort: "high" } }, summary, "detailed");
+  assert.deepEqual(configured, { reasoning: { effort: "high", summary: "detailed" } });
+  assert.deepEqual(setAdvancedSettingValue(configured, summary, "none"), { reasoning: { effort: "high" } });
+  assert.deepEqual(setAdvancedSettingValue({}, summary, "none"), {});
 });
 
 test("Anthropic speed uses standard as an omitted UI default", () => {
@@ -574,7 +592,7 @@ test("resolveAdvancedSettings upgrades legacy built-in policy paths without chan
       defaultOptions: {},
       policy: legacyDefaultPolicy,
     }).map((item) => item.key),
-    ["temperature", "reasoning.mode", "reasoning.effort", "text.verbosity"],
+    ["temperature", "reasoning.mode", "reasoning.effort", "reasoning.summary", "text.verbosity"],
   );
   assert.deepEqual(
     resolveAdvancedSettings({
@@ -671,7 +689,7 @@ test("resetAdvancedSettings only resets advanced fields and preserves tools and 
 
   assert.deepEqual(result, {
     temperature: 0.8,
-    reasoning: { summary: "auto", effort: "low" },
+    reasoning: { effort: "low" },
     text: { format: { type: "json_object" } },
     tools: [{ type: "web_search" }],
   });

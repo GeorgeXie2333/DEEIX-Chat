@@ -633,7 +633,7 @@ type ToolResult struct {
 	Error      string
 }
 
-// ReasoningOutput 定义结构化 reasoning 输出。
+// ReasoningOutput 定义结构化 reasoning 输出；Summary 是调用结束后的权威聚合摘要。
 type ReasoningOutput struct {
 	ItemID           string
 	Status           string
@@ -658,7 +658,8 @@ type GenerateOutput struct {
 	RawJSON             string
 	Debug               *UpstreamDebugSnapshot `json:"-"`
 
-	chatTextBuffer string
+	chatTextBuffer          string
+	responsesReasoningState *responsesReasoningStreamState
 }
 
 // GeneratedImage 表示图片生成/编辑接口返回的一张图片。
@@ -690,7 +691,7 @@ type GeneratedVideoStatus struct {
 	Seconds  string
 }
 
-// ReasoningDelta 定义流式 reasoning 增量。
+// ReasoningDelta 定义流式 reasoning 增量；Text 保留原始空白并且可安全追加。
 type ReasoningDelta struct {
 	EventType        string
 	ItemID           string

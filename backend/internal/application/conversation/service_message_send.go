@@ -961,9 +961,6 @@ func (s *Service) sendMessageInternal(
 			}
 			if traceRecorder != nil && event.Reasoning != nil && event.Reasoning.Text != "" {
 				traceRecorder.appendUpstreamReasoning(event.Reasoning.Kind, event.Reasoning.Text, reasoningPayload(event.Reasoning))
-				if strings.EqualFold(strings.TrimSpace(event.Reasoning.Status), "completed") {
-					traceRecorder.completeUpstreamThink()
-				}
 			}
 			if traceRecorder != nil && event.ServerToolCall != nil {
 				toolStatus := normalizeStreamServerToolStatus(event.ServerToolCall.Status)

@@ -3,6 +3,7 @@ package llm
 import (
 	"context"
 	"encoding/base64"
+	"sort"
 	"strings"
 )
 
@@ -336,6 +337,378 @@ func responsesTextContentType(role string) string {
 	return "input_text"
 }
 
+const responsesReasoningPartSeparator = "\n\n"
+
+// responsesReasoningStreamState keeps upstream deltas append-only for callbacks while
+// retaining authoritative done snapshots for the final GenerateOutput.
+type responsesReasoningStreamPart struct {
+	itemID         string
+	outputIndex    int64
+	hasOutputIndex bool
+	partIndex      int64
+	hasPartIndex   bool
+	order          int
+	kind           string
+	text           string
+	seeded         bool
+	sawDelta       bool
+	emitted        bool
+	diverged       bool // The emitted callback text no longer prefixes the authoritative text.
+	finalized      bool
+}
+
+type responsesReasoningStreamState struct {
+	parts            []*responsesReasoningStreamPart
+	itemID           string
+	status           string
+	signature        string
+	encryptedContent string
+}
+
+func newResponsesReasoningStreamState() *responsesReasoningStreamState {
+	return &responsesReasoningStreamState{
+		parts: make([]*responsesReasoningStreamPart, 0),
+	}
+}
+
+func responsesReasoningStateFor(result *GenerateOutput) *responsesReasoningStreamState {
+	if result == nil {
+		return nil
+	}
+	if result.responsesReasoningState == nil {
+		result.responsesReasoningState = newResponsesReasoningStreamState()
+	}
+	return result.responsesReasoningState
+}
+
+func (s *responsesReasoningStreamState) partFor(
+	kind string,
+	itemID string,
+	outputIndex int64,
+	hasOutputIndex bool,
+	partIndex int64,
+	hasPartIndex bool,
+	startNew bool,
+) *responsesReasoningStreamPart {
+	if s == nil {
+		return nil
+	}
+	itemID = strings.TrimSpace(itemID)
+	if hasPartIndex && !(startNew && itemID == "" && !hasOutputIndex) {
+		if existing := s.bestMatchingPart(kind, itemID, outputIndex, hasOutputIndex, partIndex, true, true); existing != nil {
+			existing.updateCoordinates(itemID, outputIndex, hasOutputIndex, partIndex, true)
+			return existing
+		}
+	}
+	if !hasPartIndex && !startNew {
+		if existing := s.bestMatchingPart(kind, itemID, outputIndex, hasOutputIndex, partIndex, false, false); existing != nil {
+			existing.updateCoordinates(itemID, outputIndex, hasOutputIndex, partIndex, false)
+			return existing
+		}
+	}
+	part := &responsesReasoningStreamPart{
+		itemID:         itemID,
+		outputIndex:    outputIndex,
+		hasOutputIndex: hasOutputIndex,
+		partIndex:      partIndex,
+		hasPartIndex:   hasPartIndex,
+		order:          len(s.parts),
+		kind:           kind,
+	}
+	s.parts = append(s.parts, part)
+	return part
+}
+
+func (s *responsesReasoningStreamState) bestMatchingPart(
+	kind string,
+	itemID string,
+	outputIndex int64,
+	hasOutputIndex bool,
+	partIndex int64,
+	hasPartIndex bool,
+	allowUnindexed bool,
+) *responsesReasoningStreamPart {
+	if s == nil {
+		return nil
+	}
+	var best *responsesReasoningStreamPart
+	bestScore := -1
+	for _, part := range s.parts {
+		if !responsesReasoningCoordinatesCompatible(part, kind, itemID, outputIndex, hasOutputIndex, partIndex, hasPartIndex) {
+			continue
+		}
+		if hasPartIndex && !part.hasPartIndex && !allowUnindexed {
+			continue
+		}
+		score := 0
+		if itemID != "" && part.itemID == itemID {
+			score += 4
+		}
+		if hasOutputIndex && part.hasOutputIndex && part.outputIndex == outputIndex {
+			score += 2
+		}
+		if hasPartIndex && part.hasPartIndex && part.partIndex == partIndex {
+			score += 8
+		}
+		if !part.finalized {
+			score++
+		}
+		if score > bestScore || (score == bestScore && (best == nil || part.order > best.order)) {
+			best = part
+			bestScore = score
+		}
+	}
+	return best
+}
+
+func responsesReasoningCoordinatesCompatible(
+	part *responsesReasoningStreamPart,
+	kind string,
+	itemID string,
+	outputIndex int64,
+	hasOutputIndex bool,
+	partIndex int64,
+	hasPartIndex bool,
+) bool {
+	if part == nil || part.kind != kind {
+		return false
+	}
+	if itemID != "" && part.itemID != "" && part.itemID != itemID {
+		return false
+	}
+	if hasOutputIndex && part.hasOutputIndex && part.outputIndex != outputIndex {
+		return false
+	}
+	return !hasPartIndex || !part.hasPartIndex || part.partIndex == partIndex
+}
+
+func (p *responsesReasoningStreamPart) updateCoordinates(itemID string, outputIndex int64, hasOutputIndex bool, partIndex int64, hasPartIndex bool) {
+	if p == nil {
+		return
+	}
+	if value := strings.TrimSpace(itemID); value != "" {
+		p.itemID = value
+	}
+	if hasOutputIndex {
+		p.outputIndex = outputIndex
+		p.hasOutputIndex = true
+	}
+	if hasPartIndex {
+		p.partIndex = partIndex
+		p.hasPartIndex = true
+	}
+}
+
+func (s *responsesReasoningStreamState) orderedParts(kind string) []*responsesReasoningStreamPart {
+	if s == nil {
+		return nil
+	}
+	parts := make([]*responsesReasoningStreamPart, 0, len(s.parts))
+	for _, part := range s.parts {
+		if part != nil && part.kind == kind {
+			parts = append(parts, part)
+		}
+	}
+	sort.SliceStable(parts, func(left int, right int) bool {
+		a := parts[left]
+		b := parts[right]
+		if a.hasOutputIndex && b.hasOutputIndex && a.outputIndex != b.outputIndex {
+			return a.outputIndex < b.outputIndex
+		}
+		if responsesReasoningSameItem(a, b) && a.hasPartIndex && b.hasPartIndex && a.partIndex != b.partIndex {
+			return a.partIndex < b.partIndex
+		}
+		return a.order < b.order
+	})
+	return parts
+}
+
+func responsesReasoningSameItem(a *responsesReasoningStreamPart, b *responsesReasoningStreamPart) bool {
+	if a == nil || b == nil || a.kind != b.kind {
+		return false
+	}
+	if a.itemID != "" && b.itemID != "" {
+		return a.itemID == b.itemID
+	}
+	return a.hasOutputIndex && b.hasOutputIndex && a.outputIndex == b.outputIndex
+}
+
+func (s *responsesReasoningStreamState) joinedText(kind string) string {
+	texts := make([]string, 0)
+	for _, part := range s.orderedParts(kind) {
+		if part.text != "" {
+			texts = append(texts, part.text)
+		}
+	}
+	return strings.Join(texts, responsesReasoningPartSeparator)
+}
+
+func (s *responsesReasoningStreamState) hasPriorEmittedPart(target *responsesReasoningStreamPart) bool {
+	if s == nil || target == nil {
+		return false
+	}
+	for _, part := range s.orderedParts(target.kind) {
+		if part == target {
+			return false
+		}
+		if part.emitted {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *responsesReasoningStreamState) appendEmission(part *responsesReasoningStreamPart, text string) string {
+	if s == nil || part == nil || text == "" {
+		return ""
+	}
+	if !part.emitted && s.hasPriorEmittedPart(part) {
+		text = responsesReasoningPartSeparator + text
+	}
+	part.emitted = true
+	return text
+}
+
+func (s *responsesReasoningStreamState) appendDelta(part *responsesReasoningStreamPart, delta string) string {
+	if s == nil || part == nil || delta == "" {
+		return ""
+	}
+	if part.seeded && !part.sawDelta {
+		part.text = ""
+		part.seeded = false
+	}
+	part.text += delta
+	part.sawDelta = true
+	if part.diverged {
+		return ""
+	}
+	return s.appendEmission(part, delta)
+}
+
+func (s *responsesReasoningStreamState) reconcileSnapshot(part *responsesReasoningStreamPart, text string, finalized bool) string {
+	if s == nil || part == nil {
+		return ""
+	}
+	previous := part.text
+	part.seeded = false
+	part.finalized = part.finalized || finalized
+	if previous == text {
+		if !part.emitted && text != "" {
+			return s.appendEmission(part, text)
+		}
+		return ""
+	}
+	part.text = text
+	if !part.emitted {
+		return s.appendEmission(part, text)
+	}
+	if part.diverged {
+		return ""
+	}
+	if strings.HasPrefix(text, previous) {
+		return s.appendEmission(part, text[len(previous):])
+	}
+	part.diverged = true
+	return ""
+}
+
+func (s *responsesReasoningStreamState) seedSnapshot(part *responsesReasoningStreamPart, text string) {
+	if s == nil || part == nil || text == "" || part.sawDelta || part.emitted {
+		return
+	}
+	part.text = text
+	part.seeded = true
+}
+
+func (s *responsesReasoningStreamState) updateMetadata(itemID string, status string, signature string, encryptedContent string) {
+	if s == nil {
+		return
+	}
+	if value := strings.TrimSpace(itemID); value != "" {
+		s.itemID = value
+	}
+	if value := strings.TrimSpace(status); value != "" {
+		s.status = value
+	}
+	if value := strings.TrimSpace(signature); value != "" {
+		s.signature = value
+	}
+	if value := strings.TrimSpace(encryptedContent); value != "" {
+		s.encryptedContent = value
+	}
+}
+
+func (s *responsesReasoningStreamState) applyToResult(adapter string, result *GenerateOutput) {
+	if s == nil || result == nil {
+		return
+	}
+	reasoning := &ReasoningOutput{}
+	if result.Reasoning != nil {
+		reasoning.Signature = result.Reasoning.Signature
+		reasoning.EncryptedContent = result.Reasoning.EncryptedContent
+	}
+	reasoning.ItemID = s.itemID
+	reasoning.Status = s.status
+	reasoning.Summary = s.joinedText("summary_text")
+	reasoning.Text = s.joinedText("content_text")
+	if s.signature != "" {
+		reasoning.Signature = s.signature
+	}
+	if s.encryptedContent != "" {
+		reasoning.EncryptedContent = s.encryptedContent
+	}
+	if adapter == AdapterOpenAIResponses {
+		reasoning.Text = ""
+	}
+	if reasoningOutputEmpty(reasoning) {
+		result.Reasoning = nil
+		return
+	}
+	result.Reasoning = reasoning
+}
+
+func reasoningOutputEmpty(reasoning *ReasoningOutput) bool {
+	return reasoning == nil || (strings.TrimSpace(reasoning.ItemID) == "" &&
+		strings.TrimSpace(reasoning.Status) == "" &&
+		reasoning.Summary == "" &&
+		reasoning.Text == "" &&
+		strings.TrimSpace(reasoning.Signature) == "" &&
+		strings.TrimSpace(reasoning.EncryptedContent) == "")
+}
+
+func responsesEventIndex(parsed map[string]interface{}, key string) (int64, bool) {
+	if parsed == nil {
+		return 0, false
+	}
+	raw, ok := parsed[key]
+	if !ok || raw == nil || strings.TrimSpace(getString(raw)) == "" {
+		return 0, false
+	}
+	return toInt64(raw), true
+}
+
+func responsesReasoningKind(eventType string) string {
+	if strings.Contains(eventType, "summary") {
+		return "summary_text"
+	}
+	return "content_text"
+}
+
+func responsesReasoningPartForEvent(state *responsesReasoningStreamState, eventType string, parsed map[string]interface{}, startNew bool) *responsesReasoningStreamPart {
+	if state == nil {
+		return nil
+	}
+	kind := responsesReasoningKind(eventType)
+	itemID := firstNonEmptyString(getString(parsed["item_id"]), getStringFromPath(parsed, "item", "id"))
+	outputIndex, hasOutputIndex := responsesEventIndex(parsed, "output_index")
+	partKey := "content_index"
+	if kind == "summary_text" {
+		partKey = "summary_index"
+	}
+	partIndex, hasPartIndex := responsesEventIndex(parsed, partKey)
+	return state.partFor(kind, itemID, outputIndex, hasOutputIndex, partIndex, hasPartIndex, startNew)
+}
+
 func applyResponsesStreamEvent(
 	adapter string,
 	eventName string,
@@ -377,9 +750,9 @@ func applyResponsesStreamEvent(
 		}
 		return eventErr
 	case "response.output_item.added", "response.output_item.in_progress":
-		return mergeResponsesStreamOutputItem(result, asMap(parsed["item"]), onEvent)
+		return mergeResponsesStreamOutputItem(adapter, eventType, result, parsed, false, onEvent)
 	case "response.output_item.done":
-		return mergeResponsesStreamOutputItem(result, asMap(parsed["item"]), onEvent)
+		return mergeResponsesStreamOutputItem(adapter, eventType, result, parsed, true, onEvent)
 	case "response.custom_tool_call_input.delta", "response.custom_tool_call_input.done":
 		return mergeResponsesCustomToolInputEvent(result, parsed, onEvent)
 	case "response.output_text.delta":
@@ -416,7 +789,13 @@ func applyResponsesStreamEvent(
 		if text != "" && !strings.Contains(result.Text, text) {
 			result.Text += text
 		}
-	case "response.reasoning_summary_text.delta", "response.reasoning_summary_part.added", "response.reasoning_text.delta", "response.thinking.delta":
+	case "response.reasoning_summary_part.added":
+		state := responsesReasoningStateFor(result)
+		responsesReasoningPartForEvent(state, eventType, parsed, true)
+		itemID, _, signature, encryptedContent := responsesReasoningEventMetadata(parsed)
+		state.updateMetadata(itemID, "", signature, encryptedContent)
+		state.applyToResult(adapter, result)
+	case "response.reasoning_summary_text.delta", "response.reasoning_text.delta", "response.thinking.delta":
 		if shouldSuppressResponsesRawReasoning(adapter, eventType) {
 			return nil
 		}
@@ -424,7 +803,14 @@ func applyResponsesStreamEvent(
 		if reasoning == nil || reasoning.Text == "" {
 			return nil
 		}
-		mergeReasoningDeltaOutput(&result.Reasoning, reasoning)
+		state := responsesReasoningStateFor(result)
+		part := responsesReasoningPartForEvent(state, eventType, parsed, false)
+		state.updateMetadata(reasoning.ItemID, "", reasoning.Signature, reasoning.EncryptedContent)
+		reasoning.Text = state.appendDelta(part, reasoning.Text)
+		state.applyToResult(adapter, result)
+		if reasoning.Text == "" {
+			return nil
+		}
 		if onEvent != nil {
 			return onEvent(GenerateStreamEvent{
 				Reasoning:  reasoning,
@@ -436,31 +822,35 @@ func applyResponsesStreamEvent(
 			return nil
 		}
 		reasoning := parseResponsesReasoningDone(eventType, parsed)
-		if reasoning == nil || reasoning.Text == "" {
+		state := responsesReasoningStateFor(result)
+		part := responsesReasoningPartForEvent(state, eventType, parsed, false)
+		finalized := strings.HasSuffix(eventType, "_part.done") || eventType == "response.thinking.done" || eventType == "response.reasoning_text.done"
+		if part != nil && finalized {
+			part.finalized = true
+		}
+		if reasoning == nil {
+			state.applyToResult(adapter, result)
 			return nil
 		}
-		if result.Reasoning == nil || !reasoningOutputContains(result.Reasoning, reasoning.Text) {
-			mergeReasoningDeltaOutput(&result.Reasoning, reasoning)
-			if onEvent != nil {
-				return onEvent(GenerateStreamEvent{
-					Reasoning:  reasoning,
-					ResponseID: result.ResponseID,
-				})
-			}
+		state.updateMetadata(reasoning.ItemID, "", reasoning.Signature, reasoning.EncryptedContent)
+		reasoning.Text = state.reconcileSnapshot(part, reasoning.Text, finalized)
+		state.applyToResult(adapter, result)
+		if reasoning.Text != "" && onEvent != nil {
+			return onEvent(GenerateStreamEvent{
+				Reasoning:  reasoning,
+				ResponseID: result.ResponseID,
+			})
 		}
 	case "response.completed":
-		output := buildGenerateOutputFromParsedForAdapter(EndpointResponses, adapter, asMap(parsed["response"]), false)
-		if result.Reasoning == nil && output.Reasoning != nil && onEvent != nil {
-			if reasoning := responsesReasoningDeltaFromOutput(eventType, output.Reasoning); reasoning != nil {
-				if err := onEvent(GenerateStreamEvent{
-					Reasoning:  reasoning,
-					ResponseID: firstNonEmptyString(result.ResponseID, output.ResponseID),
-				}); err != nil {
-					return err
-				}
-			}
-		}
+		response := asMap(parsed["response"])
+		state := responsesReasoningStateFor(result)
+		reasoningEvents := reconcileResponsesReasoningOutput(adapter, eventType, state, response["output"])
+		output := buildGenerateOutputFromParsedForAdapter(EndpointResponses, adapter, response, false)
 		mergeGenerateOutput(result, output)
+		state.applyToResult(adapter, result)
+		if err := emitResponsesReasoningEvents(result, reasoningEvents, onEvent); err != nil {
+			return err
+		}
 		if output.Usage != (Usage{}) && onEvent != nil {
 			return onEvent(GenerateStreamEvent{
 				Usage:      output.Usage,
@@ -478,28 +868,132 @@ func shouldSuppressResponsesRawReasoning(adapter string, eventType string) bool 
 	return adapter == AdapterOpenAIResponses && strings.HasPrefix(strings.TrimSpace(eventType), "response.reasoning_text.")
 }
 
-func responsesReasoningDeltaFromOutput(eventType string, output *ReasoningOutput) *ReasoningDelta {
-	if output == nil {
+func responsesReasoningEventMetadata(parsed map[string]interface{}) (itemID string, status string, signature string, encryptedContent string) {
+	return firstNonEmptyString(getString(parsed["item_id"]), getStringFromPath(parsed, "item", "id")),
+		firstNonEmptyString(getString(parsed["status"]), getStringFromPath(parsed, "item", "status")),
+		firstNonEmptyString(getString(parsed["signature"]), getStringFromPath(parsed, "item", "signature")),
+		firstNonEmptyString(getString(parsed["encrypted_content"]), getStringFromPath(parsed, "item", "encrypted_content"))
+}
+
+func reconcileResponsesReasoningOutput(
+	adapter string,
+	eventType string,
+	state *responsesReasoningStreamState,
+	rawOutput interface{},
+) []*ReasoningDelta {
+	events := make([]*ReasoningDelta, 0)
+	for outputIndex, raw := range asSlice(rawOutput) {
+		item := asMap(raw)
+		if strings.TrimSpace(getString(item["type"])) != "reasoning" {
+			continue
+		}
+		events = append(events, reconcileResponsesReasoningItem(
+			adapter,
+			eventType,
+			state,
+			item,
+			int64(outputIndex),
+			true,
+			true,
+		)...)
+	}
+	return events
+}
+
+func reconcileResponsesReasoningItem(
+	adapter string,
+	eventType string,
+	state *responsesReasoningStreamState,
+	item map[string]interface{},
+	outputIndex int64,
+	hasOutputIndex bool,
+	authoritative bool,
+) []*ReasoningDelta {
+	if state == nil || strings.TrimSpace(getString(item["type"])) != "reasoning" {
 		return nil
 	}
-	kind := "content_text"
-	text := strings.TrimSpace(output.Text)
-	if text == "" {
-		text = strings.TrimSpace(output.Summary)
-		kind = "summary_text"
+	itemID := strings.TrimSpace(getString(item["id"]))
+	status := strings.TrimSpace(getString(item["status"]))
+	signature := strings.TrimSpace(getString(item["signature"]))
+	encryptedContent := strings.TrimSpace(getString(item["encrypted_content"]))
+	state.updateMetadata(itemID, status, signature, encryptedContent)
+
+	events := make([]*ReasoningDelta, 0)
+	reconcileParts := func(kind string, fragments []string) {
+		for partIndex, text := range fragments {
+			if text == "" && !authoritative {
+				continue
+			}
+			part := state.partFor(kind, itemID, outputIndex, hasOutputIndex, int64(partIndex), true, false)
+			if !authoritative {
+				state.seedSnapshot(part, text)
+				continue
+			}
+			emitted := state.reconcileSnapshot(part, text, true)
+			if emitted == "" {
+				continue
+			}
+			events = append(events, &ReasoningDelta{
+				EventType:        eventType,
+				ItemID:           itemID,
+				Status:           status,
+				Kind:             kind,
+				Text:             emitted,
+				Signature:        signature,
+				EncryptedContent: encryptedContent,
+			})
+		}
 	}
-	if text == "" {
+
+	summaryParts := responsesReasoningFragments(item["summary"])
+	if len(summaryParts) == 0 {
+		summaryParts = responsesReasoningFragments(item["summary_text"])
+	}
+	reconcileParts("summary_text", summaryParts)
+	if adapter != AdapterOpenAIResponses {
+		contentParts := responsesReasoningFragments(item["content"])
+		if len(contentParts) == 0 {
+			contentParts = responsesReasoningFragments(item["text"])
+		}
+		reconcileParts("content_text", contentParts)
+	}
+	return events
+}
+
+func responsesReasoningFragments(raw interface{}) []string {
+	if values, ok := raw.([]interface{}); ok {
+		parts := make([]string, len(values))
+		for index, value := range values {
+			parts[index] = extractReasoningDeltaText(value)
+		}
+		return parts
+	}
+	if text := extractReasoningDeltaText(raw); text != "" {
+		return []string{text}
+	}
+	return nil
+}
+
+func emitResponsesReasoningEvents(
+	result *GenerateOutput,
+	events []*ReasoningDelta,
+	onEvent func(GenerateStreamEvent) error,
+) error {
+	if onEvent == nil {
 		return nil
 	}
-	return &ReasoningDelta{
-		EventType:        eventType,
-		ItemID:           output.ItemID,
-		Status:           output.Status,
-		Kind:             kind,
-		Text:             text,
-		Signature:        output.Signature,
-		EncryptedContent: output.EncryptedContent,
+	for _, reasoning := range events {
+		if reasoning == nil || reasoning.Text == "" {
+			continue
+		}
+		if err := onEvent(GenerateStreamEvent{
+			Reasoning:  reasoning,
+			ResponseID: result.ResponseID,
+		}); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func parseResponsesServerToolStatusEvent(eventType string, parsed map[string]interface{}) (ToolCall, bool) {
@@ -544,12 +1038,23 @@ func responseServerToolIdentifierKeys() []string {
 }
 
 func mergeResponsesStreamOutputItem(
+	adapter string,
+	eventType string,
 	result *GenerateOutput,
-	item map[string]interface{},
+	parsed map[string]interface{},
+	authoritative bool,
 	onEvent func(GenerateStreamEvent) error,
 ) error {
+	item := asMap(parsed["item"])
 	if result == nil || len(item) == 0 {
 		return nil
+	}
+	if strings.TrimSpace(getString(item["type"])) == "reasoning" {
+		state := responsesReasoningStateFor(result)
+		outputIndex, hasOutputIndex := responsesEventIndex(parsed, "output_index")
+		events := reconcileResponsesReasoningItem(adapter, eventType, state, item, outputIndex, hasOutputIndex, authoritative)
+		state.applyToResult(adapter, result)
+		return emitResponsesReasoningEvents(result, events, onEvent)
 	}
 	if !isResponsesServerToolCallItem(item) {
 		mergeResponsesOutputItem(result, item, false)
@@ -620,13 +1125,19 @@ func parseResponsesOutput(adapter string, parsed map[string]interface{}, result 
 	result.Text = getString(parsed["output_text"])
 	outputItems := asSlice(parsed["output"])
 	textChunks := make([]string, 0, len(outputItems))
+	reasoningItems := make([]*ReasoningOutput, 0)
 
 	for _, raw := range outputItems {
 		item := asMap(raw)
+		if strings.TrimSpace(getString(item["type"])) == "reasoning" {
+			reasoningItems = append(reasoningItems, parseReasoningOutputItem(item))
+			continue
+		}
 		if chunk := mergeResponsesOutputItem(result, item, true); chunk != "" {
 			textChunks = append(textChunks, chunk)
 		}
 	}
+	result.Reasoning = combineResponsesReasoningOutputs(reasoningItems)
 
 	if result.Text == "" && len(textChunks) > 0 {
 		result.Text = strings.Join(textChunks, "")
@@ -689,10 +1200,7 @@ func mergeReasoningDeltaOutput(dst **ReasoningOutput, delta *ReasoningDelta) {
 }
 
 func parseResponsesReasoningDelta(eventType string, parsed map[string]interface{}) *ReasoningDelta {
-	text := firstNonEmptyString(
-		extractReasoningDeltaText(parsed["delta"]),
-		extractReasoningDeltaText(parsed["part"]),
-	)
+	text := extractReasoningDeltaText(parsed["delta"])
 	if text == "" {
 		return nil
 	}
@@ -708,18 +1216,14 @@ func parseResponsesReasoningDelta(eventType string, parsed map[string]interface{
 		Status:           firstNonEmptyString(getString(parsed["status"]), getStringFromPath(parsed, "item", "status")),
 		Kind:             kind,
 		Text:             text,
+		Signature:        firstNonEmptyString(getString(parsed["signature"]), getStringFromPath(parsed, "item", "signature")),
 		EncryptedContent: firstNonEmptyString(getString(parsed["encrypted_content"]), getStringFromPath(parsed, "item", "encrypted_content")),
 	}
 }
 
 func parseResponsesReasoningDone(eventType string, parsed map[string]interface{}) *ReasoningDelta {
-	text := firstNonEmptyString(
-		extractReasoningDeltaText(parsed["text"]),
-		extractReasoningDeltaText(parsed["summary"]),
-		extractReasoningDeltaText(parsed["delta"]),
-		extractReasoningDeltaText(parsed["part"]),
-	)
-	if text == "" {
+	text, hasSnapshot := responsesReasoningDoneText(parsed)
+	if !hasSnapshot {
 		return nil
 	}
 
@@ -731,11 +1235,27 @@ func parseResponsesReasoningDone(eventType string, parsed map[string]interface{}
 	return &ReasoningDelta{
 		EventType:        eventType,
 		ItemID:           firstNonEmptyString(getString(parsed["item_id"]), getStringFromPath(parsed, "item", "id")),
-		Status:           firstNonEmptyString(getString(parsed["status"]), getStringFromPath(parsed, "item", "status"), "completed"),
+		Status:           firstNonEmptyString(getString(parsed["status"]), getStringFromPath(parsed, "item", "status")),
 		Kind:             kind,
 		Text:             text,
+		Signature:        firstNonEmptyString(getString(parsed["signature"]), getStringFromPath(parsed, "item", "signature")),
 		EncryptedContent: firstNonEmptyString(getString(parsed["encrypted_content"]), getStringFromPath(parsed, "item", "encrypted_content")),
 	}
+}
+
+func responsesReasoningDoneText(parsed map[string]interface{}) (string, bool) {
+	found := false
+	for _, key := range []string{"text", "summary", "delta", "part"} {
+		raw, ok := parsed[key]
+		if !ok {
+			continue
+		}
+		found = true
+		if value := extractReasoningDeltaText(raw); value != "" {
+			return value, true
+		}
+	}
+	return "", found
 }
 
 func suppressOpenAIResponsesRawReasoning(adapter string, result *GenerateOutput) {
@@ -746,17 +1266,11 @@ func suppressOpenAIResponsesRawReasoning(adapter string, result *GenerateOutput)
 	if strings.TrimSpace(result.Reasoning.Summary) != "" ||
 		strings.TrimSpace(result.Reasoning.ItemID) != "" ||
 		strings.TrimSpace(result.Reasoning.Status) != "" ||
+		strings.TrimSpace(result.Reasoning.Signature) != "" ||
 		strings.TrimSpace(result.Reasoning.EncryptedContent) != "" {
 		return
 	}
 	result.Reasoning = nil
-}
-
-func reasoningOutputContains(output *ReasoningOutput, text string) bool {
-	if output == nil || strings.TrimSpace(text) == "" {
-		return false
-	}
-	return strings.Contains(output.Text, text) || strings.Contains(output.Summary, text)
 }
 
 func parseReasoningOutputItem(item map[string]interface{}) *ReasoningOutput {
@@ -764,40 +1278,72 @@ func parseReasoningOutputItem(item map[string]interface{}) *ReasoningOutput {
 		return nil
 	}
 
-	summaryParts := make([]string, 0)
-	for _, raw := range asSlice(item["summary"]) {
-		if text := extractReasoningDeltaText(raw); text != "" {
-			summaryParts = append(summaryParts, text)
-		}
+	summaryParts := responsesReasoningFragments(item["summary"])
+	if len(summaryParts) == 0 {
+		summaryParts = responsesReasoningFragments(item["summary_text"])
 	}
-
-	contentParts := make([]string, 0)
-	for _, raw := range asSlice(item["content"]) {
-		if text := extractReasoningDeltaText(raw); text != "" {
-			contentParts = append(contentParts, text)
-		}
-	}
-
-	text := strings.Join(contentParts, "")
-	if text == "" {
-		text = extractReasoningDeltaText(item["text"])
+	contentParts := responsesReasoningFragments(item["content"])
+	if len(contentParts) == 0 {
+		contentParts = responsesReasoningFragments(item["text"])
 	}
 
 	result := &ReasoningOutput{
 		ItemID:           getString(item["id"]),
 		Status:           getString(item["status"]),
-		Summary:          strings.Join(summaryParts, ""),
-		Text:             text,
+		Summary:          joinResponsesReasoningFragments(summaryParts),
+		Text:             joinResponsesReasoningFragments(contentParts),
+		Signature:        getString(item["signature"]),
 		EncryptedContent: getString(item["encrypted_content"]),
 	}
-	if strings.TrimSpace(result.ItemID) == "" &&
-		strings.TrimSpace(result.Status) == "" &&
-		strings.TrimSpace(result.Summary) == "" &&
-		strings.TrimSpace(result.Text) == "" &&
-		strings.TrimSpace(result.EncryptedContent) == "" {
+	if reasoningOutputEmpty(result) {
 		return nil
 	}
 	return result
+}
+
+func joinResponsesReasoningFragments(parts []string) string {
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part != "" {
+			values = append(values, part)
+		}
+	}
+	return strings.Join(values, responsesReasoningPartSeparator)
+}
+
+func combineResponsesReasoningOutputs(items []*ReasoningOutput) *ReasoningOutput {
+	combined := &ReasoningOutput{}
+	summaries := make([]string, 0, len(items))
+	contents := make([]string, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		if item.Summary != "" {
+			summaries = append(summaries, item.Summary)
+		}
+		if item.Text != "" {
+			contents = append(contents, item.Text)
+		}
+		if value := strings.TrimSpace(item.ItemID); value != "" {
+			combined.ItemID = value
+		}
+		if value := strings.TrimSpace(item.Status); value != "" {
+			combined.Status = value
+		}
+		if value := strings.TrimSpace(item.Signature); value != "" {
+			combined.Signature = value
+		}
+		if value := strings.TrimSpace(item.EncryptedContent); value != "" {
+			combined.EncryptedContent = value
+		}
+	}
+	combined.Summary = strings.Join(summaries, responsesReasoningPartSeparator)
+	combined.Text = strings.Join(contents, responsesReasoningPartSeparator)
+	if reasoningOutputEmpty(combined) {
+		return nil
+	}
+	return combined
 }
 
 func mergeReasoningOutput(dst **ReasoningOutput, src *ReasoningOutput) {

@@ -1305,6 +1305,198 @@ func TestResponsesStreamReasoningSummaryDeltaIsEmittedAndStored(t *testing.T) {
 	}
 }
 
+func TestResponsesStreamOfficialReasoningSummaryLifecyclePreservesWhitespaceWithoutDuplicates(t *testing.T) {
+	result := &GenerateOutput{ToolCalls: make([]ToolCall, 0)}
+	rawStream := strings.Join([]string{
+		`event: response.reasoning_summary_part.added`,
+		`data: {"type":"response.reasoning_summary_part.added","item_id":"rs_1","output_index":0,"summary_index":0,"part":{"type":"summary_text","text":""}}`,
+		``,
+		`event: response.reasoning_summary_text.delta`,
+		`data: {"type":"response.reasoning_summary_text.delta","item_id":"rs_1","output_index":0,"summary_index":0,"delta":"Need"}`,
+		``,
+		`event: response.reasoning_summary_text.delta`,
+		`data: {"type":"response.reasoning_summary_text.delta","item_id":"rs_1","output_index":0,"summary_index":0,"delta":" to respond"}`,
+		``,
+		`event: response.reasoning_summary_text.delta`,
+		`data: {"type":"response.reasoning_summary_text.delta","item_id":"rs_1","output_index":0,"summary_index":0,"delta":" to the user."}`,
+		``,
+		`event: response.reasoning_summary_text.done`,
+		`data: {"type":"response.reasoning_summary_text.done","item_id":"rs_1","output_index":0,"summary_index":0,"text":"Need to respond to the user."}`,
+		``,
+		`event: response.reasoning_summary_part.done`,
+		`data: {"type":"response.reasoning_summary_part.done","item_id":"rs_1","output_index":0,"summary_index":0,"part":{"type":"summary_text","text":"Need to respond to the user."}}`,
+		``,
+		`event: response.output_item.done`,
+		`data: {"type":"response.output_item.done","output_index":0,"item":{"id":"rs_1","type":"reasoning","status":"completed","summary":[{"type":"summary_text","text":"Need to respond to the user."}]}}`,
+		``,
+		`event: response.completed`,
+		`data: {"type":"response.completed","response":{"id":"resp_1","output":[{"id":"rs_1","type":"reasoning","status":"completed","summary":[{"type":"summary_text","text":"Need to respond to the user."}]},{"type":"message","content":[{"type":"output_text","text":"Hi!"}]}],"usage":{"input_tokens":8,"output_tokens":5}}}`,
+		``,
+	}, "\n")
+
+	reasoningEvents := make([]string, 0)
+	err := consumeOpenAIGenerateStream(EndpointResponses, AdapterOpenAIResponses, strings.NewReader(rawStream), result, func(event GenerateStreamEvent) error {
+		if event.Reasoning != nil {
+			reasoningEvents = append(reasoningEvents, event.Reasoning.Text)
+		}
+		return nil
+	}, false)
+	if err != nil {
+		t.Fatalf("consume stream: %v", err)
+	}
+	if got := strings.Join(reasoningEvents, ""); got != "Need to respond to the user." {
+		t.Fatalf("expected exact append-safe summary, got %q from %#v", got, reasoningEvents)
+	}
+	if len(reasoningEvents) != 3 {
+		t.Fatalf("expected only the three delta events, got %#v", reasoningEvents)
+	}
+	if result.Reasoning == nil || result.Reasoning.Summary != "Need to respond to the user." || result.Reasoning.Status != "completed" {
+		t.Fatalf("expected one authoritative completed summary, got %#v", result.Reasoning)
+	}
+	if result.Text != "Hi!" {
+		t.Fatalf("expected final answer to remain intact, got %q", result.Text)
+	}
+	if result.responsesReasoningState != nil {
+		t.Fatal("expected the stream-only reasoning accumulator to be released")
+	}
+}
+
+func TestResponsesStreamReasoningDoneReconcilesPrefixAndConflict(t *testing.T) {
+	t.Run("prefix only emits missing suffix", func(t *testing.T) {
+		result := &GenerateOutput{}
+		streamed := ""
+		onEvent := func(event GenerateStreamEvent) error {
+			if event.Reasoning != nil {
+				streamed += event.Reasoning.Text
+			}
+			return nil
+		}
+		if err := applyResponsesStreamEvent(AdapterOpenAIResponses, "", map[string]interface{}{
+			"type": "response.reasoning_summary_text.delta", "item_id": "rs_1", "summary_index": float64(0), "delta": "Need",
+		}, "", result, onEvent); err != nil {
+			t.Fatal(err)
+		}
+		for range 2 {
+			if err := applyResponsesStreamEvent(AdapterOpenAIResponses, "", map[string]interface{}{
+				"type": "response.reasoning_summary_text.done", "item_id": "rs_1", "summary_index": float64(0), "text": "Need more",
+			}, "", result, onEvent); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if streamed != "Need more" || result.Reasoning == nil || result.Reasoning.Summary != "Need more" {
+			t.Fatalf("expected only the missing suffix once, streamed=%q result=%#v", streamed, result.Reasoning)
+		}
+	})
+
+	t.Run("conflict replaces final state without appending snapshot", func(t *testing.T) {
+		result := &GenerateOutput{}
+		streamed := ""
+		onEvent := func(event GenerateStreamEvent) error {
+			if event.Reasoning != nil {
+				streamed += event.Reasoning.Text
+			}
+			return nil
+		}
+		if err := applyResponsesStreamEvent(AdapterOpenAIResponses, "", map[string]interface{}{
+			"type": "response.reasoning_summary_text.delta", "item_id": "rs_1", "delta": "Draft summary",
+		}, "", result, onEvent); err != nil {
+			t.Fatal(err)
+		}
+		if err := applyResponsesStreamEvent(AdapterOpenAIResponses, "", map[string]interface{}{
+			"type": "response.reasoning_summary_text.done", "item_id": "rs_1", "text": "Corrected summary",
+		}, "", result, onEvent); err != nil {
+			t.Fatal(err)
+		}
+		if err := applyResponsesStreamEvent(AdapterOpenAIResponses, "", map[string]interface{}{
+			"type": "response.output_item.done",
+			"item": map[string]interface{}{
+				"id": "rs_1", "type": "reasoning", "status": "completed",
+				"summary": []interface{}{map[string]interface{}{"type": "summary_text", "text": "Corrected summary extended"}},
+			},
+		}, "", result, onEvent); err != nil {
+			t.Fatal(err)
+		}
+		if streamed != "Draft summary" {
+			t.Fatalf("expected conflicting snapshots and later suffixes not to append, got %q", streamed)
+		}
+		if result.Reasoning == nil || result.Reasoning.Summary != "Corrected summary extended" {
+			t.Fatalf("expected conflicting snapshot to become authoritative, got %#v", result.Reasoning)
+		}
+	})
+}
+
+func TestResponsesReasoningPreservesMultiplePartsAndItemsInProtocolOrder(t *testing.T) {
+	payload := mustDecodeObject(t, `{
+		"id":"resp_multi",
+		"output":[
+			{"id":"rs_1","type":"reasoning","status":"completed","summary":[
+				{"type":"summary_text","text":"First part."},
+				{"type":"summary_text","text":"Second part."}
+			]},
+			{"type":"message","content":[{"type":"output_text","text":"Answer"}]},
+			{"id":"rs_2","type":"reasoning","status":"completed","summary":[
+				{"type":"summary_text","text":"Third part."}
+			]}
+		]
+	}`)
+	want := "First part.\n\nSecond part.\n\nThird part."
+
+	nonStreaming := buildGenerateOutputFromParsedForAdapter(EndpointResponses, AdapterOpenAIResponses, payload, false)
+	if nonStreaming.Reasoning == nil || nonStreaming.Reasoning.Summary != want {
+		t.Fatalf("expected non-streaming reasoning order %q, got %#v", want, nonStreaming.Reasoning)
+	}
+
+	result := &GenerateOutput{}
+	streamed := ""
+	if err := applyResponsesStreamEvent(AdapterOpenAIResponses, "", map[string]interface{}{
+		"type": "response.completed", "response": payload,
+	}, "", result, func(event GenerateStreamEvent) error {
+		if event.Reasoning != nil {
+			streamed += event.Reasoning.Text
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if streamed != want || result.Reasoning == nil || result.Reasoning.Summary != want {
+		t.Fatalf("expected streamed and final reasoning order %q, streamed=%q result=%#v", want, streamed, result.Reasoning)
+	}
+}
+
+func TestResponsesReasoningMissingCoordinatesUsesStableArrivalOrder(t *testing.T) {
+	result := &GenerateOutput{}
+	streamed := ""
+	onEvent := func(event GenerateStreamEvent) error {
+		if event.Reasoning != nil {
+			streamed += event.Reasoning.Text
+		}
+		return nil
+	}
+	for _, text := range []string{"First anonymous part.", "Second anonymous part."} {
+		if err := applyResponsesStreamEvent(AdapterOpenAIResponses, "", map[string]interface{}{
+			"type": "response.reasoning_summary_part.added", "summary_index": float64(0),
+			"part": map[string]interface{}{"type": "summary_text", "text": ""},
+		}, "", result, onEvent); err != nil {
+			t.Fatal(err)
+		}
+		if err := applyResponsesStreamEvent(AdapterOpenAIResponses, "", map[string]interface{}{
+			"type": "response.reasoning_summary_text.delta", "summary_index": float64(0), "delta": text,
+		}, "", result, onEvent); err != nil {
+			t.Fatal(err)
+		}
+		if err := applyResponsesStreamEvent(AdapterOpenAIResponses, "", map[string]interface{}{
+			"type": "response.reasoning_summary_part.done", "summary_index": float64(0),
+			"part": map[string]interface{}{"type": "summary_text", "text": text},
+		}, "", result, onEvent); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want := "First anonymous part.\n\nSecond anonymous part."
+	if streamed != want || result.Reasoning == nil || result.Reasoning.Summary != want {
+		t.Fatalf("expected missing-coordinate parts in arrival order %q, streamed=%q result=%#v", want, streamed, result.Reasoning)
+	}
+}
+
 func TestResponsesStreamReasoningSummaryPartDoneIsEmittedAndStored(t *testing.T) {
 	result := &GenerateOutput{ToolCalls: make([]ToolCall, 0)}
 	rawStream := strings.Join([]string{
@@ -1320,8 +1512,8 @@ func TestResponsesStreamReasoningSummaryPartDoneIsEmittedAndStored(t *testing.T)
 			if event.Reasoning.Kind != "summary_text" {
 				t.Fatalf("expected summary_text reasoning kind, got %q", event.Reasoning.Kind)
 			}
-			if event.Reasoning.Status != "completed" {
-				t.Fatalf("expected completed reasoning status, got %q", event.Reasoning.Status)
+			if event.Reasoning.Status != "" {
+				t.Fatalf("expected part.done not to synthesize a completed status, got %q", event.Reasoning.Status)
 			}
 		}
 		return nil
@@ -1334,6 +1526,39 @@ func TestResponsesStreamReasoningSummaryPartDoneIsEmittedAndStored(t *testing.T)
 	}
 	if result.Reasoning == nil || result.Reasoning.Summary != reasoningText {
 		t.Fatalf("expected reasoning part done to be stored, got %#v", result.Reasoning)
+	}
+}
+
+func TestResponsesStreamReasoningIncompleteStatusComesFromItemLifecycle(t *testing.T) {
+	result := &GenerateOutput{}
+	rawStream := strings.Join([]string{
+		`event: response.reasoning_summary_part.added`,
+		`data: {"type":"response.reasoning_summary_part.added","item_id":"rs_incomplete","part":{"type":"summary_text","text":""}}`,
+		``,
+		`event: response.reasoning_summary_part.done`,
+		`data: {"type":"response.reasoning_summary_part.done","item_id":"rs_incomplete","status":"incomplete","part":{"type":"summary_text","text":"Partial summary"}}`,
+		``,
+		`event: response.output_item.done`,
+		`data: {"type":"response.output_item.done","item":{"id":"rs_incomplete","type":"reasoning","status":"incomplete","summary":[{"type":"summary_text","text":"Partial summary"}]}}`,
+		``,
+	}, "\n")
+
+	statuses := make([]string, 0)
+	streamed := ""
+	if err := consumeOpenAIGenerateStream(EndpointResponses, AdapterOpenAIResponses, strings.NewReader(rawStream), result, func(event GenerateStreamEvent) error {
+		if event.Reasoning != nil {
+			streamed += event.Reasoning.Text
+			statuses = append(statuses, event.Reasoning.Status)
+		}
+		return nil
+	}, false); err != nil {
+		t.Fatal(err)
+	}
+	if streamed != "Partial summary" || len(statuses) != 1 || statuses[0] != "incomplete" {
+		t.Fatalf("expected one fallback snapshot with upstream incomplete status, text=%q statuses=%#v", streamed, statuses)
+	}
+	if result.Reasoning == nil || result.Reasoning.Status != "incomplete" || result.Reasoning.Summary != "Partial summary" {
+		t.Fatalf("expected item lifecycle to own final incomplete status, got %#v", result.Reasoning)
 	}
 }
 
@@ -1424,6 +1649,34 @@ func TestOpenAIResponsesRawReasoningTextIsNotSurfaced(t *testing.T) {
 	}
 	if result.Text != "最终答案" {
 		t.Fatalf("expected final answer text, got %q", result.Text)
+	}
+}
+
+func TestCompatibleResponsesRawReasoningAliasRemainsAvailable(t *testing.T) {
+	result := &GenerateOutput{}
+	rawStream := strings.Join([]string{
+		`event: response.reasoning_text.delta`,
+		`data: {"type":"response.reasoning_text.delta","item_id":"rs_1","content_index":0,"delta":"Raw"}`,
+		``,
+		`event: response.reasoning_text.delta`,
+		`data: {"type":"response.reasoning_text.delta","item_id":"rs_1","content_index":0,"delta":" reasoning"}`,
+		``,
+		`event: response.reasoning_text.done`,
+		`data: {"type":"response.reasoning_text.done","item_id":"rs_1","content_index":0,"text":"Raw reasoning"}`,
+		``,
+	}, "\n")
+
+	streamed := ""
+	if err := consumeOpenAIGenerateStream(EndpointResponses, AdapterXAIResponses, strings.NewReader(rawStream), result, func(event GenerateStreamEvent) error {
+		if event.Reasoning != nil {
+			streamed += event.Reasoning.Text
+		}
+		return nil
+	}, false); err != nil {
+		t.Fatal(err)
+	}
+	if streamed != "Raw reasoning" || result.Reasoning == nil || result.Reasoning.Text != "Raw reasoning" {
+		t.Fatalf("expected compatible raw reasoning alias to remain append-safe, streamed=%q result=%#v", streamed, result.Reasoning)
 	}
 }
 

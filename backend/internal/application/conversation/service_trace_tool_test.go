@@ -221,6 +221,49 @@ func TestUpstreamThinkingDeltaIsCoalescedBetweenFlushes(t *testing.T) {
 	}
 }
 
+func TestUpstreamThinkingFinalCalibrationReusesRoundAndEmitsReplacement(t *testing.T) {
+	var liveEvents []map[string]interface{}
+	recorder := &messageTraceRecorder{
+		cfg: config.Config{
+			ProcessTraceEnabled:            true,
+			ProcessTraceVisibleToUser:      true,
+			ProcessTraceStoreUpstreamThink: true,
+		},
+		assistant: &model.Message{ID: 1, ConversationID: 2, UserID: 3, RunID: "run_1"},
+		onEvent: func(eventType string, payload map[string]interface{}) error {
+			if eventType == "upstream_think_delta" {
+				liveEvents = append(liveEvents, payload)
+			}
+			return nil
+		},
+	}
+
+	recorder.appendUpstreamReasoning(messageTraceThinkKindSummary, "Draft summary", nil)
+	if recorder.upstreamThink == nil {
+		t.Fatal("expected streaming think draft")
+	}
+	roundID := recorder.upstreamThink.roundID
+	eventID := recorder.upstreamThink.eventID
+	recorder.syncStructuredThink("", "Corrected summary", nil)
+	recorder.completeUpstreamThink()
+
+	if recorder.upstreamThink.roundID != roundID || recorder.upstreamThink.eventID != eventID {
+		t.Fatalf("expected final calibration to reuse round/event, got round=%q event=%q", recorder.upstreamThink.roundID, recorder.upstreamThink.eventID)
+	}
+	if recorder.upstreamThink.contentMarkdown != "Corrected summary" || recorder.upstreamThink.status != messageTraceStatusCompleted {
+		t.Fatalf("expected corrected completed draft, got %#v", recorder.upstreamThink)
+	}
+	if len(recorder.events) != 1 || recorder.events[0].EventID != eventID || recorder.events[0].ContentMarkdown != "Corrected summary" {
+		t.Fatalf("expected one persisted think event with final content, got %#v", recorder.events)
+	}
+	if len(liveEvents) != 2 || liveEvents[1]["contentMarkdown"] != "Corrected summary" || liveEvents[1]["status"] != messageTraceStatusCompleted {
+		t.Fatalf("expected final live update to replace content in the same round, got %#v", liveEvents)
+	}
+	if liveEvents[0]["roundID"] != roundID || liveEvents[1]["roundID"] != roundID || liveEvents[0]["eventID"] != eventID || liveEvents[1]["eventID"] != eventID {
+		t.Fatalf("expected stable round/event IDs across calibration, got %#v", liveEvents)
+	}
+}
+
 func TestUpstreamThinkingLiveDeltaSkipsOversizedContent(t *testing.T) {
 	var events []map[string]interface{}
 	recorder := &messageTraceRecorder{
