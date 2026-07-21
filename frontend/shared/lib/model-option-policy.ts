@@ -157,6 +157,110 @@ export function uniqueModelOptionPaths(paths: string[]): string[] {
   return [...new Set(paths.map((path) => path.trim()).filter(Boolean))];
 }
 
+const GEMINI_INTERACTIONS_ALLOWED_PATHS = [
+  "generation_config.temperature",
+  "generation_config.top_p",
+  "generation_config.max_output_tokens",
+  "generation_config.thinking_level",
+  "response_format.type",
+  "response_format.aspect_ratio",
+  "response_format.image_size",
+  "response_format.mime_type",
+  "responseFormat.type",
+  "responseFormat.aspectRatio",
+  "responseFormat.imageSize",
+  "responseFormat.mimeType",
+  "generationConfig.videoConfig.task",
+  "generation_config.video_config.task",
+];
+
+const LEGACY_BUILT_IN_POLICY_PATHS: Record<string, { required: string[]; optional?: string[] }> = {
+  default: {
+    required: ["temperature", "top_p", "max_tokens", "max_output_tokens", "max_completion_tokens", "stop", "response_format.type"],
+    optional: ["tools"],
+  },
+  openai_chat_completions: {
+    required: ["service_tier", "presence_penalty", "frequency_penalty", "reasoning_effort", "verbosity", "thinking.type", "stream_options.include_usage"],
+    optional: ["reasoning_summary"],
+  },
+  openrouter_chat_completions: {
+    required: ["presence_penalty", "frequency_penalty", "reasoning_effort", "reasoning.effort", "reasoning.summary", "verbosity", "thinking.type", "stream_options.include_usage"],
+  },
+  openai_responses: {
+    required: ["service_tier", "reasoning.effort", "reasoning.summary", "text.verbosity"],
+    optional: ["store", "reasoning.mode", "reasoning_effort", "reasoning_summary"],
+  },
+  openai_image_generations: {
+    required: ["background", "moderation", "n", "output_compression", "output_format", "partial_images", "quality", "response_format", "size", "style", "user"],
+  },
+  openai_image_edits: {
+    required: ["background", "input_fidelity", "n", "output_compression", "output_format", "partial_images", "quality", "response_format", "size", "user"],
+  },
+  google_image_generation: {
+    required: ["generationConfig.responseModalities", "generationConfig.imageConfig.aspectRatio", "generationConfig.imageConfig.imageSize"],
+    optional: ["generationConfig.thinkingConfig.thinkingLevel"],
+  },
+  anthropic_messages: {
+    required: ["speed", "top_k", "thinking.type", "thinking.budget_tokens"],
+    optional: ["output_config.effort", "cache_control"],
+  },
+  xai_responses: {
+    required: ["reasoning.effort"],
+    optional: ["store"],
+  },
+  xai_image: {
+    required: ["aspect_ratio", "n", "resolution", "response_format"],
+  },
+  xai_image_edits: {
+    required: ["aspect_ratio", "n", "resolution", "response_format"],
+  },
+  gemini_generate_content: {
+    required: ["generationConfig.temperature", "generationConfig.topP", "generationConfig.maxOutputTokens", "generationConfig.responseMimeType"],
+    optional: ["thinkingConfig.includeThoughts", "thinkingConfig.thinkingLevel"],
+  },
+};
+
+const LEGACY_BUILT_IN_OPTIONAL_PROTOCOL_PATHS: Record<string, { required: string[]; optional?: string[] }> = {
+  openrouter_responses: {
+    required: ["reasoning.effort", "reasoning.summary"],
+  },
+  openai_video_generations: {
+    required: ["seconds", "size"],
+  },
+};
+
+function modelOptionPathSetMatches(paths: string[], required: string[], optional: string[] = []): boolean {
+  const pathSet = new Set(paths);
+  if (pathSet.size !== paths.length || required.some((path) => !pathSet.has(path))) {
+    return false;
+  }
+  const allowed = new Set([...required, ...optional]);
+  return paths.every((path) => allowed.has(path));
+}
+
+function matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules: ModelOptionRuleMap): boolean {
+  if (rules.gemini_interactions) {
+    return false;
+  }
+  let allowedProtocolCount = Object.keys(LEGACY_BUILT_IN_POLICY_PATHS).length;
+  for (const [protocol, spec] of Object.entries(LEGACY_BUILT_IN_OPTIONAL_PROTOCOL_PATHS)) {
+    const paths = rules[protocol];
+    if (paths) {
+      if (!modelOptionPathSetMatches(paths, spec.required, spec.optional)) {
+        return false;
+      }
+      allowedProtocolCount++;
+    }
+  }
+  if (Object.keys(rules).length !== allowedProtocolCount) {
+    return false;
+  }
+  return Object.entries(LEGACY_BUILT_IN_POLICY_PATHS).every(([protocol, spec]) => {
+    const paths = rules[protocol];
+    return Boolean(paths && modelOptionPathSetMatches(paths, spec.required, spec.optional));
+  });
+}
+
 export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
   const parsed = parseModelOptionRuleMap(raw);
   if (parsed.error) {
@@ -167,6 +271,10 @@ export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
     next[protocol] = [...(paths ?? [])];
   }
   let changed = false;
+  if (matchesLegacyBuiltInPolicyWithoutGeminiInteractions(next)) {
+    next.gemini_interactions = [...GEMINI_INTERACTIONS_ALLOWED_PATHS];
+    changed = true;
+  }
   const legacyOpenAIChatPaths = [
     "service_tier",
     "presence_penalty",

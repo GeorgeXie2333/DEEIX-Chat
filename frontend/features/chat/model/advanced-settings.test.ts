@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { ModelOptionPolicy } from "../../../shared/lib/model-option-policy.ts";
+import {
+  type ModelOptionPolicy,
+  normalizeModelOptionAllowedPathsJSON,
+} from "../../../shared/lib/model-option-policy.ts";
+import { DEFAULT_MODEL_OPTION_ALLOWED_PATHS } from "../../admin/model/conversation-settings.ts";
 import {
   isGemini3PlusModel,
   isValidOpenAIImage2Resolution,
@@ -402,6 +406,38 @@ test("Gemini Interactions exposes media settings only for the active task", () =
     setAdvancedSettingValue({ generation_config: { thinking_level: "low", video_config: { task: "edit" } } }, videoTask, "auto"),
     { generation_config: { thinking_level: "low" } },
   );
+});
+
+test("legacy built-in policy restores Gemini Interactions advanced settings without changing custom policies", () => {
+  const legacy = JSON.parse(DEFAULT_MODEL_OPTION_ALLOWED_PATHS) as Record<string, string[]>;
+  delete legacy.gemini_interactions;
+  const legacyJSON = JSON.stringify(legacy);
+  const normalized = JSON.parse(normalizeModelOptionAllowedPathsJSON(legacyJSON)) as Record<string, string[]>;
+  assert.ok(normalized.gemini_interactions.includes("generation_config.thinking_level"));
+  assert.ok(normalized.gemini_interactions.includes("generation_config.video_config.task"));
+
+  const policy: ModelOptionPolicy = {
+    ...allowAdvancedPolicy,
+    allowedPathsJSON: legacyJSON,
+  };
+  assert.deepEqual(
+    resolveAdvancedSettings({
+      protocol: "gemini_interactions",
+      submitTask: "video_generation",
+      options: {},
+      defaultOptions: {},
+      policy,
+    }).map((item) => item.key),
+    ["generation_config.thinking_level", "generation_config.video_config.task"],
+  );
+
+  legacy.openai_chat_completions.push("metadata.tenant");
+  const customizedJSON = JSON.stringify(legacy);
+  const normalizedCustom = JSON.parse(
+    normalizeModelOptionAllowedPathsJSON(customizedJSON),
+  ) as Record<string, string[]>;
+  assert.equal(normalizedCustom.gemini_interactions, undefined);
+  assert.ok(normalizedCustom.openai_chat_completions.includes("metadata.tenant"));
 });
 
 test("resolveAdvancedSettings exposes Gemini image resolution, aspect ratio, and thinking controls", () => {

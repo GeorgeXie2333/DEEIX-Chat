@@ -217,7 +217,14 @@ func parseModelOptionPathRules(raw string) (map[string][]string, bool) {
 }
 
 func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
-	changed := upgradeLegacyOpenAIChatAllowedPaths(rules)
+	changed := false
+	if matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules) {
+		rules["gemini_interactions"] = defaultGeminiInteractionsAllowedPaths()
+		changed = true
+	}
+	if upgradeLegacyOpenAIChatAllowedPaths(rules) {
+		changed = true
+	}
 	upgrades := []struct {
 		protocol   string
 		anchors    []string
@@ -292,6 +299,126 @@ func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 		}
 	}
 	return changed
+}
+
+func defaultGeminiInteractionsAllowedPaths() []string {
+	return []string{
+		"generation_config.temperature",
+		"generation_config.top_p",
+		"generation_config.max_output_tokens",
+		"generation_config.thinking_level",
+		"response_format.type",
+		"response_format.aspect_ratio",
+		"response_format.image_size",
+		"response_format.mime_type",
+		"responseFormat.type",
+		"responseFormat.aspectRatio",
+		"responseFormat.imageSize",
+		"responseFormat.mimeType",
+		"generationConfig.videoConfig.task",
+		"generation_config.video_config.task",
+	}
+}
+
+func matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules map[string][]string) bool {
+	if _, exists := rules["gemini_interactions"]; exists {
+		return false
+	}
+	type pathSpec struct {
+		required []string
+		optional []string
+	}
+	specs := map[string]pathSpec{
+		"default": {
+			required: []string{"temperature", "top_p", "max_tokens", "max_output_tokens", "max_completion_tokens", "stop", "response_format.type"},
+			optional: []string{"tools"},
+		},
+		"openai_chat_completions": {
+			required: []string{"service_tier", "presence_penalty", "frequency_penalty", "reasoning_effort", "verbosity", "thinking.type", "stream_options.include_usage"},
+			optional: []string{"reasoning_summary"},
+		},
+		"openrouter_chat_completions": {
+			required: []string{"presence_penalty", "frequency_penalty", "reasoning_effort", "reasoning.effort", "reasoning.summary", "verbosity", "thinking.type", "stream_options.include_usage"},
+		},
+		"openai_responses": {
+			required: []string{"service_tier", "reasoning.effort", "reasoning.summary", "text.verbosity"},
+			optional: []string{"store", "reasoning.mode", "reasoning_effort", "reasoning_summary"},
+		},
+		"openai_image_generations": {
+			required: []string{"background", "moderation", "n", "output_compression", "output_format", "partial_images", "quality", "response_format", "size", "style", "user"},
+		},
+		"openai_image_edits": {
+			required: []string{"background", "input_fidelity", "n", "output_compression", "output_format", "partial_images", "quality", "response_format", "size", "user"},
+		},
+		"google_image_generation": {
+			required: []string{"generationConfig.responseModalities", "generationConfig.imageConfig.aspectRatio", "generationConfig.imageConfig.imageSize"},
+			optional: []string{"generationConfig.thinkingConfig.thinkingLevel"},
+		},
+		"anthropic_messages": {
+			required: []string{"speed", "top_k", "thinking.type", "thinking.budget_tokens"},
+			optional: []string{"output_config.effort", "cache_control"},
+		},
+		"xai_responses": {
+			required: []string{"reasoning.effort"},
+			optional: []string{"store"},
+		},
+		"xai_image": {
+			required: []string{"aspect_ratio", "n", "resolution", "response_format"},
+		},
+		"xai_image_edits": {
+			required: []string{"aspect_ratio", "n", "resolution", "response_format"},
+		},
+		"gemini_generate_content": {
+			required: []string{"generationConfig.temperature", "generationConfig.topP", "generationConfig.maxOutputTokens", "generationConfig.responseMimeType"},
+			optional: []string{"thinkingConfig.includeThoughts", "thinkingConfig.thinkingLevel"},
+		},
+	}
+	optionalSpecs := map[string]pathSpec{
+		"openrouter_responses": {
+			required: []string{"reasoning.effort", "reasoning.summary"},
+		},
+		"openai_video_generations": {
+			required: []string{"seconds", "size"},
+		},
+	}
+	allowedProtocolCount := len(specs)
+	for protocol, spec := range optionalSpecs {
+		if paths, exists := rules[protocol]; exists {
+			if !modelOptionPathSetMatches(paths, spec.required, spec.optional) {
+				return false
+			}
+			allowedProtocolCount++
+		}
+	}
+	if len(rules) != allowedProtocolCount {
+		return false
+	}
+	for protocol, spec := range specs {
+		paths, exists := rules[protocol]
+		if !exists || !modelOptionPathSetMatches(paths, spec.required, spec.optional) {
+			return false
+		}
+	}
+	return true
+}
+
+func modelOptionPathSetMatches(paths []string, required []string, optional []string) bool {
+	pathSet := stringSet(paths)
+	if len(pathSet) != len(paths) {
+		return false
+	}
+	allowed := stringSet(append(append([]string{}, required...), optional...))
+	for _, path := range required {
+		if _, exists := pathSet[path]; !exists {
+			return false
+		}
+	}
+	for path := range pathSet {
+		if _, exists := allowed[path]; !exists {
+			return false
+		}
+	}
+	return true
 }
 
 func upgradeLegacyOpenAIChatAllowedPaths(rules map[string][]string) bool {

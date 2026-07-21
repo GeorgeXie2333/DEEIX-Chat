@@ -181,6 +181,7 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T)
 	legacy["openai_responses"] = removeString(legacy["openai_responses"], "reasoning.mode")
 	legacy["gemini_generate_content"] = removeString(legacy["gemini_generate_content"], "thinkingConfig.thinkingLevel")
 	legacy["google_image_generation"] = removeString(legacy["google_image_generation"], "generationConfig.thinkingConfig.thinkingLevel")
+	delete(legacy, "gemini_interactions")
 	delete(legacy, "openai_video_generations")
 	rawLegacy, err := json.Marshal(legacy)
 	if err != nil {
@@ -209,6 +210,10 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyDefault(t *testing.T)
 	if !containsString(normalized["google_image_generation"], "generationConfig.thinkingConfig.thinkingLevel") {
 		t.Fatalf("expected normalized Google image allowlist to include thinking level, got %#v", normalized["google_image_generation"])
 	}
+	if !containsString(normalized["gemini_interactions"], "generation_config.thinking_level") ||
+		!containsString(normalized["gemini_interactions"], "generation_config.video_config.task") {
+		t.Fatalf("expected normalized Gemini Interactions allowlist to include advanced settings, got %#v", normalized["gemini_interactions"])
+	}
 	if !containsString(normalized["openai_video_generations"], "seconds") || !containsString(normalized["openai_video_generations"], "size") {
 		t.Fatalf("expected normalized OpenAI video allowlist to include seconds and size, got %#v", normalized["openai_video_generations"])
 	}
@@ -225,6 +230,22 @@ func TestNormalizeModelOptionAllowedPathsJSONKeepsCustomizedOpenAIChatPolicy(t *
 	custom := `{"openai_chat_completions":["service_tier","presence_penalty","frequency_penalty","reasoning_effort","verbosity","thinking.type","stream_options.include_usage","metadata.tenant"]}`
 	if got := NormalizeModelOptionAllowedPathsJSON(custom); got != custom {
 		t.Fatalf("expected customized OpenAI Chat allowlist unchanged, got %s", got)
+	}
+}
+
+func TestNormalizeModelOptionAllowedPathsJSONKeepsCustomizedLegacyPolicyWithoutGeminiInteractions(t *testing.T) {
+	var custom map[string][]string
+	if err := json.Unmarshal([]byte(DefaultModelOptionAllowedPathsJSON()), &custom); err != nil {
+		t.Fatalf("parse default model option paths: %v", err)
+	}
+	delete(custom, "gemini_interactions")
+	custom["openai_chat_completions"] = append(custom["openai_chat_completions"], "metadata.tenant")
+	rawCustom, err := json.Marshal(custom)
+	if err != nil {
+		t.Fatalf("marshal customized model option paths: %v", err)
+	}
+	if got := NormalizeModelOptionAllowedPathsJSON(string(rawCustom)); got != string(rawCustom) {
+		t.Fatalf("expected customized legacy allowlist unchanged, got %s", got)
 	}
 }
 
