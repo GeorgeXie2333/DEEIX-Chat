@@ -9,6 +9,7 @@ import {
   appLogoMaskImage,
   appLogoVisualHeight,
   appLogoVisualWidth,
+  customAppLogoSource,
 } from "./app-logo-assets";
 
 type AppLogoProps = {
@@ -20,18 +21,22 @@ type AppLogoProps = {
 };
 
 function logoStyle(height: number, width: number | undefined, logoURL: string): CSSProperties {
+  const customLogoSource = customAppLogoSource(logoURL);
+
   return {
     width: width ?? appLogoVisualWidth(height),
     height: width ? height : appLogoVisualHeight(height),
-    maskImage: appLogoMaskImage(),
+    maskImage: customLogoSource ? undefined : appLogoMaskImage(),
     maskPosition: "center",
     maskRepeat: "no-repeat",
     maskSize: "contain",
-    WebkitMaskImage: appLogoMaskImage(),
+    WebkitMaskImage: customLogoSource ? undefined : appLogoMaskImage(),
     WebkitMaskPosition: "center",
     WebkitMaskRepeat: "no-repeat",
     WebkitMaskSize: "contain",
-    backgroundImage: logoURL ? `url("${logoURL}")` : undefined,
+    backgroundImage: customLogoSource
+      ? `url(${JSON.stringify(customLogoSource)})`
+      : undefined,
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
     backgroundSize: "contain",
@@ -47,13 +52,16 @@ export function AppLogo({
 }: AppLogoProps) {
   const branding = useBranding();
   const label = alt ?? branding.title;
+  const hasCustomLogo = Boolean(customAppLogoSource(branding.logoURL));
+
   return (
     <span
       role="img"
       aria-label={label}
       title={label}
       className={cn(
-        "inline-block shrink-0 bg-current text-foreground align-middle leading-none",
+        "inline-block shrink-0 align-middle leading-none",
+        hasCustomLogo ? undefined : "bg-current",
         className,
       )}
       style={logoStyle(height, width, branding.logoURL)}

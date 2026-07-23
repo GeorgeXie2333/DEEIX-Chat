@@ -8,6 +8,7 @@ import {
   appLogoMaskImage,
   appLogoVisualHeight,
   appLogoVisualWidth,
+  customAppLogoSource,
 } from "./app-logo-assets.ts";
 
 test("app logo uses the SVG as a mask source", () => {
@@ -17,6 +18,12 @@ test("app logo uses the SVG as a mask source", () => {
 
 test("app logo aspect ratio matches the supplied SVG viewBox", () => {
   assert.equal(APP_LOGO_ASPECT_RATIO, 219.07144 / 43.166336);
+});
+
+test("the built-in logo is colorized instead of painted over the current text color", () => {
+  assert.equal(customAppLogoSource(""), undefined);
+  assert.equal(customAppLogoSource(" /logo.svg "), undefined);
+  assert.equal(customAppLogoSource("https://cdn.example.com/logo.svg"), "https://cdn.example.com/logo.svg");
 });
 
 test("app logo visual size follows the previous text-logo scale", () => {
@@ -30,6 +37,10 @@ test("app logo rendering follows the current text color", () => {
   const source = readFileSync(new URL("./app-logo.tsx", import.meta.url), "utf8");
 
   assert.match(source, /bg-current/);
-  assert.match(source, /maskImage: appLogoMaskImage\(\)/u);
+  assert.match(
+    source,
+    /maskImage: customLogoSource \? undefined : appLogoMaskImage\(\)/u,
+  );
+  assert.doesNotMatch(source, /text-foreground/u);
   assert.doesNotMatch(source, /APP_LOGO_LIGHT_SRC|APP_LOGO_DARK_SRC|<Image/u);
 });

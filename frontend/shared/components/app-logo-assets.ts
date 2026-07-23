@@ -5,6 +5,11 @@ export function appLogoMaskImage(): `url("${string}")` {
   return `url("${APP_LOGO_MASK_SRC}")`;
 }
 
+export function customAppLogoSource(logoURL: string): string | undefined {
+  const source = logoURL.trim();
+  return source && source !== APP_LOGO_MASK_SRC ? source : undefined;
+}
+
 export function appLogoVisualHeight(height: number): number {
   return Math.max(13, Math.min(32, Math.round(height * 0.42)));
 }
