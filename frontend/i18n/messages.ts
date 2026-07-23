@@ -19,6 +19,7 @@ import zhConversation from "@/i18n/messages/zh-CN/conversation.json";
 import zhErrors from "@/i18n/messages/zh-CN/errors.json";
 import zhFiles from "@/i18n/messages/zh-CN/files.json";
 import zhGuide from "@/i18n/messages/zh-CN/guide.json";
+import zhLanding from "@/i18n/messages/zh-CN/landing.json";
 import zhLogin from "@/i18n/messages/zh-CN/login.json";
 import zhPrompts from "@/i18n/messages/zh-CN/prompts.json";
 import zhRecent from "@/i18n/messages/zh-CN/recent.json";
@@ -32,6 +33,7 @@ const BASE_MESSAGES = {
   conversation: zhConversation,
   errors: zhErrors,
   login: zhLogin,
+  landing: zhLanding,
   prompts: zhPrompts,
   guide: zhGuide,
   chat: zhChat,
@@ -110,6 +112,7 @@ type LocaleMessageImports = [
   { default: AppMessages["conversation"] },
   { default: AppMessages["errors"] },
   { default: AppMessages["login"] },
+  { default: AppMessages["landing"] },
   { default: AppMessages["prompts"] },
   { default: AppMessages["guide"] },
   { default: AppMessages["chat"] },
@@ -139,6 +142,7 @@ function toAppMessages([
   conversation,
   errors,
   login,
+  landing,
   prompts,
   guide,
   chat,
@@ -167,6 +171,7 @@ function toAppMessages([
     conversation: conversation.default,
     errors: errors.default,
     login: login.default,
+    landing: landing.default,
     prompts: prompts.default,
     guide: guide.default,
     chat: chat.default,
@@ -203,6 +208,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
       import("@/i18n/messages/ja-JP/conversation.json"),
       import("@/i18n/messages/ja-JP/errors.json"),
       import("@/i18n/messages/ja-JP/login.json"),
+      import("@/i18n/messages/ja-JP/landing.json"),
       import("@/i18n/messages/ja-JP/prompts.json"),
       import("@/i18n/messages/ja-JP/guide.json"),
       import("@/i18n/messages/ja-JP/chat.json"),
@@ -233,6 +239,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
     import("@/i18n/messages/en-US/conversation.json"),
     import("@/i18n/messages/en-US/errors.json"),
     import("@/i18n/messages/en-US/login.json"),
+    import("@/i18n/messages/en-US/landing.json"),
     import("@/i18n/messages/en-US/prompts.json"),
     import("@/i18n/messages/en-US/guide.json"),
     import("@/i18n/messages/en-US/chat.json"),

@@ -1,0 +1,85 @@
+{
+  "nav": {
+    "ariaLabel": "主要导航",
+    "home": "返回 Comi AI 首页",
+    "language": "切换语言",
+    "login": "登录"
+  },
+  "theme": {
+    "label": "切换主题",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
+  },
+  "hero": {
+    "eyebrow": "多模型统一入口",
+    "headline": "一个入口，用遍主流 AI",
+    "headlineLine1": "一个入口，",
+    "headlineLine2": "用遍主流 AI",
+    "description": "汇集 11+ 家主流模型厂商，在同一个入口按任务选择模型。闭源模型均为官方 API 直连，所有模型统一稳定接入，价格与官方同步。",
+    "cta": "立即登录",
+    "providerCount": "已接入 11+ 模型厂商",
+    "featuredProviders": "精选模型厂商"
+  },
+  "demo": {
+    "label": "交互演示",
+    "round": "第 {current}/{total} 轮",
+    "controlsLabel": "选择演示中的模型步骤",
+    "userInitial": "你",
+    "userLabel": "你的任务",
+    "userPrompt": "请基于这组市场与用户访谈资料，整理一份可用于内部汇报的研究结论。",
+    "steps": {
+      "gpt": {
+        "role": "提炼结论",
+        "title": "先把资料压缩成关键判断",
+        "body": "归纳三条核心发现，并区分已验证事实、仍需确认的假设与可执行建议。"
+      },
+      "claude": {
+        "role": "改写汇报",
+        "title": "把结论改写成汇报文字",
+        "body": "保留证据与限制条件，改写为清晰、克制且适合管理层快速阅读的汇报段落。"
+      },
+      "gemini": {
+        "role": "整理结构",
+        "title": "转换成演示文稿结构",
+        "body": "按背景、发现、影响与下一步拆成六页大纲，并为每页补充一句核心信息。"
+      },
+      "grok": {
+        "role": "反向检查",
+        "title": "检查遗漏与反方观点",
+        "body": "指出论证中最容易被质疑的两处，补充替代解释，并列出汇报前仍需验证的数据。"
+      }
+    }
+  },
+  "providers": {
+    "eyebrow": "模型生态",
+    "title": "11+ 模型厂商，一处接入",
+    "description": "在统一入口中选择适合当前任务的模型，无需在多个平台之间来回切换。",
+    "ongoing": "持续接入"
+  },
+  "capabilities": {
+    "eyebrow": "核心能力",
+    "title": "把模型选择，变成工作流的一部分",
+    "switching": {
+      "title": "一个入口，自由切换",
+      "description": "在同一段对话中按任务选择不同模型，无需反复打开多个平台。"
+    },
+    "connection": {
+      "title": "官方直连，稳定接入",
+      "description": "闭源模型使用官方 API，所有模型通过统一接入方式稳定提供。"
+    },
+    "pricing": {
+      "title": "价格与官方同步",
+      "description": "模型价格与厂商官方定价保持同步，选择模型时更清晰、可预期。"
+    }
+  },
+  "finalCta": {
+    "title": "现在，从一个入口开始。",
+    "description": "登录 Comi AI，选择适合当前任务的模型。",
+    "button": "立即登录"
+  },
+  "footer": {
+    "copyright": "© {year} Comi AI",
+    "docs": "文档"
+  }
+}

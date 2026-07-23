@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const frontendRoot = join(__dirname, "../../..");
 const loginPageSource = readFileSync(join(__dirname, "../components/login-page.tsx"), "utf8");
+const loginRoutePageSource = readFileSync(join(frontendRoot, "app/(auth)/login/page.tsx"), "utf8");
 
 function getClassNameAfter(marker) {
   const markerIndex = loginPageSource.indexOf(marker);
@@ -36,5 +38,50 @@ test("login page exposes the password reset flow from the password form", () => 
   assert.match(loginPageSource, /htmlFor="reset-email"/, "reset form must collect the account email");
   assert.match(loginPageSource, /htmlFor="reset-password"/, "reset form must collect a new password");
   assert.match(loginPageSource, /htmlFor="reset-code"/, "reset form must collect the verification code");
+});
+
+test("login route shows default public branding before client configuration loads", () => {
+  assert.match(loginRoutePageSource, /data-public-branding-ready/);
+  assert.match(loginRoutePageSource, /fallback=\{<LoginRouteFallback\s*\/>\}/);
+  assert.doesNotMatch(loginRoutePageSource, /fallback=\{null\}/);
+  assert.match(loginRoutePageSource, /aria-busy="true"/);
+  assert.match(loginRoutePageSource, /<AppLogo/);
+});
+
+test("login page is a focused public-brand authentication card", () => {
+  assert.match(loginPageSource, /<PublicBrandSurface>/);
+  assert.match(loginPageSource, /<PublicPageHeader showLoginAction=\{false\}\s*\/>/);
+  assert.match(loginPageSource, /max-w-\[420px\]/);
+  assert.match(loginPageSource, /<LoginCardSkeleton\s*\/>/);
+  assert.doesNotMatch(loginPageSource, /LoginLandingCopy|LoginProductPreview|CustomBrandAttribution/);
+  assert.doesNotMatch(loginPageSource, /landing\./);
+});
+
+test("registration is exposed as tabs only during the primary authentication modes", () => {
+  assert.match(loginPageSource, /role="tablist"/);
+  assert.match(loginPageSource, /canShowRegisterSwitch && mode !== "reset-password" && !twoFactorChallengeToken/);
+  assert.match(loginPageSource, /loginPage\.setMode\(nextMode\)/);
+});
+
+test("login mode tabs have an explicit high-contrast selected state", () => {
+  assert.match(loginPageSource, /border-primary\/45/);
+  assert.match(loginPageSource, /dark:border-primary\/65/);
+  assert.match(loginPageSource, /dark:bg-primary\/20/);
+  assert.match(loginPageSource, /after:bg-primary/);
+  assert.match(loginPageSource, /border-transparent text-muted-foreground/);
+});
+
+test("all authentication entry points remain wired after the layout redesign", () => {
+  assert.match(loginPageSource, /onSubmit=\{onLoginSubmit\}/);
+  assert.match(loginPageSource, /onSubmit=\{onRegisterSubmit\}/);
+  assert.match(loginPageSource, /<TurnstileWidget/);
+  assert.match(loginPageSource, /requestRegisterCode/);
+  assert.match(loginPageSource, /registerDebugCode/);
+  assert.match(loginPageSource, /twoFactorChallengeToken/);
+  assert.match(loginPageSource, /requestTwoFactorEmailCode/);
+  assert.match(loginPageSource, /twoFactorEmailDebugCode/);
+  assert.match(loginPageSource, /handleProviderLogin\(provider\.slug\)/);
+  assert.match(loginPageSource, /<IdentityProviderIcon/);
+  assert.match(loginPageSource, /useLoginPage\(\{ nextPath \}\)/);
 });
 

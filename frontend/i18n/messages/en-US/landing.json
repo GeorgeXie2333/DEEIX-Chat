@@ -1,0 +1,85 @@
+{
+  "nav": {
+    "ariaLabel": "Primary navigation",
+    "home": "Back to the Comi AI home page",
+    "language": "Change language",
+    "login": "Sign in"
+  },
+  "theme": {
+    "label": "Change theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "hero": {
+    "eyebrow": "One interface for every model",
+    "headline": "Every leading AI, in one place.",
+    "headlineLine1": "Every leading AI,",
+    "headlineLine2": "in one place.",
+    "description": "Bring together models from 11+ leading providers and choose the right one for each task. Proprietary models connect through official APIs, every model is delivered through one stable interface, and pricing stays in sync with each provider.",
+    "cta": "Sign in now",
+    "providerCount": "11+ model providers available",
+    "featuredProviders": "Featured model providers"
+  },
+  "demo": {
+    "label": "Interactive demo",
+    "round": "Step {current}/{total}",
+    "controlsLabel": "Choose a model step in the demo",
+    "userInitial": "You",
+    "userLabel": "Your task",
+    "userPrompt": "Use this market research and set of user interviews to prepare findings for an internal presentation.",
+    "steps": {
+      "gpt": {
+        "role": "Extract findings",
+        "title": "Turn the source material into clear conclusions",
+        "body": "Summarize three key findings, separating validated evidence, open assumptions, and actions the team can take."
+      },
+      "claude": {
+        "role": "Rewrite the report",
+        "title": "Shape the findings into presentation copy",
+        "body": "Keep the evidence and caveats while rewriting the material into concise paragraphs that leadership can scan quickly."
+      },
+      "gemini": {
+        "role": "Build the structure",
+        "title": "Organize it as a slide narrative",
+        "body": "Create a six-slide outline covering context, findings, implications, and next steps, with one takeaway per slide."
+      },
+      "grok": {
+        "role": "Challenge the argument",
+        "title": "Check gaps and opposing views",
+        "body": "Identify the two weakest claims, offer alternative explanations, and list the evidence that still needs verification."
+      }
+    }
+  },
+  "providers": {
+    "eyebrow": "Model ecosystem",
+    "title": "11+ model providers, one access point",
+    "description": "Choose the model that fits the task from a single interface, without moving between separate platforms.",
+    "ongoing": "More coming"
+  },
+  "capabilities": {
+    "eyebrow": "Core capabilities",
+    "title": "Make model choice part of the workflow",
+    "switching": {
+      "title": "One place, free switching",
+      "description": "Choose different models for different tasks within the same conversation—without reopening multiple platforms."
+    },
+    "connection": {
+      "title": "Official APIs, stable access",
+      "description": "Proprietary models use official APIs, and every model is delivered through one consistent, stable interface."
+    },
+    "pricing": {
+      "title": "Pricing synced with providers",
+      "description": "Model pricing stays aligned with official provider rates, so each choice is clearer and more predictable."
+    }
+  },
+  "finalCta": {
+    "title": "Start from one place.",
+    "description": "Sign in to Comi AI and choose the right model for the task in front of you.",
+    "button": "Sign in now"
+  },
+  "footer": {
+    "copyright": "© {year} Comi AI",
+    "docs": "Docs"
+  }
+}

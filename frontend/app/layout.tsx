@@ -59,6 +59,9 @@ export default function RootLayout({
       data-branding-pending="true"
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+      </head>
       <body
         className="h-full min-h-svh overflow-hidden antialiased"
       >

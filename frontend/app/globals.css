@@ -13,6 +13,10 @@ html[data-branding-pending] body {
   visibility: hidden;
 }
 
+html[data-branding-pending] [data-public-branding-ready] {
+  visibility: visible;
+}
+
 :root {
   --background: oklch(97.86% 0.0027 106.45);
   --foreground: oklch(0.3438 0.0269 95.7226);
@@ -1274,5 +1278,117 @@ html[data-branding-pending] body {
   }
   .dark .brand-wordmark {
     color: #fff;
+  }
+}
+
+/*
+ * Public pages always use the default Comi brand palette. Theme mode is still
+ * controlled by ThemeProvider, while the saved in-app preset remains untouched.
+ * The root marker also covers dropdown and tooltip portals.
+ */
+:root[data-public-surface] {
+  --background: oklch(97.86% 0.0027 106.45);
+  --foreground: oklch(0.3438 0.0269 95.7226);
+  --pure: oklch(1 0 0);
+  --pure-foreground: oklch(0 0 0);
+  --card: oklch(0.9818 0.0054 95.0986);
+  --card-foreground: oklch(0.1908 0.002 106.5859);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2671 0.0196 98.939);
+  --primary: oklch(0.6171 0.1375 39.0427);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.9245 0.0138 92.9892);
+  --secondary-foreground: oklch(0.4334 0.0177 98.6048);
+  --muted: oklch(0.9341 0.0153 90.239);
+  --muted-foreground: oklch(0.6059 0.0075 97.4233);
+  --accent: oklch(94.84% 0.0032 81.39);
+  --accent-foreground: oklch(0.2671 0.0196 98.939);
+  --destructive: oklch(0.1908 0.002 106.5859);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(87.79% 0.003 106.46);
+  --input: oklch(0.7621 0.0156 98.3528);
+  --ring: oklch(0.6171 0.1375 39.0427);
+  --radius: 0.5rem;
+}
+
+.dark[data-public-surface] {
+  --background: oklch(23.89% 0.0019 106.54);
+  --foreground: oklch(0.8074 0.0142 93.0137);
+  --pure: oklch(0.3085 0.0035 106.6);
+  --pure-foreground: oklch(1 0 0);
+  --card: oklch(0.2679 0.0036 106.6427);
+  --card-foreground: oklch(0.9818 0.0054 95.0986);
+  --popover: oklch(0.3085 0.0035 106.6039);
+  --popover-foreground: oklch(0.9211 0.004 106.4781);
+  --primary: oklch(0.6724 0.1308 38.7559);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.3085 0.0035 106.6039);
+  --secondary-foreground: oklch(0.9211 0.004 106.4781);
+  --muted: oklch(0.2213 0.0038 106.707);
+  --muted-foreground: oklch(0.7713 0.0169 99.0657);
+  --accent: oklch(18.32% 0 89.88);
+  --accent-foreground: oklch(0.9663 0.008 98.8792);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(34.84% 0.0025 63.22);
+  --input: oklch(0.4336 0.0113 100.2195);
+  --ring: oklch(0.6724 0.1308 38.7559);
+  --radius: 0.5rem;
+}
+
+@keyframes landing-gate {
+  0%,
+  100% {
+    transform: translateX(-90%);
+  }
+  50% {
+    transform: translateX(190%);
+  }
+}
+
+@keyframes landing-provider-marquee {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.landing-provider-carousel {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+.landing-provider-carousel-track {
+  display: flex;
+  width: max-content;
+  animation: landing-provider-marquee 22s linear infinite;
+  will-change: transform;
+}
+
+.landing-provider-carousel:hover .landing-provider-carousel-track,
+.landing-provider-carousel:focus-within .landing-provider-carousel-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-provider-carousel {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+    scrollbar-width: none;
+  }
+
+  .landing-provider-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .landing-provider-carousel-track {
+    animation: none;
+    transform: none;
+    will-change: auto;
+  }
+
+  .landing-provider-carousel-duplicate {
+    display: none;
   }
 }
