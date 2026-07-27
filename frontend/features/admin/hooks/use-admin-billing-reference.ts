@@ -51,6 +51,7 @@ const DEFAULT_BILLING_CONFIG: AdminBillingConfigDTO = {
   paymentProviders: [],
   usdToCNYRate: 7.2,
   displayCurrency: "USD",
+  stripeFeeRatePercent: 0,
   epayTypes: [],
 };
 

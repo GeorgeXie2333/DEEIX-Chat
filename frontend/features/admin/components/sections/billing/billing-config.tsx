@@ -52,6 +52,15 @@ type BillingConfigSectionProps = {
   loading: boolean;
 };
 
+function isValidStripeFeeRatePercent(value: string): boolean {
+  const normalized = value.trim();
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) {
+    return false;
+  }
+  const rate = Number(normalized);
+  return Number.isFinite(rate) && rate >= 0 && rate <= 100;
+}
+
 export function BillingConfigSection({
   billingConfig,
   setBillingConfig,
@@ -133,6 +142,10 @@ export function BillingConfigSection({
 
   async function savePaymentSettings() {
     const providers = normalizePaymentProviders(paymentSettings.payment_providers);
+    if (!isValidStripeFeeRatePercent(paymentSettings.stripe_fee_rate_percent)) {
+      toast.error(t("toast.paymentIncomplete"), { description: t("toast.stripeFeeRateInvalid") });
+      return;
+    }
     if (providers.includes("stripe") && ((!paymentSettings.stripe_secret_key.trim() && !paymentConfiguredMap["billing.stripe_secret_key"]) || (!paymentSettings.stripe_webhook_secret.trim() && !paymentConfiguredMap["billing.stripe_webhook_secret"]))) {
       toast.error(t("toast.paymentIncomplete"), { description: t("toast.stripeRequired") });
       return;
@@ -401,6 +414,25 @@ export function BillingConfigSection({
                         aria-label={tActions("copy")}
                         title={tActions("copy")}
                       />
+                    </div>
+                  </SettingsFieldRow>
+                  <SettingsFieldRow
+                    title={t("payment.stripeFeeRate")}
+                    description={t("payment.stripeFeeRateDescription")}
+                  >
+                    <div className="relative w-full">
+                      <Input
+                        value={paymentSettings.stripe_fee_rate_percent}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        inputMode="decimal"
+                        className="pr-8 text-right"
+                        disabled={loading || saving}
+                        onChange={(event) => updatePaymentSetting("stripe_fee_rate_percent", event.target.value)}
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                     </div>
                   </SettingsFieldRow>
                   <SettingsFieldRow

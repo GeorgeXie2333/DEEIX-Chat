@@ -34,16 +34,17 @@ const (
 var stripeHTTPClient = &http.Client{Timeout: 15 * time.Second}
 
 type billingPaymentSettings struct {
-	Providers            []string
-	USDToCNYRate         float64
-	DisplayCurrency      string
-	StripePublishableKey string
-	StripeSecretKey      string
-	StripeWebhookSecret  string
-	EPayGatewayURL       string
-	EPayTypes            []PaymentTypeResponse
-	EPayPID              string
-	EPayKey              string
+	Providers                []string
+	USDToCNYRate             float64
+	DisplayCurrency          string
+	StripePublishableKey     string
+	StripeSecretKey          string
+	StripeWebhookSecret      string
+	StripeFeeRateBasisPoints int64
+	EPayGatewayURL           string
+	EPayTypes                []PaymentTypeResponse
+	EPayPID                  string
+	EPayKey                  string
 }
 
 // CreateCheckout godoc
@@ -82,23 +83,23 @@ func (h *Handler) CreateCheckout(c *gin.Context) {
 	var price *domainbilling.Price
 	switch orderType {
 	case domainbilling.PaymentOrderTypeTopUp:
-		amountMinorUnits, amountCurrency := resolveTopUpCheckoutAmount(req, settings)
+		amountMinorUnits, amountCurrency := resolveTopUpCheckoutAmount(req, settings, provider)
 		order, err = h.service.CreateTopUpPaymentOrder(c.Request.Context(), appbilling.TopUpPaymentOrderInput{
-			UserID:               userID,
-			AmountMinorUnits:     amountMinorUnits,
-			AmountCurrency:       amountCurrency,
-			Provider:             provider,
-			USDToCNYRate:         settings.USDToCNYRate,
-			PreferredPayCurrency: settings.DisplayCurrency,
+			UserID:                   userID,
+			AmountMinorUnits:         amountMinorUnits,
+			AmountCurrency:           amountCurrency,
+			Provider:                 provider,
+			USDToCNYRate:             settings.USDToCNYRate,
+			StripeFeeRateBasisPoints: settings.StripeFeeRateBasisPoints,
 		})
 	default:
 		order, plan, price, err = h.service.CreatePaymentOrder(c.Request.Context(), appbilling.PaymentOrderInput{
-			UserID:               userID,
-			PriceID:              req.PriceID,
-			Cycles:               optionalIntValue(req.Cycles),
-			Provider:             provider,
-			USDToCNYRate:         settings.USDToCNYRate,
-			PreferredPayCurrency: settings.DisplayCurrency,
+			UserID:                   userID,
+			PriceID:                  req.PriceID,
+			Cycles:                   optionalIntValue(req.Cycles),
+			Provider:                 provider,
+			USDToCNYRate:             settings.USDToCNYRate,
+			StripeFeeRateBasisPoints: settings.StripeFeeRateBasisPoints,
 		})
 	}
 	if err != nil {
@@ -134,15 +135,19 @@ func (h *Handler) CreateCheckout(c *gin.Context) {
 		"billing_payment_order",
 		order.OrderNo,
 		map[string]interface{}{
-			"provider":          order.Provider,
-			"order_type":        order.OrderType,
-			"plan_id":           order.PlanID,
-			"price_id":          order.PriceID,
-			"base_amount_cents": order.BaseAmountCents,
-			"base_currency":     order.BaseCurrency,
-			"pay_amount_cents":  order.PayAmountCents,
-			"pay_currency":      order.PayCurrency,
-			"fx_rate":           order.FXRate,
+			"provider":                  order.Provider,
+			"order_type":                order.OrderType,
+			"plan_id":                   order.PlanID,
+			"price_id":                  order.PriceID,
+			"base_amount_cents":         order.BaseAmountCents,
+			"base_currency":             order.BaseCurrency,
+			"pay_subtotal_amount_cents": order.PayAmountCents - order.FeeAmountCents,
+			"pay_amount_cents":          order.PayAmountCents,
+			"pay_currency":              order.PayCurrency,
+			"fee_rate_basis_points":     order.FeeRateBasisPoints,
+			"fee_rate_percent":          appbilling.StripeFeeRatePercent(order.FeeRateBasisPoints),
+			"fee_amount_cents":          order.FeeAmountCents,
+			"fx_rate":                   order.FXRate,
 		},
 	)
 
@@ -274,16 +279,17 @@ func (h *Handler) resolvePaymentSettings(ctx context.Context) (billingPaymentSet
 		return billingPaymentSettings{}, err
 	}
 	return billingPaymentSettings{
-		Providers:            normalizePaymentProviders(values["payment_providers"]),
-		USDToCNYRate:         parsePositiveFloat(values["usd_to_cny_rate"], 7.2),
-		DisplayCurrency:      normalizePaymentDisplayCurrency(values["display_currency"]),
-		StripePublishableKey: values["stripe_publishable_key"],
-		StripeSecretKey:      values["stripe_secret_key"],
-		StripeWebhookSecret:  values["stripe_webhook_secret"],
-		EPayGatewayURL:       values["epay_gateway_url"],
-		EPayTypes:            normalizeEPayTypes(values["epay_types"]),
-		EPayPID:              values["epay_pid"],
-		EPayKey:              values["epay_key"],
+		Providers:                normalizePaymentProviders(values["payment_providers"]),
+		USDToCNYRate:             parsePositiveFloat(values["usd_to_cny_rate"], 7.2),
+		DisplayCurrency:          normalizePaymentDisplayCurrency(values["display_currency"]),
+		StripePublishableKey:     values["stripe_publishable_key"],
+		StripeSecretKey:          values["stripe_secret_key"],
+		StripeWebhookSecret:      values["stripe_webhook_secret"],
+		StripeFeeRateBasisPoints: parseStripeFeeRateBasisPoints(values["stripe_fee_rate_percent"]),
+		EPayGatewayURL:           values["epay_gateway_url"],
+		EPayTypes:                normalizeEPayTypes(values["epay_types"]),
+		EPayPID:                  values["epay_pid"],
+		EPayKey:                  values["epay_key"],
 	}, nil
 }
 
@@ -318,6 +324,9 @@ func (h *Handler) createStripeCheckoutSession(
 	if strings.TrimSpace(settings.StripeSecretKey) == "" {
 		return "", "", fmt.Errorf("stripe secret key is not configured")
 	}
+	if !strings.EqualFold(strings.TrimSpace(order.PayCurrency), "USD") {
+		return "", "", appbilling.ErrPaymentCurrencyUnsupported
+	}
 	successURL, err := h.paymentReturnURL(c, req.SuccessURL, "/settings?section=account&payment=success")
 	if err != nil {
 		return "", "", err
@@ -326,7 +335,6 @@ func (h *Handler) createStripeCheckoutSession(
 	if err != nil {
 		return "", "", err
 	}
-	currency := strings.ToLower(firstNonEmpty(order.PayCurrency, order.BaseCurrency, "USD"))
 	form := url.Values{}
 	form.Set("mode", "payment")
 	form.Set("success_url", successURL)
@@ -338,10 +346,14 @@ func (h *Handler) createStripeCheckoutSession(
 	form.Set("metadata[base_currency]", order.BaseCurrency)
 	form.Set("metadata[base_amount_cents]", strconv.FormatInt(order.BaseAmountCents, 10))
 	form.Set("metadata[pay_currency]", order.PayCurrency)
+	form.Set("metadata[pay_subtotal_amount_cents]", strconv.FormatInt(order.PayAmountCents-order.FeeAmountCents, 10))
 	form.Set("metadata[pay_amount_cents]", strconv.FormatInt(order.PayAmountCents, 10))
+	form.Set("metadata[fee_rate_basis_points]", strconv.FormatInt(order.FeeRateBasisPoints, 10))
+	form.Set("metadata[fee_rate_percent]", strconv.FormatFloat(appbilling.StripeFeeRatePercent(order.FeeRateBasisPoints), 'f', -1, 64))
+	form.Set("metadata[fee_amount_cents]", strconv.FormatInt(order.FeeAmountCents, 10))
 	form.Set("metadata[fx_rate]", order.FXRate)
 	form.Set("line_items[0][quantity]", "1")
-	form.Set("line_items[0][price_data][currency]", currency)
+	form.Set("line_items[0][price_data][currency]", "usd")
 	form.Set("line_items[0][price_data][unit_amount]", strconv.FormatInt(order.PayAmountCents, 10))
 	form.Set("line_items[0][price_data][product_data][name]", paymentProductName(order, plan))
 	form.Set("line_items[0][price_data][product_data][description]", paymentProductDescription(order, plan))
@@ -521,16 +533,20 @@ func (h *Handler) writePaymentAudit(c *gin.Context, order *domainbilling.Payment
 		"billing_payment_order",
 		order.OrderNo,
 		map[string]interface{}{
-			"provider":          order.Provider,
-			"order_type":        order.OrderType,
-			"status":            order.Status,
-			"activated":         activated,
-			"source":            source,
-			"base_amount_cents": order.BaseAmountCents,
-			"base_currency":     order.BaseCurrency,
-			"pay_amount_cents":  order.PayAmountCents,
-			"pay_currency":      order.PayCurrency,
-			"fx_rate":           order.FXRate,
+			"provider":                  order.Provider,
+			"order_type":                order.OrderType,
+			"status":                    order.Status,
+			"activated":                 activated,
+			"source":                    source,
+			"base_amount_cents":         order.BaseAmountCents,
+			"base_currency":             order.BaseCurrency,
+			"pay_subtotal_amount_cents": order.PayAmountCents - order.FeeAmountCents,
+			"pay_amount_cents":          order.PayAmountCents,
+			"pay_currency":              order.PayCurrency,
+			"fee_rate_basis_points":     order.FeeRateBasisPoints,
+			"fee_rate_percent":          appbilling.StripeFeeRatePercent(order.FeeRateBasisPoints),
+			"fee_amount_cents":          order.FeeAmountCents,
+			"fx_rate":                   order.FXRate,
 		},
 	)
 }
@@ -691,6 +707,14 @@ func parsePositiveFloat(value string, fallback float64) float64 {
 	return parsed
 }
 
+func parseStripeFeeRateBasisPoints(value string) int64 {
+	basisPoints, err := appbilling.ParseStripeFeeRateBasisPoints(value)
+	if err != nil {
+		return 0
+	}
+	return basisPoints
+}
+
 func resolveCheckoutOrderType(req CreateCheckoutRequest) string {
 	switch strings.TrimSpace(req.OrderType) {
 	case domainbilling.PaymentOrderTypeTopUp:
@@ -705,12 +729,18 @@ func resolveCheckoutOrderType(req CreateCheckoutRequest) string {
 	}
 }
 
-func resolveTopUpCheckoutAmount(req CreateCheckoutRequest, settings billingPaymentSettings) (int64, string) {
+func resolveTopUpCheckoutAmount(req CreateCheckoutRequest, settings billingPaymentSettings, provider string) (int64, string) {
 	if req.AmountMinorUnits > 0 {
+		if provider == domainbilling.PaymentProviderStripe {
+			return req.AmountMinorUnits, "USD"
+		}
 		return req.AmountMinorUnits, settings.DisplayCurrency
 	}
 	if req.AmountUSD > 0 {
 		return int64(math.Round(req.AmountUSD * 100)), "USD"
+	}
+	if provider == domainbilling.PaymentProviderStripe {
+		return 0, "USD"
 	}
 	return 0, settings.DisplayCurrency
 }
@@ -727,11 +757,7 @@ func paymentProductName(order *domainbilling.PaymentOrder, plan *domainbilling.P
 
 func paymentProductDescription(order *domainbilling.PaymentOrder, plan *domainbilling.Plan) string {
 	if order != nil && order.OrderType == domainbilling.PaymentOrderTypeTopUp {
-		amountCents := order.PayAmountCents
-		if amountCents <= 0 {
-			amountCents = order.BaseAmountCents
-		}
-		return fmt.Sprintf("充值 %s %.2f 至按量余额", firstNonEmpty(order.PayCurrency, order.BaseCurrency, "USD"), float64(amountCents)/100)
+		return fmt.Sprintf("充值 USD %.2f 至按量余额", float64(order.CreditNanousd)/1_000_000_000)
 	}
 	if plan != nil {
 		return firstNonEmpty(plan.Description, plan.Code)

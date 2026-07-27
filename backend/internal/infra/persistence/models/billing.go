@@ -82,6 +82,8 @@ type PaymentOrder struct {
 	BaseAmountCents    int64      `gorm:"not null;default:0;comment:基准金额(分)"`
 	PayCurrency        string     `gorm:"size:16;not null;default:'CNY';comment:支付币种"`
 	PayAmountCents     int64      `gorm:"not null;default:0;comment:支付金额(分)"`
+	FeeRateBasisPoints int64      `gorm:"not null;default:0;comment:支付手续费率(基点)"`
+	FeeAmountCents     int64      `gorm:"not null;default:0;comment:支付手续费金额(支付币种分)"`
 	FXRate             string     `gorm:"size:32;not null;default:'';comment:汇率快照"`
 	CreditNanousd      int64      `gorm:"not null;default:0;comment:充值入账金额(纳美元)"`
 	BillingInterval    string     `gorm:"size:16;not null;default:'month';comment:计费周期"`

@@ -243,6 +243,7 @@
   },
   "payment": {
     "checkoutFailed": "チェックアウトの作成に失敗しました。",
+    "currencyUnsupported": "Stripe は USD の業務価格のみ対応し、プラットフォームでは自動換算しません。",
     "epayTypeUnsupported": "この EPay 支払い方法はサポートされていません。",
     "invalidEvent": "支払いイベントが無効です。",
     "invalidSignature": "支払い署名が無効です。",

@@ -77,6 +77,7 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 	paymentProviders := []string{}
 	usdToCNYRate := 7.2
 	displayCurrency := "USD"
+	stripeFeeRatePercent := 0.0
 	epayTypes := defaultEPayTypes()
 	if h.settings != nil {
 		items, err := h.settings.ListByNamespace(ctx, "billing")
@@ -120,6 +121,10 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 				if value == "USD" || value == "CNY" {
 					displayCurrency = value
 				}
+			case "stripe_fee_rate_percent":
+				if basisPoints, parseErr := appbilling.ParseStripeFeeRateBasisPoints(value); parseErr == nil {
+					stripeFeeRatePercent = appbilling.StripeFeeRatePercent(basisPoints)
+				}
 			case "epay_types":
 				epayTypes = normalizeEPayTypes(value)
 			}
@@ -141,6 +146,7 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 		PaymentProviders:               paymentProviders,
 		USDToCNYRate:                   usdToCNYRate,
 		DisplayCurrency:                displayCurrency,
+		StripeFeeRatePercent:           stripeFeeRatePercent,
 		EPayTypes:                      epayTypes,
 	}, nil
 }

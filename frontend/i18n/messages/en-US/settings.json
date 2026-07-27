@@ -668,6 +668,11 @@
       "upgradeDescription": "The higher plan starts immediately and unused entitlement is preserved after it.",
       "method": "Payment method",
       "card": "Card",
+      "subtotal": "USD business subtotal",
+      "stripeFee": "Stripe surcharge ({rate})",
+      "total": "USD total charged",
+      "stripeUnsupportedCurrency": "{currency} business currency unsupported",
+      "stripeUnsupportedCurrencyDescription": "Stripe only accepts USD business prices. This legacy plan uses {currency}, and the platform will not convert it automatically.",
       "disabled": "Disabled",
       "continue": "Continue",
       "epay": {
@@ -683,6 +688,7 @@
       "currentBalance": "Current balance {value}",
       "amount": "Top-up amount",
       "amountAria": "Top-up amount",
+      "creditAmount": "USD credit received",
       "confirm": "Top up"
     },
     "redemption": {

@@ -219,20 +219,23 @@ type SubscriptionDataResponse struct {
 
 // CheckoutResponse 支付收银台响应。
 type CheckoutResponse struct {
-	OrderNo            string     `json:"orderNo"`
-	OrderType          string     `json:"orderType"`
-	Provider           string     `json:"provider"`
-	Status             string     `json:"status"`
-	CheckoutURL        string     `json:"checkoutURL"`
-	ExternalCheckoutID string     `json:"externalCheckoutID"`
-	BaseAmountCents    int64      `json:"baseAmountCents"`
-	BaseCurrency       string     `json:"baseCurrency"`
-	PayAmountCents     int64      `json:"payAmountCents"`
-	PayCurrency        string     `json:"payCurrency"`
-	FXRate             string     `json:"fxRate"`
-	CreditNanousd      int64      `json:"creditNanousd"`
-	CreditUSD          float64    `json:"creditUSD"`
-	ExpiredAt          *time.Time `json:"expiredAt" extensions:"x-nullable,!x-omitempty"`
+	OrderNo                string     `json:"orderNo"`
+	OrderType              string     `json:"orderType"`
+	Provider               string     `json:"provider"`
+	Status                 string     `json:"status"`
+	CheckoutURL            string     `json:"checkoutURL"`
+	ExternalCheckoutID     string     `json:"externalCheckoutID"`
+	BaseAmountCents        int64      `json:"baseAmountCents"`
+	BaseCurrency           string     `json:"baseCurrency"`
+	PaySubtotalAmountCents int64      `json:"paySubtotalAmountCents"`
+	PayAmountCents         int64      `json:"payAmountCents"`
+	PayCurrency            string     `json:"payCurrency"`
+	FeeRatePercent         float64    `json:"feeRatePercent"`
+	FeeAmountCents         int64      `json:"feeAmountCents"`
+	FXRate                 string     `json:"fxRate"`
+	CreditNanousd          int64      `json:"creditNanousd"`
+	CreditUSD              float64    `json:"creditUSD"`
+	ExpiredAt              *time.Time `json:"expiredAt" extensions:"x-nullable,!x-omitempty"`
 }
 
 // CheckoutDataResponse 支付收银台操作响应。
@@ -521,6 +524,7 @@ type BillingConfigResponse struct {
 	PaymentProviders               []string                    `json:"paymentProviders"`
 	USDToCNYRate                   float64                     `json:"usdToCNYRate"`
 	DisplayCurrency                string                      `json:"displayCurrency"`
+	StripeFeeRatePercent           float64                     `json:"stripeFeeRatePercent"`
 	EPayTypes                      []PaymentTypeResponse       `json:"epayTypes"`
 }
 
@@ -807,20 +811,23 @@ func toCheckoutResponse(item *domainbilling.PaymentOrder) CheckoutResponse {
 		return CheckoutResponse{}
 	}
 	return CheckoutResponse{
-		OrderNo:            item.OrderNo,
-		OrderType:          item.OrderType,
-		Provider:           item.Provider,
-		Status:             item.Status,
-		CheckoutURL:        item.CheckoutURL,
-		ExternalCheckoutID: item.ExternalCheckoutID,
-		BaseAmountCents:    item.BaseAmountCents,
-		BaseCurrency:       item.BaseCurrency,
-		PayAmountCents:     item.PayAmountCents,
-		PayCurrency:        item.PayCurrency,
-		FXRate:             item.FXRate,
-		CreditNanousd:      item.CreditNanousd,
-		CreditUSD:          nanousdToUSD(item.CreditNanousd),
-		ExpiredAt:          item.ExpiredAt,
+		OrderNo:                item.OrderNo,
+		OrderType:              item.OrderType,
+		Provider:               item.Provider,
+		Status:                 item.Status,
+		CheckoutURL:            item.CheckoutURL,
+		ExternalCheckoutID:     item.ExternalCheckoutID,
+		BaseAmountCents:        item.BaseAmountCents,
+		BaseCurrency:           item.BaseCurrency,
+		PaySubtotalAmountCents: item.PayAmountCents - item.FeeAmountCents,
+		PayAmountCents:         item.PayAmountCents,
+		PayCurrency:            item.PayCurrency,
+		FeeRatePercent:         appbilling.StripeFeeRatePercent(item.FeeRateBasisPoints),
+		FeeAmountCents:         item.FeeAmountCents,
+		FXRate:                 item.FXRate,
+		CreditNanousd:          item.CreditNanousd,
+		CreditUSD:              nanousdToUSD(item.CreditNanousd),
+		ExpiredAt:              item.ExpiredAt,
 	}
 }
 

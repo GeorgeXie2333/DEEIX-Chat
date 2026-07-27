@@ -305,6 +305,11 @@ func validatePatchItem(item PatchItem) error {
 		default:
 			return fmt.Errorf("%s must be one of: USD, CNY", key)
 		}
+	case "billing:stripe_fee_rate_percent":
+		if _, err := appbilling.ParseStripeFeeRateBasisPoints(value); err != nil {
+			return fmt.Errorf("%s must be between 0 and 100 with at most two decimal places", key)
+		}
+		return nil
 	case "billing:prepaid_amount_usd":
 		return validateFloatMinMax(value, 0, 1000000, key)
 	case "billing:free_model_rate_limit_rpm":

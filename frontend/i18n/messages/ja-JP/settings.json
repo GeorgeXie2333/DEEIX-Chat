@@ -668,6 +668,11 @@
       "upgradeDescription": "上位プランはすぐに開始され、未使用の権限は後続期間として保持されます。",
       "method": "支払い方法",
       "card": "銀行カード",
+      "subtotal": "USD 業務小計",
+      "stripeFee": "Stripe 追加手数料（{rate}）",
+      "total": "USD 支払総額",
+      "stripeUnsupportedCurrency": "{currency} の業務通貨は未対応です",
+      "stripeUnsupportedCurrencyDescription": "Stripe は USD の業務価格のみ対応します。この旧プランは {currency} のため、プラットフォームでは自動換算しません。",
       "disabled": "未有効",
       "continue": "支払いへ進む",
       "epay": {
@@ -682,6 +687,7 @@
       "description": "米ドル金額を入力",
       "amount": "チャージ金額",
       "amountAria": "チャージする米ドル金額",
+      "creditAmount": "USD 入金額",
       "confirm": "チャージ",
       "currentBalance": "現在の残高: {value}"
     },

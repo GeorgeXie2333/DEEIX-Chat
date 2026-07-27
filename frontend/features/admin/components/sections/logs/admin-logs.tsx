@@ -1017,7 +1017,15 @@ function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | nu
                 <DetailRow label={t("fields.userID")} value={detail.item.userID} mono />
               </DetailBlock>
               <DetailBlock title={t("blocks.payment")}>
-                <DetailRow label={t("fields.amount")} value={`${formatMoneyCents(detail.item.payAmountCents, detail.item.payCurrency)} / ${formatMoneyCents(detail.item.baseAmountCents, detail.item.baseCurrency)}`} mono />
+                <DetailRow label={t("fields.subtotal")} value={formatMoneyCents(detail.item.paySubtotalAmountCents, detail.item.payCurrency)} mono />
+                <DetailRow
+                  label={t("fields.fee")}
+                  value={`${formatMoneyCents(detail.item.feeAmountCents, detail.item.payCurrency)} (${detail.item.feeRatePercent.toLocaleString(locale, { maximumFractionDigits: 2 })}%)`}
+                  mono
+                />
+                <DetailRow label={t("fields.total")} value={formatMoneyCents(detail.item.payAmountCents, detail.item.payCurrency)} mono />
+                <DetailRow label={t("fields.businessAmount")} value={formatMoneyCents(detail.item.baseAmountCents, detail.item.baseCurrency)} mono />
+                <DetailRow label={t("fields.fxRate")} value={detail.item.fxRate || "-"} mono />
                 <DetailRow label={t("fields.credit")} value={formatTooltipUsageCost(detail.item.creditUSD)} mono />
                 <DetailRow label={t("fields.interval")} value={`${detail.item.billingInterval || "-"} x ${detail.item.cycles || 0}`} />
                 <DetailRow label={t("fields.externalPaymentID")} value={detail.item.externalPaymentID || "-"} mono />

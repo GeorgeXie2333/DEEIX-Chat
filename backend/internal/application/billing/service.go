@@ -318,30 +318,32 @@ type PlanUpdateInput struct {
 
 // PaymentOrderInput 定义创建支付单入参。
 type PaymentOrderInput struct {
-	UserID               uint
-	PriceID              uint
-	Cycles               int
-	Provider             string
-	USDToCNYRate         float64
-	PreferredPayCurrency string
+	UserID                   uint
+	PriceID                  uint
+	Cycles                   int
+	Provider                 string
+	USDToCNYRate             float64
+	StripeFeeRateBasisPoints int64
 }
 
 // TopUpPaymentOrderInput 定义创建按量充值支付单入参。
 type TopUpPaymentOrderInput struct {
-	UserID               uint
-	AmountMinorUnits     int64
-	AmountCurrency       string
-	Provider             string
-	USDToCNYRate         float64
-	PreferredPayCurrency string
+	UserID                   uint
+	AmountMinorUnits         int64
+	AmountCurrency           string
+	Provider                 string
+	USDToCNYRate             float64
+	StripeFeeRateBasisPoints int64
 }
 
 type paymentQuote struct {
-	BaseCurrency    string
-	BaseAmountCents int64
-	PayCurrency     string
-	PayAmountCents  int64
-	FXRate          float64
+	BaseCurrency       string
+	BaseAmountCents    int64
+	PayCurrency        string
+	PayAmountCents     int64
+	FeeRateBasisPoints int64
+	FeeAmountCents     int64
+	FXRate             float64
 }
 
 // BillingAccountBalanceInput 定义管理员设置余额入参。
@@ -844,11 +846,18 @@ func (s *Service) CreatePaymentOrder(ctx context.Context, input PaymentOrderInpu
 		return nil, nil, nil, repository.ErrInvalidInput
 	}
 	baseCurrency := normalizeCurrency(price.Currency)
+	if provider == domainbilling.PaymentProviderStripe && baseCurrency != "USD" {
+		return nil, nil, nil, ErrPaymentCurrencyUnsupported
+	}
 	baseAmountCents := price.AmountCents * int64(cycles)
 	if baseAmountCents <= 0 {
 		return nil, nil, nil, repository.ErrInvalidInput
 	}
-	quote := resolvePaymentQuote(provider, baseCurrency, baseAmountCents, input.USDToCNYRate, input.PreferredPayCurrency)
+	quote := resolvePaymentQuote(provider, baseCurrency, baseAmountCents, input.USDToCNYRate)
+	quote, err = applyStripeFeeToQuote(provider, quote, input.StripeFeeRateBasisPoints)
+	if err != nil {
+		return nil, nil, nil, repository.ErrInvalidInput
+	}
 	if quote.PayAmountCents <= 0 {
 		return nil, nil, nil, repository.ErrInvalidInput
 	}
@@ -860,41 +869,47 @@ func (s *Service) CreatePaymentOrder(ctx context.Context, input PaymentOrderInpu
 	now := time.Now()
 	expiredAt := now.Add(30 * time.Minute)
 	snapshot := map[string]interface{}{
-		"plan_id":           plan.ID,
-		"plan_code":         plan.Code,
-		"plan_name":         plan.Name,
-		"price_id":          price.ID,
-		"price_code":        price.Code,
-		"billing_interval":  price.BillingInterval,
-		"cycles":            cycles,
-		"base_currency":     quote.BaseCurrency,
-		"base_amount_cents": quote.BaseAmountCents,
-		"pay_currency":      quote.PayCurrency,
-		"pay_amount_cents":  quote.PayAmountCents,
-		"fx_rate":           formatFXRate(quote.FXRate),
-		"provider":          provider,
+		"plan_id":                   plan.ID,
+		"plan_code":                 plan.Code,
+		"plan_name":                 plan.Name,
+		"price_id":                  price.ID,
+		"price_code":                price.Code,
+		"billing_interval":          price.BillingInterval,
+		"cycles":                    cycles,
+		"base_currency":             quote.BaseCurrency,
+		"base_amount_cents":         quote.BaseAmountCents,
+		"pay_currency":              quote.PayCurrency,
+		"pay_subtotal_amount_cents": quote.PayAmountCents - quote.FeeAmountCents,
+		"pay_amount_cents":          quote.PayAmountCents,
+		"fee_rate_basis_points":     quote.FeeRateBasisPoints,
+		"fee_rate_percent":          StripeFeeRatePercent(quote.FeeRateBasisPoints),
+		"fee_amount_cents":          quote.FeeAmountCents,
+		"fx_rate":                   formatFXRate(quote.FXRate),
+		"provider":                  provider,
 	}
 	snapshotJSON := "{}"
 	if raw, marshalErr := json.Marshal(snapshot); marshalErr == nil {
 		snapshotJSON = string(raw)
 	}
 	order, err := s.repo.CreatePaymentOrder(ctx, &domainbilling.PaymentOrder{
-		OrderNo:         orderNo,
-		OrderType:       domainbilling.PaymentOrderTypeSubscription,
-		UserID:          input.UserID,
-		PlanID:          plan.ID,
-		PriceID:         price.ID,
-		Provider:        provider,
-		Status:          domainbilling.PaymentStatusPending,
-		BaseCurrency:    quote.BaseCurrency,
-		BaseAmountCents: quote.BaseAmountCents,
-		PayCurrency:     quote.PayCurrency,
-		PayAmountCents:  quote.PayAmountCents,
-		FXRate:          formatFXRate(quote.FXRate),
-		BillingInterval: price.BillingInterval,
-		Cycles:          cycles,
-		ExpiredAt:       &expiredAt,
-		SnapshotJSON:    snapshotJSON,
+		OrderNo:            orderNo,
+		OrderType:          domainbilling.PaymentOrderTypeSubscription,
+		UserID:             input.UserID,
+		PlanID:             plan.ID,
+		PriceID:            price.ID,
+		Provider:           provider,
+		Status:             domainbilling.PaymentStatusPending,
+		BaseCurrency:       quote.BaseCurrency,
+		BaseAmountCents:    quote.BaseAmountCents,
+		PayCurrency:        quote.PayCurrency,
+		PayAmountCents:     quote.PayAmountCents,
+		FeeRateBasisPoints: quote.FeeRateBasisPoints,
+		FeeAmountCents:     quote.FeeAmountCents,
+		FXRate:             formatFXRate(quote.FXRate),
+		BillingInterval:    price.BillingInterval,
+		Cycles:             cycles,
+		ExpiredAt:          &expiredAt,
+		SnapshotJSON:       snapshotJSON,
 	})
 	if err != nil {
 		return nil, nil, nil, err
@@ -924,6 +939,9 @@ func (s *Service) CreateTopUpPaymentOrder(ctx context.Context, input TopUpPaymen
 	baseCurrency := "USD"
 	rate := resolveUSDToCNYRate(input.USDToCNYRate)
 	amountCurrency := normalizeCurrency(input.AmountCurrency)
+	if provider == domainbilling.PaymentProviderStripe && amountCurrency != "USD" {
+		return nil, ErrPaymentCurrencyUnsupported
+	}
 	baseAmountUSD := float64(input.AmountMinorUnits) / 100
 	if amountCurrency == "CNY" {
 		baseAmountUSD = baseAmountUSD / rate
@@ -932,11 +950,15 @@ func (s *Service) CreateTopUpPaymentOrder(ctx context.Context, input TopUpPaymen
 	}
 	creditNanousd := usdToNanousd(baseAmountUSD)
 	baseAmountCents := int64(math.Round(baseAmountUSD * 100))
-	quote := resolvePaymentQuote(provider, baseCurrency, baseAmountCents, rate, input.PreferredPayCurrency)
+	quote := resolvePaymentQuote(provider, baseCurrency, baseAmountCents, rate)
 	if quote.PayCurrency == amountCurrency {
 		quote.PayAmountCents = input.AmountMinorUnits
 	} else if quote.PayCurrency == "CNY" && quote.BaseCurrency == "USD" {
 		quote.PayAmountCents = int64(math.Round(baseAmountUSD * rate * 100))
+	}
+	quote, err = applyStripeFeeToQuote(provider, quote, input.StripeFeeRateBasisPoints)
+	if err != nil {
+		return nil, repository.ErrInvalidInput
 	}
 	if quote.BaseAmountCents <= 0 || quote.PayAmountCents <= 0 || creditNanousd <= 0 {
 		return nil, repository.ErrInvalidInput
@@ -949,37 +971,43 @@ func (s *Service) CreateTopUpPaymentOrder(ctx context.Context, input TopUpPaymen
 	now := time.Now()
 	expiredAt := now.Add(30 * time.Minute)
 	snapshot := map[string]interface{}{
-		"order_type":         domainbilling.PaymentOrderTypeTopUp,
-		"base_currency":      quote.BaseCurrency,
-		"base_amount_cents":  quote.BaseAmountCents,
-		"pay_currency":       quote.PayCurrency,
-		"pay_amount_cents":   quote.PayAmountCents,
-		"fx_rate":            formatFXRate(quote.FXRate),
-		"amount_currency":    amountCurrency,
-		"amount_minor_units": input.AmountMinorUnits,
-		"credit_nanousd":     creditNanousd,
-		"provider":           provider,
+		"order_type":                domainbilling.PaymentOrderTypeTopUp,
+		"base_currency":             quote.BaseCurrency,
+		"base_amount_cents":         quote.BaseAmountCents,
+		"pay_currency":              quote.PayCurrency,
+		"pay_subtotal_amount_cents": quote.PayAmountCents - quote.FeeAmountCents,
+		"pay_amount_cents":          quote.PayAmountCents,
+		"fee_rate_basis_points":     quote.FeeRateBasisPoints,
+		"fee_rate_percent":          StripeFeeRatePercent(quote.FeeRateBasisPoints),
+		"fee_amount_cents":          quote.FeeAmountCents,
+		"fx_rate":                   formatFXRate(quote.FXRate),
+		"amount_currency":           amountCurrency,
+		"amount_minor_units":        input.AmountMinorUnits,
+		"credit_nanousd":            creditNanousd,
+		"provider":                  provider,
 	}
 	snapshotJSON := "{}"
 	if raw, marshalErr := json.Marshal(snapshot); marshalErr == nil {
 		snapshotJSON = string(raw)
 	}
 	return s.repo.CreatePaymentOrder(ctx, &domainbilling.PaymentOrder{
-		OrderNo:         orderNo,
-		OrderType:       domainbilling.PaymentOrderTypeTopUp,
-		UserID:          input.UserID,
-		Provider:        provider,
-		Status:          domainbilling.PaymentStatusPending,
-		BaseCurrency:    quote.BaseCurrency,
-		BaseAmountCents: quote.BaseAmountCents,
-		PayCurrency:     quote.PayCurrency,
-		PayAmountCents:  quote.PayAmountCents,
-		FXRate:          formatFXRate(quote.FXRate),
-		CreditNanousd:   creditNanousd,
-		BillingInterval: domainbilling.IntervalLifetime,
-		Cycles:          1,
-		ExpiredAt:       &expiredAt,
-		SnapshotJSON:    snapshotJSON,
+		OrderNo:            orderNo,
+		OrderType:          domainbilling.PaymentOrderTypeTopUp,
+		UserID:             input.UserID,
+		Provider:           provider,
+		Status:             domainbilling.PaymentStatusPending,
+		BaseCurrency:       quote.BaseCurrency,
+		BaseAmountCents:    quote.BaseAmountCents,
+		PayCurrency:        quote.PayCurrency,
+		PayAmountCents:     quote.PayAmountCents,
+		FeeRateBasisPoints: quote.FeeRateBasisPoints,
+		FeeAmountCents:     quote.FeeAmountCents,
+		FXRate:             formatFXRate(quote.FXRate),
+		CreditNanousd:      creditNanousd,
+		BillingInterval:    domainbilling.IntervalLifetime,
+		Cycles:             1,
+		ExpiredAt:          &expiredAt,
+		SnapshotJSON:       snapshotJSON,
 	})
 }
 
@@ -3282,7 +3310,7 @@ func resolveUSDToCNYRate(value float64) float64 {
 	return value
 }
 
-func resolvePaymentQuote(provider string, baseCurrency string, baseAmountCents int64, usdToCNYRate float64, preferredPayCurrency string) paymentQuote {
+func resolvePaymentQuote(provider string, baseCurrency string, baseAmountCents int64, usdToCNYRate float64) paymentQuote {
 	baseCurrency = normalizeCurrency(baseCurrency)
 	quote := paymentQuote{
 		BaseCurrency:    baseCurrency,
@@ -3291,8 +3319,11 @@ func resolvePaymentQuote(provider string, baseCurrency string, baseAmountCents i
 		PayAmountCents:  baseAmountCents,
 		FXRate:          1,
 	}
+	if provider == domainbilling.PaymentProviderStripe {
+		return quote
+	}
 	payCurrency := baseCurrency
-	if provider == domainbilling.PaymentProviderEPay || normalizeCurrency(preferredPayCurrency) == "CNY" {
+	if provider == domainbilling.PaymentProviderEPay {
 		payCurrency = "CNY"
 	}
 	if payCurrency == baseCurrency {
@@ -3302,6 +3333,21 @@ func resolvePaymentQuote(provider string, baseCurrency string, baseAmountCents i
 	quote.FXRate = resolveUSDToCNYRate(usdToCNYRate)
 	quote.PayAmountCents = convertPaymentAmountCents(baseAmountCents, baseCurrency, quote.PayCurrency, quote.FXRate)
 	return quote
+}
+
+func applyStripeFeeToQuote(provider string, quote paymentQuote, basisPoints int64) (paymentQuote, error) {
+	if provider != domainbilling.PaymentProviderStripe {
+		return quote, nil
+	}
+	basisPoints = normalizeStripeFeeRateBasisPoints(basisPoints)
+	feeAmountCents, err := calculateStripeFeeAmountCents(quote.BaseAmountCents, basisPoints)
+	if err != nil {
+		return paymentQuote{}, err
+	}
+	quote.FeeRateBasisPoints = basisPoints
+	quote.FeeAmountCents = feeAmountCents
+	quote.PayAmountCents += feeAmountCents
+	return quote, nil
 }
 
 func convertPaymentAmountCents(baseAmountCents int64, baseCurrency string, payCurrency string, rate float64) int64 {

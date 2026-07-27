@@ -3,6 +3,7 @@ package billing
 import (
 	"testing"
 
+	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	"github.com/gin-gonic/gin/binding"
 )
 
@@ -106,5 +107,20 @@ func TestOptionalBillingCyclesUseServiceDefault(t *testing.T) {
 	}
 	if err := binding.Validator.ValidateStruct(CreateCheckoutRequest{Cycles: &zero}); err == nil {
 		t.Fatal("expected explicit zero checkout cycles to fail validation")
+	}
+}
+
+func TestCheckoutResponseIncludesStripeFeeBreakdown(t *testing.T) {
+	response := toCheckoutResponse(&domainbilling.PaymentOrder{
+		PayCurrency:        "USD",
+		PayAmountCents:     1_030,
+		FeeRateBasisPoints: 290,
+		FeeAmountCents:     29,
+	})
+	if response.PaySubtotalAmountCents != 1_001 ||
+		response.FeeRatePercent != 2.9 ||
+		response.FeeAmountCents != 29 ||
+		response.PayAmountCents != 1_030 {
+		t.Fatalf("unexpected checkout fee response: %+v", response)
 	}
 }

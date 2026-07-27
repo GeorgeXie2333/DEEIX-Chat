@@ -12,12 +12,15 @@ import type { UserDTO } from "@/shared/api/auth.types";
 import type { BillingOverviewData, BillingSubscriptionEntitlementDTO } from "@/shared/api/billing.types";
 import type { BillingPlanDTO, BillingPlanPriceDTO } from "@/shared/api/billing.types";
 import {
+  calculateStripePaymentAmounts,
   formatAccountBalance,
   formatMediumDate,
   formatPlanCredit,
   formatPlanPrice,
   formatProviderPaymentAmountFromUSD,
   formatShortDate,
+  formatStripeFeeRatePercent,
+  formatUSDFromCents,
   isCurrentBillingPlan,
   planRank,
   resolveDefaultPrice,
@@ -203,6 +206,7 @@ type SubscriptionSummaryProps = {
   periodUsed: number;
   periodPercent: number;
   billingDisplay: BillingDisplayOptions;
+  stripeFeeRatePercent: number;
   onOpenRedemptionDialog: () => void;
   onOpenTopUpDialog: () => void;
   onPricingDialogOpenChange: (open: boolean) => void;
@@ -246,6 +250,7 @@ export function SubscriptionSummary({
   periodUsed,
   periodPercent,
   billingDisplay,
+  stripeFeeRatePercent,
   onOpenRedemptionDialog,
   onOpenTopUpDialog,
   onPricingDialogOpenChange,
@@ -282,9 +287,20 @@ export function SubscriptionSummary({
     : selectedPlanActionKind === "upgrade"
       ? t("payment.upgradeDescription")
       : null;
-  const selectedPaymentAmountUSD = selectedPrice ? (selectedPrice.amountCents || 0) / 100 : 0;
-  const stripePaymentAmount = selectedPrice ? formatProviderPaymentAmountFromUSD(selectedPaymentAmountUSD, "stripe", billingDisplay) : "";
-  const epayPaymentAmount = selectedPrice ? formatProviderPaymentAmountFromUSD(selectedPaymentAmountUSD, "epay", billingDisplay) : "";
+  const selectedPriceCurrency = (selectedPrice?.currency || "USD").toUpperCase();
+  const stripeCurrencySupported = selectedPriceCurrency === "USD";
+  const selectedPaymentAmountUSD = selectedPrice && stripeCurrencySupported ? (selectedPrice.amountCents || 0) / 100 : 0;
+  const stripeAmounts = calculateStripePaymentAmounts(selectedPrice?.amountCents || 0, stripeFeeRatePercent);
+  const stripePaymentAmount = selectedPrice
+    ? stripeCurrencySupported
+      ? formatUSDFromCents(stripeAmounts.totalAmountCents)
+      : t("payment.stripeUnsupportedCurrency", { currency: selectedPriceCurrency })
+    : "";
+  const epayPaymentAmount = selectedPrice
+    ? selectedPriceCurrency === "USD"
+      ? formatProviderPaymentAmountFromUSD(selectedPaymentAmountUSD, "epay", billingDisplay)
+      : new Intl.NumberFormat("en-US", { style: "currency", currency: selectedPriceCurrency }).format((selectedPrice.amountCents || 0) / 100)
+    : "";
 
   return (
     <>
@@ -544,11 +560,44 @@ export function SubscriptionSummary({
               })
               : null}
           </div>
+          {selectedPaymentProvider === "stripe" ? (
+            stripeCurrencySupported ? (
+              <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5 text-xs">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">{t("payment.subtotal")}</span>
+                  <span className="font-mono tabular-nums">{formatUSDFromCents(stripeAmounts.subtotalAmountCents)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">
+                    {t("payment.stripeFee", { rate: formatStripeFeeRatePercent(stripeFeeRatePercent) })}
+                  </span>
+                  <span className="font-mono tabular-nums">{formatUSDFromCents(stripeAmounts.feeAmountCents)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-2 font-medium">
+                  <span>{t("payment.total")}</span>
+                  <span className="font-mono tabular-nums">{formatUSDFromCents(stripeAmounts.totalAmountCents)}</span>
+                </div>
+              </div>
+            ) : (
+              <p className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2.5 text-xs text-destructive">
+                {t("payment.stripeUnsupportedCurrencyDescription", { currency: selectedPriceCurrency })}
+              </p>
+            )
+          ) : null}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onPaymentDialogOpenChange(false)} disabled={checkoutPriceID === selectedPrice?.id}>
               {t("actions.cancel")}
             </Button>
-            <Button type="button" disabled={paymentDisabled || !selectedPrice || checkoutPriceID === selectedPrice.id} onClick={onConfirmPayment}>
+            <Button
+              type="button"
+              disabled={
+                paymentDisabled
+                || !selectedPrice
+                || checkoutPriceID === selectedPrice.id
+                || (selectedPaymentProvider === "stripe" && !stripeCurrencySupported)
+              }
+              onClick={onConfirmPayment}
+            >
               {checkoutPriceID === selectedPrice?.id ? <SpinnerLabel>{t("actions.processing")}</SpinnerLabel> : t("payment.continue")}
             </Button>
           </DialogFooter>

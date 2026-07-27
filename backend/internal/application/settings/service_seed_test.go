@@ -96,3 +96,19 @@ func TestSeedKeepsCustomAllowedMIMETypes(t *testing.T) {
 		t.Fatalf("expected custom MIME defaults to stay unchanged, got %q", got)
 	}
 }
+
+func TestSeedAddsDefaultStripeFeeRate(t *testing.T) {
+	repo := newSettingsSeedRepo()
+	service := NewService(repo, "")
+
+	if err := service.Seed(context.Background(), config.Config{}); err != nil {
+		t.Fatalf("seed settings: %v", err)
+	}
+	item, ok := repo.items["billing:stripe_fee_rate_percent"]
+	if !ok {
+		t.Fatal("expected stripe fee rate setting to be seeded")
+	}
+	if item.Value != "0" {
+		t.Fatalf("stripe fee rate default = %q, want 0", item.Value)
+	}
+}

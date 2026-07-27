@@ -332,6 +332,19 @@ func TestValidateBillingDisplayCurrencySetting(t *testing.T) {
 	}
 }
 
+func TestValidateStripeFeeRateSetting(t *testing.T) {
+	for _, value := range []string{"0", "2.9", "2.90", "100.00"} {
+		if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "stripe_fee_rate_percent", Value: value}); err != nil {
+			t.Fatalf("expected stripe fee rate %q to pass, got %v", value, err)
+		}
+	}
+	for _, value := range []string{"-0.01", "100.01", "2.901", "bad"} {
+		if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "stripe_fee_rate_percent", Value: value}); err == nil {
+			t.Fatalf("expected stripe fee rate %q to fail", value)
+		}
+	}
+}
+
 func TestValidateMCPSelectedToolsSetting(t *testing.T) {
 	if err := validatePatchItem(PatchItem{Namespace: "mcp", Key: "mcp_max_selected_tools_per_message", Value: "32"}); err != nil {
 		t.Fatalf("expected selected tool limit to pass, got %v", err)

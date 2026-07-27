@@ -38,6 +38,7 @@ import {
   resolveDefaultPrice,
   resolvePlanActionKind,
   billingDisplayAmountToMinorUnits,
+  convertTopUpInputAmount,
 } from "@/features/settings/model/subscription-format";
 import {
   normalizeBillingDisplayCurrency,
@@ -123,6 +124,18 @@ export function SettingsSubscription() {
     }),
     [billingConfig?.displayCurrency, billingConfig?.usdToCNYRate],
   );
+  const handlePaymentProviderChange = React.useCallback((provider: PaymentProvider) => {
+    if (provider === selectedPaymentProvider) {
+      return;
+    }
+    setTopUpAmount((current) => convertTopUpInputAmount(
+      current,
+      selectedPaymentProvider,
+      provider,
+      billingDisplay,
+    ));
+    setSelectedPaymentProvider(provider);
+  }, [billingDisplay, selectedPaymentProvider]);
 
   const intervalLabels = React.useMemo(
     () => ({
@@ -235,9 +248,9 @@ export function SettingsSubscription() {
 
   React.useEffect(() => {
     if (paymentProviders.length > 0 && !paymentProviders.includes(selectedPaymentProvider)) {
-      setSelectedPaymentProvider(paymentProviders[0] ?? "stripe");
+      handlePaymentProviderChange(paymentProviders[0] ?? "stripe");
     }
-  }, [paymentProviders, selectedPaymentProvider]);
+  }, [handlePaymentProviderChange, paymentProviders, selectedPaymentProvider]);
 
   React.useEffect(() => {
     if (selectedPaymentProvider !== "epay") return;
@@ -437,12 +450,13 @@ export function SettingsSubscription() {
         periodUsed={periodUsed}
         periodPercent={periodPercent}
         billingDisplay={billingDisplay}
+        stripeFeeRatePercent={billingConfig?.stripeFeeRatePercent ?? 0}
         onOpenRedemptionDialog={() => setRedemptionDialogOpen(true)}
         onOpenTopUpDialog={() => setTopUpDialogOpen(true)}
         onPricingDialogOpenChange={setPricingDialogOpen}
         onPaymentDialogOpenChange={setPaymentDialogOpen}
         onSelectPlan={(plan, price, isCurrent) => void handleSelectPlan(plan, price, isCurrent)}
-        onPaymentProviderChange={setSelectedPaymentProvider}
+        onPaymentProviderChange={handlePaymentProviderChange}
         onEPayTypeChange={setSelectedEPayType}
         onConfirmPayment={() => void handleConfirmPayment()}
       />
@@ -502,9 +516,10 @@ export function SettingsSubscription() {
         selectedEPayType={selectedEPayType}
         epayTypes={epayTypes}
         billingDisplay={billingDisplay}
+        stripeFeeRatePercent={billingConfig?.stripeFeeRatePercent ?? 0}
         epayLabels={epayLabels}
         onAmountChange={setTopUpAmount}
-        onPaymentProviderChange={setSelectedPaymentProvider}
+        onPaymentProviderChange={handlePaymentProviderChange}
         onEPayTypeChange={setSelectedEPayType}
         onSubmit={() => void handleTopUp()}
       />

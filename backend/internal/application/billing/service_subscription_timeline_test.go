@@ -2,6 +2,7 @@ package billing
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -121,31 +122,33 @@ func TestCreatePaymentOrderAllowsUpgradeWithActivePaidEntitlement(t *testing.T) 
 
 func TestCreatePaymentOrderResolvesProviderPaymentCurrency(t *testing.T) {
 	tests := []struct {
-		name                 string
-		provider             string
-		preferredPayCurrency string
-		wantPayCurrency      string
-		wantPayAmountCents   int64
-		wantFXRate           string
+		name               string
+		provider           string
+		usdToCNYRate       float64
+		wantPayCurrency    string
+		wantPayAmountCents int64
+		wantFXRate         string
 	}{
 		{
 			name:               "stripe uses base currency",
 			provider:           domainbilling.PaymentProviderStripe,
+			usdToCNYRate:       7.2,
 			wantPayCurrency:    "USD",
 			wantPayAmountCents: 2000,
 			wantFXRate:         "1",
 		},
 		{
-			name:                 "stripe follows cny display currency",
-			provider:             domainbilling.PaymentProviderStripe,
-			preferredPayCurrency: "CNY",
-			wantPayCurrency:      "CNY",
-			wantPayAmountCents:   14400,
-			wantFXRate:           "7.2",
+			name:               "stripe ignores exchange rate",
+			provider:           domainbilling.PaymentProviderStripe,
+			usdToCNYRate:       9.9,
+			wantPayCurrency:    "USD",
+			wantPayAmountCents: 2000,
+			wantFXRate:         "1",
 		},
 		{
 			name:               "epay converts usd to cny",
 			provider:           domainbilling.PaymentProviderEPay,
+			usdToCNYRate:       7.2,
 			wantPayCurrency:    "CNY",
 			wantPayAmountCents: 14400,
 			wantFXRate:         "7.2",
@@ -165,11 +168,10 @@ func TestCreatePaymentOrderResolvesProviderPaymentCurrency(t *testing.T) {
 			service := NewService(repo)
 
 			order, _, _, err := service.CreatePaymentOrder(context.Background(), PaymentOrderInput{
-				UserID:               1,
-				PriceID:              20,
-				Provider:             tt.provider,
-				USDToCNYRate:         7.2,
-				PreferredPayCurrency: tt.preferredPayCurrency,
+				UserID:       1,
+				PriceID:      20,
+				Provider:     tt.provider,
+				USDToCNYRate: tt.usdToCNYRate,
 			})
 			if err != nil {
 				t.Fatalf("CreatePaymentOrder() error = %v", err)
@@ -192,18 +194,17 @@ func TestCreateTopUpPaymentOrderResolvesProviderPaymentCurrency(t *testing.T) {
 	service := NewService(repo)
 
 	stripeOrder, err := service.CreateTopUpPaymentOrder(context.Background(), TopUpPaymentOrderInput{
-		UserID:               1,
-		AmountMinorUnits:     5000,
-		AmountCurrency:       "USD",
-		Provider:             domainbilling.PaymentProviderStripe,
-		PreferredPayCurrency: "CNY",
-		USDToCNYRate:         7.2,
+		UserID:           1,
+		AmountMinorUnits: 5000,
+		AmountCurrency:   "USD",
+		Provider:         domainbilling.PaymentProviderStripe,
+		USDToCNYRate:     7.2,
 	})
 	if err != nil {
 		t.Fatalf("CreateTopUpPaymentOrder(stripe) error = %v", err)
 	}
-	if stripeOrder.PayCurrency != "CNY" || stripeOrder.PayAmountCents != 36000 || stripeOrder.FXRate != "7.2" {
-		t.Fatalf("stripe order pay = %s %d fx %s, want CNY 36000 fx 7.2", stripeOrder.PayCurrency, stripeOrder.PayAmountCents, stripeOrder.FXRate)
+	if stripeOrder.PayCurrency != "USD" || stripeOrder.PayAmountCents != 5000 || stripeOrder.FXRate != "1" {
+		t.Fatalf("stripe order pay = %s %d fx %s, want USD 5000 fx 1", stripeOrder.PayCurrency, stripeOrder.PayAmountCents, stripeOrder.FXRate)
 	}
 
 	epayOrder, err := service.CreateTopUpPaymentOrder(context.Background(), TopUpPaymentOrderInput{
@@ -221,26 +222,150 @@ func TestCreateTopUpPaymentOrderResolvesProviderPaymentCurrency(t *testing.T) {
 	}
 }
 
-func TestCreateTopUpPaymentOrderKeepsDisplayCurrencyAmountExact(t *testing.T) {
+func TestCreateTopUpPaymentOrderRejectsNonUSDStripeAmount(t *testing.T) {
 	repo := &billingRepositoryStub{mode: "usage"}
 	service := NewService(repo)
 
 	order, err := service.CreateTopUpPaymentOrder(context.Background(), TopUpPaymentOrderInput{
-		UserID:               1,
-		AmountMinorUnits:     1000,
-		AmountCurrency:       "CNY",
-		Provider:             domainbilling.PaymentProviderStripe,
-		PreferredPayCurrency: "CNY",
-		USDToCNYRate:         7.2,
+		UserID:           1,
+		AmountMinorUnits: 1000,
+		AmountCurrency:   "CNY",
+		Provider:         domainbilling.PaymentProviderStripe,
+		USDToCNYRate:     7.2,
+	})
+	if !errors.Is(err, ErrPaymentCurrencyUnsupported) {
+		t.Fatalf("CreateTopUpPaymentOrder() error = %v, want ErrPaymentCurrencyUnsupported", err)
+	}
+	if order != nil {
+		t.Fatalf("CreateTopUpPaymentOrder() order = %+v, want nil", order)
+	}
+}
+
+func TestCreateStripePaymentOrderAddsFeeWithoutChangingBaseAmount(t *testing.T) {
+	repo := &billingRepositoryStub{
+		mode: "period",
+		plans: []domainbilling.Plan{
+			{ID: 2, Code: "pro", Name: "Pro", IsActive: true},
+		},
+		prices: []domainbilling.Price{
+			{ID: 20, PlanID: 2, BillingInterval: domainbilling.IntervalMonth, Currency: "USD", AmountCents: 10_000, IsActive: true},
+		},
+	}
+	service := NewService(repo)
+
+	order, _, _, err := service.CreatePaymentOrder(context.Background(), PaymentOrderInput{
+		UserID:                   1,
+		PriceID:                  20,
+		Provider:                 domainbilling.PaymentProviderStripe,
+		USDToCNYRate:             9.9,
+		StripeFeeRateBasisPoints: 300,
+	})
+	if err != nil {
+		t.Fatalf("CreatePaymentOrder() error = %v", err)
+	}
+	if order.BaseAmountCents != 10_000 || order.PayAmountCents != 10_300 {
+		t.Fatalf("order amounts = base %d pay %d, want 10000 and 10300", order.BaseAmountCents, order.PayAmountCents)
+	}
+	if order.PayCurrency != "USD" || order.FXRate != "1" {
+		t.Fatalf("order payment = %s fx %s, want USD fx 1", order.PayCurrency, order.FXRate)
+	}
+	if order.FeeRateBasisPoints != 300 || order.FeeAmountCents != 300 {
+		t.Fatalf("order fee = %d bps / %d cents, want 300 / 300", order.FeeRateBasisPoints, order.FeeAmountCents)
+	}
+	var snapshot map[string]interface{}
+	if err := json.Unmarshal([]byte(order.SnapshotJSON), &snapshot); err != nil {
+		t.Fatalf("unmarshal payment snapshot: %v", err)
+	}
+	if snapshot["pay_subtotal_amount_cents"] != float64(10_000) ||
+		snapshot["fee_rate_basis_points"] != float64(300) ||
+		snapshot["fee_amount_cents"] != float64(300) {
+		t.Fatalf("unexpected payment fee snapshot: %v", snapshot)
+	}
+
+	orderWithDifferentRate, _, _, err := service.CreatePaymentOrder(context.Background(), PaymentOrderInput{
+		UserID:                   1,
+		PriceID:                  20,
+		Provider:                 domainbilling.PaymentProviderStripe,
+		USDToCNYRate:             4.2,
+		StripeFeeRateBasisPoints: 300,
+	})
+	if err != nil {
+		t.Fatalf("CreatePaymentOrder(different FX rate) error = %v", err)
+	}
+	if orderWithDifferentRate.PayAmountCents != order.PayAmountCents ||
+		orderWithDifferentRate.PayCurrency != order.PayCurrency ||
+		orderWithDifferentRate.FXRate != order.FXRate {
+		t.Fatalf("Stripe quote changed with USD/CNY rate: first=%+v second=%+v", order, orderWithDifferentRate)
+	}
+}
+
+func TestCreateStripeTopUpAddsFeeWithoutChangingCredit(t *testing.T) {
+	repo := &billingRepositoryStub{mode: "usage"}
+	service := NewService(repo)
+
+	order, err := service.CreateTopUpPaymentOrder(context.Background(), TopUpPaymentOrderInput{
+		UserID:                   1,
+		AmountMinorUnits:         10_000,
+		AmountCurrency:           "USD",
+		Provider:                 domainbilling.PaymentProviderStripe,
+		StripeFeeRateBasisPoints: 300,
 	})
 	if err != nil {
 		t.Fatalf("CreateTopUpPaymentOrder() error = %v", err)
 	}
-	if order.PayCurrency != "CNY" || order.PayAmountCents != 1000 {
-		t.Fatalf("pay = %s %d, want CNY 1000", order.PayCurrency, order.PayAmountCents)
+	if order.CreditNanousd != 100_000_000_000 {
+		t.Fatalf("CreditNanousd = %d, want 100000000000", order.CreditNanousd)
 	}
-	if order.CreditNanousd != 1388888889 {
-		t.Fatalf("CreditNanousd = %d, want 1388888889", order.CreditNanousd)
+	if order.PayAmountCents != 10_300 || order.FeeAmountCents != 300 {
+		t.Fatalf("pay = %d fee = %d, want 10300 and 300", order.PayAmountCents, order.FeeAmountCents)
+	}
+}
+
+func TestCreateEPayOrderIgnoresStripeFeeRate(t *testing.T) {
+	repo := &billingRepositoryStub{mode: "usage"}
+	service := NewService(repo)
+
+	order, err := service.CreateTopUpPaymentOrder(context.Background(), TopUpPaymentOrderInput{
+		UserID:                   1,
+		AmountMinorUnits:         5_000,
+		AmountCurrency:           "USD",
+		Provider:                 domainbilling.PaymentProviderEPay,
+		USDToCNYRate:             7.2,
+		StripeFeeRateBasisPoints: 300,
+	})
+	if err != nil {
+		t.Fatalf("CreateTopUpPaymentOrder() error = %v", err)
+	}
+	if order.PayCurrency != "CNY" || order.PayAmountCents != 36_000 {
+		t.Fatalf("epay pay = %s %d, want CNY 36000", order.PayCurrency, order.PayAmountCents)
+	}
+	if order.FeeRateBasisPoints != 0 || order.FeeAmountCents != 0 {
+		t.Fatalf("epay fee = %d bps / %d cents, want zero", order.FeeRateBasisPoints, order.FeeAmountCents)
+	}
+}
+
+func TestCreateStripeOrderRejectsNonUSDPlan(t *testing.T) {
+	repo := &billingRepositoryStub{
+		mode: "period",
+		plans: []domainbilling.Plan{
+			{ID: 2, Code: "legacy", Name: "Legacy", IsActive: true},
+		},
+		prices: []domainbilling.Price{
+			{ID: 20, PlanID: 2, BillingInterval: domainbilling.IntervalMonth, Currency: "CNY", AmountCents: 10_000, IsActive: true},
+		},
+	}
+	service := NewService(repo)
+
+	order, _, _, err := service.CreatePaymentOrder(context.Background(), PaymentOrderInput{
+		UserID:   1,
+		PriceID:  20,
+		Provider: domainbilling.PaymentProviderStripe,
+	})
+	if !errors.Is(err, ErrPaymentCurrencyUnsupported) {
+		t.Fatalf("CreatePaymentOrder() error = %v, want ErrPaymentCurrencyUnsupported", err)
+	}
+	if order != nil {
+		t.Fatalf("CreatePaymentOrder() order = %+v, want nil", order)
 	}
 }
 

@@ -85,6 +85,7 @@ export const PAYMENT_SETTING_KEYS = [
   "stripe_publishable_key",
   "stripe_secret_key",
   "stripe_webhook_secret",
+  "stripe_fee_rate_percent",
   "epay_gateway_url",
   "epay_types",
   "epay_pid",
@@ -98,6 +99,7 @@ export const PAYMENT_DEFAULTS: PaymentSettings = {
   stripe_publishable_key: "",
   stripe_secret_key: "",
   stripe_webhook_secret: "",
+  stripe_fee_rate_percent: "0",
   epay_gateway_url: "",
   epay_types: `[
   {"name":"Alipay","type":"alipay"},

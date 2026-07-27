@@ -243,6 +243,7 @@
   },
   "payment": {
     "checkoutFailed": "Failed to create checkout.",
+    "currencyUnsupported": "Stripe only supports USD business prices; the platform will not convert currencies automatically.",
     "epayTypeUnsupported": "This EPay payment type is not supported.",
     "invalidEvent": "Invalid payment event.",
     "invalidSignature": "Invalid payment signature.",

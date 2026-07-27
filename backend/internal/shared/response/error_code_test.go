@@ -56,6 +56,12 @@ func TestInferErrorCode(t *testing.T) {
 	}
 }
 
+func TestInferStripeUnsupportedCurrencyErrorCode(t *testing.T) {
+	if got := InferErrorCode(http.StatusBadRequest, "payment currency is not supported"); got != "payment.currency_unsupported" {
+		t.Fatalf("InferErrorCode() = %q, want payment.currency_unsupported", got)
+	}
+}
+
 func TestTransportLiteralClientErrorsHaveStableCodes(t *testing.T) {
 	statusCodes := map[string]int{
 		"BadRequest":            http.StatusBadRequest,

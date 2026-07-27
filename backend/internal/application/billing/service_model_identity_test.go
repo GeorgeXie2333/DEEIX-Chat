@@ -140,6 +140,10 @@ func (r *billingRepositoryStub) GetNativeToolPricingJSON(context.Context) (strin
 	return r.nativeToolPricingJSON, nil
 }
 
+func (r *billingRepositoryStub) GetFreeModelRateLimit(context.Context) (domainbilling.FreeModelRateLimit, error) {
+	return domainbilling.FreeModelRateLimit{}, nil
+}
+
 func (r *billingRepositoryStub) GetModelPricing(_ context.Context, platformModelName string) (*domainbilling.ModelPricing, error) {
 	r.requestedPlatformModelName = platformModelName
 	if r.pricing == nil {

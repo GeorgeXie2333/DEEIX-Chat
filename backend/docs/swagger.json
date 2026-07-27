@@ -12597,6 +12597,7 @@
                 "paymentProviders",
                 "prepaidAmountNanousd",
                 "prepaidAmountUSD",
+                "stripeFeeRatePercent",
                 "usdToCNYRate"
             ],
             "properties": {
@@ -12643,6 +12644,9 @@
                     "type": "integer"
                 },
                 "prepaidAmountUSD": {
+                    "type": "number"
+                },
+                "stripeFeeRatePercent": {
                     "type": "number"
                 },
                 "usdToCNYRate": {
@@ -13352,11 +13356,14 @@
                 "creditUSD",
                 "expiredAt",
                 "externalCheckoutID",
+                "feeAmountCents",
+                "feeRatePercent",
                 "fxRate",
                 "orderNo",
                 "orderType",
                 "payAmountCents",
                 "payCurrency",
+                "paySubtotalAmountCents",
                 "provider",
                 "status"
             ],
@@ -13384,6 +13391,12 @@
                 "externalCheckoutID": {
                     "type": "string"
                 },
+                "feeAmountCents": {
+                    "type": "integer"
+                },
+                "feeRatePercent": {
+                    "type": "number"
+                },
                 "fxRate": {
                     "type": "string"
                 },
@@ -13398,6 +13411,9 @@
                 },
                 "payCurrency": {
                     "type": "string"
+                },
+                "paySubtotalAmountCents": {
+                    "type": "integer"
                 },
                 "provider": {
                     "type": "string"
@@ -18346,6 +18362,8 @@
                 "expiredAt",
                 "externalCheckoutID",
                 "externalPaymentID",
+                "feeAmountCents",
+                "feeRatePercent",
                 "fxRate",
                 "id",
                 "orderNo",
@@ -18353,6 +18371,7 @@
                 "paidAt",
                 "payAmountCents",
                 "payCurrency",
+                "paySubtotalAmountCents",
                 "planID",
                 "priceID",
                 "provider",
@@ -18397,6 +18416,12 @@
                 "externalPaymentID": {
                     "type": "string"
                 },
+                "feeAmountCents": {
+                    "type": "integer"
+                },
+                "feeRatePercent": {
+                    "type": "number"
+                },
                 "fxRate": {
                     "type": "string"
                 },
@@ -18419,6 +18444,9 @@
                 },
                 "payCurrency": {
                     "type": "string"
+                },
+                "paySubtotalAmountCents": {
+                    "type": "integer"
                 },
                 "planID": {
                     "type": "integer"

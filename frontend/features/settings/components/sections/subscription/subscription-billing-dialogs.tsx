@@ -8,9 +8,13 @@ import { Input } from "@/components/ui/input";
 import { SpinnerLabel } from "@/components/ui/spinner";
 import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot";
 import {
-  billingDisplayAmountToUSD,
-  billingDisplayInputSymbol,
+  billingDisplayAmountToMinorUnits,
+  calculateStripePaymentAmounts,
+  formatStripeFeeRatePercent,
   formatProviderPaymentAmountFromUSD,
+  formatUSDFromCents,
+  topUpInputAmountToUSD,
+  topUpInputSymbol,
 } from "@/features/settings/model/subscription-format";
 import type { BillingDisplayOptions } from "@/shared/lib/billing-display";
 
@@ -41,6 +45,7 @@ type TopUpDialogProps = {
   selectedEPayType: string;
   epayTypes: EPayTypeOption[];
   billingDisplay: BillingDisplayOptions;
+  stripeFeeRatePercent: number;
   epayLabels: {
     alipay: string;
     wxpay: string;
@@ -66,6 +71,7 @@ export function TopUpDialog({
   selectedEPayType,
   epayTypes,
   billingDisplay,
+  stripeFeeRatePercent,
   epayLabels,
   onAmountChange,
   onPaymentProviderChange,
@@ -74,10 +80,14 @@ export function TopUpDialog({
 }: TopUpDialogProps) {
   const t = useTranslations("settings.subscriptionPage");
   const displayAmount = Number(amount);
-  const paymentAmountUSD = billingDisplayAmountToUSD(displayAmount, billingDisplay);
-  const stripePaymentAmount = formatProviderPaymentAmountFromUSD(paymentAmountUSD, "stripe", billingDisplay);
+  const paymentAmountUSD = topUpInputAmountToUSD(displayAmount, selectedPaymentProvider, billingDisplay);
+  const stripeAmounts = calculateStripePaymentAmounts(
+    billingDisplayAmountToMinorUnits(paymentAmountUSD),
+    stripeFeeRatePercent,
+  );
+  const stripePaymentAmount = formatUSDFromCents(stripeAmounts.totalAmountCents);
   const epayPaymentAmount = formatProviderPaymentAmountFromUSD(paymentAmountUSD, "epay", billingDisplay);
-  const inputSymbol = billingDisplayInputSymbol(billingDisplay);
+  const inputSymbol = topUpInputSymbol(selectedPaymentProvider, billingDisplay);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -148,6 +158,29 @@ export function TopUpDialog({
                   );
                 })
                 : null}
+            </div>
+          </div>
+        ) : null}
+
+        {!paymentDisabled && selectedPaymentProvider === "stripe" ? (
+          <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5 text-xs">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">{t("payment.subtotal")}</span>
+              <span className="font-mono tabular-nums">{formatUSDFromCents(stripeAmounts.subtotalAmountCents)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">
+                {t("payment.stripeFee", { rate: formatStripeFeeRatePercent(stripeFeeRatePercent) })}
+              </span>
+              <span className="font-mono tabular-nums">{formatUSDFromCents(stripeAmounts.feeAmountCents)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-2 font-medium">
+              <span>{t("payment.total")}</span>
+              <span className="font-mono tabular-nums">{formatUSDFromCents(stripeAmounts.totalAmountCents)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 text-muted-foreground">
+              <span>{t("topUp.creditAmount")}</span>
+              <span className="font-mono tabular-nums">{formatUSDFromCents(stripeAmounts.subtotalAmountCents)}</span>
             </div>
           </div>
         ) : null}

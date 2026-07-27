@@ -980,6 +980,8 @@ definitions:
         type: integer
       prepaidAmountUSD:
         type: number
+      stripeFeeRatePercent:
+        type: number
       usdToCNYRate:
         type: number
     required:
@@ -994,6 +996,7 @@ definitions:
     - paymentProviders
     - prepaidAmountNanousd
     - prepaidAmountUSD
+    - stripeFeeRatePercent
     - usdToCNYRate
     type: object
   BillingConfigResponseDoc:
@@ -1501,6 +1504,10 @@ definitions:
         x-omitempty: false
       externalCheckoutID:
         type: string
+      feeAmountCents:
+        type: integer
+      feeRatePercent:
+        type: number
       fxRate:
         type: string
       orderNo:
@@ -1511,6 +1518,8 @@ definitions:
         type: integer
       payCurrency:
         type: string
+      paySubtotalAmountCents:
+        type: integer
       provider:
         type: string
       status:
@@ -1523,11 +1532,14 @@ definitions:
     - creditUSD
     - expiredAt
     - externalCheckoutID
+    - feeAmountCents
+    - feeRatePercent
     - fxRate
     - orderNo
     - orderType
     - payAmountCents
     - payCurrency
+    - paySubtotalAmountCents
     - provider
     - status
     type: object
@@ -5031,6 +5043,10 @@ definitions:
         type: string
       externalPaymentID:
         type: string
+      feeAmountCents:
+        type: integer
+      feeRatePercent:
+        type: number
       fxRate:
         type: string
       id:
@@ -5047,6 +5063,8 @@ definitions:
         type: integer
       payCurrency:
         type: string
+      paySubtotalAmountCents:
+        type: integer
       planID:
         type: integer
       priceID:
@@ -5078,6 +5096,8 @@ definitions:
     - expiredAt
     - externalCheckoutID
     - externalPaymentID
+    - feeAmountCents
+    - feeRatePercent
     - fxRate
     - id
     - orderNo
@@ -5085,6 +5105,7 @@ definitions:
     - paidAt
     - payAmountCents
     - payCurrency
+    - paySubtotalAmountCents
     - planID
     - priceID
     - provider

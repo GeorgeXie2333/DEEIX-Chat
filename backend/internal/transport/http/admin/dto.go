@@ -4,6 +4,7 @@ import (
 	"time"
 
 	appadmin "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/admin"
+	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/userview"
 	domainaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/audit"
 	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
@@ -346,33 +347,36 @@ type UsageStatisticsResponse struct {
 
 // PaymentOrderResponse 支付订单记录响应。
 type PaymentOrderResponse struct {
-	ID                 uint       `json:"id"`
-	OrderNo            string     `json:"orderNo"`
-	OrderType          string     `json:"orderType"`
-	UserID             uint       `json:"userID"`
-	Username           string     `json:"username"`
-	UserDisplayName    string     `json:"userDisplayName"`
-	UserLabel          string     `json:"userLabel"`
-	PlanID             uint       `json:"planID"`
-	PriceID            uint       `json:"priceID"`
-	Provider           string     `json:"provider"`
-	Status             string     `json:"status"`
-	BaseCurrency       string     `json:"baseCurrency"`
-	BaseAmountCents    int64      `json:"baseAmountCents"`
-	PayCurrency        string     `json:"payCurrency"`
-	PayAmountCents     int64      `json:"payAmountCents"`
-	FXRate             string     `json:"fxRate"`
-	CreditNanousd      int64      `json:"creditNanousd"`
-	CreditUSD          float64    `json:"creditUSD"`
-	BillingInterval    string     `json:"billingInterval"`
-	Cycles             int        `json:"cycles"`
-	ExternalPaymentID  string     `json:"externalPaymentID"`
-	ExternalCheckoutID string     `json:"externalCheckoutID"`
-	PaidAt             *time.Time `json:"paidAt" extensions:"x-nullable,!x-omitempty"`
-	ExpiredAt          *time.Time `json:"expiredAt" extensions:"x-nullable,!x-omitempty"`
-	SnapshotJSON       string     `json:"snapshotJSON"`
-	CreatedAt          time.Time  `json:"createdAt"`
-	UpdatedAt          time.Time  `json:"updatedAt"`
+	ID                     uint       `json:"id"`
+	OrderNo                string     `json:"orderNo"`
+	OrderType              string     `json:"orderType"`
+	UserID                 uint       `json:"userID"`
+	Username               string     `json:"username"`
+	UserDisplayName        string     `json:"userDisplayName"`
+	UserLabel              string     `json:"userLabel"`
+	PlanID                 uint       `json:"planID"`
+	PriceID                uint       `json:"priceID"`
+	Provider               string     `json:"provider"`
+	Status                 string     `json:"status"`
+	BaseCurrency           string     `json:"baseCurrency"`
+	BaseAmountCents        int64      `json:"baseAmountCents"`
+	PayCurrency            string     `json:"payCurrency"`
+	PaySubtotalAmountCents int64      `json:"paySubtotalAmountCents"`
+	PayAmountCents         int64      `json:"payAmountCents"`
+	FeeRatePercent         float64    `json:"feeRatePercent"`
+	FeeAmountCents         int64      `json:"feeAmountCents"`
+	FXRate                 string     `json:"fxRate"`
+	CreditNanousd          int64      `json:"creditNanousd"`
+	CreditUSD              float64    `json:"creditUSD"`
+	BillingInterval        string     `json:"billingInterval"`
+	Cycles                 int        `json:"cycles"`
+	ExternalPaymentID      string     `json:"externalPaymentID"`
+	ExternalCheckoutID     string     `json:"externalCheckoutID"`
+	PaidAt                 *time.Time `json:"paidAt" extensions:"x-nullable,!x-omitempty"`
+	ExpiredAt              *time.Time `json:"expiredAt" extensions:"x-nullable,!x-omitempty"`
+	SnapshotJSON           string     `json:"snapshotJSON"`
+	CreatedAt              time.Time  `json:"createdAt"`
+	UpdatedAt              time.Time  `json:"updatedAt"`
 }
 
 // ConversationEventResponse 对话事件响应。
@@ -876,33 +880,36 @@ func toUsageStatisticsResponse(
 
 func toPaymentOrderResponse(item domainbilling.PaymentOrder, label appadmin.UserLabel) PaymentOrderResponse {
 	return PaymentOrderResponse{
-		ID:                 item.ID,
-		OrderNo:            item.OrderNo,
-		OrderType:          item.OrderType,
-		UserID:             item.UserID,
-		Username:           label.Username,
-		UserDisplayName:    label.DisplayName,
-		UserLabel:          label.Label,
-		PlanID:             item.PlanID,
-		PriceID:            item.PriceID,
-		Provider:           item.Provider,
-		Status:             item.Status,
-		BaseCurrency:       item.BaseCurrency,
-		BaseAmountCents:    item.BaseAmountCents,
-		PayCurrency:        item.PayCurrency,
-		PayAmountCents:     item.PayAmountCents,
-		FXRate:             item.FXRate,
-		CreditNanousd:      item.CreditNanousd,
-		CreditUSD:          float64(item.CreditNanousd) / 1_000_000_000,
-		BillingInterval:    item.BillingInterval,
-		Cycles:             item.Cycles,
-		ExternalPaymentID:  item.ExternalPaymentID,
-		ExternalCheckoutID: item.ExternalCheckoutID,
-		PaidAt:             item.PaidAt,
-		ExpiredAt:          item.ExpiredAt,
-		SnapshotJSON:       item.SnapshotJSON,
-		CreatedAt:          item.CreatedAt,
-		UpdatedAt:          item.UpdatedAt,
+		ID:                     item.ID,
+		OrderNo:                item.OrderNo,
+		OrderType:              item.OrderType,
+		UserID:                 item.UserID,
+		Username:               label.Username,
+		UserDisplayName:        label.DisplayName,
+		UserLabel:              label.Label,
+		PlanID:                 item.PlanID,
+		PriceID:                item.PriceID,
+		Provider:               item.Provider,
+		Status:                 item.Status,
+		BaseCurrency:           item.BaseCurrency,
+		BaseAmountCents:        item.BaseAmountCents,
+		PayCurrency:            item.PayCurrency,
+		PaySubtotalAmountCents: item.PayAmountCents - item.FeeAmountCents,
+		PayAmountCents:         item.PayAmountCents,
+		FeeRatePercent:         appbilling.StripeFeeRatePercent(item.FeeRateBasisPoints),
+		FeeAmountCents:         item.FeeAmountCents,
+		FXRate:                 item.FXRate,
+		CreditNanousd:          item.CreditNanousd,
+		CreditUSD:              float64(item.CreditNanousd) / 1_000_000_000,
+		BillingInterval:        item.BillingInterval,
+		Cycles:                 item.Cycles,
+		ExternalPaymentID:      item.ExternalPaymentID,
+		ExternalCheckoutID:     item.ExternalCheckoutID,
+		PaidAt:                 item.PaidAt,
+		ExpiredAt:              item.ExpiredAt,
+		SnapshotJSON:           item.SnapshotJSON,
+		CreatedAt:              item.CreatedAt,
+		UpdatedAt:              item.UpdatedAt,
 	}
 }
 

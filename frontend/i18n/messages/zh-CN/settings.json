@@ -668,6 +668,11 @@
       "upgradeDescription": "升级后更高方案立即生效，未用权益会顺延保留。",
       "method": "支付方式",
       "card": "银行卡",
+      "subtotal": "USD 业务小计",
+      "stripeFee": "Stripe 额外手续费（{rate}）",
+      "total": "USD 实付总额",
+      "stripeUnsupportedCurrency": "不支持 {currency} 业务币种",
+      "stripeUnsupportedCurrencyDescription": "Stripe 仅支持 USD 业务价格；此历史套餐使用 {currency}，平台不会自动换汇。",
       "disabled": "未开启",
       "continue": "继续支付",
       "epay": {
@@ -683,6 +688,7 @@
       "currentBalance": "当前余额 {value}",
       "amount": "充值金额",
       "amountAria": "充值金额",
+      "creditAmount": "USD 到账金额",
       "confirm": "充值"
     },
     "redemption": {

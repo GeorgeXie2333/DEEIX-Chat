@@ -395,6 +395,7 @@ export interface BillingConfigResponse {
   paymentProviders: string[];
   prepaidAmountNanousd: number;
   prepaidAmountUSD: number;
+  stripeFeeRatePercent: number;
   usdToCNYRate: number;
 }
 
@@ -620,11 +621,14 @@ export interface CheckoutResponse {
   creditUSD: number;
   expiredAt: string | null;
   externalCheckoutID: string;
+  feeAmountCents: number;
+  feeRatePercent: number;
   fxRate: string;
   orderNo: string;
   orderType: string;
   payAmountCents: number;
   payCurrency: string;
+  paySubtotalAmountCents: number;
   provider: string;
   status: string;
 }
@@ -2243,6 +2247,8 @@ export interface PaymentOrderResponse {
   expiredAt: string | null;
   externalCheckoutID: string;
   externalPaymentID: string;
+  feeAmountCents: number;
+  feeRatePercent: number;
   fxRate: string;
   id: number;
   orderNo: string;
@@ -2250,6 +2256,7 @@ export interface PaymentOrderResponse {
   paidAt: string | null;
   payAmountCents: number;
   payCurrency: string;
+  paySubtotalAmountCents: number;
   planID: number;
   priceID: number;
   provider: string;

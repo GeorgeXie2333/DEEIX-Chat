@@ -130,6 +130,8 @@ type PaymentOrder struct {
 	BaseAmountCents    int64
 	PayCurrency        string
 	PayAmountCents     int64
+	FeeRateBasisPoints int64
+	FeeAmountCents     int64
 	FXRate             string
 	CreditNanousd      int64
 	BillingInterval    string

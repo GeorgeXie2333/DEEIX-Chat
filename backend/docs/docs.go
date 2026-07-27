@@ -12604,6 +12604,7 @@ const docTemplate = `{
                 "paymentProviders",
                 "prepaidAmountNanousd",
                 "prepaidAmountUSD",
+                "stripeFeeRatePercent",
                 "usdToCNYRate"
             ],
             "properties": {
@@ -12650,6 +12651,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "prepaidAmountUSD": {
+                    "type": "number"
+                },
+                "stripeFeeRatePercent": {
                     "type": "number"
                 },
                 "usdToCNYRate": {
@@ -13359,11 +13363,14 @@ const docTemplate = `{
                 "creditUSD",
                 "expiredAt",
                 "externalCheckoutID",
+                "feeAmountCents",
+                "feeRatePercent",
                 "fxRate",
                 "orderNo",
                 "orderType",
                 "payAmountCents",
                 "payCurrency",
+                "paySubtotalAmountCents",
                 "provider",
                 "status"
             ],
@@ -13391,6 +13398,12 @@ const docTemplate = `{
                 "externalCheckoutID": {
                     "type": "string"
                 },
+                "feeAmountCents": {
+                    "type": "integer"
+                },
+                "feeRatePercent": {
+                    "type": "number"
+                },
                 "fxRate": {
                     "type": "string"
                 },
@@ -13405,6 +13418,9 @@ const docTemplate = `{
                 },
                 "payCurrency": {
                     "type": "string"
+                },
+                "paySubtotalAmountCents": {
+                    "type": "integer"
                 },
                 "provider": {
                     "type": "string"
@@ -18353,6 +18369,8 @@ const docTemplate = `{
                 "expiredAt",
                 "externalCheckoutID",
                 "externalPaymentID",
+                "feeAmountCents",
+                "feeRatePercent",
                 "fxRate",
                 "id",
                 "orderNo",
@@ -18360,6 +18378,7 @@ const docTemplate = `{
                 "paidAt",
                 "payAmountCents",
                 "payCurrency",
+                "paySubtotalAmountCents",
                 "planID",
                 "priceID",
                 "provider",
@@ -18404,6 +18423,12 @@ const docTemplate = `{
                 "externalPaymentID": {
                     "type": "string"
                 },
+                "feeAmountCents": {
+                    "type": "integer"
+                },
+                "feeRatePercent": {
+                    "type": "number"
+                },
                 "fxRate": {
                     "type": "string"
                 },
@@ -18426,6 +18451,9 @@ const docTemplate = `{
                 },
                 "payCurrency": {
                     "type": "string"
+                },
+                "paySubtotalAmountCents": {
+                    "type": "integer"
                 },
                 "planID": {
                     "type": "integer"

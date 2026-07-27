@@ -143,6 +143,77 @@ func TestUsageQueriesUseSQLitePortableExpressions(t *testing.T) {
 	}
 }
 
+func TestPaymentOrderPersistsStripeFeeSnapshot(t *testing.T) {
+	db := openBillingSQLiteTestDB(t)
+	if err := db.AutoMigrate(&model.PaymentOrder{}, &model.BillingAccount{}, &model.BalanceTransaction{}); err != nil {
+		t.Fatalf("migrate payment orders: %v", err)
+	}
+	repo := NewRepo(db)
+	ctx := context.Background()
+
+	created, err := repo.CreatePaymentOrder(ctx, &domainbilling.PaymentOrder{
+		OrderNo:            "pay_fee_snapshot",
+		OrderType:          domainbilling.PaymentOrderTypeTopUp,
+		UserID:             1,
+		Provider:           domainbilling.PaymentProviderStripe,
+		Status:             domainbilling.PaymentStatusPending,
+		BaseCurrency:       "USD",
+		BaseAmountCents:    10_000,
+		PayCurrency:        "USD",
+		PayAmountCents:     10_300,
+		FeeRateBasisPoints: 300,
+		FeeAmountCents:     300,
+		FXRate:             "1",
+		CreditNanousd:      100_000_000_000,
+		BillingInterval:    domainbilling.IntervalLifetime,
+		Cycles:             1,
+	})
+	if err != nil {
+		t.Fatalf("CreatePaymentOrder() error = %v", err)
+	}
+	if created.FeeRateBasisPoints != 300 || created.FeeAmountCents != 300 {
+		t.Fatalf("created fee = %d bps / %d cents, want 300 / 300", created.FeeRateBasisPoints, created.FeeAmountCents)
+	}
+
+	got, err := repo.GetPaymentOrderByOrderNo(ctx, "pay_fee_snapshot")
+	if err != nil {
+		t.Fatalf("GetPaymentOrderByOrderNo() error = %v", err)
+	}
+	if got.FeeRateBasisPoints != 300 || got.FeeAmountCents != 300 {
+		t.Fatalf("persisted fee = %d bps / %d cents, want 300 / 300", got.FeeRateBasisPoints, got.FeeAmountCents)
+	}
+
+	paidAt := time.Now()
+	paid, credited, err := repo.MarkPaymentOrderPaidAndCreditBalance(ctx, created.OrderNo, "pi_fee_snapshot", paidAt)
+	if err != nil {
+		t.Fatalf("MarkPaymentOrderPaidAndCreditBalance() error = %v", err)
+	}
+	if !credited || paid.Status != domainbilling.PaymentStatusPaid {
+		t.Fatalf("first callback credited=%v status=%q, want true/paid", credited, paid.Status)
+	}
+	_, creditedAgain, err := repo.MarkPaymentOrderPaidAndCreditBalance(ctx, created.OrderNo, "pi_duplicate", paidAt.Add(time.Second))
+	if err != nil {
+		t.Fatalf("duplicate MarkPaymentOrderPaidAndCreditBalance() error = %v", err)
+	}
+	if creditedAgain {
+		t.Fatal("duplicate callback credited the balance again")
+	}
+	var account model.BillingAccount
+	if err := db.Where("user_id = ?", created.UserID).First(&account).Error; err != nil {
+		t.Fatalf("load billing account: %v", err)
+	}
+	if account.BalanceNanousd != created.CreditNanousd {
+		t.Fatalf("balance = %d, want %d", account.BalanceNanousd, created.CreditNanousd)
+	}
+	var transactionCount int64
+	if err := db.Model(&model.BalanceTransaction{}).Where("ref_no = ?", created.OrderNo).Count(&transactionCount).Error; err != nil {
+		t.Fatalf("count balance transactions: %v", err)
+	}
+	if transactionCount != 1 {
+		t.Fatalf("balance transaction count = %d, want 1", transactionCount)
+	}
+}
+
 func TestUsageStatisticsFiltersByCurrentPermissionGroupMembership(t *testing.T) {
 	db := openBillingSQLiteTestDB(t)
 	if err := db.AutoMigrate(

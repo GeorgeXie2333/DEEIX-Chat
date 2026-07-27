@@ -37,12 +37,11 @@ export function formatPlanPrice(
   return `${amount} / ${intervalLabels.month}`;
 }
 
-function effectivePaymentCurrency(provider: PaymentProvider, billingDisplay: BillingDisplayOptions): "USD" | "CNY" {
+function effectivePaymentCurrency(provider: PaymentProvider): "USD" | "CNY" {
   if (provider === "epay") {
     return "CNY";
   }
-  const rate = Number(billingDisplay.usdToCnyRate);
-  return billingDisplay.currency === "CNY" && Number.isFinite(rate) && rate > 0 ? "CNY" : "USD";
+  return "USD";
 }
 
 function formatCurrencyAmount(amount: number, currency: "USD" | "CNY"): string {
@@ -78,12 +77,95 @@ export function billingDisplayAmountToMinorUnits(amount: number): number {
   return Math.round(amount * 100);
 }
 
+export function topUpInputAmountToUSD(
+  amount: number,
+  provider: PaymentProvider,
+  billingDisplay: BillingDisplayOptions = DEFAULT_BILLING_DISPLAY,
+): number {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return 0;
+  }
+  return provider === "stripe" ? amount : billingDisplayAmountToUSD(amount, billingDisplay);
+}
+
+export function topUpInputSymbol(
+  provider: PaymentProvider,
+  billingDisplay: BillingDisplayOptions = DEFAULT_BILLING_DISPLAY,
+): "$" | "¥" {
+  return provider === "stripe" ? "$" : billingDisplayInputSymbol(billingDisplay);
+}
+
+export function convertTopUpInputAmount(
+  value: string,
+  fromProvider: PaymentProvider,
+  toProvider: PaymentProvider,
+  billingDisplay: BillingDisplayOptions = DEFAULT_BILLING_DISPLAY,
+): string {
+  if (fromProvider === toProvider) {
+    return value;
+  }
+  const amount = Number(value);
+  const amountUSD = topUpInputAmountToUSD(amount, fromProvider, billingDisplay);
+  if (amountUSD <= 0) {
+    return value;
+  }
+  if (toProvider === "stripe" || billingDisplayInputCurrency(billingDisplay) === "USD") {
+    return formatEditableMoneyAmount(amountUSD);
+  }
+  return formatEditableMoneyAmount(amountUSD * Number(billingDisplay.usdToCnyRate));
+}
+
+export type StripePaymentAmounts = {
+  subtotalAmountCents: number;
+  feeRateBasisPoints: number;
+  feeAmountCents: number;
+  totalAmountCents: number;
+};
+
+export function calculateStripePaymentAmounts(
+  subtotalAmountCents: number,
+  feeRatePercent: number,
+): StripePaymentAmounts {
+  const subtotal = Number.isSafeInteger(subtotalAmountCents) && subtotalAmountCents > 0
+    ? subtotalAmountCents
+    : 0;
+  const basisPoints = normalizeStripeFeeRateBasisPoints(feeRatePercent);
+  const quotient = Math.floor(subtotal / 10_000);
+  const remainder = subtotal % 10_000;
+  const fee = quotient * basisPoints + Math.floor((remainder * basisPoints + 5_000) / 10_000);
+  return {
+    subtotalAmountCents: subtotal,
+    feeRateBasisPoints: basisPoints,
+    feeAmountCents: fee,
+    totalAmountCents: subtotal + fee,
+  };
+}
+
+export function formatUSDFromCents(amountCents: number): string {
+  return formatCurrencyAmount(Math.max(0, amountCents) / 100, "USD");
+}
+
+export function formatStripeFeeRatePercent(feeRatePercent: number): string {
+  return `${normalizeStripeFeeRateBasisPoints(feeRatePercent) / 100}%`;
+}
+
+function normalizeStripeFeeRateBasisPoints(value: number): number {
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    return 0;
+  }
+  return Math.round(value * 100);
+}
+
+function formatEditableMoneyAmount(value: number): string {
+  return value.toFixed(2).replace(/\.?0+$/, "");
+}
+
 export function formatProviderPaymentAmountFromUSD(
   amountUSD: number,
   provider: PaymentProvider,
   billingDisplay: BillingDisplayOptions = DEFAULT_BILLING_DISPLAY,
 ): string {
-  const currency = effectivePaymentCurrency(provider, billingDisplay);
+  const currency = effectivePaymentCurrency(provider);
   if (currency === "USD") {
     return formatCurrencyAmount(amountUSD, "USD");
   }
