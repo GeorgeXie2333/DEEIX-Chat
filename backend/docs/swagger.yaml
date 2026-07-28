@@ -952,6 +952,8 @@ definitions:
     properties:
       displayCurrency:
         type: string
+      epayMinimumTopUpAmountUSD:
+        type: number
       epayTypes:
         items:
           $ref: '#/definitions/PaymentTypeResponse'
@@ -982,10 +984,13 @@ definitions:
         type: number
       stripeFeeRatePercent:
         type: number
+      stripeMinimumTopUpAmountUSD:
+        type: number
       usdToCNYRate:
         type: number
     required:
     - displayCurrency
+    - epayMinimumTopUpAmountUSD
     - epayTypes
     - freeModelDailyLimit
     - freeModelRateLimitExemptModels
@@ -997,6 +1002,7 @@ definitions:
     - prepaidAmountNanousd
     - prepaidAmountUSD
     - stripeFeeRatePercent
+    - stripeMinimumTopUpAmountUSD
     - usdToCNYRate
     type: object
   BillingConfigResponseDoc:

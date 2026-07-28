@@ -310,6 +310,11 @@ func validatePatchItem(item PatchItem) error {
 			return fmt.Errorf("%s must be between 0 and 100 with at most two decimal places", key)
 		}
 		return nil
+	case "billing:stripe_minimum_top_up_amount_usd", "billing:epay_minimum_top_up_amount_usd":
+		if _, err := appbilling.ParseTopUpMinimumAmountCents(value); err != nil {
+			return fmt.Errorf("%s must be between 0 and 1000000 USD with at most two decimal places", key)
+		}
+		return nil
 	case "billing:prepaid_amount_usd":
 		return validateFloatMinMax(value, 0, 1000000, key)
 	case "billing:free_model_rate_limit_rpm":

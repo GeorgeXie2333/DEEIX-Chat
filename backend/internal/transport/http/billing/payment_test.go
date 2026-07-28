@@ -47,6 +47,30 @@ func TestParseStripeFeeRateBasisPointsFailsClosed(t *testing.T) {
 	}
 }
 
+func TestParseTopUpMinimumAmountCentsFailsOpenToNoMinimum(t *testing.T) {
+	if got := parseTopUpMinimumAmountCents("10.25"); got != 1_025 {
+		t.Fatalf("parseTopUpMinimumAmountCents(10.25) = %d, want 1025", got)
+	}
+	for _, value := range []string{"", "-1", "10.001", "1000000.01", "bad"} {
+		if got := parseTopUpMinimumAmountCents(value); got != 0 {
+			t.Fatalf("parseTopUpMinimumAmountCents(%q) = %d, want 0", value, got)
+		}
+	}
+}
+
+func TestMinimumTopUpAmountCentsUsesSelectedProvider(t *testing.T) {
+	settings := billingPaymentSettings{
+		StripeMinimumTopUpCents: 1_000,
+		EPayMinimumTopUpCents:   2_000,
+	}
+	if got := minimumTopUpAmountCents(settings, domainbilling.PaymentProviderStripe); got != 1_000 {
+		t.Fatalf("Stripe minimum = %d, want 1000", got)
+	}
+	if got := minimumTopUpAmountCents(settings, domainbilling.PaymentProviderEPay); got != 2_000 {
+		t.Fatalf("EPay minimum = %d, want 2000", got)
+	}
+}
+
 func TestCreateStripeCheckoutSessionUsesSingleUSDFeeInclusiveLineItem(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	var posted url.Values

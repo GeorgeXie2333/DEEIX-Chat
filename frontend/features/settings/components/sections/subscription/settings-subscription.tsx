@@ -39,6 +39,8 @@ import {
   resolvePlanActionKind,
   billingDisplayAmountToMinorUnits,
   convertTopUpInputAmount,
+  formatUSDFromCents,
+  topUpInputAmountToUSD,
 } from "@/features/settings/model/subscription-format";
 import {
   normalizeBillingDisplayCurrency,
@@ -245,6 +247,9 @@ export function SettingsSubscription() {
     return values.length > 0 ? values : [{ name: epayLabels.alipay, type: "alipay" }, { name: epayLabels.wxpay, type: "wxpay" }];
   }, [billingConfig?.epayTypes, epayLabels.alipay, epayLabels.wxpay]);
   const paymentProviders = React.useMemo(() => billingConfig?.paymentProviders?.filter((item) => item === "stripe" || item === "epay") ?? [], [billingConfig?.paymentProviders]);
+  const selectedMinimumTopUpAmountUSD = selectedPaymentProvider === "stripe"
+    ? billingConfig?.stripeMinimumTopUpAmountUSD ?? 0
+    : billingConfig?.epayMinimumTopUpAmountUSD ?? 0;
 
   React.useEffect(() => {
     if (paymentProviders.length > 0 && !paymentProviders.includes(selectedPaymentProvider)) {
@@ -303,6 +308,18 @@ export function SettingsSubscription() {
       toast.error(t("toasts.invalidTopUpAmount"), { description: t("toasts.invalidTopUpAmountDescription") });
       return;
     }
+    const amountUSDCents = billingDisplayAmountToMinorUnits(
+      topUpInputAmountToUSD(displayAmount, selectedPaymentProvider, billingDisplay),
+    );
+    const minimumAmountCents = billingDisplayAmountToMinorUnits(selectedMinimumTopUpAmountUSD);
+    if (minimumAmountCents > 0 && amountUSDCents < minimumAmountCents) {
+      toast.error(t("toasts.topUpBelowMinimum"), {
+        description: t("toasts.topUpBelowMinimumDescription", {
+          amount: formatUSDFromCents(minimumAmountCents),
+        }),
+      });
+      return;
+    }
     setTopUpLoading(true);
     try {
       const data = await createBillingCheckout(accessToken, {
@@ -324,7 +341,16 @@ export function SettingsSubscription() {
     } finally {
       setTopUpLoading(false);
     }
-  }, [accessToken, resolveErrorMessage, selectedEPayType, selectedPaymentProvider, t, topUpAmount]);
+  }, [
+    accessToken,
+    billingDisplay,
+    resolveErrorMessage,
+    selectedEPayType,
+    selectedMinimumTopUpAmountUSD,
+    selectedPaymentProvider,
+    t,
+    topUpAmount,
+  ]);
 
   const handleRedeemCode = React.useCallback(async () => {
     const code = redemptionCode.trim();
@@ -517,6 +543,7 @@ export function SettingsSubscription() {
         epayTypes={epayTypes}
         billingDisplay={billingDisplay}
         stripeFeeRatePercent={billingConfig?.stripeFeeRatePercent ?? 0}
+        minimumTopUpAmountUSD={selectedMinimumTopUpAmountUSD}
         epayLabels={epayLabels}
         onAmountChange={setTopUpAmount}
         onPaymentProviderChange={handlePaymentProviderChange}

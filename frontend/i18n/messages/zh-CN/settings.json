@@ -688,6 +688,8 @@
       "currentBalance": "当前余额 {value}",
       "amount": "充值金额",
       "amountAria": "充值金额",
+      "minimumAmount": "当前支付渠道最低充值金额：{amount} USD",
+      "belowMinimum": "充值金额不能低于 {amount} USD",
       "creditAmount": "USD 到账金额",
       "confirm": "充值"
     },
@@ -708,6 +710,8 @@
       "subscribeFailed": "订阅失败",
       "invalidTopUpAmount": "充值金额无效",
       "invalidTopUpAmountDescription": "请输入大于 0 的美元金额。",
+      "topUpBelowMinimum": "充值金额不足",
+      "topUpBelowMinimumDescription": "当前支付渠道最低充值金额为 {amount} USD。",
       "planUnavailable": "套餐不可用",
       "planUnavailableDescription": "当前套餐没有可用价格，请联系管理员检查计费配置。",
       "paymentDisabled": "支付渠道未开启",

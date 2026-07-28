@@ -251,6 +251,7 @@
     "notificationMismatch": "支付回调与订单不匹配。",
     "orderNoRequired": "订单号不能为空。",
     "providerUnavailable": "支付服务不可用。",
+    "topUpBelowMinimum": "充值金额低于当前支付渠道的最低金额。",
     "returnUrlCrossOrigin": "支付返回地址必须使用已配置的公开站点域名。",
     "returnUrlInvalid": "支付返回地址无效。",
     "webhookBodyTooLarge": "支付回调内容过大。",

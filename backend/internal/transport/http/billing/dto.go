@@ -525,6 +525,8 @@ type BillingConfigResponse struct {
 	USDToCNYRate                   float64                     `json:"usdToCNYRate"`
 	DisplayCurrency                string                      `json:"displayCurrency"`
 	StripeFeeRatePercent           float64                     `json:"stripeFeeRatePercent"`
+	StripeMinimumTopUpAmountUSD    float64                     `json:"stripeMinimumTopUpAmountUSD"`
+	EPayMinimumTopUpAmountUSD      float64                     `json:"epayMinimumTopUpAmountUSD"`
 	EPayTypes                      []PaymentTypeResponse       `json:"epayTypes"`
 }
 

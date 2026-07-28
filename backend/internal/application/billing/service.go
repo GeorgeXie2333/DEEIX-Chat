@@ -334,6 +334,7 @@ type TopUpPaymentOrderInput struct {
 	Provider                 string
 	USDToCNYRate             float64
 	StripeFeeRateBasisPoints int64
+	MinimumAmountCents       int64
 }
 
 type paymentQuote struct {
@@ -935,6 +936,9 @@ func (s *Service) CreateTopUpPaymentOrder(ctx context.Context, input TopUpPaymen
 	if input.UserID == 0 || input.AmountMinorUnits <= 0 {
 		return nil, repository.ErrInvalidInput
 	}
+	if input.MinimumAmountCents < 0 || input.MinimumAmountCents > maxTopUpMinimumAmountCents {
+		return nil, repository.ErrInvalidInput
+	}
 
 	baseCurrency := "USD"
 	rate := resolveUSDToCNYRate(input.USDToCNYRate)
@@ -950,6 +954,9 @@ func (s *Service) CreateTopUpPaymentOrder(ctx context.Context, input TopUpPaymen
 	}
 	creditNanousd := usdToNanousd(baseAmountUSD)
 	baseAmountCents := int64(math.Round(baseAmountUSD * 100))
+	if input.MinimumAmountCents > 0 && baseAmountCents < input.MinimumAmountCents {
+		return nil, ErrTopUpAmountBelowMinimum
+	}
 	quote := resolvePaymentQuote(provider, baseCurrency, baseAmountCents, rate)
 	if quote.PayCurrency == amountCurrency {
 		quote.PayAmountCents = input.AmountMinorUnits
@@ -983,6 +990,7 @@ func (s *Service) CreateTopUpPaymentOrder(ctx context.Context, input TopUpPaymen
 		"fx_rate":                   formatFXRate(quote.FXRate),
 		"amount_currency":           amountCurrency,
 		"amount_minor_units":        input.AmountMinorUnits,
+		"minimum_amount_cents":      input.MinimumAmountCents,
 		"credit_nanousd":            creditNanousd,
 		"provider":                  provider,
 	}

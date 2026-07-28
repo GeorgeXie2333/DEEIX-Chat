@@ -19,6 +19,8 @@ var (
 	ErrPaymentProviderUnavailable = errors.New("payment provider is unavailable")
 	// ErrPaymentCurrencyUnsupported 表示支付渠道不支持订单业务币种。
 	ErrPaymentCurrencyUnsupported = errors.New("payment currency is not supported")
+	// ErrTopUpAmountBelowMinimum 表示充值的 USD 业务金额低于支付渠道最低限额。
+	ErrTopUpAmountBelowMinimum = errors.New("top-up amount is below minimum")
 	// ErrUsageBalanceInsufficient 按量余额不足。
 	ErrUsageBalanceInsufficient = errors.New("usage balance is insufficient")
 	// ErrUsageReservationConflict 表示调用编号已被使用，不能重复消费同一预算。

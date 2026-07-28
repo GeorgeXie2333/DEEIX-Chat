@@ -687,6 +687,8 @@
       "description": "米ドル金額を入力",
       "amount": "チャージ金額",
       "amountAria": "チャージする米ドル金額",
+      "minimumAmount": "この支払い方法の最低チャージ金額：{amount} USD",
+      "belowMinimum": "チャージ金額は {amount} USD 以上にしてください",
       "creditAmount": "USD 入金額",
       "confirm": "チャージ",
       "currentBalance": "現在の残高: {value}"
@@ -708,6 +710,8 @@
       "subscribeFailed": "契約に失敗しました",
       "invalidTopUpAmount": "チャージ金額が無効です",
       "invalidTopUpAmountDescription": "0 より大きい米ドル金額を入力してください。",
+      "topUpBelowMinimum": "チャージ金額が最低額を下回っています",
+      "topUpBelowMinimumDescription": "この支払い方法の最低チャージ金額は {amount} USD です。",
       "planUnavailable": "プランを利用できません",
       "planUnavailableDescription": "現在のプランには利用可能な価格がありません。管理者に課金設定の確認を依頼してください。",
       "paymentDisabled": "支払いチャネルが有効ではありません",

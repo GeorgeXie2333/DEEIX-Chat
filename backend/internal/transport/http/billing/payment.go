@@ -41,10 +41,12 @@ type billingPaymentSettings struct {
 	StripeSecretKey          string
 	StripeWebhookSecret      string
 	StripeFeeRateBasisPoints int64
+	StripeMinimumTopUpCents  int64
 	EPayGatewayURL           string
 	EPayTypes                []PaymentTypeResponse
 	EPayPID                  string
 	EPayKey                  string
+	EPayMinimumTopUpCents    int64
 }
 
 // CreateCheckout godoc
@@ -91,6 +93,7 @@ func (h *Handler) CreateCheckout(c *gin.Context) {
 			Provider:                 provider,
 			USDToCNYRate:             settings.USDToCNYRate,
 			StripeFeeRateBasisPoints: settings.StripeFeeRateBasisPoints,
+			MinimumAmountCents:       minimumTopUpAmountCents(settings, provider),
 		})
 	default:
 		order, plan, price, err = h.service.CreatePaymentOrder(c.Request.Context(), appbilling.PaymentOrderInput{
@@ -286,10 +289,12 @@ func (h *Handler) resolvePaymentSettings(ctx context.Context) (billingPaymentSet
 		StripeSecretKey:          values["stripe_secret_key"],
 		StripeWebhookSecret:      values["stripe_webhook_secret"],
 		StripeFeeRateBasisPoints: parseStripeFeeRateBasisPoints(values["stripe_fee_rate_percent"]),
+		StripeMinimumTopUpCents:  parseTopUpMinimumAmountCents(values["stripe_minimum_top_up_amount_usd"]),
 		EPayGatewayURL:           values["epay_gateway_url"],
 		EPayTypes:                normalizeEPayTypes(values["epay_types"]),
 		EPayPID:                  values["epay_pid"],
 		EPayKey:                  values["epay_key"],
+		EPayMinimumTopUpCents:    parseTopUpMinimumAmountCents(values["epay_minimum_top_up_amount_usd"]),
 	}, nil
 }
 
@@ -713,6 +718,24 @@ func parseStripeFeeRateBasisPoints(value string) int64 {
 		return 0
 	}
 	return basisPoints
+}
+
+func parseTopUpMinimumAmountCents(value string) int64 {
+	amountCents, err := appbilling.ParseTopUpMinimumAmountCents(value)
+	if err != nil {
+		return 0
+	}
+	return amountCents
+}
+
+func minimumTopUpAmountCents(settings billingPaymentSettings, provider string) int64 {
+	if provider == domainbilling.PaymentProviderStripe {
+		return settings.StripeMinimumTopUpCents
+	}
+	if provider == domainbilling.PaymentProviderEPay {
+		return settings.EPayMinimumTopUpCents
+	}
+	return 0
 }
 
 func resolveCheckoutOrderType(req CreateCheckoutRequest) string {

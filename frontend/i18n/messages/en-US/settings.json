@@ -688,6 +688,8 @@
       "currentBalance": "Current balance {value}",
       "amount": "Top-up amount",
       "amountAria": "Top-up amount",
+      "minimumAmount": "Minimum for this payment method: {amount} USD",
+      "belowMinimum": "Top-up amount must be at least {amount} USD",
       "creditAmount": "USD credit received",
       "confirm": "Top up"
     },
@@ -708,6 +710,8 @@
       "subscribeFailed": "Subscription failed",
       "invalidTopUpAmount": "Invalid top-up amount",
       "invalidTopUpAmountDescription": "Enter a USD amount greater than 0.",
+      "topUpBelowMinimum": "Top-up amount is too low",
+      "topUpBelowMinimumDescription": "The minimum for this payment method is {amount} USD.",
       "planUnavailable": "Plan unavailable",
       "planUnavailableDescription": "This plan has no available price. Ask an administrator to check the billing configuration.",
       "paymentDisabled": "Payment provider is disabled",

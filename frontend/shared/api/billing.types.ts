@@ -42,7 +42,14 @@ export type BillingMode = "self" | "period" | "usage";
 export type NativeToolPricingDTO = NativeToolPricingResponse;
 
 export type BillingConfigData = Omit<BillingConfigDataResponse, "config"> & {
-  config: Pick<BillingConfigResponse, "nativeToolBillingEnabled" | "stripeFeeRatePercent" | "usdToCNYRate"> & {
+  config: Pick<
+    BillingConfigResponse,
+    | "nativeToolBillingEnabled"
+    | "stripeFeeRatePercent"
+    | "stripeMinimumTopUpAmountUSD"
+    | "epayMinimumTopUpAmountUSD"
+    | "usdToCNYRate"
+  > & {
     mode: BillingMode;
     nativeToolPricing: NativeToolPricingDTO[];
     freeModelRateLimitRPM: number;

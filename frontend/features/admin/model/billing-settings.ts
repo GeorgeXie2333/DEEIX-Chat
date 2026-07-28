@@ -86,10 +86,12 @@ export const PAYMENT_SETTING_KEYS = [
   "stripe_secret_key",
   "stripe_webhook_secret",
   "stripe_fee_rate_percent",
+  "stripe_minimum_top_up_amount_usd",
   "epay_gateway_url",
   "epay_types",
   "epay_pid",
   "epay_key",
+  "epay_minimum_top_up_amount_usd",
 ] as const;
 export type PaymentProvider = "stripe" | "epay";
 export type PaymentSettings = Record<(typeof PAYMENT_SETTING_KEYS)[number], string>;
@@ -100,6 +102,7 @@ export const PAYMENT_DEFAULTS: PaymentSettings = {
   stripe_secret_key: "",
   stripe_webhook_secret: "",
   stripe_fee_rate_percent: "0",
+  stripe_minimum_top_up_amount_usd: "0",
   epay_gateway_url: "",
   epay_types: `[
   {"name":"Alipay","type":"alipay"},
@@ -107,6 +110,7 @@ export const PAYMENT_DEFAULTS: PaymentSettings = {
 ]`,
   epay_pid: "",
   epay_key: "",
+  epay_minimum_top_up_amount_usd: "0",
 };
 
 const DEFAULT_TIERED_TIERS: TieredPricingTierForm[] = [

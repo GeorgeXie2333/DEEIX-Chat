@@ -385,6 +385,7 @@ export interface BillingConfigRequest {
 
 export interface BillingConfigResponse {
   displayCurrency: string;
+  epayMinimumTopUpAmountUSD: number;
   epayTypes: PaymentTypeResponse[];
   freeModelDailyLimit: number;
   freeModelRateLimitExemptModels: string[];
@@ -396,6 +397,7 @@ export interface BillingConfigResponse {
   prepaidAmountNanousd: number;
   prepaidAmountUSD: number;
   stripeFeeRatePercent: number;
+  stripeMinimumTopUpAmountUSD: number;
   usdToCNYRate: number;
 }
 

@@ -241,6 +241,76 @@ func TestCreateTopUpPaymentOrderRejectsNonUSDStripeAmount(t *testing.T) {
 	}
 }
 
+func TestCreateTopUpPaymentOrderEnforcesProviderMinimumInUSD(t *testing.T) {
+	tests := []struct {
+		name             string
+		provider         string
+		amountMinorUnits int64
+		amountCurrency   string
+		rate             float64
+		wantErr          bool
+	}{
+		{
+			name:             "stripe below minimum",
+			provider:         domainbilling.PaymentProviderStripe,
+			amountMinorUnits: 999,
+			amountCurrency:   "USD",
+			wantErr:          true,
+		},
+		{
+			name:             "stripe at minimum",
+			provider:         domainbilling.PaymentProviderStripe,
+			amountMinorUnits: 1_000,
+			amountCurrency:   "USD",
+		},
+		{
+			name:             "epay below USD minimum after conversion",
+			provider:         domainbilling.PaymentProviderEPay,
+			amountMinorUnits: 7_190,
+			amountCurrency:   "CNY",
+			rate:             7.2,
+			wantErr:          true,
+		},
+		{
+			name:             "epay at USD minimum after conversion",
+			provider:         domainbilling.PaymentProviderEPay,
+			amountMinorUnits: 7_200,
+			amountCurrency:   "CNY",
+			rate:             7.2,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &billingRepositoryStub{mode: "usage"}
+			service := NewService(repo)
+
+			order, err := service.CreateTopUpPaymentOrder(context.Background(), TopUpPaymentOrderInput{
+				UserID:             1,
+				AmountMinorUnits:   tt.amountMinorUnits,
+				AmountCurrency:     tt.amountCurrency,
+				Provider:           tt.provider,
+				USDToCNYRate:       tt.rate,
+				MinimumAmountCents: 1_000,
+			})
+			if tt.wantErr {
+				if !errors.Is(err, ErrTopUpAmountBelowMinimum) {
+					t.Fatalf("CreateTopUpPaymentOrder() error = %v, want ErrTopUpAmountBelowMinimum", err)
+				}
+				if order != nil {
+					t.Fatalf("CreateTopUpPaymentOrder() order = %+v, want nil", order)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("CreateTopUpPaymentOrder() error = %v", err)
+			}
+			if order == nil {
+				t.Fatal("CreateTopUpPaymentOrder() order = nil")
+			}
+		})
+	}
+}
+
 func TestCreateStripePaymentOrderAddsFeeWithoutChangingBaseAmount(t *testing.T) {
 	repo := &billingRepositoryStub{
 		mode: "period",

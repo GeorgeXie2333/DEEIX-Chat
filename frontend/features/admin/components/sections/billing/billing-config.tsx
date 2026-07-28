@@ -61,6 +61,15 @@ function isValidStripeFeeRatePercent(value: string): boolean {
   return Number.isFinite(rate) && rate >= 0 && rate <= 100;
 }
 
+function isValidMinimumTopUpAmountUSD(value: string): boolean {
+  const normalized = value.trim();
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) {
+    return false;
+  }
+  const amount = Number(normalized);
+  return Number.isFinite(amount) && amount >= 0 && amount <= 1_000_000;
+}
+
 export function BillingConfigSection({
   billingConfig,
   setBillingConfig,
@@ -144,6 +153,13 @@ export function BillingConfigSection({
     const providers = normalizePaymentProviders(paymentSettings.payment_providers);
     if (!isValidStripeFeeRatePercent(paymentSettings.stripe_fee_rate_percent)) {
       toast.error(t("toast.paymentIncomplete"), { description: t("toast.stripeFeeRateInvalid") });
+      return;
+    }
+    if (
+      !isValidMinimumTopUpAmountUSD(paymentSettings.stripe_minimum_top_up_amount_usd)
+      || !isValidMinimumTopUpAmountUSD(paymentSettings.epay_minimum_top_up_amount_usd)
+    ) {
+      toast.error(t("toast.paymentIncomplete"), { description: t("toast.minimumTopUpAmountInvalid") });
       return;
     }
     if (providers.includes("stripe") && ((!paymentSettings.stripe_secret_key.trim() && !paymentConfiguredMap["billing.stripe_secret_key"]) || (!paymentSettings.stripe_webhook_secret.trim() && !paymentConfiguredMap["billing.stripe_webhook_secret"]))) {
@@ -436,6 +452,25 @@ export function BillingConfigSection({
                     </div>
                   </SettingsFieldRow>
                   <SettingsFieldRow
+                    title={t("payment.stripeMinimumTopUpAmount")}
+                    description={t("payment.minimumTopUpAmountDescription")}
+                  >
+                    <div className="relative w-full">
+                      <Input
+                        value={paymentSettings.stripe_minimum_top_up_amount_usd}
+                        type="number"
+                        min="0"
+                        max="1000000"
+                        step="0.01"
+                        inputMode="decimal"
+                        className="pr-12 text-right"
+                        disabled={loading || saving}
+                        onChange={(event) => updatePaymentSetting("stripe_minimum_top_up_amount_usd", event.target.value)}
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">USD</span>
+                    </div>
+                  </SettingsFieldRow>
+                  <SettingsFieldRow
                     title={t("payment.stripePublishableKey")}
                     description={t("payment.stripePublishableKeyDescription")}
                   >
@@ -464,6 +499,25 @@ export function BillingConfigSection({
                   <Switch size="sm" checked={epayEnabled} disabled={loading || saving} onCheckedChange={(checked) => setPaymentProviderEnabled("epay", checked)} />
                 </SettingsFieldRow>
                 <CollapsibleMotionContent open={epayEnabled} contentClassName="space-y-4">
+                  <SettingsFieldRow
+                    title={t("payment.epayMinimumTopUpAmount")}
+                    description={t("payment.minimumTopUpAmountDescription")}
+                  >
+                    <div className="relative w-full">
+                      <Input
+                        value={paymentSettings.epay_minimum_top_up_amount_usd}
+                        type="number"
+                        min="0"
+                        max="1000000"
+                        step="0.01"
+                        inputMode="decimal"
+                        className="pr-12 text-right"
+                        disabled={loading || saving}
+                        onChange={(event) => updatePaymentSetting("epay_minimum_top_up_amount_usd", event.target.value)}
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">USD</span>
+                    </div>
+                  </SettingsFieldRow>
                   <SettingsFieldRow
                     title={t("payment.epayGateway")}
                     description={t("payment.epayGatewayDescription")}

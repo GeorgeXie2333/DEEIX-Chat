@@ -46,6 +46,7 @@ type TopUpDialogProps = {
   epayTypes: EPayTypeOption[];
   billingDisplay: BillingDisplayOptions;
   stripeFeeRatePercent: number;
+  minimumTopUpAmountUSD: number;
   epayLabels: {
     alipay: string;
     wxpay: string;
@@ -72,6 +73,7 @@ export function TopUpDialog({
   epayTypes,
   billingDisplay,
   stripeFeeRatePercent,
+  minimumTopUpAmountUSD,
   epayLabels,
   onAmountChange,
   onPaymentProviderChange,
@@ -88,6 +90,9 @@ export function TopUpDialog({
   const stripePaymentAmount = formatUSDFromCents(stripeAmounts.totalAmountCents);
   const epayPaymentAmount = formatProviderPaymentAmountFromUSD(paymentAmountUSD, "epay", billingDisplay);
   const inputSymbol = topUpInputSymbol(selectedPaymentProvider, billingDisplay);
+  const minimumAmountCents = billingDisplayAmountToMinorUnits(minimumTopUpAmountUSD);
+  const paymentAmountCents = billingDisplayAmountToMinorUnits(paymentAmountUSD);
+  const belowMinimum = minimumAmountCents > 0 && paymentAmountCents < minimumAmountCents;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -117,6 +122,13 @@ export function TopUpDialog({
               aria-label={t("topUp.amountAria")}
             />
           </div>
+          {minimumAmountCents > 0 ? (
+            <p className={`text-[11px] ${belowMinimum ? "text-destructive" : "text-muted-foreground"}`}>
+              {belowMinimum
+                ? t("topUp.belowMinimum", { amount: formatUSDFromCents(minimumAmountCents) })
+                : t("topUp.minimumAmount", { amount: formatUSDFromCents(minimumAmountCents) })}
+            </p>
+          ) : null}
         </div>
 
         {!paymentDisabled ? (
@@ -189,7 +201,7 @@ export function TopUpDialog({
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={topUpLoading}>
             {t("actions.cancel")}
           </Button>
-          <Button type="button" disabled={billingLoading || topUpLoading || paymentDisabled} onClick={onSubmit}>
+          <Button type="button" disabled={billingLoading || topUpLoading || paymentDisabled || belowMinimum} onClick={onSubmit}>
             {topUpLoading ? <SpinnerLabel>{t("actions.processing")}</SpinnerLabel> : t("topUp.confirm")}
           </Button>
         </DialogFooter>

@@ -78,6 +78,8 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 	usdToCNYRate := 7.2
 	displayCurrency := "USD"
 	stripeFeeRatePercent := 0.0
+	stripeMinimumTopUpAmountUSD := 0.0
+	epayMinimumTopUpAmountUSD := 0.0
 	epayTypes := defaultEPayTypes()
 	if h.settings != nil {
 		items, err := h.settings.ListByNamespace(ctx, "billing")
@@ -125,6 +127,14 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 				if basisPoints, parseErr := appbilling.ParseStripeFeeRateBasisPoints(value); parseErr == nil {
 					stripeFeeRatePercent = appbilling.StripeFeeRatePercent(basisPoints)
 				}
+			case "stripe_minimum_top_up_amount_usd":
+				if amountCents, parseErr := appbilling.ParseTopUpMinimumAmountCents(value); parseErr == nil {
+					stripeMinimumTopUpAmountUSD = appbilling.TopUpMinimumAmountUSD(amountCents)
+				}
+			case "epay_minimum_top_up_amount_usd":
+				if amountCents, parseErr := appbilling.ParseTopUpMinimumAmountCents(value); parseErr == nil {
+					epayMinimumTopUpAmountUSD = appbilling.TopUpMinimumAmountUSD(amountCents)
+				}
 			case "epay_types":
 				epayTypes = normalizeEPayTypes(value)
 			}
@@ -147,6 +157,8 @@ func (h *Handler) loadBillingConfig(ctx context.Context) (BillingConfigResponse,
 		USDToCNYRate:                   usdToCNYRate,
 		DisplayCurrency:                displayCurrency,
 		StripeFeeRatePercent:           stripeFeeRatePercent,
+		StripeMinimumTopUpAmountUSD:    stripeMinimumTopUpAmountUSD,
+		EPayMinimumTopUpAmountUSD:      epayMinimumTopUpAmountUSD,
 		EPayTypes:                      epayTypes,
 	}, nil
 }

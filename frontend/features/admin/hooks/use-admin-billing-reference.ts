@@ -52,6 +52,8 @@ const DEFAULT_BILLING_CONFIG: AdminBillingConfigDTO = {
   usdToCNYRate: 7.2,
   displayCurrency: "USD",
   stripeFeeRatePercent: 0,
+  stripeMinimumTopUpAmountUSD: 0,
+  epayMinimumTopUpAmountUSD: 0,
   epayTypes: [],
 };
 

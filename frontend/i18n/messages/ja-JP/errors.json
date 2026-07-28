@@ -251,6 +251,7 @@
     "notificationMismatch": "支払い通知が注文と一致しません。",
     "orderNoRequired": "注文番号が必要です。",
     "providerUnavailable": "決済プロバイダーを利用できません。",
+    "topUpBelowMinimum": "チャージ金額がこの支払い方法の最低額を下回っています。",
     "returnUrlCrossOrigin": "支払い戻りURLは設定済みの公開Webオリジンを使用する必要があります。",
     "returnUrlInvalid": "支払い戻り URL が無効です。",
     "webhookBodyTooLarge": "Webhook 本文が大きすぎます。",

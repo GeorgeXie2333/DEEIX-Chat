@@ -251,6 +251,7 @@
     "notificationMismatch": "Payment notification does not match the order.",
     "orderNoRequired": "Order number is required.",
     "providerUnavailable": "Payment provider is unavailable.",
+    "topUpBelowMinimum": "The top-up amount is below this payment method's minimum.",
     "returnUrlCrossOrigin": "Payment return URL must use the configured public web origin.",
     "returnUrlInvalid": "Invalid payment return URL.",
     "webhookBodyTooLarge": "Webhook body is too large.",

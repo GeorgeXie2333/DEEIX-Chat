@@ -58,10 +58,12 @@ func defaultSettings() []domainsettings.SystemSetting {
 		{Namespace: "billing", Key: "stripe_secret_key", Value: "", ValueType: "string", Description: "Stripe Secret Key"},
 		{Namespace: "billing", Key: "stripe_webhook_secret", Value: "", ValueType: "string", Description: "Stripe Webhook Secret"},
 		{Namespace: "billing", Key: "stripe_fee_rate_percent", Value: "0", ValueType: "string", Description: "Stripe 额外手续费率（百分比，0-100，最多两位小数）"},
+		{Namespace: "billing", Key: "stripe_minimum_top_up_amount_usd", Value: "0", ValueType: "string", Description: "Stripe 最低充值金额（美元，0 表示不限制，最多两位小数）"},
 		{Namespace: "billing", Key: "epay_gateway_url", Value: "", ValueType: "string", Description: "易支付网关地址"},
 		{Namespace: "billing", Key: "epay_types", Value: `[{"name":"支付宝","type":"alipay"},{"name":"微信支付","type":"wxpay"}]`, ValueType: "string", Description: "易支付启用的支付类型 JSON"},
 		{Namespace: "billing", Key: "epay_pid", Value: "", ValueType: "string", Description: "易支付商户 ID"},
 		{Namespace: "billing", Key: "epay_key", Value: "", ValueType: "string", Description: "易支付商户密钥"},
+		{Namespace: "billing", Key: "epay_minimum_top_up_amount_usd", Value: "0", ValueType: "string", Description: "易支付最低充值金额（美元，0 表示不限制，最多两位小数）"},
 
 		// 开放 API 配置
 		{Namespace: "openapi", Key: "model_allowlist", Value: "", ValueType: "string", Description: "开放 API 模型白名单，逗号或换行分隔"},

@@ -62,6 +62,12 @@ func TestInferStripeUnsupportedCurrencyErrorCode(t *testing.T) {
 	}
 }
 
+func TestInferTopUpBelowMinimumErrorCode(t *testing.T) {
+	if got := InferErrorCode(http.StatusBadRequest, "top-up amount is below minimum"); got != "payment.top_up_below_minimum" {
+		t.Fatalf("InferErrorCode() = %q, want payment.top_up_below_minimum", got)
+	}
+}
+
 func TestTransportLiteralClientErrorsHaveStableCodes(t *testing.T) {
 	statusCodes := map[string]int{
 		"BadRequest":            http.StatusBadRequest,

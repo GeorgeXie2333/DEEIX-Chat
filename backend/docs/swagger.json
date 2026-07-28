@@ -12587,6 +12587,7 @@
             "type": "object",
             "required": [
                 "displayCurrency",
+                "epayMinimumTopUpAmountUSD",
                 "epayTypes",
                 "freeModelDailyLimit",
                 "freeModelRateLimitExemptModels",
@@ -12598,11 +12599,15 @@
                 "prepaidAmountNanousd",
                 "prepaidAmountUSD",
                 "stripeFeeRatePercent",
+                "stripeMinimumTopUpAmountUSD",
                 "usdToCNYRate"
             ],
             "properties": {
                 "displayCurrency": {
                     "type": "string"
+                },
+                "epayMinimumTopUpAmountUSD": {
+                    "type": "number"
                 },
                 "epayTypes": {
                     "type": "array",
@@ -12647,6 +12652,9 @@
                     "type": "number"
                 },
                 "stripeFeeRatePercent": {
+                    "type": "number"
+                },
+                "stripeMinimumTopUpAmountUSD": {
                     "type": "number"
                 },
                 "usdToCNYRate": {

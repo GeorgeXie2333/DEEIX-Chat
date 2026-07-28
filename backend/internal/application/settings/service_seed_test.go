@@ -112,3 +112,24 @@ func TestSeedAddsDefaultStripeFeeRate(t *testing.T) {
 		t.Fatalf("stripe fee rate default = %q, want 0", item.Value)
 	}
 }
+
+func TestSeedAddsDefaultProviderMinimumTopUpAmounts(t *testing.T) {
+	repo := newSettingsSeedRepo()
+	service := NewService(repo, "")
+
+	if err := service.Seed(context.Background(), config.Config{}); err != nil {
+		t.Fatalf("seed settings: %v", err)
+	}
+	for _, key := range []string{
+		"billing:stripe_minimum_top_up_amount_usd",
+		"billing:epay_minimum_top_up_amount_usd",
+	} {
+		item, ok := repo.items[key]
+		if !ok {
+			t.Fatalf("expected %s setting to be seeded", key)
+		}
+		if item.Value != "0" {
+			t.Fatalf("%s default = %q, want 0", key, item.Value)
+		}
+	}
+}

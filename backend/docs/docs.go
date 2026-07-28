@@ -12594,6 +12594,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "displayCurrency",
+                "epayMinimumTopUpAmountUSD",
                 "epayTypes",
                 "freeModelDailyLimit",
                 "freeModelRateLimitExemptModels",
@@ -12605,11 +12606,15 @@ const docTemplate = `{
                 "prepaidAmountNanousd",
                 "prepaidAmountUSD",
                 "stripeFeeRatePercent",
+                "stripeMinimumTopUpAmountUSD",
                 "usdToCNYRate"
             ],
             "properties": {
                 "displayCurrency": {
                     "type": "string"
+                },
+                "epayMinimumTopUpAmountUSD": {
+                    "type": "number"
                 },
                 "epayTypes": {
                     "type": "array",
@@ -12654,6 +12659,9 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "stripeFeeRatePercent": {
+                    "type": "number"
+                },
+                "stripeMinimumTopUpAmountUSD": {
                     "type": "number"
                 },
                 "usdToCNYRate": {

@@ -345,6 +345,27 @@ func TestValidateStripeFeeRateSetting(t *testing.T) {
 	}
 }
 
+func TestValidateProviderMinimumTopUpAmountSettings(t *testing.T) {
+	keys := []string{
+		"stripe_minimum_top_up_amount_usd",
+		"epay_minimum_top_up_amount_usd",
+	}
+	for _, key := range keys {
+		t.Run(key, func(t *testing.T) {
+			for _, value := range []string{"0", "0.01", "10", "10.50", "1000000.00"} {
+				if err := validatePatchItem(PatchItem{Namespace: "billing", Key: key, Value: value}); err != nil {
+					t.Fatalf("expected minimum top-up amount %q to pass, got %v", value, err)
+				}
+			}
+			for _, value := range []string{"-0.01", "10.001", "1000000.01", "1e2", "bad"} {
+				if err := validatePatchItem(PatchItem{Namespace: "billing", Key: key, Value: value}); err == nil {
+					t.Fatalf("expected minimum top-up amount %q to fail", value)
+				}
+			}
+		})
+	}
+}
+
 func TestValidateMCPSelectedToolsSetting(t *testing.T) {
 	if err := validatePatchItem(PatchItem{Namespace: "mcp", Key: "mcp_max_selected_tools_per_message", Value: "32"}); err != nil {
 		t.Fatalf("expected selected tool limit to pass, got %v", err)
