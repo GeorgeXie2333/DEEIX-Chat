@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import { CornerDownRight, Trash2 } from "lucide-react";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { SpinnerLabel } from "@/components/ui/spinner";
+import { Spinner, SpinnerLabel } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
@@ -57,8 +58,11 @@ import type {
   AdminUsageLogDTO,
   AdminUserAuthEventDTO,
 } from "@/features/admin/api/admin.types";
+import { getAdminBillingConfig } from "@/features/admin/api/billing";
 import {
+  cleanupAdminConversationRuns,
   cleanupAdminLogs,
+  getAdminConversationEvent,
   type AdminLogCleanupType,
 } from "@/features/admin/api/audit";
 import {
@@ -80,17 +84,21 @@ import {
 } from "@/features/admin/hooks/use-admin-logs";
 import { cn } from "@/lib/utils";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
-import { resolveAdminErrorMessage } from "@/features/admin/utils/admin-error";
 import { formatBillingBalance } from "@/features/admin/utils/account-display";
+import { resolveAdminErrorMessage } from "@/features/admin/utils/admin-error";
 import {
   billingRateMultiplierNote,
   cacheWriteBillingLabel,
   cacheWriteBillingNote,
+  formatBillingDisplayCompactAmountFromUSD,
+  formatBillingDisplayPreciseAmountFromUSD,
+  formatBillingDisplayUnitPriceFromUSD,
+  normalizeBillingDisplayCurrency,
   type BillingDisplayLabels,
   type BillingDisplayOptions,
 } from "@/shared/lib/billing-display";
 import { ModelSelect, type ModelSelectOption } from "@/shared/components/model-select";
-
+import { formatBytes } from "@/shared/lib/file-display";
 
 type LogDetail =
   | { kind: "audit"; item: AdminAuditLogDTO }
@@ -155,7 +163,7 @@ function formatCount(value: number | null | undefined, locale: string): string {
   return new Intl.NumberFormat(locale).format(value ?? 0);
 }
 
-function formatUsageBalance(value: number | null | undefined, billingDisplay?: BillingDisplayOptions): string {
+function formatUsageBalance(value: number | null | undefined, billingDisplay: BillingDisplayOptions): string {
   return value === null || value === undefined ? "-" : formatBillingBalance(value, billingDisplay);
 }
 
@@ -296,21 +304,12 @@ function useUsageBillingLabels(): UsageBillingLabels {
   );
 }
 
-function formatUsageCost(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) return "$0";
-  if (value < 0.000001) return "< $0.000001";
-  return `$${value.toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 6,
-  })}`;
+function formatUsageCost(value: number, billingDisplay: BillingDisplayOptions): string {
+  return formatBillingDisplayCompactAmountFromUSD(value, billingDisplay);
 }
 
-function formatTooltipUsageCost(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) return "$0.000000";
-  return `$${value.toLocaleString("en-US", {
-    minimumFractionDigits: 6,
-    maximumFractionDigits: 6,
-  })}`;
+function formatTooltipUsageCost(value: number, billingDisplay: BillingDisplayOptions): string {
+  return formatBillingDisplayPreciseAmountFromUSD(value, billingDisplay);
 }
 
 function formatMoneyCents(value: number | null | undefined, currency: string): string {
@@ -331,12 +330,8 @@ function formatMoneyCents(value: number | null | undefined, currency: string): s
   }
 }
 
-function formatTooltipUnitPrice(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) return "$0.00";
-  return `$${value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+function formatTooltipUnitPrice(value: number, billingDisplay: BillingDisplayOptions): string {
+  return formatBillingDisplayUnitPriceFromUSD(value, billingDisplay);
 }
 
 function nanousdToUSD(value: number): number {
@@ -490,20 +485,51 @@ function UsageBillingTieredTable({
   );
 }
 
-function usageFormulaLine(label: string, tokens: number, rateNanousd: number, billedNanousd: number): UsageBillingTooltipLine {
+function usageFormulaLine(
+  label: string,
+  tokens: number,
+  rateNanousd: number,
+  billedNanousd: number,
+  billingDisplay: BillingDisplayOptions,
+): UsageBillingTooltipLine {
   return {
     type: "row",
     left: label,
-    right: `${formatFormulaTokenCount(tokens)} tokens * ${formatTooltipUnitPrice(nanousdToUSD(rateNanousd))} / 1M = ${formatTooltipUsageCost(nanousdToUSD(billedNanousd))}`,
+    right: `${formatFormulaTokenCount(tokens)} tokens * ${formatTooltipUnitPrice(nanousdToUSD(rateNanousd), billingDisplay)} / 1M = ${formatTooltipUsageCost(nanousdToUSD(billedNanousd), billingDisplay)}`,
   };
 }
 
-function usageCountFormulaLine(label: string, count: number, unit: string, rateUnit: string, rateNanousd: number, billedNanousd: number): UsageBillingTooltipLine {
+function usageCountFormulaLine(
+  label: string,
+  count: number,
+  unit: string,
+  rateUnit: string,
+  rateNanousd: number,
+  billedNanousd: number,
+  billingDisplay: BillingDisplayOptions,
+): UsageBillingTooltipLine {
   const safeCount = Number.isFinite(count) && count > 0 ? count : 0;
   return {
     type: "row",
     left: label,
-    right: `${safeCount.toLocaleString("en-US")} ${unit} * ${formatTooltipUnitPrice(nanousdToUSD(rateNanousd))} / ${rateUnit} = ${formatTooltipUsageCost(nanousdToUSD(billedNanousd))}`,
+    right: `${safeCount.toLocaleString("en-US")} ${unit} * ${formatTooltipUnitPrice(nanousdToUSD(rateNanousd), billingDisplay)} / ${rateUnit} = ${formatTooltipUsageCost(nanousdToUSD(billedNanousd), billingDisplay)}`,
+  };
+}
+
+function usageTieredTableRow(
+  item: string,
+  tokens: number,
+  rateNanousd: number,
+  billedNanousd: number,
+  billingDisplay: BillingDisplayOptions,
+): UsageBillingTieredTableRow {
+  const safeTokens = Number.isFinite(tokens) && tokens > 0 ? tokens : 0;
+  const safeBilled = Number.isFinite(billedNanousd) && billedNanousd > 0 ? billedNanousd : 0;
+  return {
+    item,
+    tokens: formatFormulaTokenCount(safeTokens),
+    unitPrice: `${formatTooltipUnitPrice(nanousdToUSD(rateNanousd), billingDisplay)} / 1M`,
+    amount: formatTooltipUsageCost(nanousdToUSD(safeBilled), billingDisplay),
   };
 }
 
@@ -511,7 +537,11 @@ function usageServiceItemName(item: UsageServiceItemSnapshot, labels: UsageBilli
   return String(item.service_name || item.service_code || labels.serviceItemFallback).trim() || labels.serviceItemFallback;
 }
 
-function usageServiceItemLine(item: UsageServiceItemSnapshot, labels: UsageBillingLabels): UsageBillingTooltipLine {
+function usageServiceItemLine(
+  item: UsageServiceItemSnapshot,
+  labels: UsageBillingLabels,
+  billingDisplay: BillingDisplayOptions,
+): UsageBillingTooltipLine {
   const name = usageServiceItemName(item, labels);
   const mode = normalizePricingMode(item.pricing_mode);
   const billedNanousd = readUsageServiceItemNumber(item, "billed_nanousd");
@@ -519,26 +549,31 @@ function usageServiceItemLine(item: UsageServiceItemSnapshot, labels: UsageBilli
   if (mode === "call") {
     const count = readUsageServiceItemNumber(item, "call_count");
     const rate = readUsageServiceItemNumber(item, "call_nanousd_per_call");
-    return usageCountFormulaLine(name, count, labels.callUnit, labels.callUnit, rate, billedNanousd);
+    return usageCountFormulaLine(name, count, labels.callUnit, labels.callUnit, rate, billedNanousd, billingDisplay);
   }
 
   if (mode === "duration") {
     const seconds = readUsageServiceItemNumber(item, "duration_seconds");
     const rate = readUsageServiceItemNumber(item, "duration_nanousd_per_second");
-    return usageCountFormulaLine(name, seconds, labels.secondUnit, labels.secondUnit, rate, billedNanousd);
+    return usageCountFormulaLine(name, seconds, labels.secondUnit, labels.secondUnit, rate, billedNanousd, billingDisplay);
   }
 
   return {
     type: "row",
     left: name,
-    right: formatTooltipUsageCost(nanousdToUSD(billedNanousd)),
+    right: formatTooltipUsageCost(nanousdToUSD(billedNanousd), billingDisplay),
   };
 }
 
-function usageServiceItemDetail(item: UsageServiceItemSnapshot, labels: UsageBillingLabels, locale: string): string {
+function usageServiceItemDetail(
+  item: UsageServiceItemSnapshot,
+  labels: UsageBillingLabels,
+  locale: string,
+  billingDisplay: BillingDisplayOptions,
+): string {
   const name = usageServiceItemName(item, labels);
   const mode = normalizePricingMode(item.pricing_mode);
-  const billed = formatTooltipUsageCost(nanousdToUSD(readUsageServiceItemNumber(item, "billed_nanousd")));
+  const billed = formatTooltipUsageCost(nanousdToUSD(readUsageServiceItemNumber(item, "billed_nanousd")), billingDisplay);
   if (mode === "call") {
     const count = formatCount(readUsageServiceItemNumber(item, "call_count"), locale);
     return `${name} · ${count} ${labels.callUnit} · ${billed}`;
@@ -550,22 +585,13 @@ function usageServiceItemDetail(item: UsageServiceItemSnapshot, labels: UsageBil
   return `${name} · ${billed}`;
 }
 
-function usageTieredTableRow(item: string, tokens: number, rateNanousd: number, billedNanousd: number): UsageBillingTieredTableRow {
-  const safeTokens = Number.isFinite(tokens) && tokens > 0 ? tokens : 0;
-  const safeBilled = Number.isFinite(billedNanousd) && billedNanousd > 0 ? billedNanousd : 0;
-  return {
-    item,
-    tokens: formatFormulaTokenCount(safeTokens),
-    unitPrice: `${formatTooltipUnitPrice(nanousdToUSD(rateNanousd))} / 1M`,
-    amount: formatTooltipUsageCost(nanousdToUSD(safeBilled)),
-  };
-}
-
-function usageTotalLine(item: AdminUsageLogDTO, labels: UsageBillingLabels): UsageBillingTooltipLine {
+function usageTotalLine(item: AdminUsageLogDTO, labels: UsageBillingLabels, billingDisplay: BillingDisplayOptions): UsageBillingTooltipLine {
   return {
     type: "row",
     left: labels.total,
-    right: item.isFreeModel ? `$0.000000 (${labels.freeModelNoBilling})` : formatTooltipUsageCost(nanousdToUSD(item.billedNanousd)),
+    right: item.isFreeModel
+      ? `${formatTooltipUsageCost(0, billingDisplay)} (${labels.freeModelNoBilling})`
+      : formatTooltipUsageCost(nanousdToUSD(item.billedNanousd), billingDisplay),
   };
 }
 
@@ -575,6 +601,7 @@ function appendUsageServiceItemLines(
   modelSubtotalNanousd: number,
   totalLine: UsageBillingTooltipLine,
   labels: UsageBillingLabels,
+  billingDisplay: BillingDisplayOptions,
 ): UsageBillingTooltipLine[] {
   if (serviceItems.length === 0) {
     return [...lines, { type: "divider" }, totalLine];
@@ -582,14 +609,18 @@ function appendUsageServiceItemLines(
   return [
     ...lines,
     { type: "divider" },
-    { type: "row", left: labels.modelSubtotal, right: formatTooltipUsageCost(nanousdToUSD(modelSubtotalNanousd)) },
-    ...serviceItems.map((serviceItem) => usageServiceItemLine(serviceItem, labels)),
+    { type: "row", left: labels.modelSubtotal, right: formatTooltipUsageCost(nanousdToUSD(modelSubtotalNanousd), billingDisplay) },
+    ...serviceItems.map((serviceItem) => usageServiceItemLine(serviceItem, labels, billingDisplay)),
     { type: "divider" },
     totalLine,
   ];
 }
 
-function buildUsageBillingTooltipLines(item: AdminUsageLogDTO, labels: UsageBillingLabels): UsageBillingTooltipLine[] {
+function buildUsageBillingTooltipLines(
+  item: AdminUsageLogDTO,
+  labels: UsageBillingLabels,
+  billingDisplay: BillingDisplayOptions,
+): UsageBillingTooltipLine[] {
   const snapshot = parseUsagePricingSnapshot(item.pricingSnapshotJSON);
   const pricingMode = normalizePricingMode(snapshot.pricing_mode);
   const inputRate = readUsageSnapshotNumber(snapshot, "input_nanousd_per_m_tokens");
@@ -597,25 +628,24 @@ function buildUsageBillingTooltipLines(item: AdminUsageLogDTO, labels: UsageBill
   const cacheReadRate = readUsageSnapshotNumber(snapshot, "cache_read_nanousd_per_m_tokens");
   const cacheWriteRate = readUsageSnapshotNumber(snapshot, "cache_write_nanousd_per_m_tokens");
   const billedOutputTokens = item.outputTokens + item.reasoningTokens;
-  const totalLine = usageTotalLine(item, labels);
+  const serviceItems = readUsageServiceItems(snapshot);
+  const serviceBilledNanousd = readUsageServiceItemsBilledNanousd(serviceItems);
+  const modelSubtotalNanousd = Math.max(0, item.billedNanousd - serviceBilledNanousd) || readUsageMainBilledNanousd(snapshot);
+  const totalLine = usageTotalLine(item, labels, billingDisplay);
   const cacheWriteLabel = cacheWriteBillingLabel(snapshot, labels.billingDisplay);
   const cacheWriteNote = cacheWriteBillingNote(snapshot, labels.billingDisplay);
   const rateMultiplierNote = billingRateMultiplierNote(snapshot, labels.billingDisplay);
-  const serviceItems = readUsageServiceItems(snapshot);
-  const serviceBilledNanousd = readUsageServiceItemsBilledNanousd(serviceItems);
-  const snapshotMainBilledNanousd = readUsageMainBilledNanousd(snapshot);
-  const fallbackModelSubtotalNanousd = Math.max(0, item.billedNanousd - serviceBilledNanousd);
-  const modelSubtotalNanousd = snapshotMainBilledNanousd > 0 ? snapshotMainBilledNanousd : fallbackModelSubtotalNanousd;
 
   if (pricingMode === "call") {
     const callRate = readUsageSnapshotNumber(snapshot, "call_nanousd_per_call");
     const callBilled = resolveCountBilledNanousd(snapshot, "call_billed_nanousd", item.callCount, callRate);
     return appendUsageServiceItemLines(
-      [usageCountFormulaLine(labels.perCall, item.callCount, labels.callUnit, labels.callUnit, callRate, callBilled)],
+      [usageCountFormulaLine(labels.perCall, item.callCount, labels.callUnit, labels.callUnit, callRate, callBilled, billingDisplay)],
       serviceItems,
       modelSubtotalNanousd,
       totalLine,
       labels,
+      billingDisplay,
     );
   }
 
@@ -623,11 +653,12 @@ function buildUsageBillingTooltipLines(item: AdminUsageLogDTO, labels: UsageBill
     const durationRate = readUsageSnapshotNumber(snapshot, "duration_nanousd_per_second");
     const durationBilled = resolveCountBilledNanousd(snapshot, "duration_billed_nanousd", item.durationSeconds, durationRate);
     return appendUsageServiceItemLines(
-      [usageCountFormulaLine(labels.perSecond, item.durationSeconds, labels.secondUnit, labels.secondUnit, durationRate, durationBilled)],
+      [usageCountFormulaLine(labels.perSecond, item.durationSeconds, labels.secondUnit, labels.secondUnit, durationRate, durationBilled, billingDisplay)],
       serviceItems,
       modelSubtotalNanousd,
       totalLine,
       labels,
+      billingDisplay,
     );
   }
 
@@ -646,21 +677,20 @@ function buildUsageBillingTooltipLines(item: AdminUsageLogDTO, labels: UsageBill
       type: "tiered-table",
       rangeLabel: formatTieredRangeLabel(snapshot.tiered_from_tokens, snapshot.tiered_up_to_tokens, labels),
       rows: [
-        usageTieredTableRow(labels.input, item.inputTokens, inputRate, readUsageSnapshotNumber(snapshot, "input_billed_nanousd")),
-        usageTieredTableRow(labels.output, billedOutputTokens, outputRate, readUsageSnapshotNumber(snapshot, "output_billed_nanousd")),
-        usageTieredTableRow(labels.cacheRead, item.cacheReadTokens, cacheReadRate, readUsageSnapshotNumber(snapshot, "cache_read_billed_nanousd")),
-        usageTieredTableRow(cacheWriteLabel, item.cacheWriteTokens, cacheWriteRate, readUsageSnapshotNumber(snapshot, "cache_write_billed_nanousd")),
+        usageTieredTableRow(labels.input, item.inputTokens, inputRate, readUsageSnapshotNumber(snapshot, "input_billed_nanousd"), billingDisplay),
+        usageTieredTableRow(labels.output, billedOutputTokens, outputRate, readUsageSnapshotNumber(snapshot, "output_billed_nanousd"), billingDisplay),
+        usageTieredTableRow(labels.cacheRead, item.cacheReadTokens, cacheReadRate, readUsageSnapshotNumber(snapshot, "cache_read_billed_nanousd"), billingDisplay),
+        usageTieredTableRow(cacheWriteLabel, item.cacheWriteTokens, cacheWriteRate, readUsageSnapshotNumber(snapshot, "cache_write_billed_nanousd"), billingDisplay),
       ],
       totalLabel: serviceItems.length > 0 ? labels.modelSubtotal : labels.total,
-      totalAmount: item.isFreeModel ? `$0.000000 (${labels.freeModelNoBilling})` : formatTooltipUsageCost(nanousdToUSD(serviceItems.length > 0 ? modelSubtotalNanousd : item.billedNanousd)),
+      totalAmount: item.isFreeModel
+        ? `${formatTooltipUsageCost(0, billingDisplay)} (${labels.freeModelNoBilling})`
+        : formatTooltipUsageCost(nanousdToUSD(serviceItems.length > 0 ? modelSubtotalNanousd : item.billedNanousd), billingDisplay),
     });
     if (serviceItems.length > 0) {
-      lines.push(
-        { type: "divider" },
-        ...serviceItems.map((serviceItem) => usageServiceItemLine(serviceItem, labels)),
-        { type: "divider" },
-        totalLine,
-      );
+      lines.push({ type: "divider" });
+      lines.push(...serviceItems.map((serviceItem) => usageServiceItemLine(serviceItem, labels, billingDisplay)));
+      lines.push({ type: "divider" }, totalLine);
     }
     return lines;
   }
@@ -670,10 +700,10 @@ function buildUsageBillingTooltipLines(item: AdminUsageLogDTO, labels: UsageBill
   const cacheWriteBilled = resolveTokenBilledNanousd(snapshot, "cache_write_billed_nanousd", item.cacheWriteTokens, cacheWriteRate);
   const outputBilled = resolveTokenBilledNanousd(snapshot, "output_billed_nanousd", billedOutputTokens, outputRate);
   const lines: UsageBillingTooltipLine[] = [
-    usageFormulaLine(labels.input, item.inputTokens, inputRate, inputBilled),
-    usageFormulaLine(labels.output, billedOutputTokens, outputRate, outputBilled),
-    usageFormulaLine(labels.cacheRead, item.cacheReadTokens, cacheReadRate, cacheReadBilled),
-    usageFormulaLine(cacheWriteLabel, item.cacheWriteTokens, cacheWriteRate, cacheWriteBilled),
+    usageFormulaLine(labels.input, item.inputTokens, inputRate, inputBilled, billingDisplay),
+    usageFormulaLine(labels.output, billedOutputTokens, outputRate, outputBilled, billingDisplay),
+    usageFormulaLine(labels.cacheRead, item.cacheReadTokens, cacheReadRate, cacheReadBilled, billingDisplay),
+    usageFormulaLine(cacheWriteLabel, item.cacheWriteTokens, cacheWriteRate, cacheWriteBilled, billingDisplay),
   ];
   const noteLines: UsageBillingTooltipLine[] = [];
   if (rateMultiplierNote) {
@@ -685,7 +715,7 @@ function buildUsageBillingTooltipLines(item: AdminUsageLogDTO, labels: UsageBill
   if (noteLines.length > 0) {
     lines.splice(4, 0, ...noteLines);
   }
-  return appendUsageServiceItemLines(lines, serviceItems, modelSubtotalNanousd, totalLine, labels);
+  return appendUsageServiceItemLines(lines, serviceItems, modelSubtotalNanousd, totalLine, labels, billingDisplay);
 }
 
 function UsageLogModelCell({ item, labels }: { item: AdminUsageLogDTO; labels: UsageBillingLabels }) {
@@ -743,14 +773,22 @@ function UsageLogTokenCell({ item, locale }: { item: AdminUsageLogDTO; locale: s
   );
 }
 
-function UsageLogCostCell({ item, labels }: { item: AdminUsageLogDTO; labels: UsageBillingLabels }) {
-  const lines = buildUsageBillingTooltipLines(item, labels);
+function UsageLogCostCell({
+  item,
+  labels,
+  billingDisplay,
+}: {
+  item: AdminUsageLogDTO;
+  labels: UsageBillingLabels;
+  billingDisplay: BillingDisplayOptions;
+}) {
+  const lines = buildUsageBillingTooltipLines(item, labels, billingDisplay);
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <span className={cn("inline-flex cursor-default items-center font-medium tabular-nums", item.isFreeModel ? "text-muted-foreground" : "text-foreground")}>
-          {item.isFreeModel ? labels.freeModelNoBilling : formatUsageCost(item.billedUSD)}
+          {item.isFreeModel ? labels.freeModelNoBilling : formatUsageCost(item.billedUSD, billingDisplay)}
         </span>
       </TooltipTrigger>
       <TooltipContent side="top">
@@ -792,6 +830,31 @@ function UsageLogModelFilter({
   );
 }
 
+function UsageServiceItemsDetail({
+  items,
+  labels,
+  locale,
+  billingDisplay,
+}: {
+  items: UsageServiceItemSnapshot[];
+  labels: UsageBillingLabels;
+  locale: string;
+  billingDisplay: BillingDisplayOptions;
+}) {
+  if (items.length === 0) {
+    return null;
+  }
+  return (
+    <div className="space-y-1">
+      {items.map((item, index) => (
+        <div key={`${item.service_code || item.service_name || "service"}-${index}`} className="min-w-0 truncate">
+          {usageServiceItemDetail(item, labels, locale, billingDisplay)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DetailRow({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
     <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-3 border-b border-border/50 py-2.5 last:border-b-0">
@@ -810,22 +873,17 @@ function DetailBlock({ title, children }: { title: string; children: React.React
   );
 }
 
-function UsageServiceItemsDetail({ items, labels, locale }: { items: UsageServiceItemSnapshot[]; labels: UsageBillingLabels; locale: string }) {
-  if (items.length === 0) {
-    return null;
-  }
-  return (
-    <div className="grid gap-1">
-      {items.map((item, index) => (
-        <div key={`${item.service_code || item.service_name || "service"}-${index}`} className="min-w-0 truncate font-mono" title={usageServiceItemDetail(item, labels, locale)}>
-          {usageServiceItemDetail(item, labels, locale)}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | null; onClose: () => void }) {
+function LogDetailSheet({
+  detail: rawDetail,
+  billingDisplay,
+  conversationDetailLoading,
+  onClose,
+}: {
+  detail: LogDetail | null;
+  billingDisplay: BillingDisplayOptions;
+  conversationDetailLoading: boolean;
+  onClose: () => void;
+}) {
   const locale = useLocale();
   const t = useTranslations("adminLogs.detail");
   const usageLabels = useUsageBillingLabels();
@@ -863,16 +921,16 @@ function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | nu
           : t("titles.audit");
   const description =
     detail?.kind === "auth"
-      ? `${detail.item.eventType || t("fallbacks.authEvent")} · ${formatDateTime(detail.item.occurredAt, locale)}`
+      ? `${detail.item.eventType || t("fallbacks.authEvent")} 路 ${formatDateTime(detail.item.occurredAt, locale)}`
       : detail?.kind === "usage"
-        ? `${detail.item.platformModelName || t("fallbacks.modelCall")} · ${formatDateTime(detail.item.createdAt, locale)}`
+        ? `${detail.item.platformModelName || t("fallbacks.modelCall")} 路 ${formatDateTime(detail.item.createdAt, locale)}`
         : detail?.kind === "order"
-          ? `${detail.item.orderNo || t("fallbacks.order")} · ${formatDateTime(detail.item.createdAt, locale)}`
+          ? `${detail.item.orderNo || t("fallbacks.order")} 路 ${formatDateTime(detail.item.createdAt, locale)}`
           : detail?.kind === "conversation"
-            ? `${detail.item.eventType || detail.item.eventScope || t("fallbacks.conversationEvent")} · ${formatDateTime(detail.item.createdAt, locale)}`
+            ? `${detail.item.eventType || detail.item.eventScope || t("fallbacks.conversationEvent")} 路 ${formatDateTime(detail.item.createdAt, locale)}`
       : detail?.kind === "system"
-        ? `${detail.item.event || t("fallbacks.systemEvent")} · ${formatDateTime(detail.item.createdAt, locale)}`
-        : `${detail?.item.action || t("fallbacks.auditEvent")} · ${formatDateTime(detail?.item.createdAt, locale)}`;
+        ? `${detail.item.event || t("fallbacks.systemEvent")} 路 ${formatDateTime(detail.item.createdAt, locale)}`
+        : `${detail?.item.action || t("fallbacks.auditEvent")} 路 ${formatDateTime(detail?.item.createdAt, locale)}`;
   const requestID = detail && detail.kind !== "usage" && detail.kind !== "order" && detail.kind !== "conversation" ? detail.item.requestID : "";
   const detailJSON =
     detail?.kind === "usage"
@@ -883,8 +941,10 @@ function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | nu
           ? detail.item.payloadJSON || detail.item.inputJSON || detail.item.outputJSON || detail.item.errorJSON
           : detail?.item.detailJSON;
   const rawUsageJSON = detail?.kind === "usage" ? usageLogRawUsageJSON(detail.item) : "";
+  const usageServiceItems =
+    detail?.kind === "usage" ? readUsageServiceItems(parseUsagePricingSnapshot(detail.item.pricingSnapshotJSON)) : [];
+
   const formattedJSON = formatJSON(detailJSON);
-  const usageServiceItems = detail?.kind === "usage" ? readUsageServiceItems(parseUsagePricingSnapshot(detail.item.pricingSnapshotJSON)) : [];
 
   return (
     <Sheet open={Boolean(rawDetail)} onOpenChange={(open) => !open && onClose()}>
@@ -975,10 +1035,9 @@ function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | nu
                 <DetailRow label={t("fields.protocol")} value={detail.item.providerProtocol} />
               </DetailBlock>
               <DetailBlock title={t("blocks.usageBilling")}>
-                <DetailRow label={t("fields.billing")} value={`${formatTooltipUsageCost(detail.item.billedUSD)} ${detail.item.isFreeModel ? `(${usageLabels.freeModelNoBilling})` : ""}`} />
-                <DetailRow label={t("fields.balanceAfter")} value={formatUsageBalance(detail.item.balanceAfterUSD)} />
+                <DetailRow label={t("fields.billing")} value={`${formatTooltipUsageCost(detail.item.billedUSD, billingDisplay)} ${detail.item.isFreeModel ? `(${usageLabels.freeModelNoBilling})` : ""}`} />
+                <DetailRow label={t("fields.balanceAfter")} value={formatUsageBalance(detail.item.balanceAfterUSD, billingDisplay)} />
                 <DetailRow label={t("fields.totalTokens")} value={formatCount(usageTotalTokens(detail.item), locale)} mono />
-
                 <DetailRow label={usageLabels.input} value={formatCount(detail.item.inputTokens, locale)} mono />
                 <DetailRow label={usageLabels.cacheRead} value={formatCount(detail.item.cacheReadTokens, locale)} mono />
                 <DetailRow label={usageLabels.billingDisplay.cacheWrite} value={formatCount(detail.item.cacheWriteTokens, locale)} mono />
@@ -986,7 +1045,17 @@ function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | nu
                 <DetailRow label={t("fields.reasoning")} value={formatCount(detail.item.reasoningTokens, locale)} mono />
                 <DetailRow label={t("fields.callCount")} value={formatCount(detail.item.callCount, locale)} mono />
                 {usageServiceItems.length > 0 ? (
-                  <DetailRow label={usageLabels.serviceItems} value={<UsageServiceItemsDetail items={usageServiceItems} labels={usageLabels} locale={locale} />} />
+                  <DetailRow
+                    label={usageLabels.serviceItems}
+                    value={(
+                      <UsageServiceItemsDetail
+                        items={usageServiceItems}
+                        labels={usageLabels}
+                        locale={locale}
+                        billingDisplay={billingDisplay}
+                      />
+                    )}
+                  />
                 ) : null}
                 <DetailRow label={t("fields.latency")} value={`${formatCount(detail.item.latencyMS, locale)} ms`} mono />
               </DetailBlock>
@@ -997,6 +1066,7 @@ function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | nu
             <section className="space-y-2">
               <div className="flex items-center justify-between gap-3 px-1">
                 <h4 className="text-xs font-medium text-foreground/88">{t("rawUsageJsonTitle")}</h4>
+
                 <CopyActionButton
                   type="button"
                   variant="ghost"
@@ -1037,10 +1107,8 @@ function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | nu
                   value={`${formatMoneyCents(detail.item.feeAmountCents, detail.item.payCurrency)} (${detail.item.feeRatePercent.toLocaleString(locale, { maximumFractionDigits: 2 })}%)`}
                   mono
                 />
-                <DetailRow label={t("fields.total")} value={formatMoneyCents(detail.item.payAmountCents, detail.item.payCurrency)} mono />
-                <DetailRow label={t("fields.businessAmount")} value={formatMoneyCents(detail.item.baseAmountCents, detail.item.baseCurrency)} mono />
-                <DetailRow label={t("fields.fxRate")} value={detail.item.fxRate || "-"} mono />
-                <DetailRow label={t("fields.credit")} value={formatTooltipUsageCost(detail.item.creditUSD)} mono />
+                <DetailRow label={t("fields.amount")} value={`${formatMoneyCents(detail.item.payAmountCents, detail.item.payCurrency)} / ${formatMoneyCents(detail.item.baseAmountCents, detail.item.baseCurrency)}`} mono />
+                <DetailRow label={t("fields.credit")} value={formatTooltipUsageCost(detail.item.creditUSD, billingDisplay)} mono />
                 <DetailRow label={t("fields.interval")} value={`${detail.item.billingInterval || "-"} x ${detail.item.cycles || 0}`} />
                 <DetailRow label={t("fields.externalPaymentID")} value={detail.item.externalPaymentID || "-"} mono />
                 <DetailRow label={t("fields.externalCheckoutID")} value={detail.item.externalCheckoutID || "-"} mono />
@@ -1079,6 +1147,7 @@ function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | nu
                 <DetailRow label={t("fields.latency")} value={`${formatCount(detail.item.latencyMS, locale)} ms`} mono />
                 <DetailRow label={t("fields.title")} value={detail.item.title || "-"} />
                 <DetailRow label={t("fields.summary")} value={detail.item.summary || "-"} />
+                <DetailRow label={t("fields.payloadSize")} value={formatBytes(detail.item.payloadSizeBytes)} mono />
               </DetailBlock>
             </>
           ) : null}
@@ -1106,6 +1175,7 @@ function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | nu
                   size="sm"
                   className="h-7 px-2 text-xs shadow-none"
                   value={formattedJSON}
+                  disabled={conversationDetailLoading || (detail?.kind === "conversation" && detail.item.payloadOmitted)}
                   messages={copyMessages}
                   copyOptions={{ copied: t("copied", { label: t("jsonTitle") }) }}
                 >
@@ -1113,9 +1183,22 @@ function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | nu
                 </CopyActionButton>
               </div>
             </div>
-            <pre className="max-h-[320px] overflow-auto rounded-lg border border-border/60 bg-muted/35 p-3 text-xs leading-5 text-foreground/86">
-              <code>{formattedJSON}</code>
-            </pre>
+            {conversationDetailLoading ? (
+              <div className="flex h-28 items-center justify-center rounded-lg border border-border/60 bg-muted/20">
+                <Spinner label={t("loading")} className="size-4 text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                {detail?.kind === "conversation" && detail.item.payloadOmitted ? (
+                  <p className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground">
+                    {t("payloadOmitted", { size: formatBytes(detail.item.payloadSizeBytes) })}
+                  </p>
+                ) : null}
+                <pre className="max-h-[320px] overflow-auto rounded-lg border border-border/60 bg-muted/35 p-3 text-xs leading-5 text-foreground/86">
+                  <code>{formattedJSON}</code>
+                </pre>
+              </>
+            )}
           </section>
         </div>
       </SheetContent>
@@ -1344,7 +1427,13 @@ function AuthLogTable({ onOpenDetail }: { onOpenDetail: (item: AdminUserAuthEven
   );
 }
 
-function UsageLogTable({ onOpenDetail }: { onOpenDetail: (item: AdminUsageLogDTO) => void }) {
+function UsageLogTable({
+  billingDisplay,
+  onOpenDetail,
+}: {
+  billingDisplay: BillingDisplayOptions;
+  onOpenDetail: (item: AdminUsageLogDTO) => void;
+}) {
   const locale = useLocale();
   const t = useTranslations("adminLogs");
   const usageLabels = useUsageBillingLabels();
@@ -1446,9 +1535,9 @@ function UsageLogTable({ onOpenDetail }: { onOpenDetail: (item: AdminUsageLogDTO
               <TableCell>
                 <UsageLogTokenCell item={item} locale={locale} />
               </TableCell>
-              <TableCell><UsageLogCostCell item={item} labels={usageLabels} /></TableCell>
+              <TableCell><UsageLogCostCell item={item} labels={usageLabels} billingDisplay={billingDisplay} /></TableCell>
               <TableCell className="whitespace-nowrap font-medium tabular-nums text-foreground">
-                {formatUsageBalance(item.balanceAfterUSD)}
+                {formatUsageBalance(item.balanceAfterUSD, billingDisplay)}
               </TableCell>
               <TableCell className="whitespace-nowrap font-mono text-muted-foreground">{formatCount(item.latencyMS, locale)} ms</TableCell>
               <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateTime(item.createdAt, locale)}</TableCell>
@@ -1628,11 +1717,78 @@ function PaymentOrderTable({ onOpenDetail }: { onOpenDetail: (item: AdminPayment
 function ConversationEventTable({ onOpenDetail }: { onOpenDetail: (item: AdminConversationEventDTO) => void }) {
   const locale = useLocale();
   const t = useTranslations("adminLogs");
+  const commonT = useTranslations("common.actions");
   const logs = useAdminConversationEvents();
+  const [selectedRunIDs, setSelectedRunIDs] = React.useState<Set<string>>(new Set());
+  const [cleanupOpen, setCleanupOpen] = React.useState(false);
+  const [cleanupPending, setCleanupPending] = React.useState(false);
   const virtualRows = useVirtualTableRows(logs.events, {
     enabled: logs.events.length > 100,
     estimateSize: 40,
   });
+  const visibleRunIDs = React.useMemo(
+    () => [...new Set(logs.events.map((item) => item.runID.trim()).filter(Boolean))],
+    [logs.events],
+  );
+  const allVisibleSelected = visibleRunIDs.length > 0 && visibleRunIDs.every((runID) => selectedRunIDs.has(runID));
+  const someVisibleSelected = visibleRunIDs.some((runID) => selectedRunIDs.has(runID));
+
+  React.useEffect(() => {
+    setSelectedRunIDs(new Set());
+  }, [logs.events]);
+
+  const toggleRun = React.useCallback((runID: string, selected: boolean) => {
+    if (!runID) return;
+    setSelectedRunIDs((current) => {
+      const next = new Set(current);
+      if (selected) {
+        if (next.size >= 100 && !next.has(runID)) {
+          toast.error(t("conversation.cleanup.maxSelection"));
+          return current;
+        }
+        next.add(runID);
+      } else {
+        next.delete(runID);
+      }
+      return next;
+    });
+  }, [t]);
+
+  const toggleVisibleRuns = React.useCallback((selected: boolean) => {
+    if (!selected) {
+      setSelectedRunIDs(new Set());
+      return;
+    }
+    if (visibleRunIDs.length > 100) {
+      toast.error(t("conversation.cleanup.maxSelection"));
+    }
+    setSelectedRunIDs(new Set(visibleRunIDs.slice(0, 100)));
+  }, [t, visibleRunIDs]);
+
+  const cleanupSelectedRuns = React.useCallback(async () => {
+    const runIDs = [...selectedRunIDs];
+    if (runIDs.length === 0) return;
+    setCleanupPending(true);
+    try {
+      const token = await resolveAccessToken();
+      if (!token) {
+        toast.error(t("toast.sessionExpired"), { description: t("toast.signInAgain") });
+        return;
+      }
+      const result = await cleanupAdminConversationRuns(token, { runIDs });
+      toast.success(t("conversation.cleanup.success", {
+        runs: result.runCount,
+        events: result.deletedCount,
+      }));
+      setCleanupOpen(false);
+      setSelectedRunIDs(new Set());
+      await logs.loadConversationEvents(logs.page, logs.pageSize);
+    } catch (error) {
+      toast.error(t("conversation.cleanup.failed"), { description: resolveAdminErrorMessage(error) });
+    } finally {
+      setCleanupPending(false);
+    }
+  }, [logs, selectedRunIDs, t]);
   const scopeLabel = React.useCallback((value: string) => {
     switch (value) {
       case "trace_block":
@@ -1716,6 +1872,15 @@ function ConversationEventTable({ onOpenDetail }: { onOpenDetail: (item: AdminCo
           onValueChange: (value) => logs.setSortValue(value as ConversationEventSortValue),
           options: CONVERSATION_EVENT_SORT_OPTIONS.map((item) => ({ label: t(item.labelKey), value: item.value })),
         }}
+        selectedCount={selectedRunIDs.size}
+        bulkActions={[
+          {
+            key: "delete-runs",
+            label: t("conversation.cleanup.action"),
+            icon: <Trash2 />,
+            onClick: () => setCleanupOpen(true),
+          },
+        ]}
         loading={logs.loading}
         onRefresh={() => void logs.loadConversationEvents(logs.page, logs.pageSize)}
       />
@@ -1727,6 +1892,16 @@ function ConversationEventTable({ onOpenDetail }: { onOpenDetail: (item: AdminCo
       >
         <TableHeader>
           <TableRow className="hover:bg-transparent">
+            <TableHead className="w-[44px] py-1.5 text-center">
+              <div className="flex h-7 items-center justify-center">
+                <Checkbox
+                  checked={allVisibleSelected ? true : someVisibleSelected ? "indeterminate" : false}
+                  disabled={visibleRunIDs.length === 0}
+                  onCheckedChange={(checked) => toggleVisibleRuns(checked === true)}
+                  aria-label={t("conversation.cleanup.selectAll")}
+                />
+              </div>
+            </TableHead>
             <TableHead className="w-[72px]">ID</TableHead>
             <TableHead>{t("columns.user")}</TableHead>
             <TableHead>{t("columns.scope")}</TableHead>
@@ -1739,33 +1914,52 @@ function ConversationEventTable({ onOpenDetail }: { onOpenDetail: (item: AdminCo
           </TableRow>
         </TableHeader>
         <TableBody>
-          {logs.loading && logs.events.length === 0 ? <TableLoadingRow colSpan={9} /> : null}
-          {logs.events.length > 0 ? <VirtualTablePaddingRow colSpan={9} height={virtualRows.paddingTop} /> : null}
-          {logs.events.length > 0 ? virtualRows.rows.map(({ item }) => (
-            <TableRow key={item.id} className="cursor-pointer" onClick={() => onOpenDetail(item)}>
-              <TableCell className="font-mono text-xs text-foreground">{item.id}</TableCell>
-              <TableCell className="whitespace-nowrap text-muted-foreground">
-                {resolveUserDisplayName(item.userLabel, item.username, item.userID)}
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-muted-foreground">{scopeLabel(item.eventScope)}</TableCell>
-              <TableCell>
-                <div className="max-w-[12rem] truncate" title={item.eventType || item.title || "-"}>{item.eventType || item.title || "-"}</div>
-              </TableCell>
-              <TableCell className="whitespace-nowrap">{eventStatusLabel(item.status)}</TableCell>
-              <TableCell>
-                <div className="max-w-[12rem] truncate text-muted-foreground" title={item.upstreamName || "-"}>{item.upstreamName || "-"}</div>
-              </TableCell>
-              <TableCell>
-                <div className="max-w-[10rem] truncate text-muted-foreground" title={item.toolName || "-"}>{item.toolName || "-"}</div>
-              </TableCell>
-              <TableCell className="font-mono text-xs text-muted-foreground">
-                <div className="max-w-[13rem] truncate" title={item.runID || "-"}>{item.runID || "-"}</div>
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateTime(item.createdAt, locale)}</TableCell>
-            </TableRow>
-          )) : null}
-          {logs.events.length > 0 ? <VirtualTablePaddingRow colSpan={9} height={virtualRows.paddingBottom} /> : null}
-          {!logs.loading && logs.events.length === 0 ? <TableEmptyRow colSpan={9}>{t("conversation.empty")}</TableEmptyRow> : null}
+          {logs.loading && logs.events.length === 0 ? <TableLoadingRow colSpan={10} /> : null}
+          {logs.events.length > 0 ? <VirtualTablePaddingRow colSpan={10} height={virtualRows.paddingTop} /> : null}
+          {logs.events.length > 0 ? virtualRows.rows.map(({ item }) => {
+            const runID = item.runID.trim();
+            return (
+              <TableRow
+                key={item.id}
+                className="cursor-pointer"
+                selected={selectedRunIDs.has(runID)}
+                onClick={() => onOpenDetail(item)}
+              >
+                <TableCell className="w-[44px] py-1.5 text-center">
+                  <div className="flex h-7 items-center justify-center">
+                    <Checkbox
+                      checked={selectedRunIDs.has(runID)}
+                      disabled={!runID}
+                      onClick={(event) => event.stopPropagation()}
+                      onCheckedChange={(checked) => toggleRun(runID, checked === true)}
+                      aria-label={t("conversation.cleanup.selectRun", { runID: runID || "-" })}
+                    />
+                  </div>
+                </TableCell>
+                <TableCell className="font-mono text-xs text-foreground">{item.id}</TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">
+                  {resolveUserDisplayName(item.userLabel, item.username, item.userID)}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">{scopeLabel(item.eventScope)}</TableCell>
+                <TableCell>
+                  <div className="max-w-[12rem] truncate" title={item.eventType || item.title || "-"}>{item.eventType || item.title || "-"}</div>
+                </TableCell>
+                <TableCell className="whitespace-nowrap">{eventStatusLabel(item.status)}</TableCell>
+                <TableCell>
+                  <div className="max-w-[12rem] truncate text-muted-foreground" title={item.upstreamName || "-"}>{item.upstreamName || "-"}</div>
+                </TableCell>
+                <TableCell>
+                  <div className="max-w-[10rem] truncate text-muted-foreground" title={item.toolName || "-"}>{item.toolName || "-"}</div>
+                </TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">
+                  <div className="max-w-[13rem] truncate" title={runID || "-"}>{runID || "-"}</div>
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateTime(item.createdAt, locale)}</TableCell>
+              </TableRow>
+            );
+          }) : null}
+          {logs.events.length > 0 ? <VirtualTablePaddingRow colSpan={10} height={virtualRows.paddingBottom} /> : null}
+          {!logs.loading && logs.events.length === 0 ? <TableEmptyRow colSpan={10}>{t("conversation.empty")}</TableEmptyRow> : null}
         </TableBody>
       </Table>
 
@@ -1778,6 +1972,30 @@ function ConversationEventTable({ onOpenDetail }: { onOpenDetail: (item: AdminCo
         onPageChange={(nextPage) => void logs.loadConversationEvents(nextPage, logs.pageSize)}
         onPageSizeChange={(nextPageSize) => void logs.loadConversationEvents(1, nextPageSize)}
       />
+
+      <AlertDialog open={cleanupOpen} onOpenChange={(open) => !cleanupPending && setCleanupOpen(open)}>
+        <AlertDialogContent className="sm:max-w-[440px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("conversation.cleanup.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("conversation.cleanup.description", { count: selectedRunIDs.size })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cleanupPending}>{commonT("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={cleanupPending || selectedRunIDs.size === 0}
+              onClick={(event) => {
+                event.preventDefault();
+                void cleanupSelectedRuns();
+              }}
+            >
+              {cleanupPending ? <SpinnerLabel>{t("conversation.cleanup.deleting")}</SpinnerLabel> : t("conversation.cleanup.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -1947,7 +2165,13 @@ function LogCleanupDialog({
 export function AdminLogsPage() {
   const t = useTranslations("adminLogs");
   const [detail, setDetail] = React.useState<LogDetail | null>(null);
+  const [conversationDetailLoading, setConversationDetailLoading] = React.useState(false);
+  const detailRequestRef = React.useRef(0);
   const [cleanupOpen, setCleanupOpen] = React.useState(false);
+  const [billingDisplay, setBillingDisplay] = React.useState<BillingDisplayOptions>({
+    currency: "USD",
+    usdToCnyRate: null,
+  });
   const [cleanupRevisions, setCleanupRevisions] = React.useState<Record<AdminLogCleanupType, number>>({
     audit: 0,
     auth: 0,
@@ -1957,11 +2181,66 @@ export function AdminLogsPage() {
     system: 0,
   });
 
+  React.useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const token = await resolveAccessToken();
+        if (!token) return;
+        const result = await getAdminBillingConfig(token);
+        if (cancelled) return;
+        setBillingDisplay({
+          currency: normalizeBillingDisplayCurrency(result.config.displayCurrency),
+          usdToCnyRate: result.config.usdToCNYRate ?? null,
+        });
+      } catch {
+        if (!cancelled) {
+          setBillingDisplay({ currency: "USD", usdToCnyRate: null });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleCleanupSuccess = React.useCallback((type: AdminLogCleanupType) => {
     setCleanupRevisions((current) => ({
       ...current,
       [type]: current[type] + 1,
     }));
+  }, []);
+
+  const openConversationDetail = React.useCallback(async (item: AdminConversationEventDTO) => {
+    const requestID = detailRequestRef.current + 1;
+    detailRequestRef.current = requestID;
+    setDetail({ kind: "conversation", item });
+    setConversationDetailLoading(true);
+    try {
+      const token = await resolveAccessToken();
+      if (!token) {
+        toast.error(t("toast.sessionExpired"), { description: t("toast.signInAgain") });
+        return;
+      }
+      const loaded = await getAdminConversationEvent(token, item.id);
+      if (detailRequestRef.current === requestID) {
+        setDetail({ kind: "conversation", item: loaded });
+      }
+    } catch (error) {
+      if (detailRequestRef.current === requestID) {
+        toast.error(t("toast.conversationEventDetailLoadFailed"), { description: resolveAdminErrorMessage(error) });
+      }
+    } finally {
+      if (detailRequestRef.current === requestID) {
+        setConversationDetailLoading(false);
+      }
+    }
+  }, [t]);
+
+  const closeDetail = React.useCallback(() => {
+    detailRequestRef.current += 1;
+    setConversationDetailLoading(false);
+    setDetail(null);
   }, []);
 
   return (
@@ -1997,17 +2276,26 @@ export function AdminLogsPage() {
           <AuthLogTable key={cleanupRevisions.auth} onOpenDetail={(item) => setDetail({ kind: "auth", item })} />
         </TabsContent>
         <TabsContent value="usage">
-          <UsageLogTable key={cleanupRevisions.usage} onOpenDetail={(item) => setDetail({ kind: "usage", item })} />
+          <UsageLogTable
+            key={cleanupRevisions.usage}
+            billingDisplay={billingDisplay}
+            onOpenDetail={(item) => setDetail({ kind: "usage", item })}
+          />
         </TabsContent>
         <TabsContent value="orders">
           <PaymentOrderTable key={cleanupRevisions.orders} onOpenDetail={(item) => setDetail({ kind: "order", item })} />
         </TabsContent>
         <TabsContent value="conversation">
-          <ConversationEventTable key={cleanupRevisions.conversation} onOpenDetail={(item) => setDetail({ kind: "conversation", item })} />
+          <ConversationEventTable key={cleanupRevisions.conversation} onOpenDetail={(item) => void openConversationDetail(item)} />
         </TabsContent>
       </Tabs>
 
-      <LogDetailSheet detail={detail} onClose={() => setDetail(null)} />
+      <LogDetailSheet
+        detail={detail}
+        billingDisplay={billingDisplay}
+        conversationDetailLoading={conversationDetailLoading}
+        onClose={closeDetail}
+      />
       <LogCleanupDialog
         open={cleanupOpen}
         onOpenChange={setCleanupOpen}
