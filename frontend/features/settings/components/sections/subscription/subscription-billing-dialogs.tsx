@@ -135,19 +135,6 @@ export function TopUpDialog({
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">{t("payment.method")}</p>
             <div className="grid grid-cols-2 gap-2">
-              {paymentProviders.includes("stripe") ? (
-                <button
-                  type="button"
-                  className={`flex min-h-9 flex-col items-center justify-center rounded-md border px-2 py-1 text-xs ${
-                    selectedPaymentProvider === "stripe" ? "border-foreground bg-muted/25 font-medium" : "border-border bg-transparent text-muted-foreground"
-                  }`}
-                  disabled={billingLoading || topUpLoading || paymentDisabled}
-                  onClick={() => onPaymentProviderChange("stripe")}
-                >
-                  <span>Stripe</span>
-                  <span className="text-[11px] font-normal tabular-nums opacity-80">{stripePaymentAmount}</span>
-                </button>
-              ) : null}
               {paymentProviders.includes("epay")
                 ? epayTypes.map((item) => {
                   const selected = selectedPaymentProvider === "epay" && selectedEPayType === item.type;
@@ -170,6 +157,19 @@ export function TopUpDialog({
                   );
                 })
                 : null}
+              {paymentProviders.includes("stripe") ? (
+                <button
+                  type="button"
+                  className={`flex min-h-9 flex-col items-center justify-center rounded-md border px-2 py-1 text-xs ${
+                    selectedPaymentProvider === "stripe" ? "border-foreground bg-muted/25 font-medium" : "border-border bg-transparent text-muted-foreground"
+                  }`}
+                  disabled={billingLoading || topUpLoading || paymentDisabled}
+                  onClick={() => onPaymentProviderChange("stripe")}
+                >
+                  <span>Stripe</span>
+                  <span className="text-[11px] font-normal tabular-nums opacity-80">{stripePaymentAmount}</span>
+                </button>
+              ) : null}
             </div>
           </div>
         ) : null}

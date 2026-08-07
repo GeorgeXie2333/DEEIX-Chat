@@ -518,22 +518,6 @@ export function SubscriptionSummary({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            {paymentProviders.includes("stripe") ? (
-              <button
-                type="button"
-                className={`flex w-full items-center justify-between rounded-lg border px-3 py-3 text-left ${
-                  selectedPaymentProvider === "stripe" ? "border-foreground bg-muted/25" : "border-border bg-transparent"
-                }`}
-                disabled={paymentDisabled}
-                onClick={() => onPaymentProviderChange("stripe")}
-              >
-                <span className="space-y-1">
-                  <span className="block text-xs font-medium">Stripe</span>
-                  <span className="block text-xs text-muted-foreground">{stripePaymentAmount || t("payment.card")}</span>
-                </span>
-                {selectedPaymentProvider === "stripe" ? <Check className="size-4" /> : null}
-              </button>
-            ) : null}
             {paymentProviders.includes("epay")
               ? epayTypes.map((item) => {
                 const selected = selectedPaymentProvider === "epay" && selectedEPayType === item.type;
@@ -559,6 +543,22 @@ export function SubscriptionSummary({
                 );
               })
               : null}
+            {paymentProviders.includes("stripe") ? (
+              <button
+                type="button"
+                className={`flex w-full items-center justify-between rounded-lg border px-3 py-3 text-left ${
+                  selectedPaymentProvider === "stripe" ? "border-foreground bg-muted/25" : "border-border bg-transparent"
+                }`}
+                disabled={paymentDisabled}
+                onClick={() => onPaymentProviderChange("stripe")}
+              >
+                <span className="space-y-1">
+                  <span className="block text-xs font-medium">Stripe</span>
+                  <span className="block text-xs text-muted-foreground">{stripePaymentAmount || t("payment.card")}</span>
+                </span>
+                {selectedPaymentProvider === "stripe" ? <Check className="size-4" /> : null}
+              </button>
+            ) : null}
           </div>
           {selectedPaymentProvider === "stripe" ? (
             stripeCurrencySupported ? (

@@ -84,6 +84,12 @@ function SubscriptionTrendSkeleton() {
 type BillingRuntimeConfig = BillingConfigData["config"];
 type PaymentProvider = "stripe" | "epay";
 
+function preferredPaymentProvider(providers: string[]): PaymentProvider {
+  if (providers.includes("epay")) return "epay";
+  if (providers.includes("stripe")) return "stripe";
+  return "epay";
+}
+
 export function SettingsSubscription() {
   const t = useTranslations("settings.subscriptionPage");
   const resolveErrorMessage = useLocalizedErrorMessage();
@@ -112,7 +118,7 @@ export function SettingsSubscription() {
   const [paymentDialogOpen, setPaymentDialogOpen] = React.useState(false);
   const [selectedPlan, setSelectedPlan] = React.useState<BillingPlanDTO | null>(null);
   const [selectedPrice, setSelectedPrice] = React.useState<BillingPlanPriceDTO | null>(null);
-  const [selectedPaymentProvider, setSelectedPaymentProvider] = React.useState<PaymentProvider>("stripe");
+  const [selectedPaymentProvider, setSelectedPaymentProvider] = React.useState<PaymentProvider>("epay");
   const [selectedEPayType, setSelectedEPayType] = React.useState("alipay");
   const [topUpDialogOpen, setTopUpDialogOpen] = React.useState(false);
   const [redemptionDialogOpen, setRedemptionDialogOpen] = React.useState(false);
@@ -253,7 +259,7 @@ export function SettingsSubscription() {
 
   React.useEffect(() => {
     if (paymentProviders.length > 0 && !paymentProviders.includes(selectedPaymentProvider)) {
-      handlePaymentProviderChange(paymentProviders[0] ?? "stripe");
+      handlePaymentProviderChange(preferredPaymentProvider(paymentProviders));
     }
   }, [handlePaymentProviderChange, paymentProviders, selectedPaymentProvider]);
 
