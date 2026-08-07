@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import { CornerDownRight, Trash2 } from "lucide-react";
