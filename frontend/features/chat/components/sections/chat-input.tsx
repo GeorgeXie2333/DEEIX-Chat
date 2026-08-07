@@ -10,6 +10,8 @@ import {
   CircleAlert,
   Code2,
   CornerDownRight,
+  Eye,
+  EyeOff,
   Film,
   Globe2,
   Image as ImageIcon,
@@ -22,8 +24,10 @@ import {
   Video,
   Wrench,
 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+
 
 import { AudioLines } from "@/components/animate-ui/icons/audio-lines";
 import { Blocks } from "@/components/animate-ui/icons/blocks";
@@ -38,11 +42,17 @@ import type {
   PendingAttachment,
   UploadingAttachment,
 } from "@/features/chat/types/chat-runtime";
+import {
+  formatClipboardMarkdownPaste,
+  resolveClipboardMarkdownPaste,
+} from "@/features/chat/utils/markdown-paste";
 import { useChatSpeechInput } from "@/features/chat/hooks/use-chat-speech-input";
+import { useMarkdownPreviewSync } from "@/features/chat/hooks/use-markdown-preview-sync";
 import {
   useChatMentionMenu,
   type ChatMentionMenuKind,
 } from "@/features/chat/hooks/use-chat-mention-menu";
+
 import { ChatMentionMenuPortal } from "@/features/chat/components/shared/chat-mention-menu";
 import { ChatModelPicker } from "@/features/chat/components/sections/chat-model-picker";
 import { ChatModelConfig } from "@/features/chat/components/sections/chat-model-config";
@@ -69,7 +79,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { resolveFileProcessingBadge, resolveFileProcessingToneClass } from "@/shared/lib/file-processing";
 import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot";
+import { StreamdownRender } from "@/shared/components/markdown/streamdown-render";
 import { cn } from "@/lib/utils";
+
 import type { ConversationOptions } from "@/shared/api/conversation.types";
 import type { FileObjectDTO } from "@/shared/api/file.types";
 import type { MCPToolDTO } from "@/shared/api/mcp.types";
@@ -390,18 +402,27 @@ function ChatInputComponent({
   const [toolsMenuView, setToolsMenuView] = React.useState<ToolMenuView>("main");
   const [ragWarnDismissed, setRagWarnDismissed] = React.useState(false);
   const [previewAttachment, setPreviewAttachment] = React.useState<PendingAttachment | null>(null);
+  const [markdownPreview, setMarkdownPreview] = React.useState(false);
   const stablePreviewAttachment = useDialogSnapshot(previewAttachment);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const inputGroupRef = React.useRef<HTMLDivElement | null>(null);
   const inputGroupMeasureRef = React.useRef<HTMLDivElement | null>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const markdownPreviewRef = React.useRef<HTMLDivElement | null>(null);
   const composingRef = React.useRef(false);
   const [inputGroupHeight, setInputGroupHeight] = React.useState<number | null>(null);
   const hasDraftText = draft.trim().length > 0;
   const hasSubmitContent = hasDraftText || attachments.length > 0;
   const canSend = hasSubmitContent && !loading && !uploading;
+  const showMarkdownPreview = markdownPreview && hasDraftText;
   const inputHeightClassName =
     inputHeight === "compact" ? "max-h-32" : inputHeight === "loose" ? "max-h-64" : "max-h-44";
+  const { onPreviewScroll, onSourceScroll } = useMarkdownPreviewSync({
+    enabled: showMarkdownPreview,
+    previewRef: markdownPreviewRef,
+    source: draft,
+    textareaRef,
+  });
 
   // Only relevant in RAG mode: all document attachments opted out of RAG.
   const docAttachments = attachments.filter((a) => a.fileCategory !== "image");
@@ -417,7 +438,14 @@ function ChatInputComponent({
     }
   }, []);
 
+  React.useEffect(() => {
+    if (!hasDraftText) {
+      setMarkdownPreview(false);
+    }
+  }, [hasDraftText]);
+
   const selectedModel = React.useMemo(
+
     () => modelOptions.find((item) => item.platformModelName === selectedPlatformModelName) ?? null,
     [modelOptions, selectedPlatformModelName],
   );
@@ -745,6 +773,26 @@ function ChatInputComponent({
         </div>
       ) : null}
 
+      <AnimatePresence initial={false}>
+        {showMarkdownPreview && inputGroupHeight !== null ? (
+          <motion.div
+            ref={markdownPreviewRef}
+            key="markdown-preview"
+            role="region"
+            aria-label={tComposer("markdownPreview")}
+            className="absolute inset-x-0 z-[60] max-h-[40dvh] min-h-16 overflow-y-auto rounded-xl border-[0.5px] border-border/70 bg-pure/85 px-5 py-4 text-[15px] text-foreground shadow-xs backdrop-blur-xl scroll-fade-12"
+            style={{ bottom: inputGroupHeight + 8 }}
+            initial={{ opacity: 0, scale: 0.99, y: 4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.99, y: 4 }}
+            transition={{ duration: 0.12, ease: "easeOut" }}
+            onScroll={onPreviewScroll}
+          >
+            <StreamdownRender content={draft} variant="user" sourcePositions />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
       <InputGroup
         ref={inputGroupRef}
         className={cn(
@@ -754,6 +802,7 @@ function ChatInputComponent({
         )}
         style={inputGroupHeight === null ? undefined : { height: inputGroupHeight }}
       >
+
         <div ref={inputGroupMeasureRef} className="flex w-full flex-col">
           {inlineSelectedSkills ? (
             <div className="flex w-full max-h-14 flex-wrap items-center justify-start gap-x-3 gap-y-1 overflow-y-auto px-5 pt-3">
@@ -908,16 +957,33 @@ function ChatInputComponent({
           onClick={handleMentionSelectionChange}
           onKeyUp={handleMentionSelectionChange}
           onSelect={handleMentionSelectionChange}
+          onScroll={onSourceScroll}
           onPaste={(event) => {
             const files = clipboardFilesFromPaste(event);
-            if (files.length === 0) {
-              return;
-            }
-            if (!event.clipboardData.getData("text/plain")) {
+            const markdownPaste = resolveClipboardMarkdownPaste(event.clipboardData);
+            if (markdownPaste) {
               event.preventDefault();
+              const textarea = event.currentTarget;
+              const formatted = formatClipboardMarkdownPaste(
+                textarea.value,
+                textarea.selectionStart,
+                textarea.selectionEnd,
+                markdownPaste,
+              );
+              handleMentionChange(formatted.value);
+              window.requestAnimationFrame(() => {
+                textareaRef.current?.setSelectionRange(formatted.caretIndex, formatted.caretIndex);
+              });
             }
-            void onUploadFiles(files);
+
+            if (files.length > 0) {
+              if (!event.clipboardData.getData("text/plain")) {
+                event.preventDefault();
+              }
+              void onUploadFiles(files);
+            }
           }}
+
           onCompositionStart={() => {
             composingRef.current = true;
           }}
@@ -1129,6 +1195,35 @@ function ChatInputComponent({
                   {htmlVisualPromptEnabled
                     ? tComposer("htmlVisualPromptEnabled")
                     : tComposer("htmlVisualPromptDisabled")}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+
+            {hasDraftText ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <InputGroupButton
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "size-7 rounded-md text-muted-foreground hover:text-foreground sm:size-8",
+                      showMarkdownPreview && "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary",
+                    )}
+                    disabled={speechInput.active}
+                    aria-label={showMarkdownPreview ? tComposer("hideMarkdownPreview") : tComposer("previewMarkdown")}
+                    aria-pressed={showMarkdownPreview}
+                    onClick={() => setMarkdownPreview((visible) => !visible)}
+                  >
+                    {showMarkdownPreview ? (
+                      <EyeOff className="size-4" strokeWidth={1.6} />
+                    ) : (
+                      <Eye className="size-4" strokeWidth={1.6} />
+                    )}
+                  </InputGroupButton>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {showMarkdownPreview ? tComposer("hideMarkdownPreview") : tComposer("previewMarkdown")}
                 </TooltipContent>
               </Tooltip>
             ) : null}

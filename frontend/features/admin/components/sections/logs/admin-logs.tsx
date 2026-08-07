@@ -81,8 +81,16 @@ import {
 import { cn } from "@/lib/utils";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { resolveAdminErrorMessage } from "@/features/admin/utils/admin-error";
-import { billingRateMultiplierNote, cacheWriteBillingLabel, cacheWriteBillingNote, type BillingDisplayLabels } from "@/shared/lib/billing-display";
+import { formatBillingBalance } from "@/features/admin/utils/account-display";
+import {
+  billingRateMultiplierNote,
+  cacheWriteBillingLabel,
+  cacheWriteBillingNote,
+  type BillingDisplayLabels,
+  type BillingDisplayOptions,
+} from "@/shared/lib/billing-display";
 import { ModelSelect, type ModelSelectOption } from "@/shared/components/model-select";
+
 
 type LogDetail =
   | { kind: "audit"; item: AdminAuditLogDTO }
@@ -145,6 +153,10 @@ function parseJSONRecord(raw: string | null | undefined): Record<string, unknown
 
 function formatCount(value: number | null | undefined, locale: string): string {
   return new Intl.NumberFormat(locale).format(value ?? 0);
+}
+
+function formatUsageBalance(value: number | null | undefined, billingDisplay?: BillingDisplayOptions): string {
+  return value === null || value === undefined ? "-" : formatBillingBalance(value, billingDisplay);
 }
 
 function usageTotalTokens(item: AdminUsageLogDTO): number {
@@ -964,7 +976,9 @@ function LogDetailSheet({ detail: rawDetail, onClose }: { detail: LogDetail | nu
               </DetailBlock>
               <DetailBlock title={t("blocks.usageBilling")}>
                 <DetailRow label={t("fields.billing")} value={`${formatTooltipUsageCost(detail.item.billedUSD)} ${detail.item.isFreeModel ? `(${usageLabels.freeModelNoBilling})` : ""}`} />
+                <DetailRow label={t("fields.balanceAfter")} value={formatUsageBalance(detail.item.balanceAfterUSD)} />
                 <DetailRow label={t("fields.totalTokens")} value={formatCount(usageTotalTokens(detail.item), locale)} mono />
+
                 <DetailRow label={usageLabels.input} value={formatCount(detail.item.inputTokens, locale)} mono />
                 <DetailRow label={usageLabels.cacheRead} value={formatCount(detail.item.cacheReadTokens, locale)} mono />
                 <DetailRow label={usageLabels.billingDisplay.cacheWrite} value={formatCount(detail.item.cacheWriteTokens, locale)} mono />
@@ -1410,13 +1424,14 @@ function UsageLogTable({ onOpenDetail }: { onOpenDetail: (item: AdminUsageLogDTO
             <TableHead>{t("columns.model")}</TableHead>
             <TableHead>Token</TableHead>
             <TableHead>{t("columns.billing")}</TableHead>
+            <TableHead>{t("columns.balanceAfter")}</TableHead>
             <TableHead>{t("columns.latency")}</TableHead>
             <TableHead>{t("columns.time")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {logs.loading && logs.logs.length === 0 ? <TableLoadingRow colSpan={7} /> : null}
-          {logs.logs.length > 0 ? <VirtualTablePaddingRow colSpan={7} height={virtualRows.paddingTop} /> : null}
+          {logs.loading && logs.logs.length === 0 ? <TableLoadingRow colSpan={8} /> : null}
+          {logs.logs.length > 0 ? <VirtualTablePaddingRow colSpan={8} height={virtualRows.paddingTop} /> : null}
           {logs.logs.length > 0 ? virtualRows.rows.map(({ item }) => (
             <TableRow key={item.id} className="cursor-pointer" onClick={() => onOpenDetail(item)}>
               <TableCell className="font-mono text-xs text-foreground">{item.id}</TableCell>
@@ -1432,12 +1447,15 @@ function UsageLogTable({ onOpenDetail }: { onOpenDetail: (item: AdminUsageLogDTO
                 <UsageLogTokenCell item={item} locale={locale} />
               </TableCell>
               <TableCell><UsageLogCostCell item={item} labels={usageLabels} /></TableCell>
+              <TableCell className="whitespace-nowrap font-medium tabular-nums text-foreground">
+                {formatUsageBalance(item.balanceAfterUSD)}
+              </TableCell>
               <TableCell className="whitespace-nowrap font-mono text-muted-foreground">{formatCount(item.latencyMS, locale)} ms</TableCell>
               <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateTime(item.createdAt, locale)}</TableCell>
             </TableRow>
           )) : null}
-          {logs.logs.length > 0 ? <VirtualTablePaddingRow colSpan={7} height={virtualRows.paddingBottom} /> : null}
-          {!logs.loading && logs.logs.length === 0 ? <TableEmptyRow colSpan={7}>{t("usage.empty")}</TableEmptyRow> : null}
+          {logs.logs.length > 0 ? <VirtualTablePaddingRow colSpan={8} height={virtualRows.paddingBottom} /> : null}
+          {!logs.loading && logs.logs.length === 0 ? <TableEmptyRow colSpan={8}>{t("usage.empty")}</TableEmptyRow> : null}
         </TableBody>
       </Table>
 

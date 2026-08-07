@@ -66,7 +66,21 @@
     "fallbackUser": "ユーザー",
     "today": "今日",
     "yesterday": "昨日",
-    "announcements": "お知らせ"
+    "announcements": "お知らせ",
+    "searchLoadingMore": "会話をさらに読み込み中...",
+    "searchLoadFailed": "会話を読み込めませんでした",
+    "searchLoadMoreFailed": "追加の会話の読み込みに失敗しました",
+    "searchPreviewHint": "会話にホバーすると最近のメッセージをプレビューできます",
+    "searchPreviewLoading": "最近のメッセージを読み込み中...",
+    "searchPreviewLoadFailed": "最近のメッセージを読み込めませんでした",
+    "searchPreviewEmpty": "この会話にはプレビューできるメッセージがありません",
+    "searchRoleUser": "あなた",
+    "searchRoleAssistant": "アシスタント",
+    "searchShortcutNavigate": "移動",
+    "searchShortcutOpen": "開く",
+    "searchCompactView": "コンパクトリストに切り替え",
+    "searchPreviewView": "会話プレビューを表示",
+    "archived": "アーカイブ済み"
   },
   "time": {
     "todayTime": "{time}",

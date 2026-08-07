@@ -133,7 +133,9 @@
     "thinking": {
       "active": "思考中",
       "done": "思考完了"
-    }
+    },
+    "scrollableTable": "横スクロール可能なデータ表",
+    "scrollableTableHint": "横にスクロールして他の列を表示できます。"
   },
   "artifacts": {
     "title": "Artifact",
@@ -458,7 +460,10 @@
     "mcpSetDefaultServerTools": "新しいチャットで {server} のすべてのツールを既定で使用する",
     "mcpUnsetDefaultServerTools": "新しいチャットで {server} のすべてのツールを既定使用しない",
     "mcpDefaultServerToolsEnabled": "このサーバーのすべてのツールは新しいチャットで既定になります",
-    "mcpDefaultServerToolsDisabled": "このサーバーのすべてのツールを新しいチャットの既定に設定"
+    "mcpDefaultServerToolsDisabled": "このサーバーのすべてのツールを新しいチャットの既定に設定",
+    "markdownPreview": "Markdown プレビュー",
+    "previewMarkdown": "Markdown をプレビュー",
+    "hideMarkdownPreview": "Markdown プレビューを隠す"
   },
   "modelPicker": {
     "selectModel": "モデルを選択",

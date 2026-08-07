@@ -49,7 +49,9 @@
       "admin_reset_user_password": "管理者がパスワードをリセット",
       "admin_reset_user_2fa": "管理者が二段階認証をリセット",
       "admin_delete_user": "管理者がユーザーを削除",
-      "admin_cleanup_logs": "管理者によるログのクリーンアップ"
+      "admin_cleanup_logs": "管理者によるログのクリーンアップ",
+      "update_conversation_labels": "会話ラベルを更新",
+      "admin_cleanup_conversation_runs": "管理者が会話ランのトレースを削除"
     }
   },
   "usage": {
@@ -135,7 +137,8 @@
     "usageLoadFailed": "利用ログの読み込みに失敗しました",
     "modelFilterLoadFailed": "モデルフィルターの読み込みに失敗しました",
     "ordersLoadFailed": "注文記録の読み込みに失敗しました",
-    "conversationEventsLoadFailed": "会話イベントの読み込みに失敗しました"
+    "conversationEventsLoadFailed": "会話イベントの読み込みに失敗しました",
+    "conversationEventDetailLoadFailed": "会話イベント詳細の読み込みに失敗しました"
   },
   "sort": {
     "idDesc": "ID 新しい順",
@@ -192,7 +195,8 @@
     "scope": "スコープ",
     "tool": "ツール",
     "runID": "実行 ID",
-    "upstream": "アップストリーム"
+    "upstream": "アップストリーム",
+    "balanceAfter": "精算後残高"
   },
   "auth": {
     "searchPlaceholder": "ユーザー ID またはイベント種別を検索",
@@ -280,7 +284,9 @@
       "toolName": "ツール名",
       "toolCallID": "ツール呼び出し ID",
       "title": "タイトル",
-      "summary": "概要"
+      "summary": "概要",
+      "balanceAfter": "精算後残高",
+      "payloadSize": "ペイロードサイズ"
     },
     "result": {
       "success": "成功",
@@ -290,7 +296,9 @@
     "jsonTitle": "詳細 JSON",
     "copied": "{label}をコピーしました",
     "copyFailed": "コピーに失敗しました",
-    "rawUsageJsonTitle": "Raw Usage JSON"
+    "rawUsageJsonTitle": "Raw Usage JSON",
+    "loading": "詳細を読み込み中",
+    "payloadOmitted": "この履歴ペイロードは {size} で、安全な表示上限を超えているため内容を省略しました。異常な履歴データを削除するには、関連するラントレースを削除してください。"
   },
   "orders": {
     "searchPlaceholder": "ユーザー ID、注文番号、プロバイダー、状態、外部支払い ID を検索",
@@ -330,6 +338,18 @@
       "streaming": "ストリーミング中",
       "completed": "完了",
       "error": "エラー"
+    },
+    "cleanup": {
+      "action": "ラントレースを削除",
+      "title": "ラントレースを削除",
+      "description": "選択した {count} 件のランに紐づくトレースイベントを完全に削除します。会話・メッセージ・添付・呼び出し・請求記録は保持されます。",
+      "confirm": "削除",
+      "deleting": "削除中",
+      "success": "{runs} 件のランから {events} 件のトレースイベントを削除しました",
+      "failed": "ラントレースの削除に失敗しました",
+      "maxSelection": "一度に選択できるランは最大 100 件です",
+      "selectAll": "このページのランを選択",
+      "selectRun": "ラン {runID} を選択"
     }
   },
   "cleanup": {

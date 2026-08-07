@@ -100,6 +100,15 @@ export function useChatData(
   const pendingAssistantContentRef = React.useRef("");
   const resumeTextReplayByRunRef = React.useRef<Record<string, ResumeTextReplayState>>({});
   const activeResumeStreamRef = React.useRef<ActiveResumeStream | null>(null);
+  // 恢复游标只在对应的可见内容仍被保留时有效，两者必须同步清理。
+  const clearResumeCheckpoint = React.useCallback((runID: string) => {
+    const normalizedRunID = runID.trim();
+    if (!normalizedRunID) {
+      return;
+    }
+    delete resumeSeqByRunRef.current[normalizedRunID];
+    delete resumeTextReplayByRunRef.current[normalizedRunID];
+  }, []);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -288,6 +297,7 @@ export function useChatData(
     }
 
     active.controller.abort();
+    clearResumeCheckpoint(active.runID);
     setResumingRunID("");
 
     const token = active.accessToken ?? (await resolveAccessToken());
@@ -298,7 +308,7 @@ export function useChatData(
     const result = await cancelMessageGeneration(token, active.runID).catch(() => null);
     reload();
     return Boolean(result?.canceled);
-  }, [reload]);
+  }, [clearResumeCheckpoint, reload]);
 
   const pendingAssistant = React.useMemo(() => {
     for (let index = state.messages.length - 1; index >= 0; index -= 1) {
@@ -335,6 +345,10 @@ export function useChatData(
     const clearResumeTextReplay = () => {
       delete resumeTextReplayByRun[pendingRunID];
     };
+    const isResumeInactive = () => closed || controller.signal.aborted;
+    const updateResumeState = (update: (current: ChatDataState) => ChatDataState) => {
+      setState((current) => isResumeInactive() ? current : update(current));
+    };
     resumeTextReplayByRun[pendingRunID] = {
       baseContent,
       replayedContent: afterSeq > 0 ? baseContent : "",
@@ -360,6 +374,9 @@ export function useChatData(
           signal: controller.signal,
           afterSeq,
           onEventSeq: (seq) => {
+            if (isResumeInactive()) {
+              return;
+            }
             resumeSeqByRunRef.current[pendingRunID] = Math.max(resumeSeqByRunRef.current[pendingRunID] ?? 0, seq);
           },
           onMediaStatus: (event) => {
@@ -377,7 +394,7 @@ export function useChatData(
                   : status === "saving_artifact"
                     ? tSubmit(contentType === "video" ? "mediaStatus.videoSavingArtifact" : "mediaStatus.savingArtifact")
                     : event.message.trim() || status;
-            setState((prev) => ({
+            updateResumeState((prev) => ({
               ...prev,
               messages: prev.messages.map((message) =>
                 message.runID === pendingRunID && message.role === "assistant" && message.status === "pending"
@@ -387,12 +404,15 @@ export function useChatData(
             }));
           },
           onMediaImageDelta: (event) => {
+            if (isResumeInactive()) {
+              return;
+            }
             clearResumeTextReplay();
             const previewMarkdown = buildMediaImagePreviewMarkdown(event, tSubmit("imagePreviewAlt"));
             if (!previewMarkdown) {
               return;
             }
-            setState((prev) => ({
+            updateResumeState((prev) => ({
               ...prev,
               messages: prev.messages.map((message) =>
                 message.runID === pendingRunID && message.role === "assistant" && message.status === "pending"
@@ -402,6 +422,9 @@ export function useChatData(
             }));
           },
           onDelta: (delta) => {
+            if (isResumeInactive()) {
+              return;
+            }
             let replayState = resumeTextReplayByRun[pendingRunID];
             if (!replayState) {
               replayState = {
@@ -412,7 +435,7 @@ export function useChatData(
               resumeTextReplayByRun[pendingRunID] = replayState;
             }
             const nextContent = appendResumedTextDelta(replayState, delta);
-            setState((prev) => ({
+            updateResumeState((prev) => ({
               ...prev,
               messages: prev.messages.map((message) =>
                 message.runID === pendingRunID && message.role === "assistant" && message.status === "pending"
@@ -422,7 +445,7 @@ export function useChatData(
             }));
           },
           onProcessUpdate: (event) => {
-            setState((prev) => ({
+            updateResumeState((prev) => ({
               ...prev,
               messages: prev.messages.map((message) =>
                 message.runID === pendingRunID && message.role === "assistant" && message.status === "pending"
@@ -432,10 +455,13 @@ export function useChatData(
             }));
           },
           onUpstreamThinkDelta: (event) => {
+            if (isResumeInactive()) {
+              return;
+            }
             upsertLiveUpstreamThinkTrace(pendingRunID, event);
           },
           onUsage: (event) => {
-            setState((prev) => ({
+            updateResumeState((prev) => ({
               ...prev,
               messages: prev.messages.map((message) =>
                 message.runID === pendingRunID && message.role === "assistant" && message.status === "pending"
@@ -456,17 +482,16 @@ export function useChatData(
           },
         });
         if (!controller.signal.aborted && completed === null) {
-          clearResumeTextReplay();
+          clearResumeCheckpoint(pendingRunID);
           reload();
         }
         if (!controller.signal.aborted && completed) {
-          delete resumeSeqByRunRef.current[pendingRunID];
-          clearResumeTextReplay();
+          clearResumeCheckpoint(pendingRunID);
           reload();
         }
       } catch (error) {
         if (!controller.signal.aborted && error instanceof Error && error.name !== "AbortError") {
-          clearResumeTextReplay();
+          clearResumeCheckpoint(pendingRunID);
           setResumingRunID("");
           reload();
         }
@@ -484,12 +509,20 @@ export function useChatData(
     return () => {
       closed = true;
       controller.abort();
-      clearResumeTextReplay();
+      clearResumeCheckpoint(pendingRunID);
       if (activeResumeStreamRef.current?.controller === controller) {
         activeResumeStreamRef.current = null;
       }
     };
-  }, [activeGenerationRunsRef, conversationID, failedGenerationRunsRef, pendingRunID, reload, tSubmit]);
+  }, [
+    activeGenerationRunsRef,
+    clearResumeCheckpoint,
+    conversationID,
+    failedGenerationRunsRef,
+    pendingRunID,
+    reload,
+    tSubmit,
+  ]);
 
   React.useEffect(() => {
     if (

@@ -25,5 +25,14 @@
     "creating": "作成中",
     "createLink": "作成",
     "snapshotMessages": "{title} - {count} 件のスナップショットメッセージ"
+  },
+  "labelsDialog": {
+    "labels": "会話ラベル",
+    "labelsDescription": "最大 {count} 個のラベルを追加して、この会話を整理・検索できます。",
+    "labelsEmpty": "ラベルなし",
+    "labelPlaceholder": "ラベルを追加",
+    "addLabel": "ラベルを追加",
+    "removeLabel": "ラベル {label} を削除",
+    "labelsSaveFailed": "会話ラベルの保存に失敗しました"
   }
 }

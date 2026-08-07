@@ -411,7 +411,9 @@
       "description": "新しい会話を開くときに事前選択されるモデルです。空欄の場合はシステム推奨の最初の利用可能モデルを使用します。",
       "systemRecommended": "システム既定",
       "autoTitle": "タイトルを自動生成",
-      "autoTitleDescription": "無効にすると、新しい会話は最初のメッセージの先頭20文字をタイトルとして使用します。"
+      "autoTitleDescription": "無効にすると、新しい会話は最初のメッセージの先頭20文字をタイトルとして使用します。",
+      "autoLabels": "ラベルを自動生成",
+      "autoLabelsDescription": "無効にすると会話ラベルは自動生成されなくなり、補助モデル呼び出しと関連トークン使用量を削減できます。"
     },
     "input": {
       "sectionTitle": "入力と送信",
@@ -605,7 +607,8 @@
         "model": "モデル",
         "baseBilling": "基本課金",
         "serviceBilling": "サービス課金",
-        "latency": "所要時間"
+        "latency": "所要時間",
+        "balanceAfter": "精算後残高"
       },
       "empty": "利用ログはありません"
     },

@@ -280,6 +280,8 @@ type UsageLedgerResponse struct {
 	BilledCurrency      string    `json:"billedCurrency"`
 	BilledNanousd       int64     `json:"billedNanousd"`
 	BilledUSD           float64   `json:"billedUSD"`
+	BalanceAfterNanousd *int64    `json:"balanceAfterNanousd" extensions:"x-nullable,!x-omitempty"`
+	BalanceAfterUSD     *float64  `json:"balanceAfterUSD" extensions:"x-nullable,!x-omitempty"`
 	PricingSnapshotJSON string    `json:"pricingSnapshotJSON"`
 	CreatedAt           time.Time `json:"createdAt"`
 	UpdatedAt           time.Time `json:"updatedAt"`
@@ -841,7 +843,7 @@ func toBillingAccountResponse(item *domainbilling.BillingAccount) BillingAccount
 		UserID:         item.UserID,
 		Currency:       item.Currency,
 		BalanceNanousd: item.BalanceNanousd,
-		BalanceUSD:     nanousdToUSD(item.BalanceNanousd),
+		BalanceUSD:     signedNanousdToUSD(item.BalanceNanousd),
 		Status:         item.Status,
 		UpdatedAt:      item.UpdatedAt,
 	}
@@ -855,7 +857,7 @@ func toBillingAccountViewResponse(item *appbilling.BillingAccountView) *BillingA
 		UserID:         item.UserID,
 		Currency:       item.Currency,
 		BalanceNanousd: item.BalanceNanousd,
-		BalanceUSD:     nanousdToUSD(item.BalanceNanousd),
+		BalanceUSD:     signedNanousdToUSD(item.BalanceNanousd),
 		Status:         item.Status,
 		UpdatedAt:      item.UpdatedAt,
 	}
@@ -990,6 +992,8 @@ func toUsageLedgerResponse(u domainbilling.UsageLedger) UsageLedgerResponse {
 		BilledCurrency:      u.BilledCurrency,
 		BilledNanousd:       u.BilledNanousd,
 		BilledUSD:           nanousdToUSD(u.BilledNanousd),
+		BalanceAfterNanousd: u.BalanceAfterNanousd,
+		BalanceAfterUSD:     nullableSignedNanousdToUSD(u.BalanceAfterNanousd),
 		PricingSnapshotJSON: sanitizeUsagePricingSnapshotJSON(u.PricingSnapshotJSON),
 		CreatedAt:           u.CreatedAt,
 		UpdatedAt:           u.UpdatedAt,
@@ -1207,4 +1211,16 @@ func nanousdToUSD(value int64) float64 {
 		return 0
 	}
 	return float64(value) / 1000000000
+}
+
+func signedNanousdToUSD(value int64) float64 {
+	return float64(value) / 1000000000
+}
+
+func nullableSignedNanousdToUSD(value *int64) *float64 {
+	if value == nil {
+		return nil
+	}
+	converted := signedNanousdToUSD(*value)
+	return &converted
 }

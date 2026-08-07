@@ -5,7 +5,10 @@ import type {
   ConversationDefaultModelCandidateResponse,
   ConversationDeleteResponse,
   ConversationProjectResponse,
+  ConversationPreviewMessageResponse,
   ConversationResponse,
+  ConversationSearchPageResponse,
+  ConversationSearchResultResponse,
   ConversationShareResponse,
   CreateConversationProjectRequest as ContractCreateConversationProjectRequest,
   CreateConversationRequest as ContractCreateConversationRequest,
@@ -34,11 +37,20 @@ import type {
   SetConversationStarRequest as ContractSetConversationStarRequest,
   SetMessageFeedbackRequest as ContractSetMessageFeedbackRequest,
   UpdateConversationProjectRequest as ContractUpdateConversationProjectRequest,
+  UpdateConversationLabelsRequest as ContractUpdateConversationLabelsRequest,
   UpdateMessageRequest as ContractUpdateMessageRequest,
 } from "@deeix/api-contract";
 import type { UserStorageQuotaDTO } from "@/shared/api/file.types";
 
 export type ConversationDTO = ConversationResponse;
+
+export type ConversationSearchResultDTO = ConversationSearchResultResponse;
+
+export type ConversationSearchPageDTO = Omit<ConversationSearchPageResponse, "results"> & {
+  results: ConversationSearchResultDTO[];
+};
+
+export type ConversationPreviewMessageDTO = ConversationPreviewMessageResponse;
 
 export type ConversationDefaultModelCandidateDTO = ConversationDefaultModelCandidateResponse;
 
@@ -241,6 +253,8 @@ export type ConversationOptions = Record<string, unknown>;
 export type UpstreamDebugInfo = ModelProbeDebugResponse;
 
 export type RenameConversationRequest = ContractRenameConversationRequest;
+
+export type UpdateConversationLabelsRequest = ContractUpdateConversationLabelsRequest;
 
 export type SetConversationStarRequest = ContractSetConversationStarRequest;
 

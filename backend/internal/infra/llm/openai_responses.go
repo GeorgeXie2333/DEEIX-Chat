@@ -42,7 +42,8 @@ func buildResponsesRequestBody(
 	if adapter == AdapterOpenRouterResponses {
 		return buildOpenRouterResponsesRequestBody(model, input, messages, providerTools, toolDefinitions, providerStreamOptions, stream)
 	}
-	items := buildResponsesAPIInput(messages)
+	promptCache := resolveOpenAIPromptCacheConfig(adapter, input)
+	items := buildResponsesAPIInput(messages, &promptCache)
 	payload := map[string]interface{}{
 		"model":  strings.TrimSpace(model),
 		"input":  items,
@@ -67,9 +68,7 @@ func buildResponsesRequestBody(
 	}
 	nativeTools := append([]map[string]interface{}{}, providerTools...)
 	nativeTools = append(nativeTools, webSearchTools...)
-	if retention := normalizePromptCacheRetention(modelParamString(input.Options, "prompt_cache_retention")); retention != "" {
-		payload["prompt_cache_retention"] = retention
-	}
+	applyOpenAIPromptCacheRequestFields(payload, promptCache)
 	appendToolDeclarations(payload, providerTools, webSearchTools, buildOpenAITools(toolDefinitions, false))
 	// 鏈夌姸鎬佷細璇濓細鎻愪緵 previous_response_id 鏃舵湇鍔＄缁帴瀛樺偍鐨勫巻鍙诧紝
 	// input 浠呭寘鍚湰杞柊娑堟伅锛岄伩鍏嶅叏閲忛噸浼犮€?
@@ -96,6 +95,9 @@ func responsesProtectedProviderOptionKeys(adapter string, hasManagedInstructions
 		"input",
 		"messages",
 		"model",
+		"prompt_cache_key",
+		"prompt_cache_options",
+		"prompt_cache_retention",
 		"previous_response_id",
 		"reasoning",
 		"response_format",
@@ -248,7 +250,7 @@ func responsesToolsIncludeType(tools []map[string]interface{}, toolType string) 
 	return false
 }
 
-func buildResponsesAPIInput(messages []Message) []map[string]interface{} {
+func buildResponsesAPIInput(messages []Message, promptCache *openAIPromptCacheConfig) []map[string]interface{} {
 	items := make([]map[string]interface{}, 0, len(messages))
 	for _, msg := range messages {
 		if len(msg.ToolCalls) > 0 {
@@ -278,19 +280,20 @@ func buildResponsesAPIInput(messages []Message) []map[string]interface{} {
 		}
 		items = append(items, map[string]interface{}{
 			"role":    normalizeRole(msg.Role),
-			"content": buildResponsesAPIContent(msg),
+			"content": buildResponsesAPIContent(msg, promptCache),
 		})
 	}
 	return items
 }
 
-// buildResponsesAPIContent 灏嗘秷鎭唴瀹瑰簭鍒楀寲涓?Responses API 鏍煎紡锛坈ontent 鏁扮粍锛夈€?
-func buildResponsesAPIContent(msg Message) []map[string]interface{} {
+// buildResponsesAPIContent 将消息内容序列化为 Responses API 格式（content 数组）。
+func buildResponsesAPIContent(msg Message, promptCache *openAIPromptCacheConfig) []map[string]interface{} {
+
 	textType := responsesTextContentType(msg.Role)
 	if len(msg.Parts) == 0 {
-		return []map[string]interface{}{
-			{"type": textType, "text": msg.Content},
-		}
+		block := map[string]interface{}{"type": textType, "text": msg.Content}
+		appendOpenAIPromptCacheBreakpoint(block, msg.CacheControl, promptCache)
+		return []map[string]interface{}{block}
 	}
 	parts := make([]map[string]interface{}, 0, len(msg.Parts))
 	for _, part := range msg.Parts {
@@ -307,24 +310,35 @@ func buildResponsesAPIContent(msg Message) []map[string]interface{} {
 				mime = "image/jpeg"
 			}
 			b64 := base64.StdEncoding.EncodeToString(part.Data)
-			parts = append(parts, map[string]interface{}{
+			block := map[string]interface{}{
 				"type":      "input_image",
 				"image_url": "data:" + mime + ";base64," + b64,
-			})
+			}
+			appendOpenAIPromptCacheBreakpoint(block, part.CacheControl, promptCache)
+			parts = append(parts, block)
 		default: // text, file
 			text := part.Text
 			if strings.TrimSpace(text) == "" {
 				continue
 			}
-			parts = append(parts, map[string]interface{}{
+			block := map[string]interface{}{
 				"type": textType,
 				"text": text,
-			})
+			}
+			appendOpenAIPromptCacheBreakpoint(block, part.CacheControl, promptCache)
+			parts = append(parts, block)
 		}
 	}
 	if len(parts) == 0 {
-		return []map[string]interface{}{
-			{"type": textType, "text": msg.Content},
+		block := map[string]interface{}{"type": textType, "text": msg.Content}
+		appendOpenAIPromptCacheBreakpoint(block, msg.CacheControl, promptCache)
+		return []map[string]interface{}{block}
+	}
+	if msg.CacheControl != nil {
+		for index := len(parts) - 1; index >= 0; index-- {
+			if appendOpenAIPromptCacheBreakpoint(parts[index], msg.CacheControl, promptCache) {
+				break
+			}
 		}
 	}
 	return parts

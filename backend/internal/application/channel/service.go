@@ -138,6 +138,7 @@ type ResolvedRoute struct {
 	ModelSystemPrompt               string
 	UpstreamModel                   string
 	ReasoningContentPassback        bool
+	ReasoningPassbackRequestOptions map[string]interface{}
 	UpstreamCbFailureThreshold      int
 	UpstreamCbModelThreshold        int
 	UpstreamCbThresholdLogic        string
@@ -164,6 +165,7 @@ type ResolveRouteInput struct {
 	UserID            uint
 	ConversationID    uint
 	RequestID         string
+	ExcludedRouteIDs  []uint
 }
 
 type routeCandidate struct {

@@ -169,5 +169,13 @@
     "emptyTools": "このサーバーには並べ替えるツールがありません",
     "saveSuccess": "MCP 表示順序を保存しました",
     "saveFailed": "MCP 表示順序の保存に失敗しました"
+  },
+  "syncConfirm": {
+    "title": "MCP ツールを同期",
+    "description": "「{name}」のツール名・説明の扱いを選択してください。",
+    "preserve": "現在の内容を保持",
+    "preserveDescription": "名前と説明を保持しつつ、その他のツールデータを同期します",
+    "overwrite": "サーバーの内容を使用",
+    "overwriteDescription": "MCP サーバーが返す名前と説明で上書き同期します"
   }
 }

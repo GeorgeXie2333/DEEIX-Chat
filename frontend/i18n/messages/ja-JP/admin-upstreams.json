@@ -153,7 +153,18 @@
     "circuitWindow": "遮断スライディングウィンドウ（分）",
     "headers": "リクエストヘッダー",
     "creating": "作成中...",
-    "saving": "保存中..."
+    "saving": "保存中...",
+    "quickFillHeaders": "クイック入力",
+    "commonHeaderPresets": "共通識別子",
+    "providerHeaderPresets": "プロバイダー固有",
+    "conversationIDHeader": "会話 ID",
+    "sessionIDHeader": "セッションキー",
+    "requestIDHeader": "リクエスト ID",
+    "openAIClientRequestIDHeader": "OpenAI 診断リクエスト ID",
+    "codexCompatibleAffinityHeaders": "Codex 互換セッション親和性",
+    "selectedHeadersExist": "選択したヘッダーは既に設定されています。",
+    "headerPresetConflict": "同名ヘッダーに別の値が設定されています。入力前に競合を解消してください。",
+    "headersInvalidForFill": "先にリクエストヘッダーを有効な JSON オブジェクトに修正してください。"
   },
   "modelsDialog": {
     "selectKind": "カテゴリを選択",

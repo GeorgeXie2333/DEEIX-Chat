@@ -175,5 +175,8 @@
     "exportAllPartial": "{exported} 件の会話をエクスポートし、{failed} 件に失敗しました",
     "exportAllDownloaded": "会話エクスポートをダウンロードしました",
     "exportAllFailed": "会話のエクスポートに失敗しました"
-  }
+  },
+  "moveSelectedToProject": "プロジェクトへ移動",
+  "moveSelectedSuccess": "{count} 件の会話を「{project}」へ移動しました",
+  "moveSelectedFailed": "選択した会話の移動に失敗しました"
 }

@@ -3,6 +3,7 @@ package billing
 import (
 	"testing"
 
+	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
 	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	"github.com/gin-gonic/gin/binding"
 )
@@ -122,5 +123,45 @@ func TestCheckoutResponseIncludesStripeFeeBreakdown(t *testing.T) {
 		response.FeeAmountCents != 29 ||
 		response.PayAmountCents != 1_030 {
 		t.Fatalf("unexpected checkout fee response: %+v", response)
+	}
+}
+
+func TestBillingAccountResponsesPreserveNegativeBalance(t *testing.T) {
+	const balanceNanousd int64 = -1_250_000_000
+	const wantBalanceUSD = -1.25
+
+	account := toBillingAccountResponse(&domainbilling.BillingAccount{BalanceNanousd: balanceNanousd})
+	if account.BalanceUSD != wantBalanceUSD {
+		t.Fatalf("expected account balance %v, got %v", wantBalanceUSD, account.BalanceUSD)
+	}
+
+	accountView := toBillingAccountViewResponse(&appbilling.BillingAccountView{BalanceNanousd: balanceNanousd})
+	if accountView == nil {
+		t.Fatal("expected account view response")
+	}
+	if accountView.BalanceUSD != wantBalanceUSD {
+		t.Fatalf("expected account view balance %v, got %v", wantBalanceUSD, accountView.BalanceUSD)
+	}
+}
+
+func TestNanousdToUSDClampsNegativeNonBalanceAmount(t *testing.T) {
+	if got := nanousdToUSD(-1_250_000_000); got != 0 {
+		t.Fatalf("expected negative non-balance amount to be clamped, got %v", got)
+	}
+}
+
+func TestUsageLedgerResponsePreservesBalanceSnapshot(t *testing.T) {
+	balanceNanousd := int64(-1_250_000_000)
+	response := toUsageLedgerResponse(domainbilling.UsageLedger{BalanceAfterNanousd: &balanceNanousd})
+	if response.BalanceAfterNanousd == nil || *response.BalanceAfterNanousd != balanceNanousd {
+		t.Fatalf("expected raw balance snapshot %d, got %v", balanceNanousd, response.BalanceAfterNanousd)
+	}
+	if response.BalanceAfterUSD == nil || *response.BalanceAfterUSD != -1.25 {
+		t.Fatalf("expected USD balance snapshot -1.25, got %v", response.BalanceAfterUSD)
+	}
+
+	response = toUsageLedgerResponse(domainbilling.UsageLedger{})
+	if response.BalanceAfterNanousd != nil || response.BalanceAfterUSD != nil {
+		t.Fatalf("expected unavailable balance snapshot to remain nil, got %+v", response)
 	}
 }

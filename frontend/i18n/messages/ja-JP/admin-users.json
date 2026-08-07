@@ -72,7 +72,8 @@
     "balance": "残高",
     "timezone": "タイムゾーン",
     "lastLogin": "最終ログイン",
-    "lastActive": "最終アクティブ"
+    "lastActive": "最終アクティブ",
+    "balanceUSDInput": "残高（USD）"
   },
   "actions": {
     "apply": "適用",

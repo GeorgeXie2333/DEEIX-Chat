@@ -21,6 +21,7 @@ import {
   setConversationProject,
   setConversationArchive,
   setConversationStar,
+  updateConversationLabels,
   updateConversationProject,
 } from "@/shared/api/conversation";
 import type {
@@ -543,6 +544,18 @@ export function useSidebarConversationsController({
     [applyConversationUpdate],
   );
 
+  const updateLabelsByPublicID = React.useCallback(
+    async (publicID: string, labels: string[]): Promise<ConversationDTO | null> => {
+      const token = await resolveAccessToken();
+      if (!token) {
+        return null;
+      }
+
+      return applyConversationUpdate(publicID, await updateConversationLabels(token, publicID, { labels }));
+    },
+    [applyConversationUpdate],
+  );
+
   const touchByPublicID = React.useCallback((publicID: string, patch: Partial<ConversationDTO>) => {
     setRecentItems((prev) => patchConversationList(prev, publicID, patch, sortByUpdatedAtDesc));
     setStarredItems((prev) => patchConversationList(prev, publicID, patch, sortByStarredAtDesc));
@@ -905,6 +918,7 @@ export function useSidebarConversationsController({
       touchByPublicID,
       renameByPublicID,
       regenerateTitleByPublicID,
+      updateLabelsByPublicID,
       createProject,
       updateProject,
       deleteProject,
@@ -933,6 +947,7 @@ export function useSidebarConversationsController({
       prependNewConversation,
       projects,
       regenerateTitleByPublicID,
+      updateLabelsByPublicID,
       recentItems,
       reorderProjects,
       retryLoadMore,

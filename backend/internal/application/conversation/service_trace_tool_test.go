@@ -1,6 +1,7 @@
 package conversation
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -146,6 +147,20 @@ func TestBuildMessageProcessTraceDTOIncludesOrderedEvents(t *testing.T) {
 	}
 }
 
+func TestTracePayloadJSONBoundsOversizedPayload(t *testing.T) {
+	secret := strings.Repeat("x", maxTracePayloadBytes+1)
+	serialized := tracePayloadJSON(map[string]interface{}{"upstream_debug": secret})
+	if len(serialized) >= maxTracePayloadBytes {
+		t.Fatalf("expected bounded trace payload, got %d bytes", len(serialized))
+	}
+	if strings.Contains(serialized, secret[:1024]) {
+		t.Fatal("oversized trace payload must not retain original content")
+	}
+	if !strings.Contains(serialized, `"payloadOmitted":true`) {
+		t.Fatalf("expected payload omission marker, got %s", serialized)
+	}
+}
+
 func TestProcessTraceStaysStreamingUntilNextVisiblePhase(t *testing.T) {
 	recorder := &messageTraceRecorder{
 		cfg: config.Config{
@@ -261,6 +276,42 @@ func TestUpstreamThinkingFinalCalibrationReusesRoundAndEmitsReplacement(t *testi
 	}
 	if liveEvents[0]["roundID"] != roundID || liveEvents[1]["roundID"] != roundID || liveEvents[0]["eventID"] != eventID || liveEvents[1]["eventID"] != eventID {
 		t.Fatalf("expected stable round/event IDs across calibration, got %#v", liveEvents)
+	}
+}
+
+func TestFailedUpstreamThinkingFlushesBufferedContent(t *testing.T) {
+	var events []map[string]interface{}
+	recorder := &messageTraceRecorder{
+		cfg: config.Config{
+			ProcessTraceEnabled:            true,
+			ProcessTraceVisibleToUser:      true,
+			ProcessTraceStoreUpstreamThink: true,
+		},
+		assistant: &model.Message{ID: 1, ConversationID: 2, UserID: 3, RunID: "run_cancel"},
+		onEvent: func(eventType string, payload map[string]interface{}) error {
+			if eventType == "upstream_think_delta" {
+				events = append(events, payload)
+			}
+			return nil
+		},
+	}
+	recorderCtx, cancelRecorder := context.WithCancel(context.Background())
+	recorder.ctx = recorderCtx
+	cancelRecorder()
+
+	recorder.appendUpstreamReasoning(messageTraceThinkKindContent, "嗯", nil)
+	recorder.appendUpstreamReasoning(messageTraceThinkKindContent, "，继续分析完整内容", nil)
+	recorder.failWithContext(context.Background(), ErrMessageGenerationCanceled)
+
+	if len(events) != 2 {
+		t.Fatalf("expected cancellation to flush the buffered reasoning, got %d events", len(events))
+	}
+	if events[1]["delta"] != "，继续分析完整内容" || events[1]["status"] != messageTraceStatusError {
+		t.Fatalf("unexpected terminal reasoning event: %#v", events[1])
+	}
+	trace := recorder.snapshot()
+	if trace == nil || trace.UpstreamThink == nil || trace.UpstreamThink.ContentMarkdown != "嗯，继续分析完整内容" {
+		t.Fatalf("expected complete reasoning snapshot after cancellation, got %#v", trace)
 	}
 }
 

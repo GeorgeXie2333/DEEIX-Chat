@@ -13,6 +13,7 @@ import {
   upsertByPublicID,
   useSidebarConversations,
 } from "@/entities/conversation";
+import { useChatSession } from "@/features/chat";
 import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import { useLoadMoreSentinel } from "@/shared/hooks/use-load-more-sentinel";
 import { useSettingsChatPreferences } from "@/features/settings";
@@ -104,16 +105,18 @@ export function useRecentPage() {
   const t = useTranslations("recent");
   const resolveErrorMessage = useLocalizedErrorMessage();
   const router = useRouter();
+  const { requestNewConversation } = useChatSession();
   const {
-    prependNewConversation,
     renameByPublicID,
     regenerateTitleByPublicID,
+    updateLabelsByPublicID,
     setStarByPublicID,
     archiveByPublicID,
     deleteByPublicID,
     upsertConversation,
     projects,
     setProjectByPublicID,
+    batchSetProjectByPublicIDs,
     touchByPublicID,
     lastChange,
   } = useSidebarConversations();
@@ -135,12 +138,14 @@ export function useRecentPage() {
   const [renameTarget, setRenameTarget] = React.useState<ConversationDTO | null>(null);
   const [renameValue, setRenameValue] = React.useState("");
   const [renamingAutomatically, setRenamingAutomatically] = React.useState(false);
+  const [labelsTarget, setLabelsTarget] = React.useState<ConversationDTO | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<RecentDeleteTarget>(null);
   const [deleteFiles, setDeleteFiles] = React.useState(false);
   const { deleteFilesByDefault } = useSettingsChatPreferences();
   const [shareTarget, setShareTarget] = React.useState<ConversationDTO | null>(null);
   const [importingArchive, setImportingArchive] = React.useState(false);
   const [exportingAll, setExportingAll] = React.useState(false);
+  const [movingSelectedToProject, setMovingSelectedToProject] = React.useState(false);
   const pageRef = React.useRef(1);
   const requestVersionRef = React.useRef(0);
   const loadingMoreRef = React.useRef(false);
@@ -340,15 +345,11 @@ export function useRecentPage() {
     }
   }, [exportingAll, t]);
 
-  const onCreateConversation = React.useCallback(async () => {
+  const onCreateConversation = React.useCallback(() => {
     const currentProjectID = projectFilter !== "all" && projectFilter !== "unassigned" ? projectFilter : "";
-    const created = await prependNewConversation(undefined, currentProjectID);
-    if (created?.publicID) {
-      router.push(`/chat?conversation_id=${created.publicID}`);
-      return;
-    }
-    router.push("/chat");
-  }, [prependNewConversation, projectFilter, router]);
+    requestNewConversation({ projectID: currentProjectID });
+    router.push(currentProjectID ? `/chat?project_id=${encodeURIComponent(currentProjectID)}` : "/chat");
+  }, [projectFilter, requestNewConversation, router]);
 
   const onExport = React.useCallback(
     async (item: ConversationDTO) => {
@@ -448,6 +449,22 @@ export function useRecentPage() {
     setRenameTarget(item);
     setRenameValue(item.title || t("untitled"));
   }, [t]);
+
+  const onManageLabels = React.useCallback((item: ConversationDTO) => {
+    setLabelsTarget(item);
+  }, []);
+
+  const onUpdateLabels = React.useCallback(async (labels: string[]) => {
+    if (!labelsTarget) {
+      throw new Error("conversation label target is unavailable");
+    }
+    const updated = await updateLabelsByPublicID(labelsTarget.publicID, labels);
+    if (!updated) {
+      throw new Error("conversation labels were not updated");
+    }
+    setItems((current) => upsertByPublicID(current, updated));
+    setLabelsTarget(updated);
+  }, [labelsTarget, updateLabelsByPublicID]);
 
   const onArchive = React.useCallback(
     async (publicID: string, archived: boolean) => {
@@ -649,6 +666,61 @@ export function useRecentPage() {
     [items, selectedConversationIDs],
   );
 
+  const selectedProjectID = React.useMemo<string | null>(() => {
+    if (selectedItems.length === 0) {
+      return null;
+    }
+    const firstProjectID = selectedItems[0]?.projectID ?? "";
+    return selectedItems.every((item) => (item.projectID ?? "") === firstProjectID) ? firstProjectID : null;
+  }, [selectedItems]);
+
+  const moveSelectedToProject = React.useCallback(async (projectID?: string) => {
+    if (selectedConversationIDs.length === 0 || movingSelectedToProject) {
+      return;
+    }
+
+    const targetIDs = [...selectedConversationIDs];
+    const targetIDSet = new Set(targetIDs);
+    const targetProject = projects.find((project) => project.publicID === projectID);
+    const patch: Partial<ConversationDTO> = {
+      projectID: targetProject?.publicID ?? "",
+      projectName: targetProject?.name ?? "",
+    };
+    setMovingSelectedToProject(true);
+    try {
+      const updated = await batchSetProjectByPublicIDs(targetIDs, projectID);
+      if (updated !== targetIDs.length) {
+        throw new Error("not all selected conversations were moved");
+      }
+      setItems((current) => current
+        .map((item) => (targetIDSet.has(item.publicID) ? { ...item, ...patch } : item))
+        .filter((item) => conversationMatchesRecentFilters(item, statusFilter, starredFilter, shareFilter, projectFilter)));
+      setSelectedConversationIDs([]);
+      setSelectionMode(false);
+      toast.success(t("moveSelectedSuccess", {
+        count: updated,
+        project: targetProject?.name ?? t("projects.unassigned"),
+      }));
+    } catch (error) {
+      toast.error(t("moveSelectedFailed"), {
+        description: resolveErrorMessage(error, t("moveSelectedFailed")),
+      });
+    } finally {
+      setMovingSelectedToProject(false);
+    }
+  }, [
+    batchSetProjectByPublicIDs,
+    movingSelectedToProject,
+    projectFilter,
+    projects,
+    resolveErrorMessage,
+    selectedConversationIDs,
+    shareFilter,
+    starredFilter,
+    statusFilter,
+    t,
+  ]);
+
   const selectedSharedItems = React.useMemo(
     () => selectedItems.filter(isSharedConversation),
     [selectedItems],
@@ -795,10 +867,13 @@ export function useRecentPage() {
     importingArchive,
     isSelectionMode,
     selectedConversationIDs,
+    selectedProjectID,
+    movingSelectedToProject,
     hoveredConversationID,
     renameTarget,
     renameValue,
     renamingAutomatically,
+    labelsTarget,
     deleteTarget,
     deleteFiles,
     shareTarget,
@@ -819,6 +894,8 @@ export function useRecentPage() {
     onToggleSelected,
     onToggleStar,
     onRename,
+    onManageLabels,
+    onUpdateLabels,
     onArchive,
     onShare,
     onSetProject,
@@ -831,6 +908,7 @@ export function useRecentPage() {
       setRenameTarget(null);
       setRenameValue("");
     },
+    closeLabelsDialog: () => setLabelsTarget(null),
     confirmDelete,
     closeDeleteDialog,
     setDeleteFiles,
@@ -838,6 +916,7 @@ export function useRecentPage() {
     onShareChange,
     toggleSelectionMode,
     archiveSelected,
+    moveSelectedToProject,
     revokeSelectedShares,
     requestDeleteSelected,
     exitSelectionMode,

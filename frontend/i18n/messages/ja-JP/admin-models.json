@@ -358,7 +358,19 @@
         "xai__code_interpreter": "Use xAI hosted code interpreter.",
         "google__code_execution": "Google のホスト型コード実行を使用します。",
         "google__url_context": "Google の URL コンテキストで Web コンテンツを読み取ります。"
-      }
+      },
+      "promptCacheTitle": "OpenAI キャッシュ設定",
+      "promptCacheDescription": "暗黙キャッシュは自動キャッシュに対応した OpenAI モデルで動作します。明示的ブレークポイントには GPT-5.6 以降のモデルファミリーが必要です。Auto モードでは公式ルートが有効になり、互換リレーは既定で無効です。",
+      "promptCacheAvailability": "有効ポリシー",
+      "promptCacheAuto": "自動",
+      "promptCacheEnabled": "有効",
+      "promptCacheDisabled": "無効",
+      "promptCacheMode": "キャッシュモード",
+      "promptCacheImplicit": "暗黙",
+      "promptCacheExplicit": "明示（GPT-5.6+）",
+      "promptCacheTTL": "キャッシュ TTL",
+      "promptCacheRetention": "保持",
+      "promptCacheRetentionDefault": "プロバイダー既定"
     },
     "capabilitiesGuide": {
       "button": "ガイド",
