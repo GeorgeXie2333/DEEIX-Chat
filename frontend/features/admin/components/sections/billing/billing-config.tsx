@@ -70,6 +70,47 @@ function isValidMinimumTopUpAmountUSD(value: string): boolean {
   return Number.isFinite(amount) && amount >= 0 && amount <= 1_000_000;
 }
 
+function formatLimitInput(value: number | null | undefined): string {
+  if (!Number.isFinite(value ?? NaN) || (value ?? 0) <= 0) {
+    return "0";
+  }
+  return String(Math.floor(value ?? 0));
+}
+
+function parseLimitInput(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
+  }
+  return Math.floor(parsed);
+}
+
+function normalizeModelNameList(items: string[]): string[] {
+  const results: string[] = [];
+  const seen = new Set<string>();
+  for (const item of items) {
+    const name = item.trim();
+    if (!name || seen.has(name)) {
+      continue;
+    }
+    seen.add(name);
+    results.push(name);
+  }
+  return results;
+}
+
+function parseModelNameText(value: string): string[] {
+  return normalizeModelNameList(value.split(/[,\n\r\t]+/));
+}
+
+function formatModelNameList(items: string[] | null | undefined): string {
+  return normalizeModelNameList(items ?? []).join("\n");
+}
+
+function normalizeModelNameText(value: string): string {
+  return parseModelNameText(value).join("\n");
+}
+
 export function BillingConfigSection({
   billingConfig,
   setBillingConfig,
@@ -91,12 +132,21 @@ export function BillingConfigSection({
   const [savedBillingUsdToCnyRate, setSavedBillingUsdToCnyRate] = React.useState("7.2");
   const [prepaidAmount, setPrepaidAmount] = React.useState("0");
   const [savedPrepaidAmount, setSavedPrepaidAmount] = React.useState("0");
+  const [freeModelRateLimitRPM, setFreeModelRateLimitRPM] = React.useState("0");
+  const [savedFreeModelRateLimitRPM, setSavedFreeModelRateLimitRPM] = React.useState("0");
+  const [freeModelDailyLimit, setFreeModelDailyLimit] = React.useState("0");
+  const [savedFreeModelDailyLimit, setSavedFreeModelDailyLimit] = React.useState("0");
+  const [freeModelRateLimitExemptModels, setFreeModelRateLimitExemptModels] = React.useState("");
+  const [savedFreeModelRateLimitExemptModels, setSavedFreeModelRateLimitExemptModels] = React.useState("");
   const stripeWebhookEndpoint = React.useMemo(() => `${resolveApiBaseURL()}/api/v1/billing/payments/stripe/webhook`, []);
 
   const billingMode = billingConfig?.mode ?? "self";
   const billingDisplayCurrency = billingConfig?.displayCurrency === "CNY" ? "CNY" : "USD";
   const billingPrepaidAmountUSD = billingConfig?.prepaidAmountUSD;
   const billingUsdToCNYRate = billingConfig?.usdToCNYRate;
+  const billingFreeModelRateLimitRPM = billingConfig?.freeModelRateLimitRPM;
+  const billingFreeModelDailyLimit = billingConfig?.freeModelDailyLimit;
+  const billingFreeModelRateLimitExemptModels = billingConfig?.freeModelRateLimitExemptModels;
 
   React.useEffect(() => {
     if (billingPrepaidAmountUSD == null || billingUsdToCNYRate == null) {
@@ -110,6 +160,25 @@ export function BillingConfigSection({
     setSavedBillingUsdToCnyRate(nextUsdToCnyRate);
   }, [billingPrepaidAmountUSD, billingUsdToCNYRate]);
 
+  React.useEffect(() => {
+    if (
+      billingFreeModelRateLimitRPM == null
+      || billingFreeModelDailyLimit == null
+      || billingFreeModelRateLimitExemptModels == null
+    ) {
+      return;
+    }
+    const nextRPM = formatLimitInput(billingFreeModelRateLimitRPM);
+    const nextDailyLimit = formatLimitInput(billingFreeModelDailyLimit);
+    const nextExemptModels = formatModelNameList(billingFreeModelRateLimitExemptModels);
+    setFreeModelRateLimitRPM(nextRPM);
+    setSavedFreeModelRateLimitRPM(nextRPM);
+    setFreeModelDailyLimit(nextDailyLimit);
+    setSavedFreeModelDailyLimit(nextDailyLimit);
+    setFreeModelRateLimitExemptModels(nextExemptModels);
+    setSavedFreeModelRateLimitExemptModels(nextExemptModels);
+  }, [billingFreeModelDailyLimit, billingFreeModelRateLimitExemptModels, billingFreeModelRateLimitRPM]);
+
   const paymentProviders = React.useMemo(() => normalizePaymentProviders(paymentSettings.payment_providers), [paymentSettings.payment_providers]);
   const stripeEnabled = paymentProviders.includes("stripe");
   const epayEnabled = paymentProviders.includes("epay");
@@ -119,7 +188,11 @@ export function BillingConfigSection({
   );
   const prepaidAmountChanged = prepaidAmount.trim() !== savedPrepaidAmount.trim();
   const billingRateChanged = billingUsdToCnyRate.trim() !== savedBillingUsdToCnyRate.trim();
-  const billingConfigActions = ((billingMode !== "self" && prepaidAmountChanged) || billingRateChanged) ? (
+  const freeModelRateLimitChanged =
+    freeModelRateLimitRPM.trim() !== savedFreeModelRateLimitRPM.trim()
+    || freeModelDailyLimit.trim() !== savedFreeModelDailyLimit.trim()
+    || normalizeModelNameText(freeModelRateLimitExemptModels) !== normalizeModelNameText(savedFreeModelRateLimitExemptModels);
+  const billingConfigActions = ((billingMode !== "self" && prepaidAmountChanged) || billingRateChanged || freeModelRateLimitChanged) ? (
     <Button
       type="button"
       size="sm"
@@ -254,6 +327,9 @@ export function BillingConfigSection({
       toast.error(t("toast.usdToCnyRateInvalid"), { description: t("toast.usdToCnyRateInvalidDescription") });
       return;
     }
+    const nextFreeModelRateLimitRPM = parseLimitInput(freeModelRateLimitRPM);
+    const nextFreeModelDailyLimit = parseLimitInput(freeModelDailyLimit);
+    const nextFreeModelRateLimitExemptModels = parseModelNameText(freeModelRateLimitExemptModels);
     setSaving(true);
     try {
       const token = await resolveAccessToken();
@@ -265,13 +341,25 @@ export function BillingConfigSection({
         mode: billingMode,
         prepaidAmountUSD: billingMode !== "self" ? amount : undefined,
         usdToCNYRate: usdToCnyRate,
+        freeModelRateLimitRPM: nextFreeModelRateLimitRPM,
+        freeModelDailyLimit: nextFreeModelDailyLimit,
+        freeModelRateLimitExemptModels: nextFreeModelRateLimitExemptModels,
       });
       const nextAmount = formatBillingAmountInput(result.config.prepaidAmountUSD);
       const nextUsdToCnyRate = formatBillingAmountInput(result.config.usdToCNYRate);
+      const savedRPM = formatLimitInput(result.config.freeModelRateLimitRPM);
+      const savedDailyLimit = formatLimitInput(result.config.freeModelDailyLimit);
+      const savedExemptModels = formatModelNameList(result.config.freeModelRateLimitExemptModels);
       setPrepaidAmount(nextAmount);
       setSavedPrepaidAmount(nextAmount);
       setBillingUsdToCnyRate(nextUsdToCnyRate);
       setSavedBillingUsdToCnyRate(nextUsdToCnyRate);
+      setFreeModelRateLimitRPM(savedRPM);
+      setSavedFreeModelRateLimitRPM(savedRPM);
+      setFreeModelDailyLimit(savedDailyLimit);
+      setSavedFreeModelDailyLimit(savedDailyLimit);
+      setFreeModelRateLimitExemptModels(savedExemptModels);
+      setSavedFreeModelRateLimitExemptModels(savedExemptModels);
       setBillingConfig((current) => current ? {
         ...current,
         mode: result.config.mode,
@@ -279,6 +367,9 @@ export function BillingConfigSection({
         prepaidAmountNanousd: result.config.prepaidAmountNanousd,
         usdToCNYRate: result.config.usdToCNYRate,
         displayCurrency: result.config.displayCurrency,
+        freeModelRateLimitRPM: result.config.freeModelRateLimitRPM,
+        freeModelDailyLimit: result.config.freeModelDailyLimit,
+        freeModelRateLimitExemptModels: result.config.freeModelRateLimitExemptModels,
       } : result.config);
       invalidateAdminReferenceDataCache();
       toast.success(t("toast.billingConfigSaved"));
@@ -373,6 +464,69 @@ export function BillingConfigSection({
               </SettingsFieldRow>
             </SettingsFieldItem>
           ) : null}
+          <SettingsFieldItem index={billingMode !== "self" ? 4 : 3}>
+            <SettingsFieldRow
+              title={t("billingConfig.freeModelRateLimitRPM")}
+              description={t("billingConfig.freeModelRateLimitRPMDescription")}
+            >
+              <div className="w-full">
+                <Input
+                  id="billing.free_model_rate_limit_rpm"
+                  type="number"
+                  min={0}
+                  max={1_000_000}
+                  step={1}
+                  inputMode="numeric"
+                  value={freeModelRateLimitRPM}
+                  className="text-right"
+                  disabled={loading || saving}
+                  aria-label={t("billingConfig.freeModelRateLimitRPM")}
+                  onChange={(event) => setFreeModelRateLimitRPM(event.target.value)}
+                />
+              </div>
+            </SettingsFieldRow>
+          </SettingsFieldItem>
+          <SettingsFieldItem index={billingMode !== "self" ? 5 : 4}>
+            <SettingsFieldRow
+              title={t("billingConfig.freeModelDailyLimit")}
+              description={t("billingConfig.freeModelDailyLimitDescription")}
+            >
+              <div className="w-full">
+                <Input
+                  id="billing.free_model_daily_limit"
+                  type="number"
+                  min={0}
+                  max={100_000_000}
+                  step={1}
+                  inputMode="numeric"
+                  value={freeModelDailyLimit}
+                  className="text-right"
+                  disabled={loading || saving}
+                  aria-label={t("billingConfig.freeModelDailyLimit")}
+                  onChange={(event) => setFreeModelDailyLimit(event.target.value)}
+                />
+              </div>
+            </SettingsFieldRow>
+          </SettingsFieldItem>
+          <SettingsFieldItem index={billingMode !== "self" ? 6 : 5}>
+            <SettingsFieldRow
+              title={t("billingConfig.freeModelRateLimitExemptModels")}
+              description={t("billingConfig.freeModelRateLimitExemptModelsDescription")}
+            >
+              <div className="w-full">
+                <Textarea
+                  id="billing.free_model_rate_limit_exempt_models"
+                  value={freeModelRateLimitExemptModels}
+                  maxLength={20_000}
+                  className="h-24 w-full resize-none overflow-y-auto font-mono text-xs [field-sizing:fixed]"
+                  disabled={loading || saving}
+                  spellCheck={false}
+                  aria-label={t("billingConfig.freeModelRateLimitExemptModels")}
+                  onChange={(event) => setFreeModelRateLimitExemptModels(event.target.value)}
+                />
+              </div>
+            </SettingsFieldRow>
+          </SettingsFieldItem>
         </SettingsFieldList>
       </SettingsSection>
 
