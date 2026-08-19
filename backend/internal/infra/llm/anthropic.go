@@ -796,7 +796,7 @@ func (c *Client) generateAnthropic(
 	}
 	applyAnthropicBetaHeaders(req, requestBody, input.Options)
 
-	resp, err := doGenerationRequest(c.httpClientForRoute(route), req)
+	resp, err := c.doRouteGenerationRequest(route, req)
 	if err != nil {
 		return nil, err
 	}
@@ -1062,7 +1062,7 @@ func (c *Client) generateAnthropicStream(
 	req.Header.Set("Accept", "text/event-stream")
 	applyAnthropicBetaHeaders(req, requestBody, input.Options)
 
-	resp, err := doGenerationRequest(c.httpClientForRoute(route), req)
+	resp, err := c.doRouteGenerationRequest(route, req)
 	firstByteTimer.Stop()
 	if err != nil {
 		return nil, err
@@ -1643,7 +1643,7 @@ func (c *Client) listModelsAnthropic(ctx context.Context, route RouteConfig) ([]
 		return nil, err
 	}
 
-	resp, err := c.httpClientForRoute(route).Do(req)
+	resp, err := c.doRouteRequest(route, req)
 	if err != nil {
 		return nil, err
 	}

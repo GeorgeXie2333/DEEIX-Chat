@@ -897,7 +897,7 @@ func (c *Client) generateGemini(
 		return nil, err
 	}
 
-	resp, err := doGenerationRequest(c.httpClientForRoute(route), req)
+	resp, err := c.doRouteGenerationRequest(route, req)
 	if err != nil {
 		return nil, err
 	}
@@ -1445,7 +1445,7 @@ func (c *Client) generateGeminiStream(
 	}
 	req.Header.Set("Accept", "text/event-stream")
 
-	resp, err := doGenerationRequest(c.httpClientForRoute(route), req)
+	resp, err := c.doRouteGenerationRequest(route, req)
 	firstByteTimer.Stop()
 	if err != nil {
 		return nil, err
@@ -1748,7 +1748,7 @@ func (c *Client) listModelsGemini(ctx context.Context, route RouteConfig) ([]Mod
 		return nil, err
 	}
 
-	resp, err := c.httpClientForRoute(route).Do(req)
+	resp, err := c.doRouteRequest(route, req)
 	if err != nil {
 		return nil, err
 	}

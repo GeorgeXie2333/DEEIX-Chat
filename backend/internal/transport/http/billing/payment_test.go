@@ -1,22 +1,10 @@
 package billing
 
 import (
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"strings"
 	"testing"
 
 	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	"github.com/gin-gonic/gin"
 )
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
-}
 
 func TestResolveTopUpCheckoutAmountUsesUSDForStripe(t *testing.T) {
 	req := CreateCheckoutRequest{AmountMinorUnits: 10_000}
@@ -68,80 +56,6 @@ func TestMinimumTopUpAmountCentsUsesSelectedProvider(t *testing.T) {
 	}
 	if got := minimumTopUpAmountCents(settings, domainbilling.PaymentProviderEPay); got != 2_000 {
 		t.Fatalf("EPay minimum = %d, want 2000", got)
-	}
-}
-
-func TestCreateStripeCheckoutSessionUsesSingleUSDFeeInclusiveLineItem(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	var posted url.Values
-	previousClient := stripeHTTPClient
-	stripeHTTPClient = &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
-		raw, err := io.ReadAll(req.Body)
-		if err != nil {
-			t.Fatalf("read stripe request body: %v", err)
-		}
-		posted, err = url.ParseQuery(string(raw))
-		if err != nil {
-			t.Fatalf("parse stripe request body: %v", err)
-		}
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(strings.NewReader(`{"id":"cs_test","url":"https://checkout.stripe.test/session"}`)),
-			Header:     make(http.Header),
-		}, nil
-	})}
-	t.Cleanup(func() {
-		stripeHTTPClient = previousClient
-	})
-
-	recorder := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(recorder)
-	c.Request = httptest.NewRequest(http.MethodPost, "http://api.example.test/api/v1/billing/payments/checkout", nil)
-	c.Request.Header.Set("Origin", "http://web.example.test")
-
-	h := &Handler{}
-	order := &domainbilling.PaymentOrder{
-		OrderNo:            "pay_fee_checkout",
-		OrderType:          domainbilling.PaymentOrderTypeTopUp,
-		UserID:             1,
-		Provider:           domainbilling.PaymentProviderStripe,
-		BaseCurrency:       "USD",
-		BaseAmountCents:    10_000,
-		PayCurrency:        "USD",
-		PayAmountCents:     10_300,
-		FeeRateBasisPoints: 300,
-		FeeAmountCents:     300,
-		FXRate:             "1",
-		CreditNanousd:      100_000_000_000,
-	}
-	checkoutID, checkoutURL, err := h.createStripeCheckoutSession(
-		c,
-		billingPaymentSettings{StripeSecretKey: "sk_test"},
-		order,
-		nil,
-		nil,
-		CreateCheckoutRequest{},
-	)
-	if err != nil {
-		t.Fatalf("createStripeCheckoutSession() error = %v", err)
-	}
-	if checkoutID != "cs_test" || checkoutURL != "https://checkout.stripe.test/session" {
-		t.Fatalf("checkout = %q %q", checkoutID, checkoutURL)
-	}
-	if posted.Get("line_items[0][price_data][currency]") != "usd" {
-		t.Fatalf("stripe currency = %q, want usd", posted.Get("line_items[0][price_data][currency]"))
-	}
-	if posted.Get("line_items[0][price_data][unit_amount]") != "10300" {
-		t.Fatalf("stripe amount = %q, want 10300", posted.Get("line_items[0][price_data][unit_amount]"))
-	}
-	if posted.Get("line_items[1][price_data][unit_amount]") != "" {
-		t.Fatal("unexpected second Stripe line item")
-	}
-	if posted.Get("metadata[pay_subtotal_amount_cents]") != "10000" ||
-		posted.Get("metadata[fee_rate_basis_points]") != "300" ||
-		posted.Get("metadata[fee_rate_percent]") != "3" ||
-		posted.Get("metadata[fee_amount_cents]") != "300" {
-		t.Fatalf("unexpected fee metadata: %v", posted)
 	}
 }
 

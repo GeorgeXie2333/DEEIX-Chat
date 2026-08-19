@@ -110,8 +110,9 @@
     "configuredPasswordPlaceholder": "設定済みです。変更しない場合は空のままにしてください。"
   },
   "runtime": {
-    "status": {
-      "running": "実行中",
+      "status": {
+        "available": "利用可能",
+        "running": "実行中",
       "restarting": "再起動中",
       "created": "作成済み",
       "paused": "一時停止",

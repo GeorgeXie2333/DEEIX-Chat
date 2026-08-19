@@ -79,7 +79,13 @@
       "inputShort": "入",
       "outputShort": "出",
       "cacheReadShort": "読",
-      "cacheWriteShort": "書"
+      "cacheWriteShort": "書",
+      "input": "Input",
+      "output": "Output",
+      "reasoning": "Reasoning",
+      "outputTotal": "Output total",
+      "imageCount": "{count, plural, one {# image} other {# images}}",
+      "secondCount": "{count, plural, one {# second} other {# seconds}}"
     },
     "billing": {
       "cacheWrite": "キャッシュ(書)",
@@ -126,7 +132,8 @@
     "auth": "認証ログ",
     "system": "システムイベント",
     "orders": "注文記録",
-    "conversation": "会話イベント"
+    "conversation": "会話イベント",
+    "moderation": "Moderation events"
   },
   "toast": {
     "sessionExpired": "ログイン状態が失効しました",
@@ -196,7 +203,8 @@
     "tool": "ツール",
     "runID": "実行 ID",
     "upstream": "アップストリーム",
-    "balanceAfter": "精算後残高"
+    "balanceAfter": "精算後残高",
+    "usage": "Usage"
   },
   "auth": {
     "searchPlaceholder": "ユーザー ID またはイベント種別を検索",
@@ -385,6 +393,46 @@
       "signInAgain": "続行するにはもう一度サインインしてください。",
       "success": "ログのクリーンアップが完了しました。{count} 件のレコードを削除しました",
       "failed": "ログのクリーンアップに失敗しました"
+    }
+  },
+  "moderation": {
+    "searchPlaceholder": "Search event ID, user, result, run ID…",
+    "empty": "No moderation events yet.",
+    "loadFailed": "Could not load moderation events",
+    "viewDetail": "View detail",
+    "detailTitle": "Moderation event detail",
+    "detailFailed": "Could not load event detail",
+    "detailText": "Decrypted text",
+    "detailImages": "Isolated images",
+    "detailImageAlt": "Moderation image {index}",
+    "imageLoadFailed": "Failed to load one or more isolated images",
+    "filters": {
+      "all": "All"
+    },
+    "results": {
+      "passed": "Passed",
+      "hit": "Hit",
+      "failedOpen": "Failed open"
+    },
+    "directions": {
+      "input": "Input",
+      "output": "Output"
+    },
+    "columns": {
+      "eventId": "Event ID",
+      "user": "User",
+      "result": "Result",
+      "direction": "Direction",
+      "modality": "Modality",
+      "latency": "Latency",
+      "createdAt": "Created",
+      "actions": "Actions",
+      "model": "Model",
+      "userID": "User ID",
+      "runID": "Run ID"
+    },
+    "blocks": {
+      "event": "Event"
     }
   }
 }

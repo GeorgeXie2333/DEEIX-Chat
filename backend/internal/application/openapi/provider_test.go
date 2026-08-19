@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/llm"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
 )
 
 func TestLLMRawChatProviderConvertsAnthropicMessagesToChatCompletion(t *testing.T) {
@@ -30,7 +31,7 @@ func TestLLMRawChatProviderConvertsAnthropicMessagesToChatCompletion(t *testing.
 	}))
 	defer upstream.Close()
 
-	provider := NewLLMRawChatProvider(llm.NewClientWithEnv("test", false))
+	provider := NewLLMRawChatProvider(llm.NewClient(security.NewStrictOutboundPolicy(false)))
 	result, err := provider.CompleteChat(context.Background(), llm.RouteConfig{
 		Protocol:      llm.AdapterAnthropicMessages,
 		BaseURL:       upstream.URL,
@@ -125,7 +126,7 @@ func TestLLMRawChatProviderStreamsAnthropicToolUseAsChatToolCallDelta(t *testing
 	}))
 	defer upstream.Close()
 
-	provider := NewLLMRawChatProvider(llm.NewClientWithEnv("test", false))
+	provider := NewLLMRawChatProvider(llm.NewClient(security.NewStrictOutboundPolicy(false)))
 	var chunks []map[string]interface{}
 	result, err := provider.StreamChat(context.Background(), llm.RouteConfig{
 		Protocol:      llm.AdapterAnthropicMessages,

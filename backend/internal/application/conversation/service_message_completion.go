@@ -34,7 +34,10 @@ type persistMessageGenerationInput struct {
 	AssistantAttachments      []model.Attachment
 	GeneratedImageFiles       []model.FileObject
 	PersistedToolCallKeys     map[string]struct{}
+	Route                     *channel.ResolvedRoute
 	ReuseUserMessage          bool
+	// SkipEmbed defers message embedding until the moderation barrier passes.
+	SkipEmbed bool
 }
 
 type persistInterruptedMessageGenerationInput struct {
@@ -79,7 +82,6 @@ const (
 
 type persistMessageToolCallsInput struct {
 	SendInput             SendMessageInput
-	UserMessageID         uint
 	AssistantMessageID    uint
 	RunID                 string
 	Rows                  []model.ToolCall
@@ -202,12 +204,17 @@ func (s *Service) persistAssistantImagePayloadIfPresent(ctx context.Context, inp
 	var normalized *assistantImageContentNormalization
 	var err error
 	if len(input.GeneratedImages) > 0 {
+		trustedProviderEndpoint := ""
+		if input.Route != nil {
+			trustedProviderEndpoint = input.Route.BaseURL
+		}
 		normalized, err = s.normalizeAssistantGeneratedImages(
 			ctx,
 			input.SendInput.UserID,
 			input.SendInput.ConversationID,
 			input.AssistantMessage.ID,
 			successfulMessageGenerationModelName(input),
+			trustedProviderEndpoint,
 			input.GeneratedImages,
 		)
 	} else {
@@ -307,7 +314,6 @@ func successfulMessageGenerationModelName(input persistMessageGenerationInput) s
 func (s *Service) finishSuccessfulMessageGeneration(ctx context.Context, input persistMessageGenerationInput) error {
 	if err := s.persistMessageToolCalls(ctx, persistMessageToolCallsInput{
 		SendInput:             input.SendInput,
-		UserMessageID:         input.UserMessage.ID,
 		AssistantMessageID:    input.AssistantMessage.ID,
 		RunID:                 input.AssistantMessage.RunID,
 		Rows:                  input.ToolCallRows,
@@ -320,6 +326,9 @@ func (s *Service) finishSuccessfulMessageGeneration(ctx context.Context, input p
 	if normalizeBranchReason(input.SendInput.BranchReason) == "default" {
 		s.updateStatefulResponseAsync(input.SendInput.ConversationID, input.ResponseID, input.StatefulPromptFingerprint)
 	}
+	if input.SkipEmbed {
+		return nil
+	}
 	if input.ReuseUserMessage {
 		s.embedMessagePairAsync(input.SendInput, nil, input.AssistantMessage)
 	} else {
@@ -329,8 +338,10 @@ func (s *Service) finishSuccessfulMessageGeneration(ctx context.Context, input p
 	return nil
 }
 
-// persistInterruptedMessageGeneration 在模型调用已经产生可见内容、工具轨迹或已发出的取消请求后，
-// 保留本轮 assistant 消息，并沿用统一的计费与审计链路。
+// persistInterruptedMessageGeneration 在模型调用已经产生可见内容或工具轨迹后失败时，保留本轮 assistant 消息。
+// 显式取消由取消流程单独处理，避免把用户主动停止误标为异常中断。
+// Partial outputs from cancel/interrupt/upstream errors remain subject to the
+// moderation barrier after persistence.
 func (s *Service) persistInterruptedMessageGeneration(ctx context.Context, input persistInterruptedMessageGenerationInput) *SendMessageResult {
 	if !shouldPersistInterruptedMessageGeneration(input) {
 		return nil
@@ -400,7 +411,6 @@ func (s *Service) persistInterruptedMessageGeneration(ctx context.Context, input
 
 	if err := s.persistMessageToolCalls(persistCtx, persistMessageToolCallsInput{
 		SendInput:             input.SendInput,
-		UserMessageID:         input.UserMessage.ID,
 		AssistantMessageID:    input.AssistantMessage.ID,
 		RunID:                 input.AssistantMessage.RunID,
 		Rows:                  input.ToolCallRows,
@@ -434,7 +444,11 @@ func shouldPersistInterruptedMessageGeneration(input persistInterruptedMessageGe
 	hasEstimatedCanceledInput := errors.Is(input.Error, ErrMessageGenerationCanceled) &&
 		input.UpstreamCallStarted &&
 		input.EstimatedInputTokens > 0
-	return strings.TrimSpace(input.AssistantText) != "" || hasRetainedToolTrace || hasObservedUsage || hasEstimatedCanceledInput
+	return strings.TrimSpace(input.AssistantText) != "" ||
+		strings.TrimSpace(input.AssistantReasoningText) != "" ||
+		hasRetainedToolTrace ||
+		hasObservedUsage ||
+		hasEstimatedCanceledInput
 }
 
 // resolveInterruptedMessageGenerationMetrics 统一处理中断消息的真实 usage 与估算兜底。
@@ -611,7 +625,7 @@ func (s *Service) persistMessageToolCalls(ctx context.Context, input persistMess
 	s.persistToolContextArtifacts(ctx, toolContextArtifactInput{
 		ConversationID: input.SendInput.ConversationID,
 		UserID:         input.SendInput.UserID,
-		MessageID:      input.UserMessageID,
+		MessageID:      input.AssistantMessageID,
 		RunID:          input.RunID,
 		Rows:           rows,
 	})

@@ -39,20 +39,18 @@ func (f chatImageResolverFunc) ResolveChatImage(ctx context.Context, rawURL stri
 // upstream protocols that require inline image bytes.
 type HTTPChatImageResolver struct {
 	client   *http.Client
-	env      string
-	ssrf     bool
+	policy   security.OutboundPolicy
 	maxBytes int64
 }
 
 // NewHTTPChatImageResolver creates a safe resolver for OpenAI-compatible image_url inputs.
-func NewHTTPChatImageResolver(env string, ssrfProtectionEnabled bool, maxBytes int64) *HTTPChatImageResolver {
+func NewHTTPChatImageResolver(policy security.OutboundPolicy, maxBytes int64) *HTTPChatImageResolver {
 	if maxBytes <= 0 {
 		maxBytes = defaultOpenAPIImageMaxBytes
 	}
 	return &HTTPChatImageResolver{
-		client:   security.NewOutboundHTTPClient(env, ssrfProtectionEnabled, 60*time.Second),
-		env:      strings.TrimSpace(env),
-		ssrf:     ssrfProtectionEnabled,
+		client:   security.NewOutboundHTTPClient(policy, 60*time.Second),
+		policy:   policy,
 		maxBytes: maxBytes,
 	}
 }
@@ -66,12 +64,12 @@ func (r *HTTPChatImageResolver) ResolveChatImage(ctx context.Context, rawURL str
 	if parsed.User != nil || !strings.EqualFold(parsed.Scheme, "https") {
 		return llm.ContentPart{}, fmt.Errorf("%w: image_url must be https", ErrInvalidRequest)
 	}
-	if err := security.ValidateOutboundHTTPURL(imageURL, r.env, r.ssrf); err != nil {
+	if err := security.ValidateOutboundHTTPURL(imageURL, r.policy); err != nil {
 		return llm.ContentPart{}, fmt.Errorf("%w: unsafe image_url", ErrInvalidRequest)
 	}
 	client := r.client
 	if client == nil {
-		client = security.NewOutboundHTTPClient(r.env, r.ssrf, 60*time.Second)
+		client = security.NewOutboundHTTPClient(r.policy, 60*time.Second)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, imageURL, nil)
 	if err != nil {

@@ -310,6 +310,14 @@ func handleSendMessageBillingError(c *gin.Context, err error) {
 }
 
 func handleUsageAuthorizationError(c *gin.Context, err error) {
+	if errors.Is(err, billing.ErrFreeModelRateLimitExceeded) {
+		response.Error(c, http.StatusTooManyRequests, "free model rate limit exceeded")
+		return
+	}
+	if errors.Is(err, billing.ErrFreeModelDailyLimitExceeded) {
+		response.Error(c, http.StatusTooManyRequests, "free model daily limit exceeded")
+		return
+	}
 	if errors.Is(err, billing.ErrUsageConcurrencyLimitExceeded) {
 		response.Error(c, http.StatusTooManyRequests, "usage concurrency limit exceeded")
 		return
@@ -390,6 +398,10 @@ func handleSendMessageError(c *gin.Context, err error) {
 		response.Error(c, http.StatusBadRequest, "too many selected tools")
 	case errors.Is(err, appconversation.ErrSensitivePromptBlocked):
 		response.Error(c, http.StatusBadRequest, "sensitive prompt blocked")
+	case errors.Is(err, appconversation.ErrMultipleImageAttachmentProcessors):
+		response.Error(c, http.StatusBadRequest, "multiple image attachment processors selected")
+	case errors.Is(err, appconversation.ErrImageAttachmentProcessingFailed):
+		response.Error(c, http.StatusBadGateway, "image attachment processing failed")
 	case errors.Is(err, appconversation.ErrTooManySelectedSkills):
 		response.Error(c, http.StatusBadRequest, "too many selected skills")
 	case errors.Is(err, appconversation.ErrSkillNotFound):
@@ -406,6 +418,8 @@ func handleSendMessageError(c *gin.Context, err error) {
 		response.Error(c, http.StatusBadRequest, "embedding unavailable for current file capability")
 	case errors.Is(err, appconversation.ErrModelRouteNotConfigured):
 		response.Error(c, http.StatusServiceUnavailable, "model route not configured")
+	case errors.Is(err, appconversation.ErrGeneratedMediaArtifactUnavailable):
+		response.ErrorWithCode(c, http.StatusBadGateway, appconversation.MessageErrorCode(err), "generated media artifact is temporarily unavailable")
 	case errors.Is(err, appconversation.ErrUpstreamEmptyResponse):
 		response.Error(c, http.StatusBadGateway, "model returned empty response")
 	case errors.Is(err, appconversation.ErrUpstreamRequestFailed):
@@ -539,7 +553,7 @@ func (h *Handler) StreamMessage(c *gin.Context) {
 		})
 	}
 
-	// 将中间事件（rag_search 等）通过 NDJSON 推送给客户端。
+	// 将中间事件（含 moderation_*）通过 NDJSON 推送给客户端。
 	input.OnEvent = func(eventType string, payload map[string]interface{}) error {
 		_ = flushStreamEvent(normalizeStreamEventPayload(eventType, payload))
 		return nil
@@ -552,6 +566,22 @@ func (h *Handler) StreamMessage(c *gin.Context) {
 		})
 		return nil
 	})
+	if err == nil && result != nil && result.IsModerationBlocked() {
+		// Guarantee a terminal event even if live OnEvent path missed emit.
+		if !result.ModerationTerminalEmitted() {
+			_ = flushStreamEvent(moderationBlockedStreamPayload(result))
+		}
+		if result.Billable {
+			billingCtx, billingCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			_ = h.recordAndApplySendMessageBilling(billingCtx, middleware.MustUserID(c), conversation, req, result, authorization)
+			billingCancel()
+		} else {
+			_ = h.releaseSendMessageUsageAuthorization(authorization)
+		}
+		h.service.FinishMessageGeneration(input.ClientRunID)
+		h.recordStreamSendMessageAuditAsync(c, conversation, req, result, "stream_message")
+		return
+	}
 	if err != nil {
 		if result != nil {
 			if !result.Billable {
@@ -684,7 +714,7 @@ func (h *Handler) ResumeMessageGenerationStream(c *gin.Context) {
 
 	isTerminal := func(payload map[string]interface{}) bool {
 		eventType, _ := payload["type"].(string)
-		return eventType == "completed" || eventType == "error"
+		return eventType == "completed" || eventType == "error" || eventType == "moderation_blocked"
 	}
 	terminalWritten := false
 	writeEvent := func(payload map[string]interface{}) bool {

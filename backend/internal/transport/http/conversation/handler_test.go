@@ -99,6 +99,7 @@ func newFreeModelLimitedHandler(minuteExceeded bool, dailyExceeded bool) *Handle
 		nil,
 		nil,
 		nil,
+		nil,
 		zap.NewNop(),
 	)
 	conversationSvc.SetBillingService(billingSvc)
@@ -110,6 +111,7 @@ func newSensitivePromptHandler() *Handler {
 	conversationSvc := appconversation.NewService(
 		cfg,
 		sensitivePromptConversationRepoStub{},
+		nil,
 		nil,
 		nil,
 		nil,
@@ -161,6 +163,17 @@ func TestSafeFileContentTypeDowngradesActiveContent(t *testing.T) {
 		if got := safeFileContentType(tt.contentType); got != tt.want {
 			t.Fatalf("safeFileContentType(%q) = %q, want %q", tt.contentType, got, tt.want)
 		}
+	}
+}
+
+func TestMediaStreamErrorPayloadPreservesPersistedResult(t *testing.T) {
+	result := &appconversation.SendMessageResult{}
+	payload := mediaStreamErrorPayload(errors.New("store generated video"), result)
+	if payload["type"] != "error" {
+		t.Fatalf("payload type = %#v, want error", payload["type"])
+	}
+	if _, ok := payload["data"]; !ok {
+		t.Fatalf("media error payload lost persisted result: %#v", payload)
 	}
 }
 
@@ -218,7 +231,12 @@ func TestSendMessageBillingAccessFreeModelLimitReturns429(t *testing.T) {
 	handler := newFreeModelLimitedHandler(true, false)
 	ctx, recorder := newBillingAccessTestContext()
 
-	err := handler.ensureBillingModelAccess(ctx, &conversationmodel.Conversation{ID: 1}, &SendMessageRequest{Model: "free-chat"})
+	_, err := handler.authorizeUsage(ctx, sendMessageBillingInput(
+		7,
+		&conversationmodel.Conversation{ID: 1},
+		&SendMessageRequest{Model: "free-chat"},
+		nil,
+	))
 	if !errors.Is(err, appbilling.ErrFreeModelRateLimitExceeded) {
 		t.Fatalf("expected free model minute limit error, got %v", err)
 	}
@@ -236,7 +254,7 @@ func TestSendMessageBillingAccessFreeModelLimitReturns429(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode error response: %v", err)
 	}
-	if body.ErrorCode != "rate_limit.exceeded" || body.ErrorMsg != "free model rate limit exceeded" {
+	if body.ErrorCode != "rate_limit.exceeded" || body.ErrorMsg != "rate limit exceeded" {
 		t.Fatalf("unexpected error body: %#v", body)
 	}
 }
@@ -245,7 +263,12 @@ func TestMediaImageBillingAccessFreeModelLimitReturns429(t *testing.T) {
 	handler := newFreeModelLimitedHandler(false, true)
 	ctx, recorder := newBillingAccessTestContext()
 
-	err := handler.ensureMediaImageBillingModelAccess(ctx, &conversationmodel.Conversation{ID: 1}, &MediaImageRequest{Model: "free-chat"})
+	_, err := handler.authorizeUsage(ctx, mediaImageBillingInput(
+		7,
+		&conversationmodel.Conversation{ID: 1},
+		&MediaImageRequest{Model: "free-chat"},
+		nil,
+	))
 	if !errors.Is(err, appbilling.ErrFreeModelDailyLimitExceeded) {
 		t.Fatalf("expected free model daily limit error, got %v", err)
 	}
@@ -260,7 +283,7 @@ func TestMediaImageBillingAccessFreeModelLimitReturns429(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode error response: %v", err)
 	}
-	if body.ErrorCode != "rate_limit.exceeded" || body.ErrorMsg != "free model daily limit exceeded" {
+	if body.ErrorCode != "rate_limit.exceeded" || body.ErrorMsg != "rate limit exceeded" {
 		t.Fatalf("unexpected error body: %#v", body)
 	}
 }
@@ -270,7 +293,7 @@ func TestBillingStreamErrorPayloadFreeModelLimitUsesRateLimitCode(t *testing.T) 
 	if mapped.Status != http.StatusTooManyRequests {
 		t.Fatalf("expected 429 stream status, got %d", mapped.Status)
 	}
-	if mapped.Code != "rate_limit.exceeded" || mapped.Message != "free model rate limit exceeded" {
+	if mapped.Code != "rate_limit.exceeded" || mapped.Message != "rate limit exceeded" {
 		t.Fatalf("unexpected stream mapping: %#v", mapped)
 	}
 }
@@ -383,6 +406,19 @@ func TestMapStreamErrorDoesNotExposeUpstreamUnauthorizedAsPlatformUnauthorized(t
 	}
 	if mapped.Code == "auth.unauthorized" || mapped.Code == "auth.invalid_token" || mapped.Code == "auth.session_invalid" {
 		t.Fatalf("expected upstream 401 to avoid platform auth codes, got %#v", mapped)
+	}
+}
+
+func TestMapStreamErrorClassifiesGeneratedMediaArtifactFailure(t *testing.T) {
+	mapped := mapStreamError(appconversation.ErrGeneratedMediaArtifactUnavailable)
+	if mapped.Status != http.StatusBadGateway {
+		t.Fatalf("expected artifact failure to be mapped to gateway failure, got status=%d", mapped.Status)
+	}
+	if mapped.Code != appconversation.MessageErrorCodeMediaArtifactUnavailable {
+		t.Fatalf("unexpected artifact error code: %#v", mapped)
+	}
+	if mapped.Message != appconversation.ErrGeneratedMediaArtifactUnavailable.Error() {
+		t.Fatalf("unexpected public artifact message: %#v", mapped)
 	}
 }
 

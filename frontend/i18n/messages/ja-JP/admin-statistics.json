@@ -58,5 +58,19 @@
     "referenceLoadFailed": "ダッシュボードのフィルターを読み込めませんでした",
     "sessionExpired": "セッションの有効期限が切れました",
     "signInAgain": "再度ログインしてお試しください。"
+  },
+  "moderation": {
+    "title": "Content moderation",
+    "trendTitle": "Moderation trend",
+    "empty": "No moderation aggregates in the last 90 days.",
+    "loadFailed": "Could not load moderation statistics",
+    "avgLatencyLabel": "Average moderation latency",
+    "metrics": {
+      "checks": "Checks",
+      "hits": "Hits",
+      "failures": "Failure-open",
+      "hitRate": "Hit rate",
+      "latency": "Avg latency"
+    }
   }
 }

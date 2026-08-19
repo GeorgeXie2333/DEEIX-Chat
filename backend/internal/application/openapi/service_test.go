@@ -891,7 +891,7 @@ type billingStub struct {
 func (b *billingStub) AuthorizeUsage(context.Context, uint, string, string) (*domainbilling.UsageAuthorization, error) {
 	return &domainbilling.UsageAuthorization{
 		Mode:        "usage",
-		Reservation: &domainbilling.UsageBalanceReservation{UserID: 42, AmountNanousd: 1, RefNo: "req_1"},
+		Reservation: &domainbilling.UsageBalanceReservation{UserID: 42, BalanceNanousd: 1, RefNo: "req_1"},
 	}, nil
 }
 

@@ -136,33 +136,33 @@ func (s *Service) SetChatProvider(provider rawChatProvider) {
 
 // APIKeyView 是前端展示用的 API Key 元数据。
 type APIKeyView struct {
-	Exists            bool       `json:"exists"`
-	APIKey            string     `json:"apiKey,omitempty"`
-	KeyPrefix         string     `json:"keyPrefix"`
-	Status            string     `json:"status"`
-	LastUsedAt        *time.Time `json:"lastUsedAt,omitempty"`
-	CreatedAt         time.Time  `json:"createdAt,omitempty"`
-	UpdatedAt         time.Time  `json:"updatedAt,omitempty"`
-	TwoFactorRequired bool       `json:"twoFactorRequired,omitempty"`
-	Exportable        bool       `json:"exportable,omitempty"`
+	Exists            bool
+	APIKey            string
+	KeyPrefix         string
+	Status            string
+	LastUsedAt        *time.Time
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	TwoFactorRequired bool
+	Exportable        bool
 }
 
 const newAPIModelCreatedUnix int64 = 1626777600
 
 // OpenAIModelList 是 /v1/models 的兼容响应。
 type OpenAIModelList struct {
-	Success bool          `json:"success"`
-	Data    []OpenAIModel `json:"data"`
-	Object  string        `json:"object"`
+	Success bool
+	Data    []OpenAIModel
+	Object  string
 }
 
 // OpenAIModel 是 /v1/models 的模型项。
 type OpenAIModel struct {
-	ID                     string   `json:"id"`
-	Object                 string   `json:"object"`
-	Created                int64    `json:"created"`
-	OwnedBy                string   `json:"owned_by"`
-	SupportedEndpointTypes []string `json:"supported_endpoint_types"`
+	ID                     string
+	Object                 string
+	Created                int64
+	OwnedBy                string
+	SupportedEndpointTypes []string
 }
 
 // RawChatCompletionResult 表示原始 Chat Completions 调用结果。

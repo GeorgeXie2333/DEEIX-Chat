@@ -225,6 +225,7 @@
     "videoReferenceTooMany": "视频生成最多只能使用一张参考图。",
     "videoReferenceInvalid": "视频参考图无效，仅支持 JPEG、PNG 或 WebP。",
     "videoReferenceSizeMismatch": "视频参考图尺寸必须与所选分辨率一致。",
+    "artifactUnavailable": "生成结果暂时无法获取，请稍后重试；若问题持续，请联系管理员。",
     "imageStreamUnsupported": "Tips：当前上游可能不支持流式响应，请管理员在模型能力中关闭“图像流式调用”（设置 image.stream=false）后重试。",
     "routeProtocolMismatch": "当前模型路由协议与媒体任务不匹配，请检查模型绑定。",
     "invalidTask": "媒体任务参数无效。"
@@ -336,5 +337,12 @@
   "userSettings": {
     "invalidValue": "用户设置值无效。",
     "unknownKey": "未知的用户设置项。"
+  },
+  "content_moderation": {
+    "blocked": "内容已被安全检查拦截。",
+    "invalid_config": "内容审核配置无效。",
+    "config_required": "启用内容审核时必须配置完整服务并至少选择一个审核类别。",
+    "probe_failed": "内容审核连接测试失败。",
+    "event_not_found": "未找到内容审核事件。"
   }
 }

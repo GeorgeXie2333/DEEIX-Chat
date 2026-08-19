@@ -86,7 +86,7 @@ func (c *Client) generateOpenAIVideoGeneration(
 	req.Header.Set("Content-Type", contentType)
 	setOpenAIAuthorizationAndHeaders(req, route)
 
-	resp, err := c.httpClientForRoute(route).Do(req)
+	resp, err := c.doRouteGenerationRequest(route, req)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (c *Client) retrieveOpenAIVideoJob(ctx context.Context, route RouteConfig, 
 		return openAIVideoJob{}, err
 	}
 	setOpenAIAuthorizationAndHeaders(req, route)
-	resp, err := c.httpClientForRoute(route).Do(req)
+	resp, err := c.doRouteRequest(route, req)
 	if err != nil {
 		return openAIVideoJob{}, err
 	}
@@ -296,7 +296,7 @@ func (c *Client) downloadOpenAIVideoContent(ctx context.Context, route RouteConf
 		return nil, "", err
 	}
 	setOpenAIAuthorizationAndHeaders(req, route)
-	resp, err := c.httpClientForRoute(route).Do(req)
+	resp, err := c.doRouteRequest(route, req)
 	if err != nil {
 		return nil, "", err
 	}

@@ -1,5 +1,6 @@
 import zhAdminAnnouncements from "@/i18n/messages/zh-CN/admin-announcements.json";
 import zhAdminBilling from "@/i18n/messages/zh-CN/admin-billing.json";
+import zhAdminContentModeration from "@/i18n/messages/zh-CN/admin-content-moderation.json";
 import zhAdminConversation from "@/i18n/messages/zh-CN/admin-conversation.json";
 import zhAdminFiles from "@/i18n/messages/zh-CN/admin-files.json";
 import zhAdminGroups from "@/i18n/messages/zh-CN/admin-groups.json";
@@ -56,6 +57,7 @@ const BASE_MESSAGES = {
   adminTools: zhAdminTools,
   adminUpstreams: zhAdminUpstreams,
   adminUsers: zhAdminUsers,
+  adminContentModeration: zhAdminContentModeration,
 };
 
 export type AppMessages = typeof BASE_MESSAGES;
@@ -135,6 +137,7 @@ type LocaleMessageImports = [
   { default: AppMessages["adminTools"] },
   { default: AppMessages["adminUpstreams"] },
   { default: AppMessages["adminUsers"] },
+  { default: AppMessages["adminContentModeration"] },
 ];
 
 function toAppMessages([
@@ -165,6 +168,7 @@ function toAppMessages([
   adminTools,
   adminUpstreams,
   adminUsers,
+  adminContentModeration,
 ]: LocaleMessageImports): AppMessages {
   return {
     common: common.default,
@@ -194,6 +198,7 @@ function toAppMessages([
     adminTools: adminTools.default,
     adminUpstreams: adminUpstreams.default,
     adminUsers: adminUsers.default,
+    adminContentModeration: adminContentModeration.default,
   };
 }
 
@@ -231,6 +236,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
       import("@/i18n/messages/ja-JP/admin-tools.json"),
       import("@/i18n/messages/ja-JP/admin-upstreams.json"),
       import("@/i18n/messages/ja-JP/admin-users.json"),
+      import("@/i18n/messages/en-US/admin-content-moderation.json"),
     ]));
   }
 
@@ -262,5 +268,6 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
     import("@/i18n/messages/en-US/admin-tools.json"),
     import("@/i18n/messages/en-US/admin-upstreams.json"),
     import("@/i18n/messages/en-US/admin-users.json"),
+    import("@/i18n/messages/en-US/admin-content-moderation.json"),
   ]));
 }

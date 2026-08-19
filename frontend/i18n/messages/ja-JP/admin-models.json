@@ -8,7 +8,8 @@
     "status": "状態",
     "protocol": "プロトコル",
     "vendor": "ベンダー",
-    "kind": "カテゴリ"
+    "kind": "カテゴリ",
+    "displayGroup": "Display group"
   },
   "status": {
     "active": "有効",
@@ -57,7 +58,8 @@
     "apply": "適用",
     "bulkDelete": "削除",
     "test": "テスト",
-    "testAll": "すべてテスト"
+    "testAll": "すべてテスト",
+    "managePresentation": "Groups"
   },
   "probe": {
     "title": "モデルテスト",
@@ -243,7 +245,11 @@
     "modelScopeInternal": "モデルを内部タスク用に設定しました",
     "modelScopeUpdateFailed": "利用範囲の更新に失敗しました",
     "createFailed": "作成に失敗しました",
-    "updateFailed": "更新に失敗しました"
+    "updateFailed": "更新に失敗しました",
+    "bulkDisplayGroupAlreadyApplied": "Selected models already use this display group",
+    "bulkDisplayGroupUpdated": "Updated {count} model display groups",
+    "bulkDisplayGroupPartialFailed": "Some model display groups could not be updated",
+    "bulkDisplayGroupFailed": "Could not update model display groups"
   },
   "order": {
     "title": "モデル表示順",
@@ -257,7 +263,9 @@
     "modelHeader": "モデル",
     "itemCount": "{count} 件",
     "dragVendor": "ベンダー {name} をドラッグして並べ替え",
-    "dragModel": "モデル {name} をドラッグして並べ替え"
+    "dragModel": "モデル {name} をドラッグして並べ替え",
+    "groupHeader": "Display groups",
+    "dragGroup": "Drag to reorder group {name}"
   },
   "sheet": {
     "createTitle": "モデルを新規作成",
@@ -414,6 +422,50 @@
     "circuitPolicyEnforced": "グローバル上書き（この親モデル配下の全ソース）",
     "failureThreshold": "モデル失敗しきい値",
     "circuitDuration": "モデルサーキット継続時間（分）",
-    "circuitWindow": "モデルサーキットのローリングウィンドウ（分）"
+    "circuitWindow": "モデルサーキットのローリングウィンドウ（分）",
+    "displayGroup": "Display group",
+    "followVendor": "Follow vendor ({vendor})",
+    "displayGroupDescription": "Optional. Leave unchanged to keep grouping by technical vendor."
+  },
+  "presentation": {
+    "title": "Model groups",
+    "description": "Manage technical vendors and optional display groups. Models remain grouped by technical vendor by default.",
+    "createVendorTitle": "Create vendor",
+    "editVendorTitle": "Edit vendor",
+    "vendorFormDescription": "Configure the stable key, display name, and icon.",
+    "createGroupTitle": "Create display group",
+    "editGroupTitle": "Edit display group",
+    "groupFormDescription": "Display groups only affect how models are organized for users.",
+    "vendors": "Vendors",
+    "groups": "Display groups",
+    "followVendor": "Follow technical vendor",
+    "key": "Key",
+    "keyHelp": "Used for routing and data relationships. It cannot be changed after creation. Use lowercase letters, numbers, underscores, or hyphens.",
+    "keyPlaceholder": "For example, acme-ai",
+    "name": "Name",
+    "namePlaceholder": "Enter a display name",
+    "icon": "Icon",
+    "iconHelp": "Enter a LobeHub icon name or an http(s) image URL. Leave empty to use the default icon.",
+    "iconPlaceholder": "For example, openai or https://example.com/icon.svg",
+    "members": "Models",
+    "membersSelected": "{count} selected",
+    "memberSearchPlaceholder": "Search models or vendors",
+    "memberEmpty": "No matching models",
+    "memberCurrentGroup": "Current group: {group}",
+    "memberFollowVendor": "Currently follows vendor: {vendor}",
+    "membersHelp": "Saving fully synchronizes this group's members. Models selected from another group will move here.",
+    "builtIn": "Built in",
+    "empty": "No data",
+    "validationRequired": "Complete the required fields",
+    "sessionExpired": "Your session has expired",
+    "saved": "Model groups saved",
+    "loadFailed": "Failed to load model groups",
+    "modelsLoadFailed": "Failed to load models",
+    "saveFailed": "Failed to save",
+    "deleted": "Display group deleted",
+    "deleteFailed": "Failed to delete",
+    "deleteTitle": "Delete display group",
+    "deleteDescription": "Delete “{name}”? Models assigned to it will return to their technical vendor group.",
+    "deleting": "Deleting"
   }
 }

@@ -225,6 +225,7 @@
     "videoReferenceTooMany": "動画生成で使用できる参照画像は1枚までです。",
     "videoReferenceInvalid": "動画参照画像が無効です。JPEG、PNG、WebP を使用してください。",
     "videoReferenceSizeMismatch": "動画参照画像のサイズは選択した解像度と一致している必要があります。",
+    "artifactUnavailable": "生成結果は一時的に利用できません。しばらくしてからもう一度お試しください。問題が続く場合は管理者にお問い合わせください。",
     "imageStreamUnsupported": "ヒント: 上流がストリーミング応答に対応していない可能性があります。管理者にモデル能力の「画像ストリーミング呼び出し」を無効化（image.stream=false）してもらい、もう一度お試しください。",
     "routeProtocolMismatch": "現在のモデルルートプロトコルはこのメディアタスクと一致しません。モデルバインドを確認してください。",
     "invalidTask": "メディアタスクのパラメーターが無効です。"
@@ -336,5 +337,12 @@
   "userSettings": {
     "invalidValue": "ユーザー設定値が無効です。",
     "unknownKey": "不明なユーザー設定項目です。"
+  },
+  "content_moderation": {
+    "blocked": "コンテンツは安全性チェックによってブロックされました。",
+    "invalid_config": "コンテンツモデレーション設定が無効です。",
+    "config_required": "コンテンツモデレーションを有効にするには、完全なサービス設定と少なくとも1つのポリシーカテゴリが必要です。",
+    "probe_failed": "コンテンツモデレーションの接続テストに失敗しました。",
+    "event_not_found": "コンテンツモデレーションイベントが見つかりません。"
   }
 }

@@ -195,7 +195,8 @@
       "root": "モデル料金 JSON はオブジェクトである必要があります。",
       "model": "JSON からプラットフォームモデル名を変更することはできません。",
       "mode": "pricingMode は token、call、duration、tiered のいずれかである必要があります。",
-      "tiered": "階層課金には空でない tieredPricing.tiers が必要です。"
+      "tiered": "階層課金には空でない tieredPricing.tiers が必要です。",
+      "durationVideoOnly": "Per-second pricing is available only for video generation models."
     },
     "freeModel": "無料モデル",
     "inputPerM": "入力 / 1M",
@@ -236,7 +237,8 @@
     "priceOutput": "出力",
     "priceCacheWrite": "キャッシュ書き込み",
     "priceCacheRead": "キャッシュ読み取り",
-    "officialPricingRemoteError": "ライブ取得に失敗しました。手動で同期してください。"
+    "officialPricingRemoteError": "ライブ取得に失敗しました。手動で同期してください。",
+    "durationVideoOnly": "Per-second pricing requires the video generation capability."
   },
   "toolPricing": {
     "title": "ツール料金",
@@ -357,6 +359,7 @@
     "invalidPricingMode": "{model}.pricingMode は token、call、duration、tiered のいずれかである必要があります",
     "invalidNumber": "{model}.{field} は 0 以上の数値である必要があります",
     "invalidTieredPricing": "{model}.{field} には空でない tiers 配列が必要です",
-    "invalidTieredPricingJSON": "{model}.tieredPricingJSON は有効な JSON ではありません"
+    "invalidTieredPricingJSON": "{model}.tieredPricingJSON は有効な JSON ではありません",
+    "durationVideoOnly": "{model}.pricingMode=duration requires the video_gen capability"
   }
 }

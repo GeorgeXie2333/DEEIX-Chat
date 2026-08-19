@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronDown, Info, Star } from "lucide-react";
+import { Check, ChevronDown, ImageIcon, Info, Star } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -329,6 +329,21 @@ export function ChatMCPPanel({
                                 onClick={() => toggleTool(tool.id, !checked)}
                               >
                                 <span className="min-w-0 truncate text-xs text-current">{label}</span>
+                                {tool.attachmentInputMode === "image" ? (
+                                  <Tooltip disableHoverableContent>
+                                    <TooltipTrigger asChild>
+                                      <span
+                                        className="flex size-4 shrink-0 items-center justify-center rounded text-primary/75"
+                                        aria-label={tComposer("mcpImageProcessor")}
+                                      >
+                                        <ImageIcon className="size-3" strokeWidth={1.8} />
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="text-xs">
+                                      {tComposer("mcpImageProcessor")}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                ) : null}
                               </button>
                               <span className="flex size-3 shrink-0 items-center justify-center text-current">
                                 {checked ? <Check className="size-3 text-current" strokeWidth={1.7} /> : null}

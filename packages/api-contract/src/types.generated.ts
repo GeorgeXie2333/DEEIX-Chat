@@ -677,6 +677,164 @@ export interface CleanupLogsResponseDoc {
   errorMsg: string;
 }
 
+export interface ContentModerationCategoryCatalogResponse {
+  image: string[];
+  text: string[];
+}
+
+export interface ContentModerationConfigDataResponse {
+  categories: ContentModerationCategoryCatalogResponse;
+  config: ContentModerationServiceConfigResponse;
+}
+
+export interface ContentModerationConfigResponseDoc {
+  data: ContentModerationConfigDataResponse;
+  errorMsg: string;
+}
+
+export interface ContentModerationConfigUpdateDataResponse {
+  config: ContentModerationServiceConfigResponse;
+}
+
+export interface ContentModerationConfigUpdateResponseDoc {
+  data: ContentModerationConfigUpdateDataResponse;
+  errorMsg: string;
+}
+
+export interface ContentModerationDailyStatResponse {
+  category: string;
+  checkCount: number;
+  contentItems: number;
+  direction: string;
+  failureCount: number;
+  hitCount: number;
+  latencyCount: number;
+  latencySumMS: number;
+  modality: string;
+  result: string;
+  statDate: string;
+}
+
+export interface ContentModerationEventDetailResponse {
+  categoryScores: Record<string, number>;
+  decryptedText?: string;
+  event: ContentModerationEventResponse;
+  images: ContentModerationIsolatedImageResponse[];
+  imagesAvailable: boolean;
+  textAvailable: boolean;
+}
+
+export interface ContentModerationEventDetailResponseDoc {
+  data: ContentModerationEventDetailResponse;
+  errorMsg: string;
+}
+
+export interface ContentModerationEventListDataResponse {
+  items: ContentModerationEventResponse[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface ContentModerationEventListResponseDoc {
+  data: ContentModerationEventListDataResponse;
+  errorMsg: string;
+}
+
+export interface ContentModerationEventResponse {
+  categories: string[];
+  contentSummary: string;
+  conversationID: number;
+  createdAt: string;
+  direction: string;
+  errorCode: string;
+  errorMessage: string;
+  latencyMS: number;
+  messagePublicID: string;
+  modality: string;
+  model: string;
+  policyVersion: number;
+  publicID: string;
+  result: string;
+  runID: string;
+  userID: number;
+  userLabel?: string;
+  username?: string;
+}
+
+export interface ContentModerationIsolatedImageResponse {
+  sha256: string;
+  index: number;
+  mimeType: string;
+  sizeBytes: number;
+  sourceFileID?: string;
+}
+
+export interface ContentModerationPolicyRequest {
+  inputImageCategories: string[];
+  inputTextCategories: string[];
+  outputImageCategories: string[];
+  outputTextCategories: string[];
+}
+
+export interface ContentModerationPolicyResponse {
+  inputImageCategories: string[];
+  inputTextCategories: string[];
+  outputImageCategories: string[];
+  outputTextCategories: string[];
+  version: number;
+}
+
+export interface ContentModerationProbeResponse {
+  image: ContentModerationProbeResultResponse;
+  text: ContentModerationProbeResultResponse;
+}
+
+export interface ContentModerationProbeResponseDoc {
+  data: ContentModerationProbeResponse;
+  errorMsg: string;
+}
+
+export interface ContentModerationProbeResultResponse {
+  error?: string;
+  latencyMS: number;
+  model?: string;
+  valid: boolean;
+}
+
+export interface ContentModerationServiceConfigResponse {
+  apiKeyMasked?: string;
+  baseUrl: string;
+  enabled: boolean;
+  hasAPIKey: boolean;
+  maxConcurrency: number;
+  model: string;
+  policy: ContentModerationPolicyResponse;
+  queueCapacity: number;
+  timeoutSeconds: number;
+}
+
+export interface ContentModerationStatsDataResponse {
+  items: ContentModerationDailyStatResponse[];
+}
+
+export interface ContentModerationStatsResponseDoc {
+  data: ContentModerationStatsDataResponse;
+  errorMsg: string;
+}
+
+export interface ContentModerationUpdateConfigRequest {
+  apiKey?: string;
+  baseUrl?: string;
+  clearAPIKey?: boolean;
+  enabled?: boolean;
+  maxConcurrency?: number;
+  model?: string;
+  policy?: ContentModerationPolicyRequest;
+  queueCapacity?: number;
+  timeoutSeconds?: number;
+}
+
 export interface ContextArtifactResponse {
   content: string;
   createdAt: string;
@@ -1154,6 +1312,15 @@ export interface CreateConversationShareRequest {
   defaultMessagePublicIDs?: string[];
 }
 
+export interface CreateModelDisplayGroupRequest {
+  /** @maxLength 2048 */
+  icon?: string;
+  /** @maxItems 10000 */
+  modelIDs?: number[];
+  /** @maxLength 64 */
+  name: string;
+}
+
 export interface CreateModelRequest {
   accessScope?: "public" | "internal";
   /** @maxLength 10000 */
@@ -1167,6 +1334,7 @@ export interface CreateModelRequest {
   cbWindowMin?: number;
   /** @maxLength 10000 */
   description?: string;
+  displayGroupID?: number;
   /** @maxLength 128 */
   icon?: string;
   /** @maxLength 1000 */
@@ -1186,6 +1354,15 @@ export interface CreateModelRequest {
 export interface CreateModelResponseDoc {
   data: ModelDataResponse;
   errorMsg: string;
+}
+
+export interface CreateModelVendorRequest {
+  /** @maxLength 2048 */
+  icon?: string;
+  /** @maxLength 64 */
+  key: string;
+  /** @maxLength 64 */
+  name: string;
 }
 
 export interface CreatePermissionGroupRequest {
@@ -1656,6 +1833,7 @@ export interface LoginOptionsResponse {
   emailRegistrationEnabled: boolean;
   emailVerificationEnabled: boolean;
   passwordResetEnabled: boolean;
+  providerAuthBridge: ProviderAuthBridgeResponse;
   providers: IdentityProviderResponse[];
   turnstileRegistrationEnabled: boolean;
   turnstileSiteKey: string;
@@ -1755,6 +1933,13 @@ export interface MessageListResponseDoc {
   errorMsg: string;
 }
 
+export interface MessageModerationResponse {
+  categories?: string[];
+  direction?: string;
+  eventID?: string;
+  state?: string;
+}
+
 export interface MessageProcessTraceResponse {
   enabled: boolean;
   events?: MessageTraceEventResponse[];
@@ -1813,6 +1998,7 @@ export interface MessageResponse {
   latencyMS: number;
   modelIcon: string;
   modelVendor: string;
+  moderation?: MessageModerationResponse;
   myFeedback: string;
   outputTokens: number;
   parentMessageID: number | null;
@@ -1871,6 +2057,32 @@ export interface MessageTraceEventResponse {
 
 export interface ModelDataResponse {
   model: ModelResponse;
+}
+
+export interface ModelDisplayGroupDataResponse {
+  group: ModelDisplayGroupResponse;
+}
+
+export interface ModelDisplayGroupDataResponseDoc {
+  data: ModelDisplayGroupDataResponse;
+  errorMsg: string;
+}
+
+export interface ModelDisplayGroupListResponseDoc {
+  data: {
+    results: ModelDisplayGroupResponse[];
+    total: number;
+  };
+  errorMsg: string;
+}
+
+export interface ModelDisplayGroupResponse {
+  createdAt: string;
+  icon: string;
+  id: number;
+  name: string;
+  sortOrder: number;
+  updatedAt: string;
 }
 
 export interface ModelItemDoc {
@@ -2005,6 +2217,9 @@ export interface ModelResponse {
   cbWindowMin: number;
   createdAt: string;
   description: string;
+  displayGroupID: number | null;
+  displayGroupIcon: string;
+  displayGroupName: string;
   icon: string;
   id: number;
   kindsJSON: string;
@@ -2017,6 +2232,8 @@ export interface ModelResponse {
   updatedAt: string;
   upstreamNamesJSON: string;
   vendor: string;
+  vendorIcon: string;
+  vendorName: string;
 }
 
 export interface ModelUpstreamSourceDataResponse {
@@ -2058,6 +2275,34 @@ export interface ModelUpstreamSourceResponse {
   upstreamName: string;
   upstreamStatus: string;
   weight: number;
+}
+
+export interface ModelVendorDataResponse {
+  vendor: ModelVendorResponse;
+}
+
+export interface ModelVendorDataResponseDoc {
+  data: ModelVendorDataResponse;
+  errorMsg: string;
+}
+
+export interface ModelVendorListResponseDoc {
+  data: {
+    results: ModelVendorResponse[];
+    total: number;
+  };
+  errorMsg: string;
+}
+
+export interface ModelVendorResponse {
+  builtIn: boolean;
+  createdAt: string;
+  icon: string;
+  id: number;
+  key: string;
+  name: string;
+  sortOrder: number;
+  updatedAt: string;
 }
 
 export interface NativeToolPricingRequest {
@@ -2437,6 +2682,59 @@ export interface PromptPresetResponseDoc {
   errorMsg: string;
 }
 
+export interface ProviderAuthBridgeExchangeRequest {
+  /** @maxLength 128 */
+  clientID: string;
+  /**
+   * @minLength 43
+   * @maxLength 128
+   */
+  codeVerifier: string;
+  /**
+   * @minLength 43
+   * @maxLength 128
+   */
+  grant: string;
+}
+
+export interface ProviderAuthBridgeResponse {
+  callbackBaseURL: string;
+  enabled: boolean;
+  protocolVersion: number;
+}
+
+export interface ProviderAuthBridgeStartRequest {
+  /** @maxLength 128 */
+  clientID: string;
+  /**
+   * @minLength 43
+   * @maxLength 128
+   */
+  clientState: string;
+  /**
+   * @minLength 43
+   * @maxLength 128
+   */
+  codeChallenge: string;
+  intent?: "login" | "register";
+  /** @maxLength 16 */
+  locale?: string;
+  /** @maxLength 2048 */
+  next?: string;
+  /** @maxLength 2048 */
+  redirectURI: string;
+}
+
+export interface ProviderAuthBridgeStartResponse {
+  authorizationURL: string;
+  expiresAt: string;
+}
+
+export interface ProviderAuthBridgeStartResponseDoc {
+  data: ProviderAuthBridgeStartResponse;
+  errorMsg: string;
+}
+
 export interface PublicModelListResponseDoc {
   data: PublicModelResponse[];
   errorMsg: string;
@@ -2467,6 +2765,9 @@ export interface PublicModelPricingTierResponse {
 export interface PublicModelResponse {
   capabilitiesJSON: string;
   description: string;
+  displayGroupID: number | null;
+  displayGroupIcon: string;
+  displayGroupName: string;
   icon: string;
   kindsJSON: string;
   platformModelName: string;
@@ -2474,6 +2775,8 @@ export interface PublicModelResponse {
   protocolsJSON: string;
   sortOrder: number;
   vendor: string;
+  vendorIcon: string;
+  vendorName: string;
 }
 
 export interface PublicSharedConversationResponse {
@@ -2843,6 +3146,15 @@ export interface SetModelPermissionGroupsRequest {
   groupIDs?: number[];
 }
 
+export interface SetModelsDisplayGroupRequest {
+  displayGroupID: number;
+  /**
+   * @maxItems 1000
+   * @minItems 1
+   */
+  modelIDs: number[];
+}
+
 export interface SettingsPatchSettingsRequest {
   /** @minItems 1 */
   items: PatchItem[];
@@ -3028,6 +3340,10 @@ export interface ToolListResponseDoc {
 }
 
 export interface ToolResponse {
+  attachmentArgument: string;
+  attachmentEncoding: "" | "base64" | "data_url";
+  attachmentInputMode: "none" | "image";
+  attachmentPromptArgument: string;
   createdAt: string;
   description: string;
   displayName: string;
@@ -3126,6 +3442,15 @@ export interface UpdateMessageRequest {
   content: string;
 }
 
+export interface UpdateModelDisplayGroupRequest {
+  /** @maxLength 2048 */
+  icon?: string;
+  /** @maxItems 10000 */
+  modelIDs?: number[];
+  /** @maxLength 64 */
+  name?: string;
+}
+
 export interface UpdateModelRequest {
   accessScope?: "public" | "internal";
   /** @maxLength 10000 */
@@ -3139,6 +3464,7 @@ export interface UpdateModelRequest {
   cbWindowMin?: number;
   /** @maxLength 10000 */
   description?: string;
+  displayGroupID?: number;
   /** @maxLength 128 */
   icon?: string;
   /** @maxLength 1000 */
@@ -3179,6 +3505,13 @@ export interface UpdateModelUpstreamSourceResponseDoc {
   errorMsg: string;
 }
 
+export interface UpdateModelVendorRequest {
+  /** @maxLength 2048 */
+  icon?: string;
+  /** @maxLength 64 */
+  name?: string;
+}
+
 export interface UpdatePermissionGroupRequest {
   /** @maxLength 512 */
   description?: string;
@@ -3197,6 +3530,10 @@ export interface UpdateServerToolsStatusRequest {
 }
 
 export interface UpdateToolRequest {
+  attachmentArgument?: string;
+  attachmentEncoding?: "base64" | "data_url";
+  attachmentInputMode?: "none" | "image";
+  attachmentPromptArgument?: string;
   description?: string;
   displayName?: string;
   status?: string;
@@ -4294,6 +4631,152 @@ export namespace Admin {
   }
 
   /**
+   * No description
+   * @tags admin-content-moderation
+   * @name ContentModerationConfigList
+   * @summary Get content moderation config
+   * @request GET:/admin/content-moderation/config
+   * @secure
+   */
+  export namespace ContentModerationConfigList {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = ContentModerationConfigResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin-content-moderation
+   * @name ContentModerationConfigUpdate
+   * @summary Update content moderation config
+   * @request PUT:/admin/content-moderation/config
+   * @secure
+   */
+  export namespace ContentModerationConfigUpdate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = ContentModerationUpdateConfigRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = ContentModerationConfigUpdateResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin-content-moderation
+   * @name ContentModerationEventsList
+   * @summary List content moderation events
+   * @request GET:/admin/content-moderation/events
+   * @secure
+   */
+  export namespace ContentModerationEventsList {
+    export type RequestParams = {};
+    export type RequestQuery = {
+      /** Category filter */
+      category?: string;
+      /** Direction filter */
+      direction?: string;
+      /** Start time (RFC3339) */
+      from?: string;
+      /** Modality filter */
+      modality?: string;
+      /** Page number */
+      page?: number;
+      /** Page size */
+      pageSize?: number;
+      /** Result filter */
+      result?: string;
+      /** Run ID */
+      runId?: string;
+      /** End time (RFC3339) */
+      to?: string;
+      /** User ID */
+      userId?: number;
+    };
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = ContentModerationEventListResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin-content-moderation
+   * @name ContentModerationEventsDetail
+   * @summary Get content moderation event detail
+   * @request GET:/admin/content-moderation/events/{eventID}
+   * @secure
+   */
+  export namespace ContentModerationEventsDetail {
+    export type RequestParams = {
+      /** Moderation event ID */
+      eventId: string;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = ContentModerationEventDetailResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin-content-moderation
+   * @name ContentModerationEventsImagesDetail
+   * @summary Stream a isolated moderation image
+   * @request GET:/admin/content-moderation/events/{eventID}/images/{index}
+   * @secure
+   */
+  export namespace ContentModerationEventsImagesDetail {
+    export type RequestParams = {
+      /** Moderation event ID */
+      eventId: string;
+      /** Image index */
+      index: number;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = Blob;
+  }
+
+  /**
+   * No description
+   * @tags admin-content-moderation
+   * @name ContentModerationProbeCreate
+   * @summary Probe content moderation service
+   * @request POST:/admin/content-moderation/probe
+   * @secure
+   */
+  export namespace ContentModerationProbeCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = ContentModerationProbeResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin-content-moderation
+   * @name ContentModerationStatsList
+   * @summary Get content moderation daily stats
+   * @request GET:/admin/content-moderation/stats
+   * @secure
+   */
+  export namespace ContentModerationStatsList {
+    export type RequestParams = {};
+    export type RequestQuery = {
+      /** Start time (RFC3339) */
+      from?: string;
+      /** End time (RFC3339) */
+      to?: string;
+    };
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = ContentModerationStatsResponseDoc;
+  }
+
+  /**
    * @description 管理员分页查看对话运行轨迹、工具、MCP 与处理事件
    * @tags admin
    * @name ConversationEventsList
@@ -4384,6 +4867,141 @@ export namespace Admin {
   }
 
   /**
+   * @description 分页查询自定义展示分组；未绑定分组的模型继续按技术厂商展示
+   * @tags llm
+   * @name LlmModelDisplayGroupsList
+   * @summary 管理员查询模型展示分组
+   * @request GET:/admin/llm/model-display-groups
+   * @secure
+   */
+  export namespace LlmModelDisplayGroupsList {
+    export type RequestParams = {};
+    export type RequestQuery = {
+      /** 页码 */
+      page?: number;
+      /** 每页数量 */
+      page_size?: number;
+      /** 搜索名称 */
+      q?: string;
+    };
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = ModelDisplayGroupListResponseDoc;
+  }
+
+  /**
+   * @description 创建仅影响用户界面归类的自定义模型分组
+   * @tags llm
+   * @name LlmModelDisplayGroupsCreate
+   * @summary 管理员创建模型展示分组
+   * @request POST:/admin/llm/model-display-groups
+   * @secure
+   */
+  export namespace LlmModelDisplayGroupsCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = CreateModelDisplayGroupRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = ModelDisplayGroupDataResponseDoc;
+  }
+
+  /**
+   * @description 删除展示分组后，关联模型恢复按技术厂商展示
+   * @tags llm
+   * @name LlmModelDisplayGroupsDelete
+   * @summary 管理员删除模型展示分组
+   * @request DELETE:/admin/llm/model-display-groups/{id}
+   * @secure
+   */
+  export namespace LlmModelDisplayGroupsDelete {
+    export type RequestParams = {
+      /** 展示分组 ID */
+      id: number;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = SuccessDoc;
+  }
+
+  /**
+   * No description
+   * @tags llm
+   * @name LlmModelDisplayGroupsPartialUpdate
+   * @summary 管理员更新模型展示分组
+   * @request PATCH:/admin/llm/model-display-groups/{id}
+   * @secure
+   */
+  export namespace LlmModelDisplayGroupsPartialUpdate {
+    export type RequestParams = {
+      /** 展示分组 ID */
+      id: number;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = UpdateModelDisplayGroupRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = ModelDisplayGroupDataResponseDoc;
+  }
+
+  /**
+   * @description 分页查询模型技术厂商目录；技术厂商是路由、权限和计费使用的稳定身份
+   * @tags llm
+   * @name LlmModelVendorsList
+   * @summary 管理员查询模型技术厂商
+   * @request GET:/admin/llm/model-vendors
+   * @secure
+   */
+  export namespace LlmModelVendorsList {
+    export type RequestParams = {};
+    export type RequestQuery = {
+      /** 页码 */
+      page?: number;
+      /** 每页数量 */
+      page_size?: number;
+      /** 搜索 key 或名称 */
+      q?: string;
+    };
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = ModelVendorListResponseDoc;
+  }
+
+  /**
+   * @description 创建新的稳定技术厂商身份；创建后可供平台模型选择
+   * @tags llm
+   * @name LlmModelVendorsCreate
+   * @summary 管理员创建模型技术厂商
+   * @request POST:/admin/llm/model-vendors
+   * @secure
+   */
+  export namespace LlmModelVendorsCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = CreateModelVendorRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = ModelVendorDataResponseDoc;
+  }
+
+  /**
+   * @description 更新厂商展示名称和图标；稳定技术 key 不可修改
+   * @tags llm
+   * @name LlmModelVendorsPartialUpdate
+   * @summary 管理员更新模型技术厂商
+   * @request PATCH:/admin/llm/model-vendors/{key}
+   * @secure
+   */
+  export namespace LlmModelVendorsPartialUpdate {
+    export type RequestParams = {
+      /** 技术厂商 key */
+      key: string;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = UpdateModelVendorRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = ModelVendorDataResponseDoc;
+  }
+
+  /**
    * @description 管理员分页查询平台模型目录，可按 only_active 过滤
    * @tags llm
    * @name LlmModelsList
@@ -4450,6 +5068,22 @@ export namespace Admin {
     export type RequestBody = BatchDeleteRequest;
     export type RequestHeaders = {};
     export type ResponseBody = BatchDeleteResponseDoc;
+  }
+
+  /**
+   * @description 在单个事务中将指定模型归入展示分组；displayGroupID 为 0 时恢复按技术厂商展示
+   * @tags llm
+   * @name LlmModelsDisplayGroupPartialUpdate
+   * @summary 管理员批量设置模型展示分组
+   * @request PATCH:/admin/llm/models/display-group
+   * @secure
+   */
+  export namespace LlmModelsDisplayGroupPartialUpdate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = SetModelsDisplayGroupRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = SuccessDoc;
   }
 
   /**
@@ -5198,7 +5832,7 @@ export namespace Admin {
   }
 
   /**
-   * @description 管理员更新 MCP 工具的展示信息或状态
+   * @description 管理员更新 MCP 工具的展示信息、附件处理配置或状态
    * @tags admin-mcp
    * @name McpToolsPartialUpdate
    * @summary 更新 MCP 工具
@@ -6272,6 +6906,42 @@ export namespace Auth {
     export type RequestBody = PasswordResetStartRequest;
     export type RequestHeaders = {};
     export type ResponseBody = PasswordResetStartResponseDoc;
+  }
+
+  /**
+   * @description 为 Web、App 或桌面公共客户端创建 PKCE 保护的 OAuth 授权事务；外部身份源仅回调当前 DEEIX 实例
+   * @tags auth
+   * @name ProvidersAuthorizeCreate
+   * @summary 创建第三方登录授权桥事务
+   * @request POST:/auth/providers/{slug}/authorize
+   */
+  export namespace ProvidersAuthorizeCreate {
+    export type RequestParams = {
+      /** 身份源 slug */
+      slug: string;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = ProviderAuthBridgeStartRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = ProviderAuthBridgeStartResponseDoc;
+  }
+
+  /**
+   * @description 使用客户端 PKCE verifier 原子兑换服务端回调签发的一次性授权码，并进入统一 2FA/会话流程
+   * @tags auth
+   * @name ProvidersExchangeCreate
+   * @summary 兑换第三方登录一次性授权码
+   * @request POST:/auth/providers/{slug}/exchange
+   */
+  export namespace ProvidersExchangeCreate {
+    export type RequestParams = {
+      /** 身份源 slug */
+      slug: string;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = ProviderAuthBridgeExchangeRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = LoginResponseDoc;
   }
 
   /**

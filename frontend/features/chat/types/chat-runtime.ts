@@ -18,6 +18,11 @@ export type ChatModelOption = {
   description: string;
   icon: string;
   vendor: string;
+  vendorName: string;
+  vendorIcon: string;
+  displayGroupID: number | null;
+  displayGroupName: string;
+  displayGroupIcon: string;
   kinds: string[];
   protocols: string[];
   defaultOptions: ConversationOptions;

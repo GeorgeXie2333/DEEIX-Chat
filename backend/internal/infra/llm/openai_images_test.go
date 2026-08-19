@@ -326,7 +326,7 @@ func TestOpenAIImageGenerationStream(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient()
+	client := newTestClient()
 	var partials []GenerateStreamEvent
 	output, err := client.GenerateStream(context.Background(), RouteConfig{
 		Protocol:      AdapterOpenAIImageGenerations,
@@ -381,7 +381,7 @@ func TestOpenAIImageGenerationStreamFallsBackToJSONResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient()
+	client := newTestClient()
 	var usageEvents []Usage
 	output, err := client.GenerateStream(context.Background(), RouteConfig{
 		Protocol:      AdapterOpenAIImageGenerations,
@@ -436,7 +436,7 @@ func TestOpenAIImageEditStream(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient()
+	client := newTestClient()
 	var partials []GenerateStreamEvent
 	output, err := client.GenerateStream(context.Background(), RouteConfig{
 		Protocol:      AdapterOpenAIImageEdits,
@@ -496,7 +496,7 @@ func TestOpenAIImageEditStreamSniffsEventStreamBodyWithWrongContentType(t *testi
 	}))
 	defer server.Close()
 
-	client := NewClient()
+	client := newTestClient()
 	output, err := client.GenerateStream(context.Background(), RouteConfig{
 		Protocol:      AdapterOpenAIImageEdits,
 		BaseURL:       server.URL,
@@ -544,7 +544,7 @@ func TestOpenAIImageEditStreamReturnsReadableErrorForNonJSONNonSSE200(t *testing
 	}))
 	defer server.Close()
 
-	client := NewClient()
+	client := newTestClient()
 	_, err := client.GenerateStream(context.Background(), RouteConfig{
 		Protocol:      AdapterOpenAIImageEdits,
 		BaseURL:       server.URL,

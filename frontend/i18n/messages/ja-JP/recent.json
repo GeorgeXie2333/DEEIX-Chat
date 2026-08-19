@@ -63,7 +63,9 @@
     "defaultsSelected": "{count} 件選択済み",
     "defaultsSelectionLimit": "最大 {count} 件まで選択できます。",
     "defaultsNoResults": "一致する項目はありません。",
-    "defaultsLoadFailed": "既定値の候補を読み込めませんでした。"
+    "defaultsLoadFailed": "既定値の候補を読み込めませんでした。",
+    "imageProcessorLimitTitle": "Only one image processor can be selected",
+    "imageProcessorLimitDescription": "A project can preset one MCP image attachment processor. Clear the current one first."
   },
   "select": "選択",
   "selectedCount": "{count} 件の会話を選択中",

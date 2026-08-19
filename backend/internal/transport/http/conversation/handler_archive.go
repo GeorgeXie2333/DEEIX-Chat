@@ -1,6 +1,7 @@
 package conversation
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -44,14 +45,19 @@ func (h *Handler) ExportConversationArchive(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, "export conversation failed")
 		return
 	}
+	archiveDoc, err := conversationArchiveDocFromApplication(archive)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "export conversation failed")
+		return
+	}
 
 	h.recordAudit(c, "export_conversation_archive",
 		"conversation",
 		publicID,
-		map[string]interface{}{"schema": archive.Schema, "messageCount": len(archive.Messages)},
+		map[string]interface{}{"schema": archiveDoc.Schema, "messageCount": len(archiveDoc.Messages)},
 	)
 
-	response.Success(c, archive)
+	response.Success(c, archiveDoc)
 }
 
 // ImportConversationArchive godoc
@@ -75,12 +81,17 @@ func (h *Handler) ImportConversationArchive(c *gin.Context) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, conversationArchiveImportMaxBytes)
 
-	var archive appconversation.ConversationArchive
-	if err := c.ShouldBindJSON(&archive); err != nil {
+	var archiveDoc ConversationArchiveRequest
+	if err := c.ShouldBindJSON(&archiveDoc); err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "request body too large") {
 			response.Error(c, http.StatusRequestEntityTooLarge, "conversation archive too large")
 			return
 		}
+		response.InvalidRequestBody(c, err)
+		return
+	}
+	archive, err := conversationArchiveFromDoc(archiveDoc)
+	if err != nil {
 		response.InvalidRequestBody(c, err)
 		return
 	}
@@ -103,8 +114,35 @@ func (h *Handler) ImportConversationArchive(c *gin.Context) {
 	h.recordAudit(c, "import_conversation_archive",
 		"conversation",
 		strconv.FormatUint(uint64(item.ID), 10),
-		map[string]interface{}{"schema": archive.Schema, "messageCount": item.MessageCount},
+		map[string]interface{}{"schema": archiveDoc.Schema, "messageCount": item.MessageCount},
 	)
 
 	response.Success(c, toConversationResponse(item))
+}
+
+func conversationArchiveDocFromApplication(source *appconversation.ConversationArchive) (ConversationArchiveDoc, error) {
+	if source == nil {
+		return ConversationArchiveDoc{}, errors.New("conversation archive is nil")
+	}
+	payload, err := json.Marshal(source)
+	if err != nil {
+		return ConversationArchiveDoc{}, err
+	}
+	var target ConversationArchiveDoc
+	if err = json.Unmarshal(payload, &target); err != nil {
+		return ConversationArchiveDoc{}, err
+	}
+	return target, nil
+}
+
+func conversationArchiveFromDoc(source ConversationArchiveDoc) (appconversation.ConversationArchive, error) {
+	payload, err := json.Marshal(source)
+	if err != nil {
+		return appconversation.ConversationArchive{}, err
+	}
+	var target appconversation.ConversationArchive
+	if err = json.Unmarshal(payload, &target); err != nil {
+		return appconversation.ConversationArchive{}, err
+	}
+	return target, nil
 }

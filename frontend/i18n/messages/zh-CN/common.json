@@ -111,6 +111,7 @@
   },
   "runtime": {
     "status": {
+      "available": "可用",
       "running": "运行中",
       "restarting": "重启中",
       "created": "已创建",

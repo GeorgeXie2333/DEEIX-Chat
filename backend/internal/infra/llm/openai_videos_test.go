@@ -71,7 +71,7 @@ func TestOpenAIVideoGenerationCreatesPollsAndDownloads(t *testing.T) {
 	}))
 	defer server.Close()
 
-	output, err := NewClient().Generate(context.Background(), RouteConfig{
+	output, err := newTestClient().Generate(context.Background(), RouteConfig{
 		Protocol:      AdapterOpenAIVideoGenerations,
 		BaseURL:       server.URL,
 		APIKey:        "test-key",
@@ -146,7 +146,7 @@ func TestOpenAIVideoGenerationStreamEmitsProgressStatus(t *testing.T) {
 	defer server.Close()
 
 	var statuses []GeneratedVideoStatus
-	output, err := NewClient().GenerateStream(context.Background(), RouteConfig{
+	output, err := newTestClient().GenerateStream(context.Background(), RouteConfig{
 		Protocol:      AdapterOpenAIVideoGenerations,
 		BaseURL:       server.URL,
 		APIKey:        "test-key",

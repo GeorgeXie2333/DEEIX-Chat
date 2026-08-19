@@ -52,7 +52,7 @@ func (c *Client) generateOpenAICompatible(ctx context.Context, route RouteConfig
 	setOpenRouterAttributionHeaders(req, route)
 	setAdditionalHeadersForInput(req, route.HeadersJSON, &input)
 
-	resp, err := doGenerationRequest(c.httpClientForRoute(route), req)
+	resp, err := c.doRouteGenerationRequest(route, req)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (c *Client) generateStreamOpenAICompatible(
 	setOpenRouterAttributionHeaders(req, route)
 	setAdditionalHeadersForInput(req, route.HeadersJSON, &input)
 
-	resp, err := doGenerationRequest(c.httpClientForRoute(route), req)
+	resp, err := c.doRouteGenerationRequest(route, req)
 	firstByteTimer.Stop()
 	if err != nil {
 		return nil, err
@@ -189,7 +189,7 @@ func (c *Client) GenerateRawChatCompletion(ctx context.Context, route RouteConfi
 	setOpenRouterAttributionHeaders(req, route)
 	setAdditionalHeaders(req, route.HeadersJSON)
 
-	resp, err := c.httpClientForRoute(route).Do(req)
+	resp, err := c.doRouteRequest(route, req)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func (c *Client) GenerateRawChatCompletionStream(
 	setOpenRouterAttributionHeaders(req, route)
 	setAdditionalHeaders(req, route.HeadersJSON)
 
-	resp, err := c.httpClientForRoute(route).Do(req)
+	resp, err := c.doRouteGenerationRequest(route, req)
 	firstByteTimer.Stop()
 	if err != nil {
 		return nil, err
@@ -385,7 +385,7 @@ func (c *Client) listModelsOpenAICompatible(ctx context.Context, route RouteConf
 	setOpenRouterAttributionHeaders(req, route)
 	setAdditionalHeaders(req, route.HeadersJSON)
 
-	resp, err := c.httpClientForRoute(route).Do(req)
+	resp, err := c.doRouteRequest(route, req)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +430,7 @@ func (c *Client) fetchOpenAIResponse(ctx context.Context, route RouteConfig, met
 	}
 	setAdditionalHeaders(req, route.HeadersJSON)
 
-	resp, err := c.httpClientForRoute(route).Do(req)
+	resp, err := c.doRouteRequest(route, req)
 	if err != nil {
 		return nil, err
 	}
@@ -569,6 +569,9 @@ func buildOpenAIRequestURL(baseURL string, endpoint string) string {
 	case EndpointImageEdits:
 		return buildVersionedEndpointURL(baseURL, "v1", "/images/edits")
 	case EndpointVideoGenerations:
+		if parsed, err := url.Parse(baseURL); err == nil && strings.EqualFold(parsed.Hostname(), "api.x.ai") {
+			return buildVersionedEndpointURL(baseURL, "v1", "/videos/generations")
+		}
 		return buildVersionedEndpointURL(baseURL, "v1", "/videos")
 	default:
 		return buildVersionedEndpointURL(baseURL, "v1", "/responses")

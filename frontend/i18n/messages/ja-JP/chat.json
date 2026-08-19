@@ -272,7 +272,12 @@
     "editReplyFailed": "返信を編集できません",
     "retryReplyFailed": "この返信を再試行できません",
     "retryReplyMissingUser": "対応するユーザーメッセージが見つかりません。",
-    "concurrentGenerationLimit": "同時生成数の上限に達しました。進行中の生成が完了してから再試行してください。"
+    "concurrentGenerationLimit": "同時生成数の上限に達しました。進行中の生成が完了してから再試行してください。",
+    "moderationChecking": "安全性を確認しています…",
+    "moderationBlocked": "コンテンツがブロックされました",
+    "moderationBlockedDescription": "安全性チェック後、この回答は取り下げられました。",
+    "moderationEventId": "イベント ID: {id}",
+    "moderationCategories": "該当カテゴリ: {categories}"
   },
   "data": {
     "signInRequired": "未ログインのため、会話メッセージを読み込めません",
@@ -463,7 +468,23 @@
     "mcpDefaultServerToolsDisabled": "このサーバーのすべてのツールを新しいチャットの既定に設定",
     "markdownPreview": "Markdown プレビュー",
     "previewMarkdown": "Markdown をプレビュー",
-    "hideMarkdownPreview": "Markdown プレビューを隠す"
+    "hideMarkdownPreview": "Markdown プレビューを隠す",
+    "voiceStartingPlaceholder": "Starting voice input…",
+    "mcpImageProcessor": "Image attachment processor",
+    "mcpImageProcessorLimitTitle": "Only one image processor can be selected",
+    "mcpImageProcessorLimitDescription": "One MCP image attachment processor can handle images for a message. Clear the current one first.",
+    "voiceErrorTitle": "Voice input stopped",
+    "voiceErrors": {
+      "audioUnavailable": "No available microphone was found. Check the microphone permission and device.",
+      "interrupted": "Speech recognition was repeatedly interrupted. Please try again.",
+      "languageUnsupported": "The browser speech service does not support the current language.",
+      "network": "The browser speech service could not be reached. Check the network and try again.",
+      "noSpeech": "No speech was detected. Please try again and speak closer to the microphone.",
+      "permissionDenied": "Microphone permission was denied. Allow microphone access and try again.",
+      "serviceUnavailable": "The browser speech service is unavailable on this device.",
+      "startFailed": "Speech recognition could not be started. Please try again.",
+      "unavailable": "Voice input is unavailable in the current browser environment."
+    }
   },
   "modelPicker": {
     "selectModel": "モデルを選択",
@@ -494,7 +515,8 @@
     "perSecond": "1 秒あたり",
     "callUnit": "回",
     "secondUnit": "秒",
-    "empty": "利用可能なモデルはありません"
+    "empty": "利用可能なモデルはありません",
+    "group": "Group"
   },
   "processTrace": {
     "fileBadges": {
@@ -730,7 +752,8 @@
     "top_k": "Top K",
     "top_p": "Top P",
     "verbosity": "出力の詳しさ",
-    "web_search": "Web 検索"
+    "web_search": "Web 検索",
+    "duration": "Duration (seconds)"
   },
   "optionDescriptions": {
     "background": "Controls the generated image background. Transparent output requires model and format support.",
@@ -811,7 +834,8 @@
     "top_k": "Limits how many candidate tokens participate in sampling.",
     "top_p": "Controls the nucleus sampling probability mass.",
     "verbosity": "Controls output detail for models that support it.",
-    "web_search": "Controls whether native web search is enabled."
+    "web_search": "Controls whether native web search is enabled.",
+    "duration": "Controls generated video duration in seconds."
   },
   "nativeToolDescriptions": {
     "openai__web_search": "Use OpenAI hosted web search for realtime information.",

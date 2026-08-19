@@ -27,7 +27,7 @@ func (s *Service) saveAssistantGeneratedImages(ctx context.Context, input assist
 	attachmentRows := make([]model.Attachment, 0, len(input.Images))
 	now := time.Now()
 	for i, image := range input.Images {
-		data, mimeType, err := s.readGeneratedImage(ctx, image)
+		data, mimeType, err := s.readGeneratedImage(ctx, image, "")
 		if err != nil {
 			return nil, nil, err
 		}

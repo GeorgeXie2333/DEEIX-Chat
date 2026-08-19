@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
 	appopenapi "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/openapi"
@@ -20,6 +21,18 @@ type Handler struct {
 	service *appopenapi.Service
 }
 
+type apiKeyResponse struct {
+	Exists            bool       `json:"exists"`
+	APIKey            string     `json:"apiKey,omitempty"`
+	KeyPrefix         string     `json:"keyPrefix"`
+	Status            string     `json:"status"`
+	LastUsedAt        *time.Time `json:"lastUsedAt,omitempty"`
+	CreatedAt         time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt         time.Time  `json:"updatedAt,omitempty"`
+	TwoFactorRequired bool       `json:"twoFactorRequired,omitempty"`
+	Exportable        bool       `json:"exportable,omitempty"`
+}
+
 // NewHandler 创建处理器。
 func NewHandler(service *appopenapi.Service) *Handler {
 	return &Handler{service: service}
@@ -32,7 +45,7 @@ func (h *Handler) GetAPIKey(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, "get open api key failed")
 		return
 	}
-	response.Success(c, view)
+	response.Success(c, toAPIKeyResponse(view))
 }
 
 // CreateAPIKey 创建当前用户 API Key。
@@ -50,7 +63,7 @@ func (h *Handler) CreateAPIKey(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, "create open api key failed")
 		return
 	}
-	response.Success(c, view)
+	response.Success(c, toAPIKeyResponse(view))
 }
 
 // RegenerateAPIKey 重新生成当前用户 API Key。
@@ -64,7 +77,7 @@ func (h *Handler) RegenerateAPIKey(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, "regenerate open api key failed")
 		return
 	}
-	response.Success(c, view)
+	response.Success(c, toAPIKeyResponse(view))
 }
 
 // DeleteAPIKey 停用当前用户 API Key。
@@ -74,7 +87,7 @@ func (h *Handler) DeleteAPIKey(c *gin.Context) {
 		response.Error(c, http.StatusInternalServerError, "delete open api key failed")
 		return
 	}
-	response.Success(c, view)
+	response.Success(c, toAPIKeyResponse(view))
 }
 
 // ListModels 处理 GET /v1/models。
@@ -103,7 +116,38 @@ func (h *Handler) ListModels(c *gin.Context) {
 		writeOpenAIError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, models)
+	c.JSON(http.StatusOK, toModelListResponse(models))
+}
+
+func toAPIKeyResponse(view *appopenapi.APIKeyView) apiKeyResponse {
+	if view == nil {
+		return apiKeyResponse{}
+	}
+	return apiKeyResponse{
+		Exists:            view.Exists,
+		APIKey:            view.APIKey,
+		KeyPrefix:         view.KeyPrefix,
+		Status:            view.Status,
+		LastUsedAt:        view.LastUsedAt,
+		CreatedAt:         view.CreatedAt,
+		UpdatedAt:         view.UpdatedAt,
+		TwoFactorRequired: view.TwoFactorRequired,
+		Exportable:        view.Exportable,
+	}
+}
+
+func toModelListResponse(models appopenapi.OpenAIModelList) ModelListResponseDoc {
+	items := make([]ModelItemDoc, 0, len(models.Data))
+	for _, model := range models.Data {
+		items = append(items, ModelItemDoc{
+			ID:                     model.ID,
+			Object:                 model.Object,
+			Created:                model.Created,
+			OwnedBy:                model.OwnedBy,
+			SupportedEndpointTypes: model.SupportedEndpointTypes,
+		})
+	}
+	return ModelListResponseDoc{Success: models.Success, Data: items, Object: models.Object}
 }
 
 // ChatCompletions 处理 POST /v1/chat/completions。

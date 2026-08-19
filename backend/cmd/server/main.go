@@ -9,9 +9,8 @@ import (
 )
 
 // @title Comi AI API
-// @version 0.3.4
+// @version 0.3.5
 // @description Comi AI backend API documentation.
-
 // @BasePath /api/v1
 // @securityDefinitions.apikey BearerAuth
 // @in header

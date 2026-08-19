@@ -158,7 +158,8 @@ func TestUsageQueriesUseSQLitePortableExpressions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetUsageStatistics(week) error = %v", err)
 	}
-	if len(weeklyStatistics.Trend) != 1 || weeklyStatistics.Trend[0].PeriodStart.Format("2006-01-02") != "2026-06-01" {
+	expectedWeekStart := usageDate.AddDate(0, 0, -(int(usageDate.Weekday())+6)%7).Format("2006-01-02")
+	if len(weeklyStatistics.Trend) != 1 || weeklyStatistics.Trend[0].PeriodStart.Format("2006-01-02") != expectedWeekStart {
 		t.Fatalf("unexpected weekly statistics: %+v", weeklyStatistics.Trend)
 	}
 }

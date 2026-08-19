@@ -14,7 +14,8 @@
     "chatFiles": "ファイルと検索",
     "about": "概要",
     "upstreams": "??",
-    "statistics": "利用統計"
+    "statistics": "利用統計",
+    "contentModeration": "Content moderation"
   },
   "aboutPage": {
     "title": "概要",

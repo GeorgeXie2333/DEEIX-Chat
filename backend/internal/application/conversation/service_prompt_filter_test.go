@@ -25,6 +25,7 @@ func TestValidatePromptSensitiveWords(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 		zap.NewNop(),
 	)
 
@@ -40,7 +41,7 @@ func TestValidatePromptSensitiveWords(t *testing.T) {
 }
 
 func TestValidatePromptSensitiveWordsEmptyDictionary(t *testing.T) {
-	service := NewService(config.Config{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, zap.NewNop())
+	service := NewService(config.Config{}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, zap.NewNop())
 	if err := service.ValidatePromptSensitiveWords("anything"); err != nil {
 		t.Fatalf("expected empty dictionary to pass, got %v", err)
 	}

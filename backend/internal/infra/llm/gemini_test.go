@@ -151,7 +151,7 @@ func TestGeminiGenerateRequestsThoughtSummariesByDefault(t *testing.T) {
 	}))
 	defer server.Close()
 
-	output, err := NewClient().Generate(context.Background(), RouteConfig{
+	output, err := newTestClient().Generate(context.Background(), RouteConfig{
 		Protocol:      AdapterGoogleGenerateContent,
 		BaseURL:       server.URL,
 		UpstreamModel: "gemini-2.0-flash",
@@ -186,7 +186,7 @@ func TestGeminiGenerateRespectsExplicitIncludeThoughtsFalse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err := NewClient().Generate(context.Background(), RouteConfig{
+	_, err := newTestClient().Generate(context.Background(), RouteConfig{
 		Protocol:      AdapterGoogleGenerateContent,
 		BaseURL:       server.URL,
 		UpstreamModel: "gemini-2.5-pro",
@@ -660,7 +660,7 @@ func TestGeminiImageGenerationStream(t *testing.T) {
 	defer server.Close()
 
 	var usageEvents []Usage
-	output, err := NewClient().GenerateStream(context.Background(), RouteConfig{
+	output, err := newTestClient().GenerateStream(context.Background(), RouteConfig{
 		Protocol:      AdapterGoogleImageGeneration,
 		BaseURL:       server.URL,
 		APIKey:        "gemini-key",

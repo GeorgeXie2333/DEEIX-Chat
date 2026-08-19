@@ -25,165 +25,165 @@ const (
 
 // ConversationArchive 是单条会话 JSON 备份格式。
 type ConversationArchive struct {
-	Schema       string                       `json:"schema"`
-	ExportedAt   time.Time                    `json:"exportedAt"`
-	Conversation ConversationArchiveMetadata  `json:"conversation"`
-	Runs         []ConversationArchiveRun     `json:"runs,omitempty"`
-	Messages     []ConversationArchiveMessage `json:"messages"`
+	Schema       string
+	ExportedAt   time.Time
+	Conversation ConversationArchiveMetadata
+	Runs         []ConversationArchiveRun
+	Messages     []ConversationArchiveMessage
 }
 
 // ConversationArchiveMetadata 保存可恢复的会话元信息。
 type ConversationArchiveMetadata struct {
-	OriginalPublicID    string    `json:"originalPublicID,omitempty"`
-	OriginalProjectName string    `json:"originalProjectName,omitempty"`
-	Title               string    `json:"title"`
-	LabelsJSON          string    `json:"labelsJSON"`
-	Model               string    `json:"model"`
-	Provider            string    `json:"provider"`
-	IsStarred           bool      `json:"isStarred"`
-	Status              string    `json:"status"`
-	ContextPolicyJSON   string    `json:"contextPolicyJSON,omitempty"`
-	MessageCount        int       `json:"messageCount"`
-	CreatedAt           time.Time `json:"createdAt"`
-	UpdatedAt           time.Time `json:"updatedAt"`
+	OriginalPublicID    string
+	OriginalProjectName string
+	Title               string
+	LabelsJSON          string
+	Model               string
+	Provider            string
+	IsStarred           bool
+	Status              string
+	ContextPolicyJSON   string
+	MessageCount        int
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
 }
 
 // ConversationArchiveRun 保存消息展示所需的运行快照。
 type ConversationArchiveRun struct {
-	OriginalRunID       string     `json:"originalRunID"`
-	TaskType            string     `json:"taskType"`
-	Endpoint            string     `json:"endpoint"`
-	Provider            string     `json:"provider"`
-	ProviderProtocol    string     `json:"providerProtocol"`
-	RequestedModelName  string     `json:"requestedModelName"`
-	PlatformModelName   string     `json:"platformModelName"`
-	ModelVendor         string     `json:"modelVendor"`
-	ModelIcon           string     `json:"modelIcon"`
-	UpstreamModelName   string     `json:"upstreamModelName"`
-	InputTokens         int64      `json:"inputTokens"`
-	OutputTokens        int64      `json:"outputTokens"`
-	CacheReadTokens     int64      `json:"cacheReadTokens"`
-	CacheWriteTokens    int64      `json:"cacheWriteTokens"`
-	ReasoningTokens     int64      `json:"reasoningTokens"`
-	ToolCallsCount      int        `json:"toolCallsCount"`
-	FirstTokenLatencyMS int64      `json:"firstTokenLatencyMS"`
-	TotalLatencyMS      int64      `json:"totalLatencyMS"`
-	Status              string     `json:"status"`
-	ErrorCode           string     `json:"errorCode"`
-	ErrorMessage        string     `json:"errorMessage"`
-	StartedAt           time.Time  `json:"startedAt"`
-	EndedAt             *time.Time `json:"endedAt,omitempty"`
-	CreatedAt           time.Time  `json:"createdAt"`
-	UpdatedAt           time.Time  `json:"updatedAt"`
+	OriginalRunID       string
+	TaskType            string
+	Endpoint            string
+	Provider            string
+	ProviderProtocol    string
+	RequestedModelName  string
+	PlatformModelName   string
+	ModelVendor         string
+	ModelIcon           string
+	UpstreamModelName   string
+	InputTokens         int64
+	OutputTokens        int64
+	CacheReadTokens     int64
+	CacheWriteTokens    int64
+	ReasoningTokens     int64
+	ToolCallsCount      int
+	FirstTokenLatencyMS int64
+	TotalLatencyMS      int64
+	Status              string
+	ErrorCode           string
+	ErrorMessage        string
+	StartedAt           time.Time
+	EndedAt             *time.Time
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
 }
 
 // ConversationArchiveMessage 保存单条消息及其可展示附属信息。
 type ConversationArchiveMessage struct {
-	OriginalPublicID string                           `json:"originalPublicID"`
-	ParentPublicID   string                           `json:"parentPublicID,omitempty"`
-	SourcePublicID   string                           `json:"sourcePublicID,omitempty"`
-	RunID            string                           `json:"runID,omitempty"`
-	Role             string                           `json:"role"`
-	ContentType      string                           `json:"contentType"`
-	Content          string                           `json:"content"`
-	BranchReason     string                           `json:"branchReason"`
-	TokenUsage       int64                            `json:"tokenUsage"`
-	InputTokens      int64                            `json:"inputTokens"`
-	OutputTokens     int64                            `json:"outputTokens"`
-	CacheReadTokens  int64                            `json:"cacheReadTokens"`
-	CacheWriteTokens int64                            `json:"cacheWriteTokens"`
-	ReasoningTokens  int64                            `json:"reasoningTokens"`
-	LatencyMS        int64                            `json:"latencyMS"`
-	Status           string                           `json:"status"`
-	ErrorCode        string                           `json:"errorCode"`
-	ErrorMessage     string                           `json:"errorMessage"`
-	Attachments      []ConversationArchiveAttachment  `json:"attachments,omitempty"`
-	ProcessTrace     *ConversationArchiveProcessTrace `json:"processTrace,omitempty"`
-	CreatedAt        time.Time                        `json:"createdAt"`
-	UpdatedAt        time.Time                        `json:"updatedAt"`
+	OriginalPublicID string
+	ParentPublicID   string
+	SourcePublicID   string
+	RunID            string
+	Role             string
+	ContentType      string
+	Content          string
+	BranchReason     string
+	TokenUsage       int64
+	InputTokens      int64
+	OutputTokens     int64
+	CacheReadTokens  int64
+	CacheWriteTokens int64
+	ReasoningTokens  int64
+	LatencyMS        int64
+	Status           string
+	ErrorCode        string
+	ErrorMessage     string
+	Attachments      []ConversationArchiveAttachment
+	ProcessTrace     *ConversationArchiveProcessTrace
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
 
 // ConversationArchiveAttachment 是附件的元数据快照，不包含文件内容和原始 fileID。
 type ConversationArchiveAttachment struct {
-	Kind                   string `json:"kind"`
-	FileName               string `json:"fileName"`
-	MimeType               string `json:"mimeType"`
-	DetectedMIME           string `json:"detectedMIME,omitempty"`
-	FileCategory           string `json:"fileCategory,omitempty"`
-	FileSize               int64  `json:"fileSize"`
-	ProcessingStatus       string `json:"processingStatus,omitempty"`
-	ProcessingReady        bool   `json:"processingReady,omitempty"`
-	ProcessingErrorCode    string `json:"processingErrorCode,omitempty"`
-	ProcessingErrorMessage string `json:"processingErrorMessage,omitempty"`
+	Kind                   string
+	FileName               string
+	MimeType               string
+	DetectedMIME           string
+	FileCategory           string
+	FileSize               int64
+	ProcessingStatus       string
+	ProcessingReady        bool
+	ProcessingErrorCode    string
+	ProcessingErrorMessage string
 }
 
 type ConversationArchiveProcessTrace struct {
-	Enabled       bool                            `json:"enabled"`
-	Status        string                          `json:"status"`
-	Process       *ConversationArchiveTraceBlock  `json:"process,omitempty"`
-	Tools         *ConversationArchiveTraceBlock  `json:"tools,omitempty"`
-	UpstreamThink *ConversationArchiveTraceBlock  `json:"upstreamThink,omitempty"`
-	PromptTrace   *ConversationArchivePromptTrace `json:"promptTrace,omitempty"`
-	Events        []ConversationArchiveTraceEvent `json:"events,omitempty"`
+	Enabled       bool
+	Status        string
+	Process       *ConversationArchiveTraceBlock
+	Tools         *ConversationArchiveTraceBlock
+	UpstreamThink *ConversationArchiveTraceBlock
+	PromptTrace   *ConversationArchivePromptTrace
+	Events        []ConversationArchiveTraceEvent
 }
 
 type ConversationArchiveTraceBlock struct {
-	Title           string    `json:"title"`
-	Summary         string    `json:"summary"`
-	ContentMarkdown string    `json:"contentMarkdown"`
-	Status          string    `json:"status"`
-	Stage           string    `json:"stage,omitempty"`
-	RoundID         string    `json:"roundID,omitempty"`
-	ParentEventID   string    `json:"parentEventID,omitempty"`
-	UpdatedAt       time.Time `json:"updatedAt"`
-	PayloadJSON     string    `json:"payloadJSON,omitempty"`
+	Title           string
+	Summary         string
+	ContentMarkdown string
+	Status          string
+	Stage           string
+	RoundID         string
+	ParentEventID   string
+	UpdatedAt       time.Time
+	PayloadJSON     string
 }
 
 type ConversationArchiveTraceEvent struct {
-	EventID         string     `json:"eventID"`
-	EventType       string     `json:"eventType"`
-	Phase           string     `json:"phase"`
-	Stage           string     `json:"stage,omitempty"`
-	RoundID         string     `json:"roundID,omitempty"`
-	ParentEventID   string     `json:"parentEventID,omitempty"`
-	Title           string     `json:"title"`
-	Summary         string     `json:"summary"`
-	ContentMarkdown string     `json:"contentMarkdown"`
-	Status          string     `json:"status"`
-	Seq             int        `json:"seq"`
-	StartedAt       time.Time  `json:"startedAt"`
-	EndedAt         *time.Time `json:"endedAt,omitempty"`
-	UpdatedAt       time.Time  `json:"updatedAt"`
-	PayloadJSON     string     `json:"payloadJSON,omitempty"`
+	EventID         string
+	EventType       string
+	Phase           string
+	Stage           string
+	RoundID         string
+	ParentEventID   string
+	Title           string
+	Summary         string
+	ContentMarkdown string
+	Status          string
+	Seq             int
+	StartedAt       time.Time
+	EndedAt         *time.Time
+	UpdatedAt       time.Time
+	PayloadJSON     string
 }
 
 type ConversationArchivePromptTrace struct {
-	Mode                   string                           `json:"mode"`
-	PromptFingerprint      string                           `json:"promptFingerprint"`
-	StatefulUsed           bool                             `json:"statefulUsed"`
-	StatefulDisabledReason string                           `json:"statefulDisabledReason"`
-	TotalTokenEstimate     int64                            `json:"totalTokenEstimate"`
-	SentTokenEstimate      int64                            `json:"sentTokenEstimate"`
-	FullMessageCount       int                              `json:"fullMessageCount"`
-	SentMessageCount       int                              `json:"sentMessageCount"`
-	StatefulSavedMessages  int                              `json:"statefulSavedMessages"`
-	StatefulSavedTokens    int64                            `json:"statefulSavedTokens"`
-	Blocks                 []ConversationArchivePromptBlock `json:"blocks"`
+	Mode                   string
+	PromptFingerprint      string
+	StatefulUsed           bool
+	StatefulDisabledReason string
+	TotalTokenEstimate     int64
+	SentTokenEstimate      int64
+	FullMessageCount       int
+	SentMessageCount       int
+	StatefulSavedMessages  int
+	StatefulSavedTokens    int64
+	Blocks                 []ConversationArchivePromptBlock
 }
 
 type ConversationArchivePromptBlock struct {
-	Kind          string                               `json:"kind"`
-	Title         string                               `json:"title"`
-	TokenEstimate int64                                `json:"tokenEstimate"`
-	Cacheable     bool                                 `json:"cacheable"`
-	SourceCount   int                                  `json:"sourceCount"`
-	SourceRefs    []ConversationArchivePromptSourceRef `json:"sourceRefs,omitempty"`
+	Kind          string
+	Title         string
+	TokenEstimate int64
+	Cacheable     bool
+	SourceCount   int
+	SourceRefs    []ConversationArchivePromptSourceRef
 }
 
 type ConversationArchivePromptSourceRef struct {
-	SourceType string `json:"sourceType"`
-	SourceID   string `json:"sourceID"`
-	Title      string `json:"title"`
+	SourceType string
+	SourceID   string
+	Title      string
 }
 
 // ExportConversationArchive 导出当前用户的一条会话为 JSON 归档对象。

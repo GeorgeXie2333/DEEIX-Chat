@@ -171,7 +171,9 @@
       "emailVerified": "メール確認状態",
       "displayName": "表示名",
       "avatar": "アバター"
-    }
+    },
+    "serverCallbackURL": "Server callback URL (recommended)",
+    "legacyWebCallbackURL": "Legacy Web callback URL (deprecated soon)"
   },
   "deleteDialog": {
     "title": "ID プロバイダーを削除",
