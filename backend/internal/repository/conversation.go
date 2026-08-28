@@ -6,6 +6,7 @@ import "context"
 type ConversationRepository interface {
 	WithConversationTransaction(ctx context.Context, fn func(repo ConversationRepository) error) error
 	ConversationMetadataRepository
+	ConversationForkRepository
 	MessageRepository
 	MessageFeedbackRepository
 	ConversationTraceRepository
@@ -20,6 +21,6 @@ type ConversationRepository interface {
 	FileEmbeddingArtifactsRepository
 	EmbeddingRepository
 	RAGRepository
-	FileProcessingRepository
+	FileProcessingStatusRepository
 	ConversationSettingsRepository
 }

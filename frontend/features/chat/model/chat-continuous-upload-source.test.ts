@@ -28,9 +28,9 @@ test("chat composer keeps upload entry points available while queueing messages"
     inputSource,
     /id="chat-tools-menu-trigger"[\s\S]*?disabled=\{loading \|\| uploading\}/,
   );
-  assert.match(areaSource, /const uploadDropDisabled = loading \|\| uploading/);
+  assert.match(areaSource, /const uploadDropDisabled = temporaryMode \|\| loading \|\| uploading/);
   assert.match(areaSource, /onDragEnter=\{onFileDragEnter\}/);
-  assert.match(areaSource, /dropActive: fileDragActive/);
+  assert.match(areaSource, /dropActive: temporaryMode \? false : fileDragActive/);
   assert.doesNotMatch(areaSource, /useChatWindowFileDrop|dragUploadTitle|UploadCloud/);
 });
 

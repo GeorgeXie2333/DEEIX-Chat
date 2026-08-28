@@ -325,7 +325,7 @@ func consumeRawChatCompletionStream(
 		}
 		usage := parseChatStreamUsage(adapter, parsed)
 		reasoning := extractChatStreamReasoningDelta(parsed)
-		if err := applyChatStreamEvent(adapter, parsed, result, nil, false); err != nil {
+		if err := applyChatStreamEvent(adapter, parsed, result, nil, nil, false); err != nil {
 			return err
 		}
 		if onEvent != nil {
@@ -549,17 +549,6 @@ func setOpenAIResponseTextParam(payload map[string]interface{}, key string, valu
 	text[key] = value
 }
 
-func normalizePromptCacheRetention(value string) string {
-	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "in-memory", "in_memory":
-		return "in_memory"
-	case "24h":
-		return "24h"
-	default:
-		return ""
-	}
-}
-
 func buildOpenAIRequestURL(baseURL string, endpoint string) string {
 	switch endpoint {
 	case EndpointChatCompletions:
@@ -573,6 +562,8 @@ func buildOpenAIRequestURL(baseURL string, endpoint string) string {
 			return buildVersionedEndpointURL(baseURL, "v1", "/videos/generations")
 		}
 		return buildVersionedEndpointURL(baseURL, "v1", "/videos")
+	case EndpointVideoExtensions:
+		return buildVersionedEndpointURL(baseURL, "v1", "/videos/extensions")
 	default:
 		return buildVersionedEndpointURL(baseURL, "v1", "/responses")
 	}
@@ -663,7 +654,7 @@ func consumeOpenAIGenerateStream(
 	if normalizeEndpoint(endpoint) != EndpointChatCompletions {
 		defer func() {
 			if result != nil {
-				result.responsesReasoningState = nil
+				result.StreamState = nil
 			}
 		}()
 	}
@@ -671,6 +662,8 @@ func consumeOpenAIGenerateStream(
 	scanner.Buffer(make([]byte, 0, 256*1024), 64*1024*1024)
 
 	var eventName string
+	// chatVisibleBuffer 承载 DSML 工具调用识别期间暂缓下发的可见文本。
+	var chatVisibleBuffer string
 	dataLines := make([]string, 0, 4)
 
 	dispatch := func() error {
@@ -686,7 +679,7 @@ func consumeOpenAIGenerateStream(
 		}
 		if strings.TrimSpace(payloadText) == "[DONE]" {
 			if normalizeEndpoint(endpoint) == EndpointChatCompletions && allowTextEncodedToolCalls {
-				if err := flushChatVisibleBuffer(result, onEvent, true); err != nil {
+				if err := flushChatVisibleBuffer(result, &chatVisibleBuffer, onEvent, true); err != nil {
 					return err
 				}
 			}
@@ -703,7 +696,7 @@ func consumeOpenAIGenerateStream(
 
 		switch normalizeEndpoint(endpoint) {
 		case EndpointChatCompletions:
-			return applyChatStreamEvent(adapter, parsed, result, onEvent, allowTextEncodedToolCalls)
+			return applyChatStreamEvent(adapter, parsed, result, &chatVisibleBuffer, onEvent, allowTextEncodedToolCalls)
 		default:
 			return applyResponsesStreamEvent(adapter, currentEvent, parsed, payloadText, result, onEvent)
 		}
@@ -738,7 +731,7 @@ func consumeOpenAIGenerateStream(
 		return err
 	}
 	if normalizeEndpoint(endpoint) == EndpointChatCompletions && allowTextEncodedToolCalls {
-		if err := flushChatVisibleBuffer(result, onEvent, true); err != nil {
+		if err := flushChatVisibleBuffer(result, &chatVisibleBuffer, onEvent, true); err != nil {
 			return err
 		}
 	}

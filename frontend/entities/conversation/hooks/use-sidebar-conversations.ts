@@ -475,30 +475,12 @@ export function useSidebarConversationsController({
     await loadMore();
   }, [loadMore]);
 
-  const prependNewConversation = React.useCallback(async (platformModelName?: string, projectID?: string): Promise<ConversationDTO | null> => {
-    const token = await resolveAccessToken();
-    if (!token) {
-      return null;
-    }
-    const explicitModel = platformModelName?.trim() || "";
-    const modelName = explicitModel || (await resolveConversationDefaultModel({ accessToken: token })).platformModelName;
-
-    const item = await createConversation(token, {
-      title: newConversationTitle,
-      model: modelName,
-      projectID: projectID?.trim() || "",
-    });
-    setRecentItems((prev) => mergeUniqueByPublicID([item], prev, sortByUpdatedAtDesc));
-    publishChange({ type: "upsert", publicID: item.publicID, item });
-    return item;
-  }, [newConversationTitle, publishChange]);
-
   const upsertConversation = React.useCallback((item: ConversationDTO) => {
     if (isArchivedConversation(item)) {
       setRecentItems((prev) => removeByPublicID(prev, item.publicID));
       setStarredItems((prev) => removeByPublicID(prev, item.publicID));
       publishChange({ type: "upsert", publicID: item.publicID, item });
-      return;
+      return item;
     }
 
     if (item.isStarred) {
@@ -517,7 +499,24 @@ export function useSidebarConversationsController({
       }
     }
     publishChange({ type: "upsert", publicID: item.publicID, item });
+    return item;
   }, [publishChange]);
+
+  const prependNewConversation = React.useCallback(async (platformModelName?: string, projectID?: string): Promise<ConversationDTO | null> => {
+    const token = await resolveAccessToken();
+    if (!token) {
+      return null;
+    }
+    const explicitModel = platformModelName?.trim() || "";
+    const modelName = explicitModel || (await resolveConversationDefaultModel({ accessToken: token })).platformModelName;
+
+    const item = await createConversation(token, {
+      title: newConversationTitle,
+      model: modelName,
+      projectID: projectID?.trim() || "",
+    });
+    return upsertConversation(item);
+  }, [newConversationTitle, upsertConversation]);
 
 
   const renameByPublicID = React.useCallback(
@@ -948,6 +947,7 @@ export function useSidebarConversationsController({
       projects,
       regenerateTitleByPublicID,
       updateLabelsByPublicID,
+      upsertConversation,
       recentItems,
       reorderProjects,
       retryLoadMore,

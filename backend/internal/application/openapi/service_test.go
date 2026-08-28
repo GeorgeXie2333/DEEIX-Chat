@@ -14,7 +14,7 @@ import (
 	appchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
 	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	domainopenapi "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/openapi"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/llm"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 )
 

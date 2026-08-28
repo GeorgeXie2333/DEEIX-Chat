@@ -20,6 +20,7 @@ import zhConversation from "@/i18n/messages/zh-CN/conversation.json";
 import zhErrors from "@/i18n/messages/zh-CN/errors.json";
 import zhFiles from "@/i18n/messages/zh-CN/files.json";
 import zhGuide from "@/i18n/messages/zh-CN/guide.json";
+import zhKnowledgeBases from "@/i18n/messages/zh-CN/knowledge-bases.json";
 import zhLanding from "@/i18n/messages/zh-CN/landing.json";
 import zhLogin from "@/i18n/messages/zh-CN/login.json";
 import zhPrompts from "@/i18n/messages/zh-CN/prompts.json";
@@ -42,6 +43,7 @@ const BASE_MESSAGES = {
   recent: zhRecent,
   share: zhShare,
   files: zhFiles,
+  knowledgeBases: zhKnowledgeBases,
   settings: zhSettings,
   adminAnnouncements: zhAdminAnnouncements,
   adminBilling: zhAdminBilling,
@@ -109,36 +111,23 @@ export function applyBrandingToMessages(messages: AppMessages, brandTitle: strin
 
 export const DEFAULT_MESSAGES: AppMessages = BASE_MESSAGES;
 
-type LocaleMessageImports = [
-  { default: AppMessages["common"] },
-  { default: AppMessages["conversation"] },
-  { default: AppMessages["errors"] },
-  { default: AppMessages["login"] },
-  { default: AppMessages["landing"] },
-  { default: AppMessages["prompts"] },
-  { default: AppMessages["guide"] },
-  { default: AppMessages["chat"] },
-  { default: AppMessages["announcements"] },
-  { default: AppMessages["recent"] },
-  { default: AppMessages["share"] },
-  { default: AppMessages["files"] },
-  { default: AppMessages["settings"] },
-  { default: AppMessages["adminAnnouncements"] },
-  { default: AppMessages["adminBilling"] },
-  { default: AppMessages["adminConversation"] },
-  { default: AppMessages["adminFiles"] },
-  { default: AppMessages["adminGroups"] },
-  { default: AppMessages["adminLogin"] },
-  { default: AppMessages["adminLogs"] },
-  { default: AppMessages["adminModels"] },
-  { default: AppMessages["adminOpenAPI"] },
-  { default: AppMessages["adminPrompts"] },
-  { default: AppMessages["adminStatistics"] },
-  { default: AppMessages["adminTools"] },
-  { default: AppMessages["adminUpstreams"] },
-  { default: AppMessages["adminUsers"] },
-  { default: AppMessages["adminContentModeration"] },
-];
+type LocaleMessageModule = { default: unknown };
+type LocaleMessageImports = readonly [LocaleMessageModule, ...LocaleMessageModule[]];
+
+function mergeLocaleValue<T>(base: T, localized: unknown): T {
+  if (base === null || typeof base !== "object" || Array.isArray(base)) {
+    return (localized === undefined ? base : localized) as T;
+  }
+  const localizedRecord = localized !== null && typeof localized === "object" && !Array.isArray(localized)
+    ? localized as Record<string, unknown>
+    : {};
+  return Object.fromEntries(
+    Object.entries(base as Record<string, unknown>).map(([key, value]) => [
+      key,
+      mergeLocaleValue(value, localizedRecord[key]),
+    ]),
+  ) as T;
+}
 
 function toAppMessages([
   common,
@@ -153,6 +142,7 @@ function toAppMessages([
   recent,
   share,
   files,
+  knowledgeBases,
   settings,
   adminAnnouncements,
   adminBilling,
@@ -170,7 +160,7 @@ function toAppMessages([
   adminUsers,
   adminContentModeration,
 ]: LocaleMessageImports): AppMessages {
-  return {
+  return mergeLocaleValue(BASE_MESSAGES, {
     common: common.default,
     conversation: conversation.default,
     errors: errors.default,
@@ -183,6 +173,7 @@ function toAppMessages([
     recent: recent.default,
     share: share.default,
     files: files.default,
+    knowledgeBases: knowledgeBases.default,
     settings: settings.default,
     adminAnnouncements: adminAnnouncements.default,
     adminBilling: adminBilling.default,
@@ -199,7 +190,7 @@ function toAppMessages([
     adminUpstreams: adminUpstreams.default,
     adminUsers: adminUsers.default,
     adminContentModeration: adminContentModeration.default,
-  };
+  });
 }
 
 export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages> {
@@ -221,6 +212,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
       import("@/i18n/messages/ja-JP/recent.json"),
       import("@/i18n/messages/ja-JP/share.json"),
       import("@/i18n/messages/ja-JP/files.json"),
+      import("@/i18n/messages/en-US/knowledge-bases.json"),
       import("@/i18n/messages/ja-JP/settings.json"),
       import("@/i18n/messages/ja-JP/admin-announcements.json"),
       import("@/i18n/messages/ja-JP/admin-billing.json"),
@@ -253,6 +245,7 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
     import("@/i18n/messages/en-US/recent.json"),
     import("@/i18n/messages/en-US/share.json"),
     import("@/i18n/messages/en-US/files.json"),
+    import("@/i18n/messages/en-US/knowledge-bases.json"),
     import("@/i18n/messages/en-US/settings.json"),
     import("@/i18n/messages/en-US/admin-announcements.json"),
     import("@/i18n/messages/en-US/admin-billing.json"),

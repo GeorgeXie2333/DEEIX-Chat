@@ -18,8 +18,14 @@ COPY backend/package.json ./backend/package.json
 COPY packages/api-contract/package.json ./packages/api-contract/package.json
 COPY frontend/scripts ./frontend/scripts
 COPY frontend/public/pwa ./frontend/public/pwa
-COPY frontend/public/logo.svg frontend/public/logo-color.svg frontend/public/logo-black.svg frontend/public/logo-white.svg ./frontend/public/
-COPY frontend/public/sw.js ./frontend/public/sw.js
+WORKDIR /src/frontend
+COPY frontend/public/logo.svg ./public/logo.svg
+COPY frontend/public/logo-color.svg ./public/logo-color.svg
+COPY frontend/public/logo-black.svg ./public/logo-black.svg
+COPY frontend/public/logo-white.svg ./public/logo-white.svg
+COPY frontend/public/sw.js ./public/sw.js
+
+WORKDIR /src
 
 RUN corepack enable
 

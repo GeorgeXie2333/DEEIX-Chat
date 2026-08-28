@@ -17,6 +17,8 @@ var (
 	ErrPaymentRequired = errors.New("payment is required")
 	// ErrPaymentProviderUnavailable 支付渠道未配置。
 	ErrPaymentProviderUnavailable = errors.New("payment provider is unavailable")
+	// ErrEPayTypeUnsupported 表示请求的易支付类型未启用。
+	ErrEPayTypeUnsupported = errors.New("epay payment type is not supported")
 	// ErrPaymentCurrencyUnsupported 表示支付渠道不支持订单业务币种。
 	ErrPaymentCurrencyUnsupported = errors.New("payment currency is not supported")
 	// ErrTopUpAmountBelowMinimum 表示充值的 USD 业务金额低于支付渠道最低限额。

@@ -15,10 +15,18 @@
   "time": "时间",
   "tokens": "Token",
   "details": "详情",
-  "archive": {
-    "exported": "已导出 JSON",
-    "exportFailed": "导出失败",
-    "signInRequired": "未登录，无法导出对话"
+  "temporary": {
+    "title": "临时对话",
+    "historyChat": "正常对话",
+    "notice": "此对话不会出现在你的历史记录中，离开页面后数据将被清除。",
+    "exitTitle": "退出临时对话",
+    "exitDescription": "离开后，此临时对话中的所有消息和生成内容都将被清除，且无法恢复。",
+    "continue": "取消",
+    "exitAction": "退出",
+    "stopped": "生成已停止",
+    "blocked": "内容因安全策略已撤回",
+    "failed": "临时消息生成失败，请重试",
+    "sessionExpired": "登录状态已失效，请重新登录"
   },
   "greeting": {
     "morning": "上午好",
@@ -96,18 +104,18 @@
     "delete": "删除"
   },
   "screenshot": {
-    "captureFull": "完整会话截图",
+    "captureLatest": "最近 100 条消息截图",
     "captureSelect": "选择消息截图",
     "selectMessage": "选择此消息",
-    "selectedCount": "已选 {count} 条消息",
     "selectAll": "全选",
+    "selectLatest": "选择最近 100 条",
     "clearSelection": "取消",
     "captureSelected": "生成",
     "exitSelection": "退出选择",
     "generating": "正在生成截图…",
     "ready": "截图已生成",
     "failed": "截图生成失败",
-    "loadLimitReached": "会话过长，请选择部分消息进行截图。",
+    "selectionLimitReached": "最多选择 100 条消息",
     "tooLarge": "会话内容过大，请选择部分消息进行截图。",
     "emptySelection": "请至少选择一条消息",
     "previewTitle": "会话截图",
@@ -118,7 +126,10 @@
     "downloaded": "图片已下载",
     "copied": "图片已复制到剪贴板",
     "copyFailed": "复制图片失败",
-    "copyUnsupported": "当前浏览器不支持复制图片"
+    "copyUnsupported": "当前浏览器不支持复制图片",
+    "captureFull": "完整会话截图",
+    "selectedCount": "已选 {count} 条消息",
+    "loadLimitReached": "会话过长，请选择部分消息进行截图。"
   },
   "markdown": {
     "back": "返回",
@@ -129,6 +140,14 @@
     "downloadImage": "下载图片",
     "scrollableTable": "可横向滚动的数据表格",
     "scrollableTableHint": "横向滚动可查看更多列。",
+    "table": {
+      "download": "下载",
+      "downloadAsCsv": "下载 CSV",
+      "downloadAsMarkdown": "下载 Markdown",
+      "formatCsv": "CSV",
+      "formatMarkdown": "Markdown",
+      "downloadFailed": "表格下载失败"
+    },
     "copyLatex": "复制公式源码",
     "latexCopied": "已复制公式源码",
     "latexCopyFailed": "公式源码复制失败",
@@ -139,10 +158,6 @@
       "copy": "复制链接",
       "copied": "已复制链接",
       "copyFailed": "链接复制失败"
-    },
-    "codeBlock": {
-      "collapse": "折叠",
-      "expand": "展开 {count} 行"
     },
     "artifact": {
       "openPreview": "预览",
@@ -160,6 +175,22 @@
     "thinking": {
       "active": "正在思考",
       "done": "思考完成"
+    },
+    "diagram": {
+      "downloadDiagram": "下载",
+      "downloadDiagramAsSvg": "导出为 SVG",
+      "downloadDiagramAsPng": "导出为 PNG",
+      "downloadDiagramAsMmd": "导出为 MMD 源码",
+      "copyDiagram": "复制",
+      "viewFullscreen": "全屏",
+      "exitFullscreen": "退出",
+      "zoomIn": "放大",
+      "zoomOut": "缩小",
+      "resetView": "重置视图"
+    },
+    "codeBlock": {
+      "collapse": "折叠",
+      "expand": "展开 {count} 行"
     }
   },
   "artifacts": {
@@ -175,6 +206,8 @@
     "sourceCopied": "源码已复制",
     "copyFailed": "源码复制失败",
     "downloadHtml": "下载 HTML",
+    "downloadSvg": "下载 SVG",
+    "invalidSvg": "SVG 源码无效，无法预览。",
     "close": "关闭",
     "resize": "调整 Artifact 宽度",
     "empty": "当前 Artifact 为空，暂无法预览。",
@@ -191,6 +224,9 @@
     "imageRunning": "正在生成图片",
     "contextCompressed": "上下文已自动压缩",
     "scrollToBottom": "回到底部",
+    "responseOutline": "本轮回复",
+    "jumpToResponseSection": "跳转到“{title}”",
+    "knowledgeSources": "参考了 {count} 个来源",
     "processing": "正在处理…",
     "expandUserMessage": "展开",
     "collapseUserMessage": "收起",
@@ -208,6 +244,9 @@
     "dislikeReply": "点踩",
     "retryReply": "重试",
     "continueReply": "继续回复",
+    "extendVideo": "扩展视频",
+    "forkMessage": "分支到新聊天",
+    "forkTitle": "{title}（分支）",
     "rememberPreference": "记住偏好",
     "memorySaved": "已记住",
     "memorySavedDescription": "此偏好将在后续对话中生效",
@@ -250,12 +289,12 @@
     "screenshotUnsupported": "当前浏览器不支持屏幕截图",
     "screenshotFailed": "屏幕截图失败",
     "retry": "请重试。",
-    "metadataOnly": "仅备份元数据",
     "policy": {
       "mimeNotAllowed": "当前文件类型不在后台允许的 MIME 白名单内。",
       "fullContextLimitExceeded": "当前未启用向量检索，只允许上传可走全文注入的小文件。当前文件超过 {limit} 上限。",
       "sizeLimitExceeded": "当前文件超过 {limit} 上限。"
-    }
+    },
+    "metadataOnly": "仅备份元数据"
   },
   "submit": {
     "attachmentOnlyContent": "请参考附件",
@@ -276,11 +315,13 @@
       "image_edit_unsupported": "该模型不支持图像编辑，请移除图片或切换到支持编辑的模型。",
       "image_generation_rejects_attachments": "图像生成仅接受文字提示词，请移除附件或切换到可处理附件的模型。",
       "image_task_rejects_non_image_attachments": "图像任务仅支持图片附件，请移除非图片文件。",
-      "video_generation_rejects_non_image_attachments": "视频生成仅支持一张图片作为参考图，请移除非图片文件。",
-      "video_generation_too_many_reference_images": "视频生成最多只能使用一张参考图，请移除多余图片。",
       "video_generation_too_many_images": "视频生成最多支持一张输入图片，请保留一张图片后重试。",
       "video_task_rejects_non_image_attachments": "视频生成仅支持文字提示和图片附件，请移除非图片文件。",
-      "model_task_unsupported": "该模型无法处理当前输入，请切换模型后重试。"
+      "video_extension_requires_single_mp4": "视频扩展仅支持一个 MP4 文件，请移除其他附件后重试。",
+      "video_extension_unsupported": "当前模型不支持视频扩展，请切换至支持 xAI 视频协议的模型。",
+      "model_task_unsupported": "该模型无法处理当前输入，请切换模型后重试。",
+      "video_generation_rejects_non_image_attachments": "视频生成仅支持一张图片作为参考图，请移除非图片文件。",
+      "video_generation_too_many_reference_images": "视频生成最多只能使用一张参考图，请移除多余图片。"
     },
     "mediaStatus": {
       "queued": "图片任务已排队",
@@ -292,9 +333,12 @@
     },
     "generationInterrupted": "生成中断",
     "sendFailed": "发送失败",
+    "queuedParentFailed": "排队消息已取消",
+    "queuedParentFailedDescription": "上一条消息未成功完成，依赖它的排队消息已取消。",
     "continueGenerationPrompt": "请从上一条中断的回复处继续，不要重复已经生成的内容。",
     "continueReplyFailed": "无法继续生成",
     "continueReplyUnavailable": "这条回复当前不能继续生成。",
+    "forkFailed": "分支到新聊天失败",
     "editReplyFailed": "编辑回复失败",
     "retryReplyFailed": "无法重试这条回复",
     "retryReplyMissingUser": "没有找到对应的用户消息。",
@@ -356,34 +400,44 @@
     }
   },
   "composer": {
-    "addPhotosAndFiles": "添加照片和文件",
     "uploadFile": "上传文件",
     "screenshot": "屏幕截图",
     "openTools": "打开工具菜单",
-    "advancedSettings": "高级设置",
     "inputPlaceholder": "输入消息，或用 / 添加上下文，@ 添加资源",
     "voiceStartingPlaceholder": "正在启动语音输入…",
     "voiceListeningPlaceholder": "正在接收语音…",
     "modelOptions": "模型配置",
     "mcpTools": "MCP 工具",
     "mcpToolsSelected": "已启用 {count} 个工具",
-    "enabledCount": "已启用 {count} 个",
-    "back": "返回",
+    "knowledgeBases": "知识库",
+    "knowledgeBasesSelected": "已选择 {count} 个知识库",
+    "searchKnowledgeBases": "搜索知识库",
+    "knowledgeBaseReadyFiles": "{count} 个文件可检索",
+    "knowledgeBaseNotReady": "暂无可检索文件",
+    "knowledgeBaseEmpty": "暂无可用知识库",
+    "knowledgeBaseLoadFailed": "知识库加载失败",
+    "knowledgeBaseLoadMore": "加载更多",
+    "knowledgeBaseUnavailable": "知识库检索当前不可用",
+    "knowledgeBaseUnavailableDescription": "请联系管理员检查 RAG 与向量服务配置。",
+    "knowledgeBaseUnavailableRAGDisabled": "RAG 检索未启用，请联系管理员开启 RAG。",
+    "knowledgeBaseUnavailableEmbeddingDisabled": "向量服务未启用，请联系管理员开启 Embedding。",
+    "knowledgeBaseUnavailableEmbeddingHostMissing": "未配置向量服务地址，请联系管理员完成 Embedding 配置。",
+    "knowledgeBaseUnavailableEmbeddingModelMissing": "未配置向量模型，请联系管理员完成 Embedding 配置。",
+    "knowledgeBaseUnavailableEmbeddingClientMissing": "向量服务客户端不可用，请联系管理员检查 Embedding 配置。",
+    "knowledgeBaseUnavailableVectorStore": "向量存储不可用，请联系管理员检查数据库向量能力。",
+    "knowledgeBaseLimit": "最多选择 {limit} 个知识库",
     "clear": "清空",
     "default": "默认",
-    "resetAdvancedDefaults": "恢复默认",
-    "customResolution": "自定义分辨率",
-    "customResolutionPlaceholder": "例如 2048x1152",
-    "invalidResolution": "需使用 WIDTHxHEIGHT，边长不超过 3840，且为 16 的倍数。",
+    "jsonConfig": "JSON 配置",
     "visualConfig": "可视化配置",
     "visual": "可视化",
     "notEnabled": "未启用",
     "ignored": "已忽略",
     "willPass": "会透传",
     "locked": "不可修改",
-    "nativeToolMayNotApply": "可能不适用",
-    "nativeToolMayNotApplyHelp": "该工具不是当前请求协议的已适配原生工具，开启后仍会按配置写入 JSON 并交由上游处理。",
-    "currentProtocol": "当前协议",
+    "routeDependent": "取决于路由",
+    "routeDependentHelp": "该配置仅适用于模型的部分协议，将根据后端实际选择的路由决定是否生效。",
+    "modelProtocols": "模型协议",
     "toolProtocols": "工具协议",
     "notEnabledHelp": "未启用：该配置当前不在左侧 JSON 中，不会随请求透传。",
     "ignoredHelp": "已忽略：该配置已写入 JSON，但会被后台透传策略过滤。",
@@ -397,6 +451,7 @@
     "sessionExpired": "登录状态已失效，请重新登录。",
     "retryLater": "请稍后重试。",
     "streamResponseParseFailed": "上游返回 HTTP {statusCode}，但流式响应格式与当前协议不兼容。",
+    "jsonMustBeObject": "JSON 必须是对象",
     "currentModel": "当前模型",
     "dialogDescription": "{model} 的请求参数配置，保存后会随模型请求发送。",
     "ragAllDisabled": "所有附件已关闭 RAG，将以全文注入，可能消耗较多 Token",
@@ -420,6 +475,8 @@
     "mcpToolLimitTitle": "工具数量已达上限",
     "mcpToolLimitDescription": "单次消息最多选择 {limit} 个 MCP 工具，请减少选择后再继续。",
     "mcpImageProcessor": "图片附件处理器",
+    "mcpPaidTool": "按次数计费，{price} / 次。",
+    "mcpPaidToolNote": "仅对成功执行的工具调用进行计费，失败不计费。",
     "mcpImageProcessorLimitTitle": "只能选择一个图片处理器",
     "mcpImageProcessorLimitDescription": "一条消息只能由一个 MCP 图片附件处理器接管图片，请先取消当前选择。",
     "skillLimitTitle": "Skills 数量已达上限",
@@ -486,20 +543,25 @@
       "videoGeneration": "视频生成",
       "videoGenerationIntro": "当前为视频生成模式。",
       "videoGenerationDescription": "将根据文字提示创建视频；可上传一张匹配分辨率的图片作为首帧参考。",
+      "videoExtension": "视频扩展",
+      "videoExtensionIntro": "当前为视频扩展模式。",
+      "videoExtensionDescription": "将根据文字提示扩展已上传的 MP4 视频，仅需设置扩展时长。",
       "invalidFile": "监测到无效文件",
       "invalidFileIntro": "当前文件无法用于图像任务。",
-      "videoInvalidFileIntro": "当前文件无法用于视频生成。",
       "blockedDescriptions": {
         "image_edit_input_required": "请先上传需要编辑的图片。",
         "image_edit_unsupported": "当前模型不支持图像编辑，请移除图片或切换模型。",
         "image_generation_rejects_attachments": "图像生成仅接收文字提示，请移除附件。",
         "image_task_rejects_non_image_attachments": "图像任务仅支持图片附件，请移除非图片文件。",
-        "video_generation_rejects_non_image_attachments": "视频生成仅支持一张图片作为参考图，请移除非图片文件。",
-        "video_generation_too_many_reference_images": "视频生成最多只能使用一张参考图，请移除多余图片。",
         "video_generation_too_many_images": "视频生成最多支持一张输入图片。",
         "video_task_rejects_non_image_attachments": "视频生成仅支持文字提示和图片附件，请移除非图片文件。",
-        "model_task_unsupported": "当前模型不支持此输入，请切换模型后重试。"
-      }
+        "video_extension_requires_single_mp4": "视频扩展仅支持一个 MP4 文件，请移除其他附件。",
+        "video_extension_unsupported": "当前模型不支持视频扩展，请切换至支持 xAI 视频协议的模型。",
+        "model_task_unsupported": "当前模型不支持此输入，请切换模型后重试。",
+        "video_generation_rejects_non_image_attachments": "视频生成仅支持一张图片作为参考图，请移除非图片文件。",
+        "video_generation_too_many_reference_images": "视频生成最多只能使用一张参考图，请移除多余图片。"
+      },
+      "videoInvalidFileIntro": "当前文件无法用于视频生成。"
     },
     "nativeTools": {
       "official": "官方原生工具",
@@ -508,6 +570,17 @@
       "claude": "Claude 原生工具",
       "google": "Google 原生工具"
     },
+    "addPhotosAndFiles": "添加照片和文件",
+    "advancedSettings": "高级设置",
+    "enabledCount": "已启用 {count} 个",
+    "back": "返回",
+    "resetAdvancedDefaults": "恢复默认",
+    "customResolution": "自定义分辨率",
+    "customResolutionPlaceholder": "例如 2048x1152",
+    "invalidResolution": "需使用 WIDTHxHEIGHT，边长不超过 3840，且为 16 的倍数。",
+    "nativeToolMayNotApply": "可能不适用",
+    "nativeToolMayNotApplyHelp": "该工具不是当前请求协议的已适配原生工具，开启后仍会按配置写入 JSON 并交由上游处理。",
+    "currentProtocol": "当前协议",
     "mcpSelectServerTools": "选择服务器工具",
     "mcpClearServerTools": "??"
   },
@@ -516,8 +589,6 @@
     "empty": "暂无模型",
     "group": "分组",
     "viewPricing": "查看价格",
-    "viewDescription": "查看描述",
-    "noDescription": "暂无描述",
     "freeModel": "免费模型",
     "freeModelDescription": "不会扣除按量余额",
     "tieredPricing": "阶梯计费",
@@ -540,7 +611,9 @@
     "perCall": "每次",
     "perSecond": "每秒",
     "callUnit": "次",
-    "secondUnit": "秒"
+    "secondUnit": "秒",
+    "viewDescription": "查看描述",
+    "noDescription": "暂无描述"
   },
   "processTrace": {
     "fileBadges": {
@@ -562,6 +635,7 @@
     "rag": {
       "sourceFallback": "片段来源 {fileID}",
       "chunksShort": "{count} 段 · {scorePercent}%",
+      "chunksTotal": "{count} 段",
       "retrievalSources": "检索来源",
       "matchedContents": "{count} 段命中内容",
       "matchSummary": "{count} 段命中 · 占比 {sharePercent}% · 最高相关度 {scorePercent}%",
@@ -598,13 +672,22 @@
         "thinking": "模型思考"
       },
       "detail": {
+        "nameLabel": "工具",
         "request": "请求",
         "response": "响应",
         "error": "错误",
-        "expand": "展开",
-        "collapse": "收起",
+        "argumentsTitle": "参数",
+        "resultTitle": "结果",
+        "copy": "复制",
+        "copied": "已复制",
+        "copyFailed": "复制失败",
         "sourceFallback": "来源 {index}",
         "generatedImageAlt": "生成图片 {index}",
+        "sourceCount": "{count} 个来源",
+        "groundingSupportCount": "{count} 条引用依据",
+        "exitCode": "退出码 {code}",
+        "expand": "展开",
+        "collapse": "收起",
         "query": "关键词",
         "action": "动作",
         "source": "来源",
@@ -640,10 +723,21 @@
       }
     },
     "think": {
+      "rowActive": "深度思考中",
+      "rowDone": "深度思考",
+      "duration": "{seconds}",
       "titleActive": "正在思考",
       "titleDone": "思考完成",
       "subtitleActive": "正在解析问题并梳理关键信息",
       "subtitleDone": "已理解并完成相关信息整合与推理"
+    },
+    "run": {
+      "titleActive": "执行中",
+      "titleDone": "执行完成",
+      "toolCalls": "{count} 次工具调用",
+      "thinkRounds": "{count} 轮深度思考",
+      "duration": "{duration}",
+      "labelSeparator": " · "
     },
     "promptTrace": {
       "modes": {
@@ -685,7 +779,9 @@
       "summary": "已压缩第 {fromTurn}-{toTurn} 轮上下文",
       "detail": "对话已压缩并生成滚动摘要。",
       "range": "压缩区间：第 {fromTurn}-{toTurn} 轮。",
-      "tokens": "Tokens 缩减：{sourceTokens} -> {summaryTokens}。"
+      "tokens": "Tokens 缩减：{sourceTokens} -> {summaryTokens}。",
+      "pending": "正在后台生成滚动摘要。",
+      "failed": "上下文压缩未完成，系统将在后续请求中重试。"
     }
   },
   "optionLabels": {
@@ -710,6 +806,9 @@
     "generationConfig__thinkingConfig__includeThoughts": "思考内容",
     "generationConfig__thinkingConfig__thinkingBudget": "思考预算",
     "generationConfig__thinkingConfig__thinkingLevel": "思考级别",
+    "generation_config__max_output_tokens": "最大输出 Tokens",
+    "generation_config__thinking_level": "思考级别",
+    "generation_config__thinking_summaries": "思考摘要",
     "generationConfig__topK": "Top K",
     "logprobs": "Logprobs 数量",
     "max_completion_tokens": "最大输出 Tokens",
@@ -728,15 +827,10 @@
     "quality": "质量",
     "reasoning__summary": "推理摘要",
     "reasoning__effort": "推理强度",
-    "reasoning_mode": "推理模式",
     "reasoning_effort": "推理强度",
     "reasoning_summary": "推理摘要",
     "resolution": "分辨率",
     "size": "尺寸",
-    "videoResolution": "视频分辨率",
-    "videoSeconds": "视频秒数",
-    "video_duration": "视频时长",
-    "video_task_type": "视频任务类型",
     "aspect_ratio": "画幅比例",
     "aspectRatio": "画幅比例",
     "image_size": "图片尺寸",
@@ -757,7 +851,6 @@
     "think": "思考模式",
     "thinking": "思考模式",
     "thinking_display": "思维块",
-    "thinking_level": "思考等级",
     "thinking__budget_tokens": "思考预算",
     "thinking__display": "思考展示",
     "thinking__includeThoughts": "思考内容",
@@ -777,7 +870,13 @@
     "top_k": "Top K",
     "top_p": "Top P",
     "verbosity": "输出详略",
-    "web_search": "联网搜索"
+    "web_search": "联网搜索",
+    "reasoning_mode": "推理模式",
+    "videoResolution": "视频分辨率",
+    "videoSeconds": "视频秒数",
+    "video_duration": "视频时长",
+    "video_task_type": "视频任务类型",
+    "thinking_level": "思考等级"
   },
   "optionDescriptions": {
     "background": "控制生成图片背景，透明背景需要模型和输出格式支持。",
@@ -804,6 +903,9 @@
     "generationConfig__thinkingConfig__includeThoughts": "控制是否包含 Gemini 思考内容。",
     "generationConfig__thinkingConfig__thinkingBudget": "Gemini 思考 token 预算。",
     "generationConfig__thinkingConfig__thinkingLevel": "Gemini 思考级别。",
+    "generation_config__max_output_tokens": "限制 Gemini 响应包含的最大 token 数。",
+    "generation_config__thinking_level": "控制 Gemini 模型的思考深度。",
+    "generation_config__thinking_summaries": "控制 Gemini 响应是否包含思考摘要。",
     "generationConfig__topK": "Gemini Top K 采样范围。",
     "imageConfig__aspectRatio": "Google 图片输出画幅比例。",
     "imageConfig__imageSize": "Google 图片输出尺寸档位。",
@@ -849,9 +951,6 @@
     "thinkingConfig__thinkingBudget": "限制思考 token 预算。",
     "thinkingConfig__thinkingLevel": "控制思考级别。",
     "thinking_display": "控制思维块展示方式。",
-    "thinking_level": "控制模型的思考等级。",
-    "video_duration": "控制 Gemini 输出视频的时长。",
-    "video_task_type": "控制 Gemini 视频生成、参考图生成或编辑任务类型。",
     "tool_choice": "控制模型是否以及如何选择工具。",
     "tool_choice__type": "控制模型工具选择模式。",
     "tool_config__functionCallingConfig__mode": "控制函数调用模式。",
@@ -859,7 +958,10 @@
     "top_k": "限制采样时参与候选的 token 数。",
     "top_p": "控制 nucleus sampling 的概率质量范围。",
     "verbosity": "控制支持该参数的模型输出详略。",
-    "web_search": "控制是否启用原生联网搜索。"
+    "web_search": "控制是否启用原生联网搜索。",
+    "thinking_level": "控制模型的思考等级。",
+    "video_duration": "控制 Gemini 输出视频的时长。",
+    "video_task_type": "控制 Gemini 视频生成、参考图生成或编辑任务类型。"
   },
   "nativeToolDescriptions": {
     "openai__web_search": "使用 OpenAI 托管网页搜索获取实时信息。",
@@ -889,18 +991,18 @@
     "googleCodeExecution": "Google 原生代码执行",
     "googleUrlContext": "Google 原生 URL 上下文",
     "openaiWebSearch": "OpenAI 原生网页搜索",
-    "openaiWebSearchPreview": "OpenAI 原生网页搜索预览",
     "openaiShell": "OpenAI 托管容器 Shell",
     "openaiImageGeneration": "OpenAI 原生图像生成",
     "openaiCodeInterpreter": "OpenAI 原生代码解释器",
-    "geminiWebSearch": "Gemini 原生网页搜索",
-    "geminiCodeExecution": "Gemini 原生代码执行",
     "claudeWebSearch": "Claude 原生网页搜索",
     "claudeWebFetch": "Claude 原生网页/PDF 抓取",
     "claudeCodeExecution": "Claude 原生代码执行",
     "claudeAdvisor": "Claude 原生建议工具（Beta）",
     "claudeToolSearchRegex": "Claude 原生工具搜索（Regex）",
-    "claudeToolSearchBm25": "Claude 原生工具搜索（BM25）"
+    "claudeToolSearchBm25": "Claude 原生工具搜索（BM25）",
+    "openaiWebSearchPreview": "OpenAI 原生网页搜索预览",
+    "geminiWebSearch": "Gemini 原生网页搜索",
+    "geminiCodeExecution": "Gemini 原生代码执行"
   },
   "nativeToolLabels": {
     "openai__web_search": "网页搜索",
@@ -924,7 +1026,6 @@
     "xai__x_search": "X 搜索",
     "xai__code_interpreter": "代码解释器",
     "webSearch": "网页搜索",
-    "webSearchPreview": "网页搜索预览",
     "xSearch": "X 搜索",
     "codeInterpreter": "代码解释器",
     "shell": "Shell",
@@ -933,6 +1034,12 @@
     "codeExecution": "代码执行",
     "advisor": "Advisor",
     "toolSearchRegex": "工具搜索（Regex）",
-    "toolSearchBm25": "工具搜索（BM25）"
+    "toolSearchBm25": "工具搜索（BM25）",
+    "webSearchPreview": "网页搜索预览"
+  },
+  "archive": {
+    "exported": "已导出 JSON",
+    "exportFailed": "导出失败",
+    "signInRequired": "未登录，无法导出对话"
   }
 }

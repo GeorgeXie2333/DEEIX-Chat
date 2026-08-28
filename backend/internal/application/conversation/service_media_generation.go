@@ -16,8 +16,8 @@ import (
 	appcm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/contentmoderation"
 	appupload "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/upload"
 	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/llm"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/traceid"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -31,8 +31,8 @@ const (
 	MediaImageTaskGeneration MediaImageTaskType = "image_generation"
 	// MediaImageTaskEdit 表示基于输入图片的编辑任务。
 	MediaImageTaskEdit MediaImageTaskType = "image_edit"
-	// MediaVideoTaskGeneration 表示纯文本或参考图视频生成任务。
-	MediaVideoTaskGeneration MediaImageTaskType = "video_generation"
+	// MediaImageTaskVideoGeneration 表示纯文本或参考图视频生成任务。
+	MediaImageTaskVideoGeneration MediaImageTaskType = "video_generation"
 )
 
 const maxMediaImageEditInputImages = 16
@@ -64,7 +64,7 @@ type MediaImageInput struct {
 // StreamMediaImage 执行图片生成任务并把结果保存为文件对象。
 // 图片能力不复用聊天生成链路，只通过图片任务类型和图片协议路由。
 func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (*SendMessageResult, error) {
-	if input.TaskType != MediaImageTaskGeneration && input.TaskType != MediaImageTaskEdit && input.TaskType != MediaVideoTaskGeneration {
+	if input.TaskType != MediaImageTaskGeneration && input.TaskType != MediaImageTaskEdit && input.TaskType != MediaImageTaskVideoGeneration {
 		return nil, ErrInvalidMediaGenerationTask
 	}
 	if s.routeResolver == nil || s.llmClient == nil {
@@ -101,7 +101,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		input.FileIDs = parseAttachmentSnapshotFileIDs(branchState.ReuseUserMessage.Attachments)
 	}
 	if strings.TrimSpace(input.Prompt) == "" {
-		if input.TaskType == MediaVideoTaskGeneration {
+		if input.TaskType == MediaImageTaskVideoGeneration {
 			return nil, ErrMediaVideoPromptRequired
 		}
 		return nil, ErrMediaImagePromptRequired
@@ -115,7 +115,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 	if input.TaskType == MediaImageTaskEdit && len(input.FileIDs) == 0 {
 		return nil, ErrMediaImageEditInputRequired
 	}
-	if input.TaskType == MediaVideoTaskGeneration && len(input.FileIDs) > 1 {
+	if input.TaskType == MediaImageTaskVideoGeneration && len(input.FileIDs) > 1 {
 		return nil, ErrMediaVideoTooManyReferenceImages
 	}
 
@@ -131,7 +131,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 	if input.TaskType == MediaImageTaskEdit {
 		taskRouteType = channel.TaskTypeImageEdit
 		endpoint = llm.EndpointImageEdits
-	} else if input.TaskType == MediaVideoTaskGeneration {
+	} else if input.TaskType == MediaImageTaskVideoGeneration {
 		taskRouteType = channel.TaskTypeVideoGeneration
 		endpoint = llm.EndpointVideoGenerations
 	}
@@ -144,7 +144,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		RequestID:         strings.TrimSpace(input.RequestID),
 	})
 	if err != nil {
-		return nil, ErrModelRouteNotConfigured
+		return nil, mapRouteResolutionError(err)
 	}
 	if input.TaskType == MediaImageTaskGeneration && !llm.IsImageGenerationAdapter(route.Protocol) {
 		return nil, ErrMediaRouteProtocolMismatch
@@ -152,7 +152,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 	if input.TaskType == MediaImageTaskEdit && !llm.IsImageEditAdapter(route.Protocol) {
 		return nil, ErrMediaRouteProtocolMismatch
 	}
-	if input.TaskType == MediaVideoTaskGeneration && !llm.IsVideoGenerationAdapter(route.Protocol) {
+	if input.TaskType == MediaImageTaskVideoGeneration && !llm.IsVideoGenerationAdapter(route.Protocol) {
 		return nil, ErrMediaRouteProtocolMismatch
 	}
 	// 图片任务会把会话当前模型更新为实际执行的图片模型；标题、标签等内部文本任务会单独回退到聊天模型。
@@ -171,7 +171,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		DeniedPathsJSON:       cfg.ModelOptionDeniedPaths,
 		ModelCapabilitiesJSON: route.ModelCapabilitiesJSON,
 	})
-	if input.TaskType == MediaVideoTaskGeneration {
+	if input.TaskType == MediaImageTaskVideoGeneration {
 		filteredOptions = sanitizeOpenAIVideoGenerationOptions(route.UpstreamModel, filteredOptions)
 	}
 
@@ -180,7 +180,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		return nil, err
 	}
 	var videoReferenceParts []llm.ContentPart
-	if input.TaskType == MediaVideoTaskGeneration {
+	if input.TaskType == MediaImageTaskVideoGeneration {
 		resolvedAttachments, videoReferenceParts, err = s.resolveMediaVideoReferenceInputs(ctx, input, route.UpstreamModel, filteredOptions)
 		if err != nil {
 			return nil, err
@@ -270,7 +270,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 	}()
 	cancelCtx, cancel := context.WithCancel(ctx)
 	ctx = cancelCtx
-	s.generationStreams.register(ctx, runID, input.UserID, cancel)
+	s.generationStreams.register(ctx, runID, input.UserID, conversation.PublicID, cancel)
 
 	assistantMessage = &model.Message{
 		ConversationID: input.ConversationID,
@@ -432,7 +432,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		}}
 		generateInput.ImageEditMask = maskPart
 	}
-	if input.TaskType == MediaVideoTaskGeneration && len(videoReferenceParts) > 0 {
+	if input.TaskType == MediaImageTaskVideoGeneration && len(videoReferenceParts) > 0 {
 		parts := make([]llm.ContentPart, 0, 1+len(videoReferenceParts))
 		parts = append(parts, llm.ContentPart{
 			Kind: llm.ContentPartText,
@@ -451,7 +451,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		retErr = ErrMessageGenerationCanceled
 		return nil, retErr
 	}
-	if input.TaskType == MediaVideoTaskGeneration || useMediaImageStream {
+	if input.TaskType == MediaImageTaskVideoGeneration || useMediaImageStream {
 		output, err = s.llmClient.GenerateStream(ctx, routeConfig, generateInput, func(event llm.GenerateStreamEvent) error {
 			if event.Usage != (llm.Usage{}) && input.OnEvent != nil {
 				if streamErr := input.OnEvent("usage", map[string]interface{}{
@@ -503,7 +503,7 @@ func (s *Service) StreamMediaImage(ctx context.Context, input MediaImageInput) (
 		return nil, retErr
 	}
 	s.routeResolver.MarkRouteSuccess(ctx, route)
-	if input.TaskType == MediaVideoTaskGeneration {
+	if input.TaskType == MediaImageTaskVideoGeneration {
 		if output == nil || len(output.GeneratedVideos) == 0 {
 			retErr = ErrUpstreamEmptyResponse
 			_ = s.repo.UpdateMessageState(ctx, assistantMessage.ID, "error", classifyRunErrorCode(retErr), truncateError(messageErrorSummary(retErr), 255))
@@ -719,21 +719,21 @@ func mediaImageRunningMessage(taskType MediaImageTaskType) string {
 	if taskType == MediaImageTaskEdit {
 		return "editing image"
 	}
-	if taskType == MediaVideoTaskGeneration {
+	if taskType == MediaImageTaskVideoGeneration {
 		return "generating video"
 	}
 	return "generating image"
 }
 
 func mediaQueuedMessage(taskType MediaImageTaskType) string {
-	if taskType == MediaVideoTaskGeneration {
+	if taskType == MediaImageTaskVideoGeneration {
 		return "video task queued"
 	}
 	return "image task queued"
 }
 
 func mediaAssistantContentType(taskType MediaImageTaskType) string {
-	if taskType == MediaVideoTaskGeneration {
+	if taskType == MediaImageTaskVideoGeneration {
 		return "video"
 	}
 	return "image"
@@ -820,7 +820,7 @@ func (s *Service) resolveMediaVideoReferenceInputs(
 	modelName string,
 	options map[string]interface{},
 ) ([]AttachmentInput, []llm.ContentPart, error) {
-	if input.TaskType != MediaVideoTaskGeneration {
+	if input.TaskType != MediaImageTaskVideoGeneration {
 		return nil, nil, nil
 	}
 	attachments, err := s.resolveAttachments(ctx, input.UserID, input.FileIDs)
@@ -1002,10 +1002,10 @@ func emitMediaVideoStatus(onEvent func(string, map[string]interface{}) error, st
 	upstreamStatus := strings.TrimSpace(status.Status)
 	normalized := strings.ToLower(upstreamStatus)
 	appStatus := "running"
-	message := mediaImageRunningMessage(MediaVideoTaskGeneration)
+	message := mediaImageRunningMessage(MediaImageTaskVideoGeneration)
 	if normalized == "queued" {
 		appStatus = "queued"
-		message = mediaQueuedMessage(MediaVideoTaskGeneration)
+		message = mediaQueuedMessage(MediaImageTaskVideoGeneration)
 	}
 	payload := map[string]interface{}{
 		"status":          appStatus,
@@ -1049,12 +1049,6 @@ func withGeminiInteractionResponseType(options map[string]interface{}, responseT
 		for key, value := range raw {
 			format[key] = value
 		}
-	}
-	if raw, ok := next["responseFormat"].(map[string]interface{}); ok {
-		for key, value := range raw {
-			format[key] = value
-		}
-		delete(next, "responseFormat")
 	}
 	format["type"] = strings.TrimSpace(responseType)
 	next["response_format"] = format

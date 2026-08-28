@@ -1,7 +1,5 @@
 "use client";
 
-import * as React from "react";
-import dynamic from "next/dynamic";
 import {
   Box,
   Check,
@@ -26,16 +24,18 @@ import {
   Wrench,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
+import * as React from "react";
 import { toast } from "sonner";
 
 
 import { AudioLines } from "@/components/animate-ui/icons/audio-lines";
 import { Blocks } from "@/components/animate-ui/icons/blocks";
+import { Crop } from "@/components/animate-ui/icons/crop";
+import { Link as LinkIcon } from "@/components/animate-ui/icons/link";
 import { Pause } from "@/components/animate-ui/icons/pause";
 import { Send } from "@/components/animate-ui/icons/send";
-import { Link as LinkIcon } from "@/components/animate-ui/icons/link";
-import { Crop } from "@/components/animate-ui/icons/crop";
 import { X as XIcon } from "@/components/animate-ui/icons/x";
 import { PlusIcon } from "@/components/ui/plus";
 import type {
@@ -51,7 +51,7 @@ import {
   useChatSpeechInput,
   type SpeechInputErrorCode,
 } from "@/features/chat/hooks/use-chat-speech-input";
-import { useMarkdownPreviewSync } from "@/features/chat/hooks/use-markdown-preview-sync";
+import { useChatPreviewSync } from "@/features/chat/hooks/use-chat-preview-sync";
 import {
   useChatMentionMenu,
   type ChatMentionMenuKind,
@@ -60,7 +60,6 @@ import {
 import { ChatMentionMenuPortal } from "@/features/chat/components/shared/chat-mention-menu";
 import { ChatModelPicker } from "@/features/chat/components/sections/chat-model-picker";
 import { ChatModelConfig } from "@/features/chat/components/sections/chat-model-config";
-import { formatBytes, resolveFileIcon } from "@/shared/lib/file-display";
 import type { ChatSubmitDecision } from "@/features/chat/model/chat-task";
 import { isMediaSubmitTask, resolveChatSubmitDecision } from "@/features/chat/model/chat-task";
 import { ChatMCPPanel } from "@/features/chat/components/sections/chat-mcp";
@@ -94,11 +93,18 @@ import { isNativeToolTypeAllowed, type ModelOptionPolicy } from "@/shared/lib/mo
 import type { SendShortcut } from "@/features/settings/types/settings";
 import { isSendShortcutEvent } from "@/shared/lib/platform-shortcuts";
 import type { BillingDisplayCurrency } from "@/shared/lib/billing-display";
+import { formatBytes, resolveFileExtension, resolveFileIcon } from "@/shared/lib/file-display";
 
 const FilePreviewDialog = dynamic(
   () => import("@/shared/components/file-preview/preview-dialog").then((module) => module.FilePreviewDialog),
   { ssr: false },
 );
+
+const TEMPORARY_NOTICE_TRANSITION = {
+  duration: 0.22,
+  ease: [0.16, 1, 0.3, 1] as const,
+};
+const TEMPORARY_MENTION_KINDS = ["model", "tool", "skill", "prompt"] as const;
 
 type QueuedComposerMessage = {
   id: string;
@@ -112,8 +118,9 @@ type ChatInputProps = {
   sending: boolean;
   uploading: boolean;
   isConversationMode: boolean;
-  maxFilesPerMessage: number;
   fileMode?: "auto" | "full_context" | "rag";
+  ragAvailable: boolean | null;
+  ragAvailabilityReason: string;
   sendShortcut?: SendShortcut;
   inputHeight?: "compact" | "standard" | "loose";
   attachments: PendingAttachment[];
@@ -125,6 +132,7 @@ type ChatInputProps = {
   availableTools: MCPToolDTO[];
   selectedToolIDs: number[];
   selectedSkills: SkillSummaryDTO[];
+  selectedKnowledgeBaseIDs: string[];
   defaultToolIDs: number[];
   queuedMessages: QueuedComposerMessage[];
   htmlVisualPromptEnabled: boolean;
@@ -137,11 +145,13 @@ type ChatInputProps = {
   modelLoading: boolean;
   modelDisabled?: boolean;
   dropActive?: boolean;
+  temporaryMode?: boolean;
   onDraftChange: (value: string) => void;
   onModelChange: (platformModelName: string) => void;
   onModelCatalogRefresh?: () => void | Promise<void>;
   onSelectedToolsChange: (toolIDs: number[]) => void;
   onSelectedSkillsChange: (skills: SkillSummaryDTO[]) => void;
+  onSelectedKnowledgeBasesChange: (ids: string[]) => void;
   onDefaultToolsChange: (toolIDs: number[]) => void | Promise<void>;
   onHTMLVisualPromptChange: (enabled: boolean) => void;
   onOptionsChange: React.Dispatch<React.SetStateAction<ConversationOptions>>;
@@ -313,6 +323,17 @@ function resolveComposerModeIndicator(
       tone: "default",
     };
   }
+  if (decision.task === "video_extension") {
+    return {
+      label: t("mediaMode.videoExtension"),
+      intro: t("mediaMode.videoExtensionIntro"),
+      description: decision.blockedReason
+        ? t(`mediaMode.blockedDescriptions.${decision.blockedReason}`)
+        : t("mediaMode.videoExtensionDescription"),
+      icon: Film,
+      tone: decision.blockedReason ? "warning" : "default",
+    };
+  }
   return null;
 }
 
@@ -344,6 +365,8 @@ function ChatInputComponent({
   uploading,
   isConversationMode,
   fileMode,
+  ragAvailable,
+  ragAvailabilityReason,
   sendShortcut = "enter",
   inputHeight = "standard",
   attachments,
@@ -355,6 +378,7 @@ function ChatInputComponent({
   availableTools,
   selectedToolIDs,
   selectedSkills,
+  selectedKnowledgeBaseIDs,
   defaultToolIDs,
   queuedMessages,
   htmlVisualPromptEnabled,
@@ -367,11 +391,13 @@ function ChatInputComponent({
   modelLoading,
   modelDisabled = false,
   dropActive = false,
+  temporaryMode = false,
   onDraftChange,
   onModelChange,
   onModelCatalogRefresh,
   onSelectedToolsChange,
   onSelectedSkillsChange,
+  onSelectedKnowledgeBasesChange,
   onDefaultToolsChange,
   onHTMLVisualPromptChange,
   onOptionsChange,
@@ -428,10 +454,21 @@ function ChatInputComponent({
   const hasDraftText = draft.trim().length > 0;
   const hasSubmitContent = hasDraftText || attachments.length > 0;
   const canSend = hasSubmitContent && !loading && !uploading;
+  const submitActionLabel = hasSubmitContent
+    ? sending
+      ? tComposer("queueMessage")
+      : tChat("send")
+    : sending
+      ? tComposer("pauseGeneration")
+      : speechInput.supported
+        ? speechInput.active
+          ? tComposer("cancelVoiceInput")
+          : tComposer("voiceInput")
+        : tComposer("voiceUnsupported");
   const showMarkdownPreview = markdownPreview && hasDraftText;
   const inputHeightClassName =
     inputHeight === "compact" ? "max-h-32" : inputHeight === "loose" ? "max-h-64" : "max-h-44";
-  const { onPreviewScroll, onSourceScroll } = useMarkdownPreviewSync({
+  const { onPreviewScroll, onSourceScroll } = useChatPreviewSync({
     enabled: showMarkdownPreview,
     previewRef: markdownPreviewRef,
     source: draft,
@@ -485,7 +522,8 @@ function ChatInputComponent({
       return null;
     }
     const options = nativeToolGroup.options.filter((tool) => (
-      isNativeToolTypeAllowed(modelOptionPolicy, selectedProtocol, tool.type, selectedModel?.nativeToolKeys ?? [])
+      modelOptionPolicy !== null
+      && isNativeToolTypeAllowed(modelOptionPolicy, selectedProtocol, tool.type, selectedModel?.nativeToolKeys ?? [])
     ));
     return options.length > 0 ? { ...nativeToolGroup, options } : null;
   }, [modelOptionPolicy, nativeToolGroup, selectedModel?.nativeToolKeys, selectedProtocol]);
@@ -567,6 +605,7 @@ function ChatInputComponent({
     anchorRef: inputGroupRef,
     textareaRef,
     toolsDisabled: isMediaMode,
+    enabledKinds: temporaryMode ? TEMPORARY_MENTION_KINDS : undefined,
     onDraftChange,
     onFileSelect: onAttachExistingFile,
     onModelCatalogRefresh,
@@ -812,6 +851,7 @@ function ChatInputComponent({
         className={cn(
           "relative z-10 flex-col items-stretch overflow-hidden rounded-3xl border-[0.5px] border-border/70 bg-pure shadow-xs transition-[height,border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none has-[[data-slot=input-group-control]:focus-visible]:border-border has-[[data-slot=input-group-control]:focus-visible]:ring-0",
           inputGroupHeight === null && "h-auto",
+          temporaryMode && "border-foreground/15 bg-muted/45 shadow-none",
           dropActive && "border-dashed border-foreground/30 bg-muted/20 shadow-none",
         )}
         style={inputGroupHeight === null ? undefined : { height: inputGroupHeight }}

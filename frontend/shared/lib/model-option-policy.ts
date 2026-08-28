@@ -15,6 +15,7 @@ export const MODEL_OPTION_POLICY_PROTOCOLS = [
   "xai_image",
   "xai_image_edits",
   "xai_video",
+  "xai_video_extensions",
 ] as const;
 
 export type ModelOptionPolicyProtocol = (typeof MODEL_OPTION_POLICY_PROTOCOLS)[number];
@@ -117,6 +118,7 @@ export const MODEL_OPTION_POLICY_PROTOCOL_LABELS: Record<ModelOptionPolicyProtoc
   xai_image: "xAI（Images Generations）",
   xai_image_edits: "xAI（Images Edits）",
   xai_video: "xAI（Video Generations）",
+  xai_video_extensions: "xAI（Video Extensions）",
 };
 
 export const HARD_DENIED_MODEL_OPTION_PATHS = [
@@ -134,6 +136,10 @@ export const HARD_DENIED_MODEL_OPTION_PATHS = [
   "baseURL",
   "stream",
   "previous_response_id",
+  "prompt_cache_key",
+  "prompt_cache_options",
+  "prompt_cache_breakpoint",
+  "prompt_cache_retention",
 ];
 
 export function parseModelOptionRuleMap(raw: string): { value: ModelOptionRuleMap; error: string } {
@@ -169,6 +175,21 @@ const GEMINI_INTERACTIONS_ALLOWED_PATHS = [
   "response_format.duration",
   "response_format.image_size",
   "response_format.mime_type",
+  "response_format.schema",
+  "generation_config.video_config.task",
+];
+
+const LEGACY_GEMINI_INTERACTIONS_ALLOWED_PATHS_WITH_DURATION = [
+  "generation_config.temperature",
+  "generation_config.top_p",
+  "generation_config.max_output_tokens",
+  "generation_config.thinking_level",
+  "generation_config.thinking_summaries",
+  "response_format.type",
+  "response_format.aspect_ratio",
+  "response_format.duration",
+  "response_format.image_size",
+  "response_format.mime_type",
   "responseFormat.type",
   "responseFormat.aspectRatio",
   "responseFormat.duration",
@@ -178,7 +199,7 @@ const GEMINI_INTERACTIONS_ALLOWED_PATHS = [
   "generation_config.video_config.task",
 ];
 
-const LEGACY_GEMINI_INTERACTIONS_ALLOWED_PATHS = GEMINI_INTERACTIONS_ALLOWED_PATHS.filter(
+const LEGACY_GEMINI_INTERACTIONS_ALLOWED_PATHS = LEGACY_GEMINI_INTERACTIONS_ALLOWED_PATHS_WITH_DURATION.filter(
   (path) => path !== "response_format.duration" && path !== "responseFormat.duration",
 );
 
@@ -226,7 +247,7 @@ const LEGACY_BUILT_IN_POLICY_PATHS: Record<string, { required: string[]; optiona
   },
   xai_responses: {
     required: ["reasoning.effort"],
-    optional: ["store"],
+    optional: ["min_p", "parallel_tool_calls", "store", "top_k"],
   },
   xai_image: {
     required: ["aspect_ratio", "n", "resolution", "response_format"],
@@ -249,6 +270,12 @@ const LEGACY_BUILT_IN_OPTIONAL_PROTOCOL_PATHS: Record<string, { required: string
   },
   openai_video_generations: {
     required: ["seconds", "size"],
+  },
+  xai_video: {
+    required: ["aspect_ratio", "duration", "resolution"],
+  },
+  xai_video_extensions: {
+    required: ["duration"],
   },
 };
 
@@ -327,9 +354,12 @@ export function normalizeModelOptionAllowedPathsJSON(raw: string): string {
   const geminiInteractionsPaths = next.gemini_interactions;
   if (
     geminiInteractionsPaths &&
-    modelOptionPathSetMatches(geminiInteractionsPaths, LEGACY_GEMINI_INTERACTIONS_ALLOWED_PATHS)
+    (
+      modelOptionPathSetMatches(geminiInteractionsPaths, LEGACY_GEMINI_INTERACTIONS_ALLOWED_PATHS)
+      || modelOptionPathSetMatches(geminiInteractionsPaths, LEGACY_GEMINI_INTERACTIONS_ALLOWED_PATHS_WITH_DURATION)
+    )
   ) {
-    geminiInteractionsPaths.push("response_format.duration", "responseFormat.duration");
+    next.gemini_interactions = [...GEMINI_INTERACTIONS_ALLOWED_PATHS];
     changed = true;
   }
   const legacyOpenAIChatPaths = [
@@ -453,6 +483,8 @@ export function resolveModelOptionPolicyProtocol(protocol: string): ModelOptionP
       return "xai_image_edits";
     case "xai_video":
       return "xai_video";
+    case "xai_video_extensions":
+      return "xai_video_extensions";
     case "google":
     case "gemini":
     case "google_generate_content":

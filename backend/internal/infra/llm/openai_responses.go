@@ -49,7 +49,9 @@ func buildResponsesRequestBody(
 		"input":  items,
 		"stream": stream,
 	}
-	if adapter == AdapterOpenAIResponses && input.ResponsesBackground {
+	if adapter == AdapterOpenAIResponses && input.Ephemeral {
+		payload["store"] = false
+	} else if adapter == AdapterOpenAIResponses && input.ResponsesBackground {
 		payload["background"] = true
 		payload["store"] = true
 	}
@@ -72,7 +74,7 @@ func buildResponsesRequestBody(
 	appendToolDeclarations(payload, providerTools, webSearchTools, buildOpenAITools(toolDefinitions, false))
 	// 鏈夌姸鎬佷細璇濓細鎻愪緵 previous_response_id 鏃舵湇鍔＄缁帴瀛樺偍鐨勫巻鍙诧紝
 	// input 浠呭寘鍚湰杞柊娑堟伅锛岄伩鍏嶅叏閲忛噸浼犮€?
-	if prevID := strings.TrimSpace(input.PreviousResponseID); prevID != "" {
+	if prevID := strings.TrimSpace(input.PreviousResponseID); !input.Ephemeral && prevID != "" {
 		payload["previous_response_id"] = prevID
 	}
 	if streamOptions := responsesStreamOptions(providerStreamOptions); stream && len(streamOptions) > 0 {
@@ -389,10 +391,12 @@ func responsesReasoningStateFor(result *GenerateOutput) *responsesReasoningStrea
 	if result == nil {
 		return nil
 	}
-	if result.responsesReasoningState == nil {
-		result.responsesReasoningState = newResponsesReasoningStreamState()
+	if state, ok := result.StreamState.(*responsesReasoningStreamState); ok && state != nil {
+		return state
 	}
-	return result.responsesReasoningState
+	state := newResponsesReasoningStreamState()
+	result.StreamState = state
+	return state
 }
 
 func (s *responsesReasoningStreamState) partFor(

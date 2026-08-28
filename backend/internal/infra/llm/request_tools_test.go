@@ -165,6 +165,7 @@ func TestParseChatCompletionsOutputSeparatesReasoningContentParts(t *testing.T) 
 
 func TestApplyChatStreamEventSeparatesReasoningContentParts(t *testing.T) {
 	result := &GenerateOutput{}
+	var buffer string
 	var visible string
 	var reasoning string
 	err := applyChatStreamEvent(AdapterOpenAIChatCompletions, map[string]interface{}{
@@ -178,7 +179,7 @@ func TestApplyChatStreamEventSeparatesReasoningContentParts(t *testing.T) {
 				},
 			},
 		},
-	}, result, func(event GenerateStreamEvent) error {
+	}, result, &buffer, func(event GenerateStreamEvent) error {
 		visible += event.Delta
 		if event.Reasoning != nil {
 			reasoning += event.Reasoning.Text
@@ -290,7 +291,7 @@ func applyChatReasoningStreamChunk(t *testing.T, result *GenerateOutput, chunk s
 				},
 			},
 		},
-	}, result, func(event GenerateStreamEvent) error {
+	}, result, nil, func(event GenerateStreamEvent) error {
 		if event.Reasoning != nil {
 			emitted += event.Reasoning.Text
 		}
@@ -315,7 +316,7 @@ func applyChatReasoningContentPartStreamChunk(t *testing.T, result *GenerateOutp
 				},
 			},
 		},
-	}, result, func(event GenerateStreamEvent) error {
+	}, result, nil, func(event GenerateStreamEvent) error {
 		if event.Reasoning != nil {
 			emitted += event.Reasoning.Text
 		}
@@ -864,7 +865,7 @@ func TestChatStreamToolCallArgumentsAreConcatenatedWithoutDefaultPrefix(t *testi
 	}
 
 	for _, chunk := range chunks {
-		if err := applyChatStreamEvent(AdapterOpenAIChatCompletions, chunk, result, nil, false); err != nil {
+		if err := applyChatStreamEvent(AdapterOpenAIChatCompletions, chunk, result, nil, nil, false); err != nil {
 			t.Fatalf("apply stream event: %v", err)
 		}
 	}
@@ -921,7 +922,7 @@ func TestChatStreamCustomToolCallInputIsConcatenated(t *testing.T) {
 	}
 
 	for _, chunk := range chunks {
-		if err := applyChatStreamEvent(AdapterOpenAIChatCompletions, chunk, result, nil, false); err != nil {
+		if err := applyChatStreamEvent(AdapterOpenAIChatCompletions, chunk, result, nil, nil, false); err != nil {
 			t.Fatalf("apply stream event: %v", err)
 		}
 	}
@@ -1318,7 +1319,7 @@ func TestResponsesStreamOfficialReasoningSummaryLifecyclePreservesWhitespaceWith
 	if result.Text != "Hi!" {
 		t.Fatalf("expected final answer to remain intact, got %q", result.Text)
 	}
-	if result.responsesReasoningState != nil {
+	if result.StreamState != nil {
 		t.Fatal("expected the stream-only reasoning accumulator to be released")
 	}
 }

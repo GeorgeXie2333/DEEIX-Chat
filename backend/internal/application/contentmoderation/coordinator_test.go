@@ -130,6 +130,27 @@ func (r *coordinatorTestRepo) ListStaleModeratingRuns(context.Context, time.Time
 	return append([]string(nil), r.staleRunIDs...), nil
 }
 
+func TestEphemeralCoordinatorBlockDoesNotMutateConversationRun(t *testing.T) {
+	repo := &coordinatorTestRepo{}
+	service := &Service{repo: repo}
+	coord := newRunCoordinator(service, RunMeta{RunID: "temporary-run", Ephemeral: true}, runtimeConfig{})
+	emitted := false
+	coord.SetLiveEmitter(func(eventType string, _ map[string]interface{}) {
+		emitted = eventType == "moderation_blocked"
+	})
+
+	notified, err := coord.applyBlock(BlockInfo{EventID: "event", Direction: DirectionInput, Categories: []string{"unsafe"}})
+	if err != nil {
+		t.Fatalf("apply ephemeral block: %v", err)
+	}
+	if !notified || !emitted {
+		t.Fatal("ephemeral block must still emit the terminal moderation event")
+	}
+	if repo.applyCalls != 0 {
+		t.Fatalf("ApplyRunBlock calls = %d, want 0", repo.applyCalls)
+	}
+}
+
 func TestKnownHitRemainsBlockedWhenDurableApplyFails(t *testing.T) {
 	repo := &coordinatorTestRepo{applyErr: errors.New("database unavailable")}
 	service := NewService(nil, repo, "", nil)
@@ -335,12 +356,16 @@ func TestRecordHitRollsBackIsolatedImagesWhenEventCreateFails(t *testing.T) {
 		RawImages: []OutputImageSource{{FileID: "file_1", Data: []byte("image-bytes"), MimeType: "image/png"}},
 	}
 
-	if _, err := service.recordHit(context.Background(), task, HitEvaluation{
+	eventID, err := service.recordHit(context.Background(), task, HitEvaluation{
 		Hit:        true,
 		Categories: []string{"violence"},
 		Scores:     map[string]float64{"violence": 0.99},
-	}, 10, nil); !errors.Is(err, repo.createErr) {
+	}, 10, nil)
+	if !errors.Is(err, repo.createErr) {
 		t.Fatalf("record hit error=%v, want %v", err, repo.createErr)
+	}
+	if eventID != "" {
+		t.Fatalf("failed event persistence exposed dangling event ID %q", eventID)
 	}
 
 	store.mu.Lock()

@@ -8,9 +8,9 @@ import (
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/buildinfo"
 )
 
-// @title Comi AI API
-// @version 0.3.5
-// @description Comi AI backend API documentation.
+// @title DEEIX Chat API
+// @version 0.4.0
+// @description DEEIX Chat 后端 API 文档
 // @BasePath /api/v1
 // @securityDefinitions.apikey BearerAuth
 // @in header

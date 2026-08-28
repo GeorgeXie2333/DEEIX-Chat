@@ -7,22 +7,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/llm"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
 )
 
 // LLMRawChatProvider adapts the shared LLM client to the open API service.
 type LLMRawChatProvider struct {
-	client        *llm.Client
+	client        llm.ChatClient
 	imageResolver chatImageResolver
 }
 
 // NewLLMRawChatProvider 创建原始 Chat Completions 调用器。
-func NewLLMRawChatProvider(client *llm.Client) *LLMRawChatProvider {
+func NewLLMRawChatProvider(client llm.ChatClient) *LLMRawChatProvider {
 	return &LLMRawChatProvider{client: client}
 }
 
 // NewLLMRawChatProviderWithImageResolver 创建支持远程 image_url 下载的开放 API 调用器。
-func NewLLMRawChatProviderWithImageResolver(client *llm.Client, resolver chatImageResolver) *LLMRawChatProvider {
+func NewLLMRawChatProviderWithImageResolver(client llm.ChatClient, resolver chatImageResolver) *LLMRawChatProvider {
 	return &LLMRawChatProvider{client: client, imageResolver: resolver}
 }
 

@@ -1,7 +1,7 @@
 import type { ChatModelOption, PendingAttachment } from "@/features/chat/types/chat-runtime";
 import type { ConversationOptions } from "@/shared/api/conversation.types";
 
-export type ChatSubmitTask = "chat" | "image_generation" | "image_edit" | "video_generation";
+export type ChatSubmitTask = "chat" | "image_generation" | "image_edit" | "video_generation" | "video_extension";
 export type ChatSubmitBlockReason =
   | "image_edit_input_required"
   | "image_edit_unsupported"
@@ -11,6 +11,8 @@ export type ChatSubmitBlockReason =
   | "video_generation_too_many_reference_images"
   | "video_generation_too_many_images"
   | "video_task_rejects_non_image_attachments"
+  | "video_extension_requires_single_mp4"
+  | "video_extension_unsupported"
   | "model_task_unsupported";
 
 export type ChatSubmitDecision = {
@@ -23,10 +25,19 @@ export type ChatSubmitDecision = {
   supportsImageGeneration: boolean;
   supportsImageEdit: boolean;
   supportsVideoGeneration: boolean;
+  supportsVideoExtension: boolean;
 };
 
 function isImageAttachment(item: PendingAttachment): boolean {
   return item.fileCategory === "image" || item.mimeType.toLowerCase().startsWith("image/");
+}
+
+function isMP4Attachment(item: PendingAttachment): boolean {
+  return item.mimeType.toLowerCase() === "video/mp4" || item.detectedMime?.toLowerCase() === "video/mp4";
+}
+
+function isVideoAttachment(item: PendingAttachment): boolean {
+  return item.mimeType.toLowerCase().startsWith("video/") || item.detectedMime?.toLowerCase().startsWith("video/") === true;
 }
 
 function buildDecision(
@@ -66,7 +77,7 @@ function requestedResponseType(options?: ConversationOptions): "image" | "video"
   if (!options) {
     return "";
   }
-  return responseFormatType(options.response_format ?? options.responseFormat);
+  return responseFormatType(options.response_format);
 }
 
 export function resolveChatSubmitDecision(
@@ -77,11 +88,14 @@ export function resolveChatSubmitDecision(
   const kinds = new Set(model?.kinds ?? []);
   const attachmentCount = attachments.length;
   const imageAttachmentCount = attachments.filter(isImageAttachment).length;
+  const mp4AttachmentCount = attachments.filter(isMP4Attachment).length;
+  const videoAttachmentCount = attachments.filter(isVideoAttachment).length;
   const nonImageAttachmentCount = attachmentCount - imageAttachmentCount;
   const supportsChat = kinds.size === 0 || kinds.has("chat") || kinds.has("audio");
   const supportsImageGeneration = kinds.has("image_gen");
   const supportsImageEdit = kinds.has("image_edit");
   const supportsVideoGeneration = kinds.has("video_gen");
+  const supportsVideoExtension = model?.videoExtension?.enabled === true;
   const baseDecision = {
     attachmentCount,
     imageAttachmentCount,
@@ -90,6 +104,7 @@ export function resolveChatSubmitDecision(
     supportsImageGeneration,
     supportsImageEdit,
     supportsVideoGeneration,
+    supportsVideoExtension,
   };
   const requestedType = requestedResponseType(options);
 
@@ -179,5 +194,5 @@ export function resolveChatSubmitDecision(
 }
 
 export function isMediaSubmitTask(task: ChatSubmitTask): boolean {
-  return task === "image_generation" || task === "image_edit" || task === "video_generation";
+  return task === "image_generation" || task === "image_edit" || task === "video_generation" || task === "video_extension";
 }

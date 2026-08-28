@@ -15,10 +15,18 @@
   "time": "Time",
   "tokens": "Tokens",
   "details": "Details",
-  "archive": {
-    "exported": "JSON exported",
-    "exportFailed": "Export failed",
-    "signInRequired": "Sign in to export this conversation."
+  "temporary": {
+    "title": "Temporary chat",
+    "historyChat": "Normal chat",
+    "notice": "This chat won't appear in your history. Its data will be cleared when you leave the page.",
+    "exitTitle": "Exit temporary chat",
+    "exitDescription": "All messages and generated content in this temporary chat will be cleared and cannot be recovered.",
+    "continue": "Cancel",
+    "exitAction": "Exit",
+    "stopped": "Generation stopped",
+    "blocked": "Content withdrawn by the safety policy",
+    "failed": "Temporary message generation failed. Please try again.",
+    "sessionExpired": "Your session has expired. Please sign in again."
   },
   "greeting": {
     "morning": "Good morning",
@@ -96,18 +104,18 @@
     "delete": "Delete"
   },
   "screenshot": {
-    "captureFull": "Capture full conversation",
+    "captureLatest": "Capture latest 100 messages",
     "captureSelect": "Select messages to capture",
     "selectMessage": "Select this message",
-    "selectedCount": "{count} selected",
     "selectAll": "Select all",
+    "selectLatest": "Select latest 100",
     "clearSelection": "Clear selection",
     "captureSelected": "Capture",
     "exitSelection": "Exit selection",
     "generating": "Generating screenshot…",
     "ready": "Screenshot ready",
     "failed": "Failed to generate screenshot",
-    "loadLimitReached": "The conversation is too long. Please select a portion of the messages to take a screenshot.",
+    "selectionLimitReached": "You can select up to 100 messages",
     "tooLarge": "The conversation content is too large. Please select a portion of the messages to take a screenshot.",
     "emptySelection": "Select at least one message",
     "previewTitle": "Conversation screenshot",
@@ -118,7 +126,10 @@
     "downloaded": "Image downloaded",
     "copied": "Image copied to clipboard",
     "copyFailed": "Failed to copy image",
-    "copyUnsupported": "Copying images is not supported in this browser"
+    "copyUnsupported": "Copying images is not supported in this browser",
+    "captureFull": "Capture full conversation",
+    "selectedCount": "{count} selected",
+    "loadLimitReached": "The conversation is too long. Please select a portion of the messages to take a screenshot."
   },
   "markdown": {
     "back": "Back",
@@ -129,6 +140,14 @@
     "downloadImage": "Download image",
     "scrollableTable": "Scrollable data table",
     "scrollableTableHint": "Scroll horizontally to view more columns.",
+    "table": {
+      "download": "Download",
+      "downloadAsCsv": "Download CSV",
+      "downloadAsMarkdown": "Download Markdown",
+      "formatCsv": "CSV",
+      "formatMarkdown": "Markdown",
+      "downloadFailed": "Could not download table"
+    },
     "copyLatex": "Copy formula source",
     "latexCopied": "Formula source copied",
     "latexCopyFailed": "Could not copy formula source",
@@ -139,10 +158,6 @@
       "copy": "Copy link",
       "copied": "Link copied",
       "copyFailed": "Could not copy link"
-    },
-    "codeBlock": {
-      "collapse": "Collapse",
-      "expand": "Expand {count} lines"
     },
     "artifact": {
       "openPreview": "Preview",
@@ -160,6 +175,22 @@
     "thinking": {
       "active": "Thinking",
       "done": "Thinking complete"
+    },
+    "diagram": {
+      "downloadDiagram": "Download",
+      "downloadDiagramAsSvg": "Download diagram as SVG",
+      "downloadDiagramAsPng": "Download diagram as PNG",
+      "downloadDiagramAsMmd": "Download diagram as MMD",
+      "copyDiagram": "Copy",
+      "viewFullscreen": "Fullscreen",
+      "exitFullscreen": "Exit",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "resetView": "Reset view"
+    },
+    "codeBlock": {
+      "collapse": "Collapse",
+      "expand": "Expand {count} lines"
     }
   },
   "artifacts": {
@@ -175,6 +206,8 @@
     "sourceCopied": "Source copied",
     "copyFailed": "Could not copy source",
     "downloadHtml": "Download HTML",
+    "downloadSvg": "Download SVG",
+    "invalidSvg": "This SVG source is invalid and cannot be previewed.",
     "close": "Close",
     "resize": "Resize Artifact",
     "empty": "This artifact is empty and cannot be previewed yet.",
@@ -191,6 +224,9 @@
     "imageRunning": "Generating image",
     "contextCompressed": "Context was automatically compressed",
     "scrollToBottom": "Scroll to bottom",
+    "responseOutline": "This response",
+    "jumpToResponseSection": "Jump to “{title}”",
+    "knowledgeSources": "Used {count} sources",
     "processing": "Processing...",
     "expandUserMessage": "Expand",
     "collapseUserMessage": "Collapse",
@@ -208,6 +244,9 @@
     "dislikeReply": "Dislike",
     "retryReply": "Retry",
     "continueReply": "Continue reply",
+    "extendVideo": "Extend video",
+    "forkMessage": "Fork conversation here",
+    "forkTitle": "{title} (Fork)",
     "rememberPreference": "Remember preference",
     "memorySaved": "Remembered",
     "memorySavedDescription": "This preference will apply to future conversations.",
@@ -250,12 +289,12 @@
     "screenshotUnsupported": "This browser does not support screenshots",
     "screenshotFailed": "Screenshot failed",
     "retry": "Please try again.",
-    "metadataOnly": "Metadata only",
     "policy": {
       "mimeNotAllowed": "This file type is not included in the admin MIME allowlist.",
       "fullContextLimitExceeded": "Vector retrieval is disabled. Only small files that fit full-context injection can be uploaded, and this file exceeds the {limit} limit.",
       "sizeLimitExceeded": "This file exceeds the {limit} limit."
-    }
+    },
+    "metadataOnly": "Metadata only"
   },
   "submit": {
     "attachmentOnlyContent": "Please refer to the attachments.",
@@ -276,11 +315,13 @@
       "image_edit_unsupported": "This model does not support image editing. Remove the image or select an editing-capable model.",
       "image_generation_rejects_attachments": "Image generation accepts text prompts only. Remove attachments or select a model that handles them.",
       "image_task_rejects_non_image_attachments": "Image tasks only support image attachments. Remove non-image files.",
-      "video_generation_rejects_non_image_attachments": "Video generation only supports one image as a reference. Remove non-image files.",
-      "video_generation_too_many_reference_images": "Video generation can use at most one reference image. Remove extra images.",
       "video_generation_too_many_images": "Video generation supports one input image at most. Keep one image and try again.",
       "video_task_rejects_non_image_attachments": "Video generation only supports text prompts and image attachments. Remove non-image files.",
-      "model_task_unsupported": "This model cannot process the current input. Select another model and try again."
+      "video_extension_requires_single_mp4": "Video extension accepts exactly one MP4 file. Remove the other attachments and try again.",
+      "video_extension_unsupported": "The selected model does not support video extension. Switch to a model using the xAI video protocol.",
+      "model_task_unsupported": "This model cannot process the current input. Select another model and try again.",
+      "video_generation_rejects_non_image_attachments": "Video generation only supports one image as a reference. Remove non-image files.",
+      "video_generation_too_many_reference_images": "Video generation can use at most one reference image. Remove extra images."
     },
     "mediaStatus": {
       "queued": "Image task queued",
@@ -292,9 +333,12 @@
     },
     "generationInterrupted": "Generation interrupted",
     "sendFailed": "Send failed",
+    "queuedParentFailed": "Queued messages canceled",
+    "queuedParentFailedDescription": "The previous message did not complete successfully, so its dependent queued messages were canceled.",
     "continueGenerationPrompt": "Continue from the previous interrupted reply without repeating content that was already generated.",
     "continueReplyFailed": "Unable to continue generation",
     "continueReplyUnavailable": "This reply cannot be continued right now.",
+    "forkFailed": "Failed to fork conversation",
     "editReplyFailed": "Failed to edit reply",
     "retryReplyFailed": "Unable to retry this reply",
     "retryReplyMissingUser": "The corresponding user message was not found.",
@@ -356,34 +400,44 @@
     }
   },
   "composer": {
-    "addPhotosAndFiles": "Add photos and files",
     "uploadFile": "Upload file",
     "screenshot": "Screenshot",
     "openTools": "Open tools",
-    "advancedSettings": "Advanced settings",
     "inputPlaceholder": "Message, or use / for context, @ for resources",
     "voiceStartingPlaceholder": "Starting voice input…",
     "voiceListeningPlaceholder": "Receiving voice input…",
     "modelOptions": "Parameters",
     "mcpTools": "MCP tools",
     "mcpToolsSelected": "{count} tools enabled",
-    "enabledCount": "{count} enabled",
-    "back": "Back",
+    "knowledgeBases": "Knowledge bases",
+    "knowledgeBasesSelected": "{count} knowledge bases selected",
+    "searchKnowledgeBases": "Search knowledge bases",
+    "knowledgeBaseReadyFiles": "{count} files ready",
+    "knowledgeBaseNotReady": "No searchable files yet",
+    "knowledgeBaseEmpty": "No knowledge bases available",
+    "knowledgeBaseLoadFailed": "Failed to load knowledge bases",
+    "knowledgeBaseLoadMore": "Load more",
+    "knowledgeBaseUnavailable": "Knowledge base retrieval is unavailable",
+    "knowledgeBaseUnavailableDescription": "Ask an administrator to check the RAG and embedding configuration.",
+    "knowledgeBaseUnavailableRAGDisabled": "RAG retrieval is disabled. Ask an administrator to enable RAG.",
+    "knowledgeBaseUnavailableEmbeddingDisabled": "The embedding service is disabled. Ask an administrator to enable it.",
+    "knowledgeBaseUnavailableEmbeddingHostMissing": "The embedding service URL is not configured. Ask an administrator to complete the embedding configuration.",
+    "knowledgeBaseUnavailableEmbeddingModelMissing": "The embedding model is not configured. Ask an administrator to complete the embedding configuration.",
+    "knowledgeBaseUnavailableEmbeddingClientMissing": "The embedding client is unavailable. Ask an administrator to check the embedding configuration.",
+    "knowledgeBaseUnavailableVectorStore": "The vector store is unavailable. Ask an administrator to check the database vector capability.",
+    "knowledgeBaseLimit": "Select up to {limit} knowledge bases",
     "clear": "Clear",
     "default": "Default",
-    "resetAdvancedDefaults": "Restore defaults",
-    "customResolution": "Custom resolution",
-    "customResolutionPlaceholder": "For example 2048x1152",
-    "invalidResolution": "Use WIDTHxHEIGHT, with edges no larger than 3840 and divisible by 16.",
+    "jsonConfig": "JSON config",
     "visualConfig": "Visual config",
     "visual": "Visual",
     "notEnabled": "Not enabled",
     "ignored": "Ignored",
     "willPass": "Passes through",
     "locked": "Locked",
-    "nativeToolMayNotApply": "May not apply",
-    "nativeToolMayNotApplyHelp": "This tool is not adapted for the current request protocol. If enabled, it is still written to JSON and left for the upstream provider to handle.",
-    "currentProtocol": "Current protocol",
+    "routeDependent": "Route dependent",
+    "routeDependentHelp": "This configuration is supported by only some model protocols and is applied according to the route selected by the backend.",
+    "modelProtocols": "Model protocols",
     "toolProtocols": "Tool protocols",
     "notEnabledHelp": "Not enabled: this option is not present in the JSON on the left and will not be sent.",
     "ignoredHelp": "Ignored: this option is present in JSON but filtered by the backend passthrough policy.",
@@ -397,6 +451,7 @@
     "sessionExpired": "Your session has expired. Please sign in again.",
     "retryLater": "Please try again later.",
     "streamResponseParseFailed": "The upstream returned HTTP {statusCode}, but the stream format is incompatible with the selected protocol.",
+    "jsonMustBeObject": "JSON must be an object",
     "currentModel": "Current model",
     "dialogDescription": "{model} request parameters. Saved values are sent with model requests.",
     "ragAllDisabled": "All attachments have RAG disabled and will be injected as full context. This may use more tokens.",
@@ -420,6 +475,8 @@
     "mcpToolLimitTitle": "Tool limit reached",
     "mcpToolLimitDescription": "A message can use up to {limit} MCP tools. Clear some tools before selecting more.",
     "mcpImageProcessor": "Image attachment processor",
+    "mcpPaidTool": "Billed per call at {price}.",
+    "mcpPaidToolNote": "Only successfully executed tool calls are billed; failed calls are not billed.",
     "mcpImageProcessorLimitTitle": "Only one image processor can be selected",
     "mcpImageProcessorLimitDescription": "One MCP image attachment processor can handle images for a message. Clear the current one first.",
     "skillLimitTitle": "Skill limit reached",
@@ -486,20 +543,25 @@
       "videoGeneration": "Video generation",
       "videoGenerationIntro": "Video generation mode is active.",
       "videoGenerationDescription": "Creates a video from the text prompt. You may upload one matching-resolution image as the first-frame reference.",
+      "videoExtension": "Video extension",
+      "videoExtensionIntro": "Video extension mode is active.",
+      "videoExtensionDescription": "Extends the uploaded MP4 video from your prompt. Only the extension duration is configurable.",
       "invalidFile": "Invalid file detected",
       "invalidFileIntro": "This file cannot be used for an image task.",
-      "videoInvalidFileIntro": "This file cannot be used for video generation.",
       "blockedDescriptions": {
         "image_edit_input_required": "Upload an image to edit first.",
         "image_edit_unsupported": "The selected model does not support image editing. Remove the image or switch models.",
         "image_generation_rejects_attachments": "Image generation only accepts text prompts. Remove attachments.",
         "image_task_rejects_non_image_attachments": "Image tasks only support image attachments. Remove non-image files.",
-        "video_generation_rejects_non_image_attachments": "Video generation only supports one image as a reference. Remove non-image files.",
-        "video_generation_too_many_reference_images": "Video generation can use at most one reference image. Remove extra images.",
         "video_generation_too_many_images": "Video generation supports one input image at most.",
         "video_task_rejects_non_image_attachments": "Video generation only supports text prompts and image attachments. Remove non-image files.",
-        "model_task_unsupported": "The selected model cannot process this input. Switch models and try again."
-      }
+        "video_extension_requires_single_mp4": "Video extension accepts exactly one MP4 file. Remove the other attachments.",
+        "video_extension_unsupported": "The selected model does not support video extension. Switch to a model using the xAI video protocol.",
+        "model_task_unsupported": "The selected model cannot process this input. Switch models and try again.",
+        "video_generation_rejects_non_image_attachments": "Video generation only supports one image as a reference. Remove non-image files.",
+        "video_generation_too_many_reference_images": "Video generation can use at most one reference image. Remove extra images."
+      },
+      "videoInvalidFileIntro": "This file cannot be used for video generation."
     },
     "nativeTools": {
       "official": "Official native tools",
@@ -508,6 +570,17 @@
       "claude": "Claude native tools",
       "google": "Google native tools"
     },
+    "addPhotosAndFiles": "Add photos and files",
+    "advancedSettings": "Advanced settings",
+    "enabledCount": "{count} enabled",
+    "back": "Back",
+    "resetAdvancedDefaults": "Restore defaults",
+    "customResolution": "Custom resolution",
+    "customResolutionPlaceholder": "For example 2048x1152",
+    "invalidResolution": "Use WIDTHxHEIGHT, with edges no larger than 3840 and divisible by 16.",
+    "nativeToolMayNotApply": "May not apply",
+    "nativeToolMayNotApplyHelp": "This tool is not adapted for the current request protocol. If enabled, it is still written to JSON and left for the upstream provider to handle.",
+    "currentProtocol": "Current protocol",
     "mcpSelectServerTools": "Select all",
     "mcpClearServerTools": "Clear"
   },
@@ -516,8 +589,6 @@
     "empty": "No models",
     "group": "Group",
     "viewPricing": "View pricing",
-    "viewDescription": "View description",
-    "noDescription": "No description",
     "freeModel": "Free model",
     "freeModelDescription": "No usage balance will be deducted",
     "tieredPricing": "Tiered pricing",
@@ -540,7 +611,9 @@
     "perCall": "Per call",
     "perSecond": "Per second",
     "callUnit": "call",
-    "secondUnit": "second"
+    "secondUnit": "second",
+    "viewDescription": "View description",
+    "noDescription": "No description"
   },
   "processTrace": {
     "fileBadges": {
@@ -562,6 +635,7 @@
     "rag": {
       "sourceFallback": "Chunk source {fileID}",
       "chunksShort": "{count} chunks · {scorePercent}%",
+      "chunksTotal": "{count} chunks",
       "retrievalSources": "Retrieval sources",
       "matchedContents": "{count} matched chunks",
       "matchSummary": "{count} matches · share {sharePercent}% · max relevance {scorePercent}%",
@@ -598,13 +672,22 @@
         "thinking": "Model thinking"
       },
       "detail": {
+        "nameLabel": "Tool",
         "request": "Request",
         "response": "Response",
         "error": "Error",
-        "expand": "Expand",
-        "collapse": "Collapse",
+        "argumentsTitle": "Parameters",
+        "resultTitle": "Result",
+        "copy": "Copy",
+        "copied": "Copied",
+        "copyFailed": "Copy failed",
         "sourceFallback": "Source {index}",
         "generatedImageAlt": "Generated image {index}",
+        "sourceCount": "{count} sources",
+        "groundingSupportCount": "{count} grounding supports",
+        "exitCode": "Exit code {code}",
+        "expand": "Expand",
+        "collapse": "Collapse",
         "query": "Query",
         "action": "Action",
         "source": "Source",
@@ -640,10 +723,21 @@
       }
     },
     "think": {
+      "rowActive": "Deep reasoning",
+      "rowDone": "Deep reasoning",
+      "duration": "{seconds}",
       "titleActive": "Thinking",
       "titleDone": "Thinking complete",
       "subtitleActive": "Parsing the request and organizing key context",
       "subtitleDone": "Reasoning and context integration complete"
+    },
+    "run": {
+      "titleActive": "Running",
+      "titleDone": "Run complete",
+      "toolCalls": "{count} tool calls",
+      "thinkRounds": "{count} deep-reasoning rounds",
+      "duration": "{duration}",
+      "labelSeparator": " · "
     },
     "promptTrace": {
       "modes": {
@@ -685,7 +779,9 @@
       "summary": "Compacted turns {fromTurn}-{toTurn}",
       "detail": "Conversation context was compacted into a rolling summary.",
       "range": "Compacted range: turns {fromTurn}-{toTurn}.",
-      "tokens": "Token reduction: {sourceTokens} -> {summaryTokens}."
+      "tokens": "Token reduction: {sourceTokens} -> {summaryTokens}.",
+      "pending": "Generating a rolling summary in the background.",
+      "failed": "Context compaction did not complete and will be retried on a later request."
     }
   },
   "optionLabels": {
@@ -710,6 +806,9 @@
     "generationConfig__thinkingConfig__includeThoughts": "Include thoughts",
     "generationConfig__thinkingConfig__thinkingBudget": "Thinking budget",
     "generationConfig__thinkingConfig__thinkingLevel": "Thinking level",
+    "generation_config__max_output_tokens": "Max output tokens",
+    "generation_config__thinking_level": "Thinking level",
+    "generation_config__thinking_summaries": "Thinking summaries",
     "generationConfig__topK": "Top K",
     "logprobs": "Logprobs count",
     "max_completion_tokens": "Max output tokens",
@@ -728,15 +827,10 @@
     "quality": "Quality",
     "reasoning__summary": "Reasoning summary",
     "reasoning__effort": "Reasoning effort",
-    "reasoning_mode": "Reasoning mode",
     "reasoning_effort": "Reasoning effort",
     "reasoning_summary": "Reasoning summary",
     "resolution": "Resolution",
     "size": "Size",
-    "videoResolution": "Video resolution",
-    "videoSeconds": "Video seconds",
-    "video_duration": "Video duration",
-    "video_task_type": "Video task type",
     "aspect_ratio": "Aspect ratio",
     "aspectRatio": "Aspect ratio",
     "image_size": "Image size",
@@ -757,7 +851,6 @@
     "think": "Thinking mode",
     "thinking": "Thinking mode",
     "thinking_display": "Thinking display",
-    "thinking_level": "Thinking level",
     "thinking__budget_tokens": "Thinking budget",
     "thinking__display": "Thinking display",
     "thinking__includeThoughts": "Include thoughts",
@@ -777,7 +870,13 @@
     "top_k": "Top K",
     "top_p": "Top P",
     "verbosity": "Verbosity",
-    "web_search": "Web search"
+    "web_search": "Web search",
+    "reasoning_mode": "Reasoning mode",
+    "videoResolution": "Video resolution",
+    "videoSeconds": "Video seconds",
+    "video_duration": "Video duration",
+    "video_task_type": "Video task type",
+    "thinking_level": "Thinking level"
   },
   "optionDescriptions": {
     "background": "Controls the generated image background. Transparent output requires model and format support.",
@@ -804,6 +903,9 @@
     "generationConfig__thinkingConfig__includeThoughts": "Controls whether Gemini thinking content is included.",
     "generationConfig__thinkingConfig__thinkingBudget": "Gemini thinking token budget.",
     "generationConfig__thinkingConfig__thinkingLevel": "Gemini thinking level.",
+    "generation_config__max_output_tokens": "Limits the maximum number of tokens included in the Gemini response.",
+    "generation_config__thinking_level": "Controls the depth of thinking used by the Gemini model.",
+    "generation_config__thinking_summaries": "Controls whether the Gemini response includes thinking summaries.",
     "generationConfig__topK": "Gemini Top K sampling range.",
     "imageConfig__aspectRatio": "Google image output aspect ratio.",
     "imageConfig__imageSize": "Google image output size tier.",
@@ -849,9 +951,6 @@
     "thinkingConfig__thinkingBudget": "Limits the thinking token budget.",
     "thinkingConfig__thinkingLevel": "Controls thinking level.",
     "thinking_display": "Controls thinking block display.",
-    "thinking_level": "Controls the model thinking level.",
-    "video_duration": "Controls the Gemini output video duration.",
-    "video_task_type": "Controls the Gemini video generation, reference, or editing task type.",
     "tool_choice": "Controls whether and how the model chooses tools.",
     "tool_choice__type": "Controls model tool choice mode.",
     "tool_config__functionCallingConfig__mode": "Controls function calling mode.",
@@ -859,7 +958,10 @@
     "top_k": "Limits how many candidate tokens participate in sampling.",
     "top_p": "Controls the nucleus sampling probability mass.",
     "verbosity": "Controls output detail for models that support it.",
-    "web_search": "Controls whether native web search is enabled."
+    "web_search": "Controls whether native web search is enabled.",
+    "thinking_level": "Controls the model thinking level.",
+    "video_duration": "Controls the Gemini output video duration.",
+    "video_task_type": "Controls the Gemini video generation, reference, or editing task type."
   },
   "nativeToolDescriptions": {
     "openai__web_search": "Use OpenAI hosted web search for realtime information.",
@@ -889,18 +991,18 @@
     "googleCodeExecution": "Google native code execution",
     "googleUrlContext": "Google native URL context",
     "openaiWebSearch": "OpenAI native web search",
-    "openaiWebSearchPreview": "OpenAI native web search preview",
     "openaiShell": "OpenAI managed container shell",
     "openaiImageGeneration": "OpenAI native image generation",
     "openaiCodeInterpreter": "OpenAI native code interpreter",
-    "geminiWebSearch": "Gemini native web search",
-    "geminiCodeExecution": "Gemini native code execution",
     "claudeWebSearch": "Claude native web search",
     "claudeWebFetch": "Claude native web/PDF fetch",
     "claudeCodeExecution": "Claude native code execution",
     "claudeAdvisor": "Claude native advisor tool (Beta)",
     "claudeToolSearchRegex": "Claude native tool search (Regex)",
-    "claudeToolSearchBm25": "Claude native tool search (BM25)"
+    "claudeToolSearchBm25": "Claude native tool search (BM25)",
+    "openaiWebSearchPreview": "OpenAI native web search preview",
+    "geminiWebSearch": "Gemini native web search",
+    "geminiCodeExecution": "Gemini native code execution"
   },
   "nativeToolLabels": {
     "openai__web_search": "Web search",
@@ -924,7 +1026,6 @@
     "xai__x_search": "X search",
     "xai__code_interpreter": "Code interpreter",
     "webSearch": "Web search",
-    "webSearchPreview": "Web search preview",
     "xSearch": "X search",
     "codeInterpreter": "Code interpreter",
     "shell": "Shell",
@@ -933,6 +1034,12 @@
     "codeExecution": "Code execution",
     "advisor": "Advisor",
     "toolSearchRegex": "Tool search (Regex)",
-    "toolSearchBm25": "Tool search (BM25)"
+    "toolSearchBm25": "Tool search (BM25)",
+    "webSearchPreview": "Web search preview"
+  },
+  "archive": {
+    "exported": "JSON exported",
+    "exportFailed": "Export failed",
+    "signInRequired": "Sign in to export this conversation."
   }
 }

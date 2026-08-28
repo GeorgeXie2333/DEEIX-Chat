@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import * as React from "react";
 import { toast } from "sonner";
 
 import {
@@ -11,15 +11,13 @@ import {
   removeByPublicID,
   sortByUpdatedAtDesc,
   upsertByPublicID,
-  useSidebarConversations,
+  useSidebarConversationField,
 } from "@/entities/conversation";
 import { useChatSession } from "@/features/chat";
-import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
-import { useLoadMoreSentinel } from "@/shared/hooks/use-load-more-sentinel";
+import type { RecentDeleteTarget, RecentRowState } from "@/features/recent/types/recent";
+import { RECENT_PAGE_SIZE } from "@/features/recent/utils/recent-display";
 import { useSettingsChatPreferences } from "@/features/settings";
-import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
-import { runBulkActionInChunks } from "@/shared/lib/bulk-action";
-import { downloadBlob, readExportManifest } from "@/shared/lib/export-download";
+import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import {
   exportConversationArchive,
   exportAllConversations,
@@ -36,13 +34,15 @@ import type {
   ConversationStarredFilter,
   ConversationStatusFilter,
 } from "@/shared/api/conversation.types";
+import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import {
   downloadConversationArchive,
   readConversationArchiveFile,
 } from "@/features/recent/utils/conversation-archive";
-import { RECENT_PAGE_SIZE } from "@/features/recent/utils/recent-display";
-import type { RecentDeleteTarget, RecentRowState } from "@/features/recent/types/recent";
+import { useLoadMoreSentinel } from "@/shared/hooks/use-load-more-sentinel";
+import { runBulkActionInChunks } from "@/shared/lib/bulk-action";
 import { normalizeConversationSearchText } from "@/shared/lib/conversation-search";
+import { downloadBlob, readExportManifest } from "@/shared/lib/export-download";
 
 const RECENT_SEARCH_DEBOUNCE_MS = 250;
 
@@ -106,20 +106,18 @@ export function useRecentPage() {
   const resolveErrorMessage = useLocalizedErrorMessage();
   const router = useRouter();
   const { requestNewConversation } = useChatSession();
-  const {
-    renameByPublicID,
-    regenerateTitleByPublicID,
-    updateLabelsByPublicID,
-    setStarByPublicID,
-    archiveByPublicID,
-    deleteByPublicID,
-    upsertConversation,
-    projects,
-    setProjectByPublicID,
-    batchSetProjectByPublicIDs,
-    touchByPublicID,
-    lastChange,
-  } = useSidebarConversations();
+  const renameByPublicID = useSidebarConversationField("renameByPublicID");
+  const regenerateTitleByPublicID = useSidebarConversationField("regenerateTitleByPublicID");
+  const updateLabelsByPublicID = useSidebarConversationField("updateLabelsByPublicID");
+  const setStarByPublicID = useSidebarConversationField("setStarByPublicID");
+  const archiveByPublicID = useSidebarConversationField("archiveByPublicID");
+  const deleteByPublicID = useSidebarConversationField("deleteByPublicID");
+  const upsertConversation = useSidebarConversationField("upsertConversation");
+  const projects = useSidebarConversationField("projects");
+  const setProjectByPublicID = useSidebarConversationField("setProjectByPublicID");
+  const batchSetProjectByPublicIDs = useSidebarConversationField("batchSetProjectByPublicIDs");
+  const touchByPublicID = useSidebarConversationField("touchByPublicID");
+  const lastChange = useSidebarConversationField("lastChange");
   const [items, setItems] = React.useState<ConversationDTO[]>([]);
   const [loadingInitial, setLoadingInitial] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);

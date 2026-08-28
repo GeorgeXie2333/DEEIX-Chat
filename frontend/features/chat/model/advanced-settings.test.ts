@@ -623,14 +623,28 @@ test("pre-OpenRouter built-in policy restores Gemini Interactions video settings
 });
 
 test("previous Gemini Interactions built-in policy gains video duration without changing custom policies", () => {
-  const current = JSON.parse(DEFAULT_MODEL_OPTION_ALLOWED_PATHS) as Record<string, string[]>;
-  const legacyPaths = current.gemini_interactions.filter(
-    (path) => path !== "response_format.duration" && path !== "responseFormat.duration",
-  );
+  const legacyPaths = [
+    "generation_config.temperature",
+    "generation_config.top_p",
+    "generation_config.max_output_tokens",
+    "generation_config.thinking_level",
+    "generation_config.thinking_summaries",
+    "response_format.type",
+    "response_format.aspect_ratio",
+    "response_format.image_size",
+    "response_format.mime_type",
+    "responseFormat.type",
+    "responseFormat.aspectRatio",
+    "responseFormat.imageSize",
+    "responseFormat.mimeType",
+    "generationConfig.videoConfig.task",
+    "generation_config.video_config.task",
+  ];
   const legacyJSON = JSON.stringify({ gemini_interactions: legacyPaths });
   const normalized = JSON.parse(normalizeModelOptionAllowedPathsJSON(legacyJSON)) as Record<string, string[]>;
   assert.ok(normalized.gemini_interactions.includes("response_format.duration"));
-  assert.ok(normalized.gemini_interactions.includes("responseFormat.duration"));
+  assert.equal(normalized.gemini_interactions.includes("responseFormat.duration"), false);
+  assert.ok(normalized.gemini_interactions.includes("response_format.schema"));
 
   const customJSON = JSON.stringify({ gemini_interactions: [...legacyPaths, "metadata.tenant"] });
   assert.equal(normalizeModelOptionAllowedPathsJSON(customJSON), customJSON);

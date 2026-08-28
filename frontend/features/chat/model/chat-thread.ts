@@ -52,6 +52,7 @@ function parseProcessTrace(item: MessageDTO) {
           stage: block.stage,
           roundID: block.roundID,
           parentEventID: block.parentEventID,
+          startedAt: block.startedAt,
           updatedAt: block.updatedAt,
           payloadJson: block.payloadJSON,
         }
@@ -172,6 +173,8 @@ type MessageLabels = {
   imageRunning?: string;
   moderationBlocked?: string;
   moderationBlockedDescription?: string;
+  moderationEventID?: (eventID: string) => string;
+  moderationCategories?: (categories: string[]) => string;
   resolveErrorMessage?: (errorCode: string, fallback: string, details?: UpstreamDebugInfo) => string;
 };
 
@@ -192,21 +195,26 @@ export function mapServerMessage(
   labels: MessageLabels = {
     generationInterrupted: "Generation interrupted",
   },
-  options: { liveRunIDs?: ReadonlySet<string> } = {},
+  options: {
+    liveRunIDs?: ReadonlySet<string>;
+    liveActivityLabels?: ReadonlyMap<string, string>;
+  } = {},
 ): ChatAreaMessage {
   const runtimeItem = item as MessageDTO & { activityLabel?: string; activityProgress?: number };
   const publicID = item.publicID.trim();
+  const runID = item.runID?.trim() || "";
+  const role = item.role === "assistant" ? "assistant" : item.role === "system" ? "system" : "user";
   const msg: ChatAreaMessage = {
-    key: `server-${publicID}`,
+    key: chatMessageKey(role, `server-${publicID}`, runID),
     publicID,
     parentPublicID: item.parentPublicID?.trim() || null,
     sourcePublicID: item.sourcePublicID?.trim() || null,
-    role: item.role === "assistant" ? "assistant" : item.role === "system" ? "system" : "user",
+    role,
     contentType: item.contentType,
     content: item.content,
     branchReason: item.branchReason || "default",
     status: item.status || "success",
-    runID: item.runID || undefined,
+    runID: runID || undefined,
     platformModelName: item.platformModelName?.trim() || undefined,
     serverMessageID: item.id,
     createdAt: item.createdAt,
@@ -233,16 +241,32 @@ export function mapServerMessage(
     msg.reasoningTokens = item.reasoningTokens ?? 0;
     msg.latencyMS = item.latencyMS ?? 0;
     msg.billingCost = item.billingCost;
+    msg.knowledgeSources = item.knowledgeSources?.map((source) => ({
+      file_name: source.fileName,
+      file_id: source.fileID,
+      chunk_index: source.chunkIndex,
+      score: source.score,
+      preview: source.preview,
+    }));
     msg.processTrace = parseProcessTrace(item);
     const status = item.status.trim().toLowerCase();
     const moderationBlocked = status === "blocked" || item.errorCode === "content_moderation.blocked";
     if (moderationBlocked) {
+      const eventID = item.moderation?.eventID?.trim() || "";
+      const categories = item.moderation?.categories?.filter(Boolean) ?? [];
       msg.inlineAlert = {
         title: labels.moderationBlocked || "Content blocked",
-        message:
+        message: [
           labels.moderationBlockedDescription ||
-          item.errorMessage?.trim() ||
-          "This response was withdrawn after a safety check.",
+            item.errorMessage?.trim() ||
+            "This response was withdrawn after a safety check.",
+          eventID && labels.moderationEventID ? labels.moderationEventID(eventID) : "",
+          categories.length > 0 && labels.moderationCategories
+            ? labels.moderationCategories(categories)
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n"),
       };
     } else if ((status === "error" || status === "interrupted") && item.errorMessage?.trim()) {
       const details = extractInlineAlertDetails(item);
@@ -264,6 +288,17 @@ export function mapServerMessage(
     }
   }
   return msg;
+}
+
+export function chatMessageKey(
+  role: ChatAreaMessage["role"],
+  fallbackKey: string,
+  runID?: string | null,
+) {
+  const normalizedRunID = runID?.trim() || "";
+  return normalizedRunID && role !== "system"
+    ? `${role}-run-${normalizedRunID}`
+    : fallbackKey;
 }
 
 export function toBranchKey(publicID?: string | null): string {

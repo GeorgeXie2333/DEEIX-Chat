@@ -68,7 +68,6 @@
     "twoFactorChallengeExpired": "Two-factor verification expired. Sign in again.",
     "twoFactorExpired": "Two-factor verification expired. Try again.",
     "twoFactorNotStarted": "Two-factor verification has not started.",
-    "twoFactorRequired": "Enable two-factor authentication before creating or exporting an API Key.",
     "turnstileInvalid": "Human verification failed. Please try again.",
     "turnstileNotConfigured": "Human verification is not configured.",
     "turnstileRequired": "Complete the human verification first.",
@@ -76,7 +75,8 @@
     "usernameChangeRequired": "Change the initial username.",
     "verificationCodeAttemptsExceeded": "Too many verification attempts. Request a new code.",
     "verificationCodeInvalid": "Verification code is invalid or expired.",
-    "verificationCodeRecent": "A verification code was sent recently. Try again later."
+    "verificationCodeRecent": "A verification code was sent recently. Try again later.",
+    "twoFactorRequired": "Enable two-factor authentication before creating or exporting an API Key."
   },
   "billing": {
     "insufficientBalance": "Insufficient balance.",
@@ -124,6 +124,9 @@
   "conversation": {
     "invalidId": "Invalid conversation ID.",
     "invalidTitle": "Invalid conversation title.",
+    "messageForkHistoryIncomplete": "This conversation is too deep or its message history is incomplete, so it cannot be forked here.",
+    "messageForkStateInvalid": "Wait for this message to finish generating before forking the conversation.",
+    "messageForkTargetInvalid": "Only assistant messages can be forked into a new conversation.",
     "noTitleableContent": "This conversation has no content that can be used to generate a title.",
     "notFound": "Conversation not found."
   },
@@ -170,23 +173,44 @@
   "internal": {
     "error": "Internal server error. Please try again later."
   },
+  "knowledgeBase": {
+    "conflict": "A knowledge base with the same name already exists in this scope.",
+    "fileCleanupUnavailable": "Platform source cleanup is temporarily unavailable. Try again later.",
+    "internal": "The knowledge base operation failed. Please try again later.",
+    "invalid": "The knowledge base configuration is invalid.",
+    "invalidReference": "The selected knowledge base is unavailable or you no longer have access.",
+    "notFound": "The knowledge base was not found.",
+    "notReady": "The selected knowledge base has no searchable files yet. Wait for indexing to finish.",
+    "ownerFileReference": "This account still owns files referenced by a built-in knowledge base. Remove them or have another administrator upload replacements first.",
+    "platformFileInUse": "This platform source is still referenced by another resource. Remove the reference before deleting.",
+    "unavailable": "Knowledge base retrieval is temporarily unavailable. Try again later, or ask an administrator to check the embedding service if the issue persists."
+  },
   "toolRun": {
     "finalAnswerMissing": "The tool run reached its limit before the model produced a final answer. Retry or enable fewer tools for this message."
   },
   "llm": {
     "apiKeysRequired": "API keys are required.",
+    "circuitBreakerDisabled": "Model circuit breaking is disabled. Enable it before performing this action.",
     "emptyResponse": "The model returned an empty response.",
     "invalidAdapter": "This interface protocol is not supported. Choose another protocol.",
     "invalidApiKeysConfig": "Invalid API keys configuration.",
     "invalidCompatible": "Invalid compatibility mode.",
     "invalidHeadersConfig": "Invalid headers configuration.",
     "invalidKinds": "Invalid model kinds.",
+    "invalidModelCapabilities": "The context window must be between 4,096 and 16,000,000 tokens, and the output token limit must be smaller than the context window.",
     "invalidPlatformModelName": "Invalid platform model name.",
     "invalidRouteProtocolCombination": "This protocol combination is not available. A binding can use one protocol, or image generation and image editing protocols from the same provider.",
     "systemPromptTooLong": "System prompt must be at most 20000 characters.",
     "invalidProtocolDefaultsConfig": "Invalid protocol defaults configuration.",
     "modelAccessDenied": "You do not have access to this model.",
     "modelRouteNotConfigured": "Model route is not configured.",
+    "modelIconInvalid": "Invalid model icon. Use a built-in icon name, an uploaded icon, or an http(s) image URL.",
+    "modelIconFileInvalid": "Invalid icon file. Only PNG, JPEG, and WebP are supported.",
+    "modelIconFileTooLarge": "The icon file cannot exceed 1 MiB.",
+    "modelIconAssetNotFound": "The icon asset no longer exists. Upload it again.",
+    "modelIconAssetInUse": "This icon is still in use. Remove its references first.",
+    "modelVendorBuiltin": "Built-in vendors cannot be deleted.",
+    "modelVendorInUse": "This vendor still has associated models. Move them first.",
     "noActiveApiKey": "No active API key is available.",
     "platformModelNameExists": "Platform model name already exists.",
     "platformModelNameRequired": "Platform model name is required.",
@@ -221,14 +245,14 @@
     "imageEditInputRequired": "Image editing requires at least one input image.",
     "imageEditTooManyInputs": "Too many input images for image editing.",
     "imageEditInputInvalid": "Image editing only supports valid image files.",
-    "videoPromptRequired": "Enter a video prompt.",
-    "videoReferenceTooMany": "Video generation can use at most one reference image.",
-    "videoReferenceInvalid": "The video reference image is invalid. Use JPEG, PNG, or WebP.",
-    "videoReferenceSizeMismatch": "The video reference image size must match the selected resolution.",
     "artifactUnavailable": "The generated result is temporarily unavailable. Try again, or contact an administrator if the issue persists.",
     "imageStreamUnsupported": "Tips: The upstream may not support streaming responses. Ask an administrator to disable \"Image streaming call\" in model capabilities (set image.stream=false), then try again.",
     "routeProtocolMismatch": "The current model route protocol does not match this media task. Check the model binding.",
-    "invalidTask": "Invalid media task parameters."
+    "invalidTask": "Invalid media task parameters.",
+    "videoPromptRequired": "Enter a video prompt.",
+    "videoReferenceTooMany": "Video generation can use at most one reference image.",
+    "videoReferenceInvalid": "The video reference image is invalid. Use JPEG, PNG, or WebP.",
+    "videoReferenceSizeMismatch": "The video reference image size must match the selected resolution."
   },
   "message": {
     "feedbackTargetInvalid": "Invalid message feedback target.",
@@ -239,12 +263,15 @@
     "invalidFeedback": "Invalid message feedback.",
     "invalidId": "Invalid message ID.",
     "notFound": "Message not found.",
-    "sensitivePromptBlocked": "This content does not meet the safety policy. Edit it and try again.",
-    "tooManyFiles": "Too many files in one message."
+    "tooManyFiles": "Too many files in one message.",
+    "sensitivePromptBlocked": "This content does not meet the safety policy. Edit it and try again."
+  },
+  "temporaryChat": {
+    "contextTooLarge": "The temporary chat context is too large. Start a new temporary chat or shorten the conversation."
   },
   "payment": {
     "checkoutFailed": "Failed to create checkout.",
-    "currencyUnsupported": "Stripe only supports USD business prices; the platform will not convert currencies automatically.",
+    "epayGatewayInvalid": "The EPay redirect gateway URL is invalid.",
     "epayTypeUnsupported": "This EPay payment type is not supported.",
     "invalidEvent": "Invalid payment event.",
     "invalidSignature": "Invalid payment signature.",
@@ -252,11 +279,12 @@
     "notificationMismatch": "Payment notification does not match the order.",
     "orderNoRequired": "Order number is required.",
     "providerUnavailable": "Payment provider is unavailable.",
-    "topUpBelowMinimum": "The top-up amount is below this payment method's minimum.",
     "returnUrlCrossOrigin": "Payment return URL must use the configured public web origin.",
     "returnUrlInvalid": "Invalid payment return URL.",
     "webhookBodyTooLarge": "Webhook body is too large.",
-    "webhookNotConfigured": "Payment webhook is not configured."
+    "webhookNotConfigured": "Payment webhook is not configured.",
+    "currencyUnsupported": "Stripe only supports USD business prices; the platform will not convert currencies automatically.",
+    "topUpBelowMinimum": "The top-up amount is below this payment method's minimum."
   },
   "quota": {
     "exceeded": "Quota exceeded."
@@ -304,6 +332,7 @@
     "smtpInvalid": "Invalid SMTP settings."
   },
   "upstream": {
+    "rateLimited": "The upstream is rate limiting requests. Try again shortly.",
     "unavailable": "Upstream service is unavailable."
   },
   "upstreamEmptyResponse": "The upstream returned an empty response. Try again later or ask an administrator to check the model route.",

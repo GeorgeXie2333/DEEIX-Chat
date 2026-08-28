@@ -20,6 +20,7 @@ import (
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/conversation"
 	appembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/embedding"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/extraction"
+	appknowledgebase "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/knowledgebase"
 	applogcleanup "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/logcleanup"
 	appmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/mcp"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/memory"
@@ -37,15 +38,19 @@ import (
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
 	moderationclient "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/contentmoderation"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/embedding"
+	extractengines "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/engines"
+	extractprobe "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/probe"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/geoip"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/identityprovider"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/llm"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/mcp"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/mediaartifact"
 	openrouterpricing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/modelpricing/openrouter"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/objectstore"
 	platformlogger "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/logger"
 	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/openwebui"
+	epaypayment "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/payment/epay"
 	stripepayment "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/payment/stripe"
 	filecache "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/filecache"
 	announcementrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/announcement"
@@ -54,6 +59,7 @@ import (
 	channelrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/channel"
 	contentmoderationrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/contentmoderation"
 	conversationrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/conversation"
+	knowledgebaserepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/knowledgebase"
 	logcleanuprepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/logcleanup"
 	mcprepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/mcp"
 	memoryrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/memory"
@@ -65,6 +71,7 @@ import (
 	userrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/user"
 	usersettingsrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/usersettings"
 	platformruntime "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/runtime"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/lifecycle"
 	platformhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http"
 	adminhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/admin"
 	announcementhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/announcement"
@@ -73,6 +80,7 @@ import (
 	channelhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/channel"
 	contentmoderationhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/contentmoderation"
 	conversationhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/conversation"
+	knowledgebasehttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/knowledgebase"
 	mcphttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/mcp"
 	memoryhttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/memory"
 	openapihttp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/openapi"
@@ -102,6 +110,8 @@ type App struct {
 	mediaArtifactClient    *mediaartifact.Client
 	moderationClient       *moderationclient.Client
 	backgroundCancel       context.CancelFunc
+	// shutdown 是进程关停排空信号：翻转就绪探针并断开订阅型长连接。
+	shutdown 				*lifecycle.Shutdown
 }
 
 type subscriptionGroupAdapter struct {
@@ -184,7 +194,7 @@ func NewApp() (*App, error) {
 	settingsRepo := settingsrepo.NewRepo(db)
 	settingsService := settings.NewService(settingsRepo, cfg.DataEncryptionKey)
 	settingsService.SetAuditWriter(auditService)
-	runtimeService := appruntime.NewService(runtimeCfg)
+	runtimeService := appruntime.NewService(runtimeCfg, extractprobe.Prober{})
 	runtimeService.SetDockerRunner(platformruntime.NewDockerRunner())
 	settingsCache := buildSettingsCache(cfg, redisClient, memoryCache)
 	runtimeSettings := settings.NewRuntimeSettings(settingsRepo, settingsCache, cfg.DataEncryptionKey)
@@ -197,7 +207,8 @@ func NewApp() (*App, error) {
 		return nil, fmt.Errorf("apply settings: %w", err)
 	}
 
-	// 启动时确保 embedding_model_signature 已写入：首次部署或签名字段为空时自动补全。
+	// 启动时补全旧版模型签名以兼容已有向量。后续真正修改模型、
+	// 维度或服务地址时，设置处理器会切换到包含服务地址的新空间签名。
 	if startCfg := runtimeCfg.Snapshot(); startCfg.EmbeddingModelSignature == "" && startCfg.RAGModel != "" {
 		initialSig := appembedding.ComputeModelSignature(startCfg.RAGModel, startCfg.EmbeddingOutputDimensions)
 		if _, seedErr := settingsService.BatchUpdate(context.Background(), []settings.PatchItem{
@@ -218,16 +229,51 @@ func NewApp() (*App, error) {
 		openrouterpricing.New(cfg.StrictOutboundPolicy()),
 		filecache.NewOpenRouterPricingCache(runtimeCfg.Snapshot().StorageRootDir),
 	)
-	paymentCheckoutService := billing.NewPaymentCheckoutService(stripepayment.New(cfg.StrictOutboundPolicy()))
-	billingHandler := billinghttp.NewHandler(billingService, settingsService, runtimeCfg, officialPricingService, paymentCheckoutService)
+	paymentCheckoutService := billing.NewPaymentCheckoutService(stripepayment.New(cfg.StrictOutboundPolicy()), epaypayment.New())
+	billingHandler := billinghttp.NewHandler(billingService, settingsService, runtimeCfg, officialPricingService, paymentCheckoutService, log)
 	billingModule := billinghttp.NewModule(billingHandler)
-	objectStoreProvider := appstorage.NewRuntimeProvider(runtimeCfg, nil)
+	// 组合根绑定对象存储默认工厂；application 侧未显式注入工厂的 provider 均使用该实现。
+	appstorage.RegisterDefaultFactory(objectstore.New)
+	objectStoreProvider := appstorage.NewRuntimeProvider(runtimeCfg, objectstore.New)
+	// 组合根注册抽取引擎工厂；具体客户端构造为 nil 时必须返回 nil 接口，避免 typed-nil 绕过判空。
+	extraction.RegisterEngineFactories(extraction.EngineFactories{
+		NewTika: func(cfg config.Config) extraction.DocumentExtractor {
+			if client := extractengines.NewTika(cfg); client != nil {
+				return client
+			}
+			return nil
+		},
+		NewDocling: func(cfg config.Config) extraction.DocumentExtractor {
+			if client := extractengines.NewDocling(cfg); client != nil {
+				return client
+			}
+			return nil
+		},
+		NewMinerU: func(cfg config.Config) extraction.DocumentExtractor {
+			if client := extractengines.NewMinerU(cfg); client != nil {
+				return client
+			}
+			return nil
+		},
+		NewOCR: func(provider string, cfg config.Config) extraction.OCRExtractor {
+			if client := extractengines.NewOCR(provider, cfg); client != nil {
+				return client
+			}
+			return nil
+		},
+		Builtin: extractengines.Builtin{},
+	})
 	geoResolver := geoip.New(runtimeCfg.Snapshot())
+	// GeoIP 关闭时 geoip.New 返回 nil 指针，必须转成 nil 接口再注入，避免 typed-nil 绕过判空。
+	var authGeoResolver auth.GeoResolver
+	if geoResolver != nil {
+		authGeoResolver = geoResolver
+	}
 	identityProviderClient := identityprovider.New(cfg.StrictOutboundPolicy())
 	authService := auth.NewServiceWithRuntime(
 		runtimeCfg,
 		userRepo,
-		geoResolver,
+		authGeoResolver,
 		identityProviderClient,
 	)
 	authService.SetLogger(log)
@@ -256,6 +302,8 @@ func NewApp() (*App, error) {
 	mediaArtifactClient := mediaartifact.New(strictOutboundPolicy)
 	channelService := channel.NewServiceWithRuntime(runtimeCfg, channelRepo, channelRepo, channelCache, llmClient)
 	channelService.SetLogger(log)
+	channelService.SetObjectStoreProvider(objectStoreProvider)
+	channelService.SetModelIconAssetRepository(channelRepo)
 	channelService.SetBillingModelPricingFilter(billingService)
 	channelService.SetPermissionGroupRepo(channelRepo)
 	channelService.SetSubscriptionGroupResolver(&subscriptionGroupAdapter{billing: billingService})
@@ -315,12 +363,14 @@ func NewApp() (*App, error) {
 	userService.SetAvatarFileValidator(conversationService)
 	authService.SetAvatarFileValidator(conversationService)
 	memoryService.SetCacheInvalidator(conversationService.InvalidateMemoryCache)
-	conversationHandler := conversationhttp.NewHandler(conversationService, runtimeCfg)
+	shutdownSignal := lifecycle.NewShutdown()
+	conversationHandler := conversationhttp.NewHandler(conversationService, runtimeCfg, shutdownSignal)
 	conversationModule := conversationhttp.NewModule(conversationHandler)
 	userHandler := userhttp.NewHandler(userService)
 	userModule := userhttp.NewModule(userHandler)
 	mcpService := appmcp.NewServiceWithRuntime(runtimeCfg, mcpRepo, mcpClient)
 	mcpService.SetSystemEventWriter(systemEventService)
+	mcpService.SetBillingModeProvider(billingService)
 	mcpHandler := mcphttp.NewHandler(mcpService)
 	mcpModule := mcphttp.NewModule(mcpHandler)
 	adminService := admin.NewService(userService, auditService)
@@ -342,6 +392,7 @@ func NewApp() (*App, error) {
 	contentModerationHandler.SetUserLabelResolver(adminService)
 	userSettingsRepo := usersettingsrepo.NewRepo(db)
 	userSettingsService := usersettings.NewService(userSettingsRepo)
+	userSettingsService.SetCacheRefresher(conversationService.RefreshUserSettingCache)
 	userSettingsHandler := usersettingshttp.NewHandler(userSettingsService)
 	userSettingsModule := usersettingshttp.NewModule(userSettingsHandler)
 	openAPIRepo := openapirepo.NewRepo(db)
@@ -372,6 +423,16 @@ func NewApp() (*App, error) {
 	conversationService.SetSkillResolver(skillService)
 	skillHandler := skillhttp.NewHandler(skillService)
 	skillModule := skillhttp.NewModule(skillHandler)
+	knowledgeBaseRepo := knowledgebaserepo.NewRepo(db)
+	knowledgeBaseService := appknowledgebase.NewService(knowledgeBaseRepo)
+	knowledgeBaseService.SetAuditWriter(auditService)
+	knowledgeBaseService.SetFileCleaner(conversationService)
+	knowledgeBaseService.SetFileContentOpener(conversationService)
+	knowledgeBaseService.SetFileUploader(conversationService)
+	knowledgeBaseService.SetLogger(log)
+	conversationService.SetKnowledgeBaseResolver(knowledgeBaseService)
+	knowledgeBaseHandler := knowledgebasehttp.NewHandler(knowledgeBaseService, runtimeCfg)
+	knowledgeBaseModule := knowledgebasehttp.NewModule(knowledgeBaseHandler)
 
 	hc := newHealthChecker(db, cfg.CacheDriver, redisClient)
 	engine, err := platformhttp.NewEngine(runtimeCfg, log, platformhttp.Modules{
@@ -387,10 +448,12 @@ func NewApp() (*App, error) {
 		Announcement:      announcementModule,
 		PromptPreset:      promptPresetModule,
 		Skill:             skillModule,
+		KnowledgeBase:     knowledgeBaseModule,
 		Settings:          settingsModule,
 		UserSettings:      userSettingsModule,
 		OpenAPI:           openAPIModule,
 		User:              userModule,
+		Shutdown:          shutdownSignal,
 		StartupLog: func(log *zap.Logger) {
 			if log == nil || bootstrapSuperAdmin == nil {
 				return
@@ -406,8 +469,13 @@ func NewApp() (*App, error) {
 	}
 
 	backgroundCtx, backgroundCancel := context.WithCancel(context.Background())
+	if _, reconcileErr := embeddingService.ReconcileIndex(backgroundCtx); reconcileErr != nil {
+		log.Warn("embedding index reconciliation failed", zap.Error(reconcileErr))
+	}
+	embeddingService.StartBackgroundWorkers(backgroundCtx)
 	conversationService.StartBackgroundWorkers(backgroundCtx)
 	contentModerationService.StartBackgroundWorkers(backgroundCtx)
+	channelService.StartModelIconAssetCleanup(backgroundCtx)
 
 	return &App{
 		cfg:                    runtimeCfg.Snapshot(),
@@ -423,6 +491,7 @@ func NewApp() (*App, error) {
 		mediaArtifactClient:    mediaArtifactClient,
 		moderationClient:       moderationClient,
 		backgroundCancel:       backgroundCancel,
+		shutdown:               shutdownSignal,
 	}, nil
 }
 
@@ -457,14 +526,29 @@ func (a *App) Run() error {
 		a.logger.Info("server_shutting_down", zap.String("signal", sig.String()))
 	}
 
-	if a.backgroundCancel != nil {
-		a.backgroundCancel()
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// 阶段一：进入排空。就绪探针翻转为 503 引导负载均衡摘流，
+	// 订阅型 SSE（run 对账流、run 观看流）立即断开，客户端按既有逻辑重连。
+	a.shutdown.BeginDrain()
+
+	// 阶段二：排空 in-flight 请求。消息生成等有价值的流式请求在窗口内自然完成。
+	drainTimeout := httpTimeoutSeconds(a.cfg.HTTPShutdownTimeoutSeconds, 10)
+	ctx, cancel := context.WithTimeout(context.Background(), drainTimeout)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		a.logger.Error("server_shutdown_error", zap.Error(err))
-		return err
+		// 阶段三：排空超时，强断剩余连接。被打断的生成已有落盘与前端恢复兜底，
+		// 属预期内降级而非故障，进程仍以成功状态退出。
+		a.logger.Warn("server_drain_timeout_force_close",
+			zap.Duration("drain_timeout", drainTimeout),
+			zap.Error(err),
+		)
+		if closeErr := srv.Close(); closeErr != nil {
+			a.logger.Warn("server_force_close_error", zap.Error(closeErr))
+		}
+	}
+
+	// HTTP 排空完成后再停后台 worker；资源释放由 cli.Run 的 defer Close() 收尾。
+	if a.backgroundCancel != nil {
+		a.backgroundCancel()
 	}
 	a.logger.Info("server_stopped")
 	return nil

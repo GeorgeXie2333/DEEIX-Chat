@@ -86,8 +86,9 @@ func (s *Service) SubscribeMessageGeneration(
 	userID uint,
 	runID string,
 	afterSeq int64,
+	includeTextSnapshot bool,
 ) ([]GenerationStreamEvent, <-chan GenerationStreamEvent, func(), bool) {
-	return s.generationStreams.subscribe(ctx, userID, normalizeRunID(runID), afterSeq)
+	return s.generationStreams.subscribe(ctx, userID, normalizeRunID(runID), afterSeq, includeTextSnapshot)
 }
 
 // FinishMessageGeneration 标记生成流结束，并在短期恢复窗口后释放事件缓存。
@@ -150,16 +151,20 @@ type GenerationStreamEvent struct {
 
 type activeGeneration struct {
 	userID          uint
+	conversationID  string
 	cancel          context.CancelFunc
 	leaseCancel     context.CancelFunc
 	maxRuntimeTimer *time.Timer
 }
 
 type generationStreamRegistry struct {
-	mu      sync.Mutex
-	active  map[string]*activeGeneration
-	store   repository.GenerationStreamCacheRepository
-	options generationStreamOptions
+	mu                       sync.Mutex
+	active                   map[string]*activeGeneration
+	store                    repository.GenerationStreamCacheRepository
+	options                  generationStreamOptions
+	activeEventReaderStarted bool
+	activeSubscriberSeq      uint64
+	activeSubscribers        map[uint]map[uint64]chan ActiveMessageGenerationEvent
 }
 
 func newGenerationStreamRegistry(store repository.GenerationStreamCacheRepository, options generationStreamOptions) *generationStreamRegistry {
@@ -182,28 +187,36 @@ func newGenerationStreamRegistry(store repository.GenerationStreamCacheRepositor
 		options.SubscriberBuffer = generationStreamSubscriberBuffer
 	}
 	return &generationStreamRegistry{
-		active:  map[string]*activeGeneration{},
-		store:   store,
-		options: options,
+		active:            map[string]*activeGeneration{},
+		store:             store,
+		options:           options,
+		activeSubscribers: map[uint]map[uint64]chan ActiveMessageGenerationEvent{},
 	}
 }
 
-func (r *generationStreamRegistry) register(ctx context.Context, runID string, userID uint, cancel context.CancelFunc) {
+func (r *generationStreamRegistry) register(ctx context.Context, runID string, userID uint, conversationPublicID string, cancel context.CancelFunc) {
 	if runID == "" {
 		if cancel != nil {
 			cancel()
 		}
 		return
 	}
+	conversationPublicID = normalizePublicID(conversationPublicID)
+	if userID == 0 || conversationPublicID == "" {
+		if cancel != nil {
+			cancel()
+		}
+		return
+	}
 	if r.store != nil {
-		_ = r.store.RegisterGenerationStream(ctx, runID, userID, r.options.ActiveTTL)
+		_ = r.store.RegisterGenerationStream(ctx, runID, userID, conversationPublicID, r.options.ActiveTTL)
 	}
 
 	var replaced *activeGeneration
 	r.mu.Lock()
 	replaced = r.active[runID]
-	active := &activeGeneration{userID: userID, cancel: cancel}
-	active.leaseCancel = r.startActiveLease(runID)
+	active := &activeGeneration{userID: userID, conversationID: conversationPublicID, cancel: cancel}
+	active.leaseCancel = r.startActiveLease(runID, userID)
 	r.active[runID] = active
 	r.scheduleActiveExpiryLocked(runID, active)
 	r.mu.Unlock()
@@ -213,7 +226,11 @@ func (r *generationStreamRegistry) register(ctx context.Context, runID string, u
 		if replaced.cancel != nil {
 			replaced.cancel()
 		}
+		if replaced.userID != userID || replaced.conversationID != conversationPublicID {
+			r.publishActiveEvent(context.Background(), replaced.userID, "finished", runID, replaced.conversationID)
+		}
 	}
+	r.publishActiveEvent(context.Background(), userID, "started", runID, conversationPublicID)
 }
 
 func (r *generationStreamRegistry) cancel(ctx context.Context, userID uint, runID string) bool {
@@ -252,7 +269,16 @@ func (r *generationStreamRegistry) cancelActive(ctx context.Context, userID uint
 	if ok && active.cancel != nil {
 		active.cancel()
 	}
-	r.clearActive(context.Background(), runID)
+	clearUserID := userID
+	if active != nil && active.userID != 0 {
+		clearUserID = active.userID
+	}
+	r.clearActive(context.Background(), runID, clearUserID)
+	conversationID := ""
+	if active != nil {
+		conversationID = active.conversationID
+	}
+	r.publishActiveEvent(context.Background(), clearUserID, "finished", runID, conversationID)
 	return true
 }
 
@@ -293,7 +319,11 @@ func (r *generationStreamRegistry) publish(ctx context.Context, runID string, pa
 	if err != nil {
 		return actual
 	}
-	record, err := r.append(ctx, r.store, runID, payloadJSON)
+	appendInput := repository.GenerationStreamAppend{PayloadJSON: payloadJSON}
+	if streamString(persisted["type"]) == "delta" {
+		appendInput.TextDelta = streamString(persisted["delta"])
+	}
+	record, err := r.append(ctx, r.store, runID, appendInput)
 	if err == nil && record.Seq > 0 {
 		actual["seq"] = record.Seq
 		if sanitized {
@@ -314,11 +344,11 @@ func (r *generationStreamRegistry) resetEvents(ctx context.Context, runID string
 	_ = r.store.ResetGenerationStreamEvents(ctx, runID)
 }
 
-func (r *generationStreamRegistry) append(ctx context.Context, store repository.GenerationStreamCacheRepository, runID string, payloadJSON string) (repository.GenerationStreamMessage, error) {
+func (r *generationStreamRegistry) append(ctx context.Context, store repository.GenerationStreamCacheRepository, runID string, input repository.GenerationStreamAppend) (repository.GenerationStreamMessage, error) {
 	if store == nil {
 		return repository.GenerationStreamMessage{}, nil
 	}
-	return store.AppendGenerationStreamEvent(ctx, runID, payloadJSON, int64(r.options.MaxEvents), r.options.ActiveTTL)
+	return store.AppendGenerationStreamEvent(ctx, runID, input, int64(r.options.MaxEvents), r.options.ActiveTTL)
 }
 
 func (r *generationStreamRegistry) subscribe(
@@ -326,11 +356,12 @@ func (r *generationStreamRegistry) subscribe(
 	userID uint,
 	runID string,
 	afterSeq int64,
+	includeTextSnapshot bool,
 ) ([]GenerationStreamEvent, <-chan GenerationStreamEvent, func(), bool) {
 	if runID == "" {
 		return nil, nil, nil, false
 	}
-	return r.subscribeStore(ctx, r.store, userID, runID, afterSeq)
+	return r.subscribeStore(ctx, r.store, userID, runID, afterSeq, includeTextSnapshot)
 }
 
 func (r *generationStreamRegistry) subscribeStore(
@@ -339,6 +370,7 @@ func (r *generationStreamRegistry) subscribeStore(
 	userID uint,
 	runID string,
 	afterSeq int64,
+	includeTextSnapshot bool,
 ) ([]GenerationStreamEvent, <-chan GenerationStreamEvent, func(), bool) {
 	if store == nil || !r.authorized(ctx, store, runID, userID) {
 		return nil, nil, nil, false
@@ -347,7 +379,21 @@ func (r *generationStreamRegistry) subscribeStore(
 	if err != nil {
 		return nil, nil, nil, false
 	}
-	replay, cursor, terminal := retainedStreamEvents(retained, afterSeq)
+	textSnapshot := repository.GenerationStreamTextSnapshot{}
+	hasTextSnapshot := false
+	if includeTextSnapshot {
+		// Read the snapshot after the retained window. Events appended in between
+		// are read again from cursor; visible deltas already covered by the snapshot
+		// are filtered by snapshot seq while non-text events remain replayable.
+		textSnapshot, hasTextSnapshot, err = store.GetGenerationStreamTextSnapshot(ctx, runID)
+		if err != nil {
+			return nil, nil, nil, false
+		}
+	}
+	replay, cursor, terminal, safe := retainedStreamEvents(retained, afterSeq, textSnapshot, hasTextSnapshot, includeTextSnapshot)
+	if !safe {
+		return nil, nil, nil, false
+	}
 	events := make(chan GenerationStreamEvent, r.options.SubscriberBuffer)
 	if terminal {
 		close(events)
@@ -355,7 +401,7 @@ func (r *generationStreamRegistry) subscribeStore(
 	}
 
 	readCtx, cancel := context.WithCancel(ctx)
-	go r.readStoreEvents(readCtx, store, runID, cursor, afterSeq, events)
+	go r.readStoreEvents(readCtx, store, runID, cursor, afterSeq, textSnapshot.Seq, events)
 	return replay, events, cancel, true
 }
 
@@ -365,6 +411,7 @@ func (r *generationStreamRegistry) readStoreEvents(
 	runID string,
 	cursor string,
 	afterSeq int64,
+	textSnapshotSeq int64,
 	out chan<- GenerationStreamEvent,
 ) {
 	defer close(out)
@@ -392,6 +439,9 @@ func (r *generationStreamRegistry) readStoreEvents(
 			if !ok {
 				continue
 			}
+			if streamString(event.Payload["type"]) == "delta" && event.Seq <= textSnapshotSeq {
+				continue
+			}
 			afterSeq = event.Seq
 			select {
 			case <-ctx.Done():
@@ -409,17 +459,30 @@ func (r *generationStreamRegistry) finish(ctx context.Context, runID string) {
 	if runID == "" {
 		return
 	}
-	r.clearActive(ctx, runID)
-	if r.store != nil {
-		_ = r.store.ExpireGenerationStream(ctx, runID, r.options.Retention)
-	}
-
 	r.mu.Lock()
 	active, ok := r.active[runID]
 	if ok {
 		delete(r.active, runID)
 	}
 	r.mu.Unlock()
+	userID := uint(0)
+	if active != nil {
+		userID = active.userID
+	}
+	if userID == 0 && r.store != nil {
+		if ownerID, found, err := r.store.GetGenerationStreamOwner(ctx, runID); err == nil && found {
+			userID = ownerID
+		}
+	}
+	r.clearActive(ctx, runID, userID)
+	conversationID := ""
+	if active != nil {
+		conversationID = active.conversationID
+	}
+	r.publishActiveEvent(context.Background(), userID, "finished", runID, conversationID)
+	if r.store != nil {
+		_ = r.store.ExpireGenerationStream(ctx, runID, r.options.Retention)
+	}
 	if ok {
 		stopActiveGeneration(active)
 	}
@@ -447,18 +510,23 @@ func (r *generationStreamRegistry) scheduleActiveExpiryLocked(runID string, acti
 	active.maxRuntimeTimer = time.AfterFunc(activeTTL, func() {
 		var cancel context.CancelFunc
 		var leaseCancel context.CancelFunc
+		expired := false
 		r.mu.Lock()
 		current, ok := r.active[runID]
-		if ok && current == active && current.cancel != nil {
+		if ok && current == active {
 			delete(r.active, runID)
 			cancel = current.cancel
 			leaseCancel = current.leaseCancel
+			expired = true
 		}
 		r.mu.Unlock()
 		if leaseCancel != nil {
 			leaseCancel()
 		}
-		r.clearActive(context.Background(), runID)
+		if expired {
+			r.clearActive(context.Background(), runID, active.userID)
+			r.publishActiveEvent(context.Background(), active.userID, "finished", runID, active.conversationID)
+		}
 		if cancel != nil {
 			cancel()
 		}
@@ -491,9 +559,9 @@ func (r *generationStreamRegistry) hasActive(ctx context.Context, runID string) 
 	return false
 }
 
-func (r *generationStreamRegistry) startActiveLease(runID string) context.CancelFunc {
+func (r *generationStreamRegistry) startActiveLease(runID string, userID uint) context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
-	r.touchActive(ctx, runID)
+	r.touchActiveForOwner(ctx, runID, userID)
 	go func() {
 		ticker := time.NewTicker(r.options.LeaseRefresh)
 		defer ticker.Stop()
@@ -502,7 +570,7 @@ func (r *generationStreamRegistry) startActiveLease(runID string) context.Cancel
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				r.touchActive(ctx, runID)
+				r.touchActiveForOwner(ctx, runID, userID)
 			}
 		}
 	}()
@@ -513,17 +581,27 @@ func (r *generationStreamRegistry) touchActive(ctx context.Context, runID string
 	if runID == "" {
 		return
 	}
-	if r.store != nil {
-		_ = r.store.TouchGenerationStreamActive(ctx, runID, r.options.LeaseTTL)
+	r.mu.Lock()
+	active := r.active[runID]
+	r.mu.Unlock()
+	if active != nil {
+		r.touchActiveForOwner(ctx, runID, active.userID)
 	}
 }
 
-func (r *generationStreamRegistry) clearActive(ctx context.Context, runID string) {
+func (r *generationStreamRegistry) touchActiveForOwner(ctx context.Context, runID string, userID uint) {
+	if runID == "" || userID == 0 || r.store == nil {
+		return
+	}
+	_ = r.store.TouchGenerationStreamActive(ctx, runID, userID, r.options.LeaseTTL)
+}
+
+func (r *generationStreamRegistry) clearActive(ctx context.Context, runID string, userID uint) {
 	if runID == "" {
 		return
 	}
 	if r.store != nil {
-		_ = r.store.ClearGenerationStreamActive(ctx, runID)
+		_ = r.store.ClearGenerationStreamActive(ctx, runID, userID)
 	}
 }
 
@@ -541,10 +619,32 @@ func stopActiveGeneration(active *activeGeneration) {
 	}
 }
 
-func retainedStreamEvents(records []repository.GenerationStreamMessage, afterSeq int64) ([]GenerationStreamEvent, string, bool) {
+func retainedStreamEvents(
+	records []repository.GenerationStreamMessage,
+	afterSeq int64,
+	textSnapshot repository.GenerationStreamTextSnapshot,
+	hasTextSnapshot bool,
+	includeTextSnapshot bool,
+) ([]GenerationStreamEvent, string, bool, bool) {
 	replay := make([]GenerationStreamEvent, 0)
 	cursor := "0-0"
 	terminal := false
+	snapshotPending := includeTextSnapshot && hasTextSnapshot
+	appendTextSnapshot := func() {
+		if !snapshotPending {
+			return
+		}
+		replay = append(replay, GenerationStreamEvent{
+			Seq: textSnapshot.Seq,
+			Payload: map[string]interface{}{
+				"type":    "delta",
+				"seq":     textSnapshot.Seq,
+				"delta":   textSnapshot.Content,
+				"replace": true,
+			},
+		})
+		snapshotPending = false
+	}
 	for _, record := range records {
 		if strings.TrimSpace(record.ID) != "" {
 			cursor = record.ID
@@ -553,14 +653,28 @@ func retainedStreamEvents(records []repository.GenerationStreamMessage, afterSeq
 		if !ok {
 			continue
 		}
+		if snapshotPending && event.Seq > textSnapshot.Seq {
+			appendTextSnapshot()
+		}
 		if isTerminalStreamPayload(event.Payload) {
 			terminal = true
+		}
+		if streamString(event.Payload["type"]) == "delta" {
+			// A text delta without a cumulative checkpoint cannot be replayed
+			// safely once the bounded event window has trimmed older chunks.
+			if includeTextSnapshot && !hasTextSnapshot {
+				return nil, cursor, terminal, false
+			}
+			if includeTextSnapshot && event.Seq <= textSnapshot.Seq {
+				continue
+			}
 		}
 		if event.Seq > afterSeq {
 			replay = append(replay, event)
 		}
 	}
-	return replay, cursor, terminal
+	appendTextSnapshot()
+	return replay, cursor, terminal, true
 }
 
 func decodeStreamRecord(record repository.GenerationStreamMessage) (GenerationStreamEvent, bool) {

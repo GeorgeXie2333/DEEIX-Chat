@@ -22,6 +22,7 @@ const videoModel: ChatModelOption = {
   nativeToolKeys: [],
   nativeTools: [],
   pricing: null,
+  videoExtension: null,
 };
 
 function attachment(fileName: string, mimeType: string, fileCategory?: string): PendingAttachment {

@@ -16,6 +16,7 @@ import (
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // Handler 封装计费 HTTP 处理。
@@ -25,6 +26,7 @@ type Handler struct {
 	cfg             *config.Runtime
 	officialPricing *appbilling.OfficialPricingService
 	paymentCheckout *appbilling.PaymentCheckoutService
+	logger          *zap.Logger
 }
 
 // NewHandler 创建处理器。
@@ -34,13 +36,18 @@ func NewHandler(
 	cfg *config.Runtime,
 	officialPricing *appbilling.OfficialPricingService,
 	paymentCheckout *appbilling.PaymentCheckoutService,
+	logger *zap.Logger,
 ) *Handler {
+	if logger == nil {
+		logger = zap.NewNop()
+	}
 	return &Handler{
 		service:         service,
 		settings:        settingsService,
 		cfg:             cfg,
 		officialPricing: officialPricing,
 		paymentCheckout: paymentCheckout,
+		logger:          logger,
 	}
 }
 

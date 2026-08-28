@@ -2,39 +2,49 @@ package openapi
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
 )
 
-func TestLLMRawChatProviderConvertsAnthropicMessagesToChatCompletion(t *testing.T) {
-	var upstreamPath string
-	var upstreamBody map[string]interface{}
-	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		upstreamPath = r.URL.Path
-		if err := json.NewDecoder(r.Body).Decode(&upstreamBody); err != nil {
-			t.Fatalf("decode upstream body: %v", err)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{
-			"id":"msg_test",
-			"type":"message",
-			"role":"assistant",
-			"content":[{"type":"text","text":"hello from anthropic"}],
-			"usage":{"input_tokens":3,"output_tokens":5}
-		}`))
-	}))
-	defer upstream.Close()
+type chatClientStub struct {
+	generate       func(context.Context, llm.RouteConfig, llm.GenerateInput) (*llm.GenerateOutput, error)
+	generateStream func(context.Context, llm.RouteConfig, llm.GenerateInput, func(llm.GenerateStreamEvent) error) (*llm.GenerateOutput, error)
+}
 
-	provider := NewLLMRawChatProvider(llm.NewClient(security.NewStrictOutboundPolicy(false)))
+func (s chatClientStub) Generate(ctx context.Context, route llm.RouteConfig, input llm.GenerateInput) (*llm.GenerateOutput, error) {
+	return s.generate(ctx, route, input)
+}
+
+func (s chatClientStub) GenerateStream(ctx context.Context, route llm.RouteConfig, input llm.GenerateInput, onEvent func(llm.GenerateStreamEvent) error) (*llm.GenerateOutput, error) {
+	return s.generateStream(ctx, route, input, onEvent)
+}
+
+func (s chatClientStub) GenerateRawChatCompletion(context.Context, llm.RouteConfig, map[string]interface{}) (*llm.RawChatCompletionOutput, error) {
+	return nil, nil
+}
+
+func (s chatClientStub) GenerateRawChatCompletionStream(context.Context, llm.RouteConfig, map[string]interface{}, func(llm.RawChatCompletionStreamEvent) error) (*llm.RawChatCompletionOutput, error) {
+	return nil, nil
+}
+
+func TestLLMRawChatProviderConvertsAnthropicMessagesToChatCompletion(t *testing.T) {
+	provider := NewLLMRawChatProvider(chatClientStub{generate: func(_ context.Context, route llm.RouteConfig, input llm.GenerateInput) (*llm.GenerateOutput, error) {
+		if route.Protocol != llm.AdapterAnthropicMessages || route.UpstreamModel != "claude-upstream" {
+			t.Fatalf("unexpected route: %#v", route)
+		}
+		if len(input.Messages) != 1 || input.Messages[0].Content != "hi" {
+			t.Fatalf("unexpected normalized messages: %#v", input.Messages)
+		}
+		return &llm.GenerateOutput{
+			ResponseID: "msg_test",
+			Text:       "hello from anthropic",
+			Usage:      llm.Usage{InputTokens: 3, OutputTokens: 5},
+		}, nil
+	}})
 	result, err := provider.CompleteChat(context.Background(), llm.RouteConfig{
 		Protocol:      llm.AdapterAnthropicMessages,
-		BaseURL:       upstream.URL,
 		UpstreamModel: "claude-upstream",
 	}, map[string]interface{}{
 		"model":    "public-model",
@@ -42,12 +52,6 @@ func TestLLMRawChatProviderConvertsAnthropicMessagesToChatCompletion(t *testing.
 	})
 	if err != nil {
 		t.Fatalf("CompleteChat returned error: %v", err)
-	}
-	if upstreamPath != "/v1/messages" {
-		t.Fatalf("expected Anthropic Messages path, got %q", upstreamPath)
-	}
-	if upstreamBody["model"] != "claude-upstream" {
-		t.Fatalf("expected upstream model rewrite, got %#v", upstreamBody["model"])
 	}
 	if result.Body["object"] != "chat.completion" {
 		t.Fatalf("expected chat completion response, got %#v", result.Body)
@@ -111,26 +115,19 @@ func TestChatResultFromGenerateOutputIncludesLegacyFunctionCallWhenRequested(t *
 }
 
 func TestLLMRawChatProviderStreamsAnthropicToolUseAsChatToolCallDelta(t *testing.T) {
-	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/event-stream")
-		_, _ = w.Write([]byte("event: message_start\n"))
-		_, _ = w.Write([]byte(`data: {"type":"message_start","message":{"id":"msg_tool","usage":{"input_tokens":3}}}` + "\n\n"))
-		_, _ = w.Write([]byte("event: content_block_start\n"))
-		_, _ = w.Write([]byte(`data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_1","name":"get_weather","input":{}}}` + "\n\n"))
-		_, _ = w.Write([]byte("event: content_block_delta\n"))
-		_, _ = w.Write([]byte(`data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"city\":\"Paris\"}"}}` + "\n\n"))
-		_, _ = w.Write([]byte("event: message_delta\n"))
-		_, _ = w.Write([]byte(`data: {"type":"message_delta","usage":{"output_tokens":2}}` + "\n\n"))
-		_, _ = w.Write([]byte("event: message_stop\n"))
-		_, _ = w.Write([]byte(`data: {"type":"message_stop"}` + "\n\n"))
-	}))
-	defer upstream.Close()
-
-	provider := NewLLMRawChatProvider(llm.NewClient(security.NewStrictOutboundPolicy(false)))
+	toolCall := llm.ToolCall{ToolCallID: "toolu_1", ToolType: "function", ToolName: "get_weather", ArgumentsJSON: `{"city":"Paris"}`}
+	provider := NewLLMRawChatProvider(chatClientStub{generateStream: func(_ context.Context, route llm.RouteConfig, input llm.GenerateInput, onEvent func(llm.GenerateStreamEvent) error) (*llm.GenerateOutput, error) {
+		if route.Protocol != llm.AdapterAnthropicMessages || len(input.Tools) != 1 {
+			t.Fatalf("unexpected stream input: route=%#v input=%#v", route, input)
+		}
+		if err := onEvent(llm.GenerateStreamEvent{ResponseID: "msg_tool", ServerToolCall: &toolCall}); err != nil {
+			return nil, err
+		}
+		return &llm.GenerateOutput{ResponseID: "msg_tool", ToolCalls: []llm.ToolCall{toolCall}}, nil
+	}})
 	var chunks []map[string]interface{}
 	result, err := provider.StreamChat(context.Background(), llm.RouteConfig{
 		Protocol:      llm.AdapterAnthropicMessages,
-		BaseURL:       upstream.URL,
 		UpstreamModel: "claude-upstream",
 	}, map[string]interface{}{
 		"model": "public-model",

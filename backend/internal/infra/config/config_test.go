@@ -385,8 +385,8 @@ func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyGeminiInteractionsDur
 		t.Fatalf("parse normalized Gemini Interactions paths: %v", err)
 	}
 	if !containsString(normalized["gemini_interactions"], "response_format.duration") ||
-		!containsString(normalized["gemini_interactions"], "responseFormat.duration") {
-		t.Fatalf("expected legacy Gemini Interactions allowlist to gain duration paths, got %#v", normalized["gemini_interactions"])
+		containsString(normalized["gemini_interactions"], "responseFormat.duration") {
+		t.Fatalf("expected legacy Gemini Interactions allowlist to gain the canonical duration path, got %#v", normalized["gemini_interactions"])
 	}
 
 	custom := append(append([]string{}, legacy...), "metadata.tenant")
