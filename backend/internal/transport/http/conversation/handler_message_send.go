@@ -121,6 +121,7 @@ func sendMessageBillingInput(
 		UserID:            userID,
 		PlatformModelName: strings.TrimSpace(req.Model),
 		ClientRunID:       strings.TrimSpace(req.ClientRunID),
+		SelectedToolIDs:   append([]uint(nil), req.SelectedToolIDs...),
 		Result:            result,
 	}
 	if conversation != nil {
@@ -476,6 +477,7 @@ func (h *Handler) SendMessage(c *gin.Context) {
 	if err != nil {
 		return
 	}
+	input.UsageAuthorization = authorization
 	stopAuthorizationRenewal := h.startUsageAuthorizationRenewal(authorization)
 	defer stopAuthorizationRenewal()
 
@@ -537,6 +539,7 @@ func (h *Handler) StreamMessage(c *gin.Context) {
 	if err != nil {
 		return
 	}
+	input.UsageAuthorization = authorization
 	stopAuthorizationRenewal := h.startUsageAuthorizationRenewal(authorization)
 	defer stopAuthorizationRenewal()
 

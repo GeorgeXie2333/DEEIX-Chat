@@ -60,6 +60,17 @@ func (s *Service) prepareMessageSendBranch(ctx context.Context, input *SendMessa
 	}, nil
 }
 
+func (s *Service) prepareValidatedMessageSendBranch(ctx context.Context, input *SendMessageInput) (*messageSendBranchPreparation, error) {
+	preparation, err := s.prepareMessageSendBranch(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	if err = s.ValidatePromptSensitiveWords(input.Content); err != nil {
+		return nil, err
+	}
+	return preparation, nil
+}
+
 type messagePair struct {
 	user      *model.Message
 	assistant *model.Message
@@ -191,7 +202,7 @@ func (s *Service) persistRejectedMessageSend(
 	if err != nil {
 		return ErrConversationNotFound
 	}
-	preparation, err := s.prepareMessageSendBranch(ctx, &input)
+	preparation, err := s.prepareValidatedMessageSendBranch(ctx, &input)
 	if err != nil {
 		return err
 	}

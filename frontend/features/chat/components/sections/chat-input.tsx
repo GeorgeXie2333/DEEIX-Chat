@@ -29,7 +29,6 @@ import { useLocale, useTranslations } from "next-intl";
 import * as React from "react";
 import { toast } from "sonner";
 
-
 import { AudioLines } from "@/components/animate-ui/icons/audio-lines";
 import { Blocks } from "@/components/animate-ui/icons/blocks";
 import { Crop } from "@/components/animate-ui/icons/crop";
@@ -37,7 +36,40 @@ import { Link as LinkIcon } from "@/components/animate-ui/icons/link";
 import { Pause } from "@/components/animate-ui/icons/pause";
 import { Send } from "@/components/animate-ui/icons/send";
 import { X as XIcon } from "@/components/animate-ui/icons/x";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupTextarea,
+} from "@/components/ui/input-group";
 import { PlusIcon } from "@/components/ui/plus";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ChatKnowledgeBases } from "@/features/chat/components/sections/chat-knowledge-bases";
+import { ChatMCPPanel } from "@/features/chat/components/sections/chat-mcp";
+import { ChatModelConfig } from "@/features/chat/components/sections/chat-model-config";
+import { ChatModelPicker } from "@/features/chat/components/sections/chat-model-picker";
+import { ChatMentionMenuPortal } from "@/features/chat/components/shared/chat-mention-menu";
+import {
+  type ChatMentionMenuKind,
+  useChatMentionMenu,
+} from "@/features/chat/hooks/use-chat-mention-menu";
+import { useChatPreviewSync } from "@/features/chat/hooks/use-chat-preview-sync";
+import {
+  type SpeechInputErrorCode,
+  useChatSpeechInput,
+} from "@/features/chat/hooks/use-chat-speech-input";
+import type { ChatSubmitDecision } from "@/features/chat/model/chat-task";
+import { isMediaSubmitTask, resolveChatSubmitDecision } from "@/features/chat/model/chat-task";
+import {
+  countProviderTools,
+  hasProviderTool,
+  type NativeToolOption,
+  resolveNativeToolGroup,
+  setProviderToolEnabled,
+  shouldShowMCPToolsMenu,
+} from "@/features/chat/model/native-tools";
 import type {
   ChatModelOption,
   PendingAttachment,
@@ -47,63 +79,25 @@ import {
   formatClipboardMarkdownPaste,
   resolveClipboardMarkdownPaste,
 } from "@/features/chat/utils/markdown-paste";
-import {
-  useChatSpeechInput,
-  type SpeechInputErrorCode,
-} from "@/features/chat/hooks/use-chat-speech-input";
-import { useChatPreviewSync } from "@/features/chat/hooks/use-chat-preview-sync";
-import {
-  useChatMentionMenu,
-  type ChatMentionMenuKind,
-} from "@/features/chat/hooks/use-chat-mention-menu";
-
-import { ChatMentionMenuPortal } from "@/features/chat/components/shared/chat-mention-menu";
-import { ChatModelPicker } from "@/features/chat/components/sections/chat-model-picker";
-import { ChatModelConfig } from "@/features/chat/components/sections/chat-model-config";
-import type { ChatSubmitDecision } from "@/features/chat/model/chat-task";
-import { isMediaSubmitTask, resolveChatSubmitDecision } from "@/features/chat/model/chat-task";
-import { ChatMCPPanel } from "@/features/chat/components/sections/chat-mcp";
-import {
-  countProviderTools,
-  hasProviderTool,
-  resolveNativeToolGroup,
-  setProviderToolEnabled,
-  shouldShowMCPToolsMenu,
-  type NativeToolOption,
-} from "@/features/chat/model/native-tools";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupTextarea,
-} from "@/components/ui/input-group";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { resolveFileProcessingBadge, resolveFileProcessingToneClass } from "@/shared/lib/file-processing";
-import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot";
-import { StreamdownRender } from "@/shared/components/markdown/streamdown-render";
+import type { SendShortcut } from "@/features/settings/types/settings";
 import { cn } from "@/lib/utils";
-
 import type { ConversationOptions } from "@/shared/api/conversation.types";
 import type { FileObjectDTO } from "@/shared/api/file.types";
 import type { MCPToolDTO } from "@/shared/api/mcp.types";
 import type { SkillSummaryDTO } from "@/shared/api/skills.types";
-import { isNativeToolTypeAllowed, type ModelOptionPolicy } from "@/shared/lib/model-option-policy";
-import type { SendShortcut } from "@/features/settings/types/settings";
-import { isSendShortcutEvent } from "@/shared/lib/platform-shortcuts";
+import { StreamdownRender } from "@/shared/components/markdown/streamdown-render";
+import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot";
 import type { BillingDisplayCurrency } from "@/shared/lib/billing-display";
-import { formatBytes, resolveFileExtension, resolveFileIcon } from "@/shared/lib/file-display";
+import { formatBytes, resolveFileIcon } from "@/shared/lib/file-display";
+import { resolveFileProcessingBadge, resolveFileProcessingToneClass } from "@/shared/lib/file-processing";
+import { isNativeToolTypeAllowed, type ModelOptionPolicy } from "@/shared/lib/model-option-policy";
+import { isSendShortcutEvent } from "@/shared/lib/platform-shortcuts";
 
 const FilePreviewDialog = dynamic(
   () => import("@/shared/components/file-preview/preview-dialog").then((module) => module.FilePreviewDialog),
   { ssr: false },
 );
 
-const TEMPORARY_NOTICE_TRANSITION = {
-  duration: 0.22,
-  ease: [0.16, 1, 0.3, 1] as const,
-};
 const TEMPORARY_MENTION_KINDS = ["model", "tool", "skill", "prompt"] as const;
 
 type QueuedComposerMessage = {
@@ -454,17 +448,6 @@ function ChatInputComponent({
   const hasDraftText = draft.trim().length > 0;
   const hasSubmitContent = hasDraftText || attachments.length > 0;
   const canSend = hasSubmitContent && !loading && !uploading;
-  const submitActionLabel = hasSubmitContent
-    ? sending
-      ? tComposer("queueMessage")
-      : tChat("send")
-    : sending
-      ? tComposer("pauseGeneration")
-      : speechInput.supported
-        ? speechInput.active
-          ? tComposer("cancelVoiceInput")
-          : tComposer("voiceInput")
-        : tComposer("voiceUnsupported");
   const showMarkdownPreview = markdownPreview && hasDraftText;
   const inputHeightClassName =
     inputHeight === "compact" ? "max-h-32" : inputHeight === "loose" ? "max-h-64" : "max-h-44";
@@ -697,9 +680,10 @@ function ChatInputComponent({
         type="file"
         multiple
         className="sr-only "
+        disabled={temporaryMode}
         onChange={(event) => {
           const files = Array.from(event.target.files ?? []);
-          if (files.length > 0) {
+          if (!temporaryMode && files.length > 0) {
             void onUploadFiles(files);
           }
           event.currentTarget.value = "";
@@ -1030,7 +1014,7 @@ function ChatInputComponent({
               });
             }
 
-            if (files.length > 0) {
+            if (!temporaryMode && files.length > 0) {
               if (!event.clipboardData.getData("text/plain")) {
                 event.preventDefault();
               }
@@ -1130,21 +1114,25 @@ function ChatInputComponent({
                   </div>
                 ) : (
                   <div>
-                    <CompactToolMenuItem
-                      label={tComposer("addPhotosAndFiles")}
-                      description={tComposer("uploadFile")}
-                      renderIcon={(hovered) => (
-                        <LinkIcon size={12} strokeWidth={1.5} animate={hovered ? "default" : undefined} />
-                      )}
-                      onClick={onSelectUploadTool}
-                    />
-                    <CompactToolMenuItem
-                      label={tComposer("screenshot")}
-                      renderIcon={(hovered) => (
-                        <Crop size={12} strokeWidth={1.5} animate={hovered ? "default" : undefined} />
-                      )}
-                      onClick={onSelectScreenshotTool}
-                    />
+                    {!temporaryMode ? (
+                      <>
+                        <CompactToolMenuItem
+                          label={tComposer("addPhotosAndFiles")}
+                          description={tComposer("uploadFile")}
+                          renderIcon={(hovered) => (
+                            <LinkIcon size={12} strokeWidth={1.5} animate={hovered ? "default" : undefined} />
+                          )}
+                          onClick={onSelectUploadTool}
+                        />
+                        <CompactToolMenuItem
+                          label={tComposer("screenshot")}
+                          renderIcon={(hovered) => (
+                            <Crop size={12} strokeWidth={1.5} animate={hovered ? "default" : undefined} />
+                          )}
+                          onClick={onSelectScreenshotTool}
+                        />
+                      </>
+                    ) : null}
 
                     {visibleNativeToolGroup ? (
                       <>
@@ -1202,14 +1190,23 @@ function ChatInputComponent({
               </PopoverContent>
             </Popover>
 
+            {!isMediaMode ? (
+              <ChatKnowledgeBases
+                selectedIDs={selectedKnowledgeBaseIDs}
+                disabled={loading || uploading}
+                available={ragAvailable}
+                unavailableReason={ragAvailabilityReason}
+                onChange={onSelectedKnowledgeBasesChange}
+              />
+            ) : null}
+
             {!modelOptionPolicyDisabled ? (
               <ChatModelConfig
                 disabled={loading || uploading || modelLoading}
                 options={options}
                 defaultOptions={defaultOptions}
                 optionControls={selectedModel?.optionControls ?? []}
-                nativeToolKeys={selectedModel?.nativeToolKeys ?? []}
-                nativeTools={selectedModel?.nativeTools ?? []}
+                lockedOptionPaths={selectedModel?.lockedOptionPaths ?? []}
                 modelOptionPolicy={modelOptionPolicy}
                 selectedProtocol={selectedProtocol}
                 selectedModelName={selectedPlatformModelName}

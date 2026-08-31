@@ -1535,10 +1535,33 @@ func geminiVideoFromMap(item map[string]interface{}) (GeneratedVideo, bool) {
 		return GeneratedVideo{}, false
 	}
 	return GeneratedVideo{
-		URL:      url,
-		B64JSON:  b64,
-		MIMEType: mimeType,
+		URL:             url,
+		B64JSON:         b64,
+		MIMEType:        mimeType,
+		DurationSeconds: geminiVideoDurationSeconds(item),
 	}, true
+}
+
+// geminiVideoDurationSeconds accepts both the documented video content shape
+// and duration metadata emitted by compatible Interactions proxies. The
+// public VideoContent schema does not require a duration, so callers still
+// use the request duration as a fallback when this returns zero.
+func geminiVideoDurationSeconds(item map[string]interface{}) int64 {
+	if len(item) == 0 {
+		return 0
+	}
+	for _, key := range []string{"duration_seconds", "durationSeconds", "duration"} {
+		if seconds := generatedMediaDurationSeconds(item[key]); seconds > 0 {
+			return seconds
+		}
+	}
+	metadata := asMap(item["metadata"])
+	for _, key := range []string{"duration_seconds", "durationSeconds", "duration", "seconds"} {
+		if seconds := generatedMediaDurationSeconds(metadata[key]); seconds > 0 {
+			return seconds
+		}
+	}
+	return 0
 }
 
 func geminiInteractionTextFromSteps(raw interface{}) string {

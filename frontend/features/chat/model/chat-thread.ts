@@ -282,7 +282,9 @@ export function mapServerMessage(
       msg.isPending = live;
       msg.isStreaming = live;
       if (live) {
-        msg.activityLabel = runtimeItem.activityLabel ?? (item.contentType === "image" ? labels.imageRunning : undefined);
+        msg.activityLabel = runtimeItem.activityLabel
+          ?? options.liveActivityLabels?.get(liveRunID)
+          ?? (item.contentType === "image" ? labels.imageRunning : undefined);
         msg.activityProgress = runtimeItem.activityProgress;
       }
     }

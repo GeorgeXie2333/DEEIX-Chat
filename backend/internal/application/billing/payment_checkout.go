@@ -130,7 +130,7 @@ func (s *PaymentCheckoutService) CreateStripeCheckoutSession(ctx context.Context
 // DescribePaymentProduct 统一生成各支付渠道使用的商品展示信息。
 func DescribePaymentProduct(order *domainbilling.PaymentOrder, plan *domainbilling.Plan) PaymentProduct {
 	if order != nil && order.OrderType == domainbilling.PaymentOrderTypeTopUp {
-		amountCents := order.PayAmountCents
+		amountCents := order.PayAmountCents - order.FeeAmountCents
 		if amountCents <= 0 {
 			amountCents = order.BaseAmountCents
 		}

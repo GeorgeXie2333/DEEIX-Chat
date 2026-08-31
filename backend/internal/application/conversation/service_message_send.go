@@ -206,7 +206,7 @@ func (s *Service) sendMessageInternal(
 		return nil, ErrConversationNotFound
 	}
 
-	branchPreparation, err := s.prepareMessageSendBranch(ctx, &input)
+	branchPreparation, err := s.prepareValidatedMessageSendBranch(ctx, &input)
 	if err != nil {
 		retErr = err
 		return nil, err
@@ -529,6 +529,9 @@ func (s *Service) sendMessageInternal(
 	if err != nil {
 		retErr = err
 		return nil, err
+	}
+	if input.UsageAuthorization != nil {
+		toolRuntime = toolRuntime.withAuthorizedMCPPrices(input.UsageAuthorization.MCPToolPriceNanousdByID)
 	}
 	imageAttachmentRoutingActive := toolRuntime.attachmentProcessor != nil
 	imageProcessing, err := s.processImageAttachments(ctx, imageAttachmentProcessingInput{

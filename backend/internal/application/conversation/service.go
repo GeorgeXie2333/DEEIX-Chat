@@ -17,6 +17,7 @@ import (
 	apprag "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/rag"
 	appskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/skill"
 	appupload "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/upload"
+	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
 	domainknowledgebase "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/knowledgebase"
 	domainmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/mcp"
@@ -190,6 +191,7 @@ type SendMessageInput struct {
 	ClientRunID             string
 	FileIDs                 []string
 	SelectedToolIDs         []uint
+	UsageAuthorization      *domainbilling.UsageAuthorization
 	SkillIDs                []uint
 	KnowledgeBaseIDs        []string
 	HTMLVisualPromptEnabled bool

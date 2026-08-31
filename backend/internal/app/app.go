@@ -111,7 +111,7 @@ type App struct {
 	moderationClient       *moderationclient.Client
 	backgroundCancel       context.CancelFunc
 	// shutdown 是进程关停排空信号：翻转就绪探针并断开订阅型长连接。
-	shutdown 				*lifecycle.Shutdown
+	shutdown *lifecycle.Shutdown
 }
 
 type subscriptionGroupAdapter struct {
@@ -313,6 +313,7 @@ func NewApp() (*App, error) {
 	billingService.SetPlatformModelIdentityResolver(channelService)
 	billingService.SetModelPricingCatalogProvider(channelService)
 	billingService.SetNativeToolCatalogProvider(channelService)
+	settingsService.SetNativeToolCatalogProvider(channelService)
 	settingsHandler.SetNativeToolCatalogProvider(channelService)
 	channelHandler := channelhttp.NewHandler(channelService)
 	channelModule := channelhttp.NewModule(channelHandler)
@@ -401,9 +402,11 @@ func NewApp() (*App, error) {
 		Settings:          settingsService,
 		Channel:           channelService,
 		Billing:           billingService,
-		ChatProvider:      appopenapi.NewLLMRawChatProviderWithImageResolver(llmClient, appopenapi.NewHTTPChatImageResolver(cfg.StrictOutboundPolicy(), cfg.MaxUploadFileBytes)),
+		ChatProvider:      appopenapi.NewLLMRawChatProviderWithImageResolver(llmClient, appopenapi.NewHTTPChatImageResolver(cfg.MaxUploadFileBytes)),
 		RateLimiter:       rateLimiter,
 		TwoFactor:         authService,
+		UserStatus:        userRepo,
+		ModelOptionFilter: conversationService,
 		DataEncryptionKey: cfg.DataEncryptionKey,
 	})
 	openAPIHandler := openapihttp.NewHandler(openAPIService)

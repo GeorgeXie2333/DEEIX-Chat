@@ -94,6 +94,22 @@ func TestReadGeneratedVideoMapsAdapterSizeLimit(t *testing.T) {
 	}
 }
 
+func TestReadGeneratedVideoAcceptsAdapterData(t *testing.T) {
+	mp4 := []byte{0x00, 0x00, 0x00, 0x18, 'f', 't', 'y', 'p', 'i', 's', 'o', 'm'}
+	service := &Service{}
+
+	data, mimeType, err := service.readGeneratedVideo(t.Context(), llm.GeneratedVideo{
+		Data:     mp4,
+		MIMEType: "application/octet-stream",
+	}, "", "")
+	if err != nil {
+		t.Fatalf("read generated video data: %v", err)
+	}
+	if string(data) != string(mp4) || mimeType != "video/mp4" {
+		t.Fatalf("unexpected generated video: data=%q MIME=%q", data, mimeType)
+	}
+}
+
 func TestReadGeneratedImageHidesAdapterSecurityDetails(t *testing.T) {
 	cause := fmt.Errorf("%w: unsafe host", security.ErrUnsafeOutboundURL)
 	service := &Service{

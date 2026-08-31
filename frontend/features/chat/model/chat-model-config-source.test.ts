@@ -19,7 +19,7 @@ test("ChatModelConfig keeps the local advanced settings popover", () => {
 
 test("ChatModelConfig hides temperature from rendered advanced settings", () => {
   assert.match(configSource, /settings\.filter\(\(setting\) => setting\.kind !== "temperature"\)/);
-  assert.match(configSource, /if \(visibleSettings\.length === 0\)/);
+  assert.match(configSource, /if \(visibleSettings\.length === 0 && customSettings\.length === 0\)/);
   assert.match(configSource, /visibleSettings\.map\(\(setting\) =>/);
 });
 
@@ -32,4 +32,13 @@ test("ChatModelConfig popover matches the compact tools menu surface", () => {
 
 test("ChatModelConfig keeps select controls compact enough for labels", () => {
   assert.match(configSource, /grid-cols-\[minmax\(0,1fr\)_6\.5rem\]/);
+});
+
+test("ChatModelConfig renders server controls and restores backend defaults", () => {
+  assert.match(configSource, /resolveServerOptionControls/);
+  assert.match(configSource, /customSettings\.map/);
+  assert.match(configSource, /valueType === "boolean"/);
+  assert.match(configSource, /valueType === "select"/);
+  assert.match(configSource, /onDefaultOptionsRestore/);
+  assert.match(configSource, /lockedOptionPaths/);
 });

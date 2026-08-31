@@ -3,6 +3,7 @@ package conversation
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -13,7 +14,10 @@ import (
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 )
 
-const defaultXAIVideoDurationSeconds int64 = 6
+const (
+	defaultXAIVideoDurationSeconds    int64 = 6
+	defaultOpenAIVideoDurationSeconds int64 = 4
+)
 
 type canceledMediaGenerationInput struct {
 	Context             context.Context
@@ -200,6 +204,9 @@ func mediaDurationSecondsFromOptions(options map[string]interface{}) int64 {
 		{"durationSeconds"},
 		{"duration_seconds"},
 		{"duration"},
+		{"seconds"},
+		{"response_format", "duration"},
+		{"responseFormat", "duration"},
 		{"videoConfig", "durationSeconds"},
 		{"video_config", "duration_seconds"},
 		{"generationConfig", "videoConfig", "durationSeconds"},
@@ -221,14 +228,21 @@ func mediaDurationSecondsFromOptions(options map[string]interface{}) int64 {
 // 其他协议仍以其返回的真实媒体时长为准，避免发送未声明的厂商参数。
 func withDefaultMediaVideoDuration(options map[string]interface{}, protocol string) map[string]interface{} {
 	adapter := llm.NormalizeAdapter(protocol)
-	if mediaDurationSecondsFromOptions(options) > 0 || (adapter != llm.AdapterXAIVideo && adapter != llm.AdapterXAIVideoExtensions) {
+	if mediaDurationSecondsFromOptions(options) > 0 {
+		return options
+	}
+	if adapter != llm.AdapterXAIVideo && adapter != llm.AdapterXAIVideoExtensions && adapter != llm.AdapterOpenAIVideoGenerations {
 		return options
 	}
 	next := make(map[string]interface{}, len(options)+1)
 	for key, value := range options {
 		next[key] = value
 	}
-	next["duration"] = defaultXAIVideoDurationSeconds
+	if adapter == llm.AdapterOpenAIVideoGenerations {
+		next["seconds"] = fmt.Sprintf("%d", defaultOpenAIVideoDurationSeconds)
+	} else {
+		next["duration"] = defaultXAIVideoDurationSeconds
+	}
 	return next
 }
 
@@ -237,6 +251,9 @@ func resolveGeneratedVideoDurations(videos []llm.GeneratedVideo, fallbackSeconds
 	var total int64
 	for index, video := range videos {
 		seconds := positiveSeconds(video.DurationSeconds)
+		if seconds == 0 {
+			seconds = mediaDurationSecondsFromValue(video.Seconds)
+		}
 		if seconds == 0 {
 			seconds = positiveSeconds(fallbackSeconds)
 		}

@@ -27,6 +27,7 @@ type selectedToolRuntime struct {
 // 服务器归属与价格在解析选中工具时快照，保证同名工具跨服务器可区分、计费按调用时价格结算。
 type mcpToolCallBinding struct {
 	Config       mcp.CallConfig
+	ToolID       uint
 	ServerID     uint
 	ServerName   string
 	ToolName     string
@@ -225,6 +226,7 @@ func (s *Service) resolveSelectedToolRuntime(ctx context.Context, toolIDs []uint
 				TimeoutMS: cfg.MCPToolTimeoutSeconds * 1000,
 				Headers:   headers,
 			},
+			ToolID:       tool.ID,
 			ServerID:     server.ID,
 			ServerName:   server.Name,
 			ToolName:     tool.Name,
@@ -245,6 +247,99 @@ func (s *Service) resolveSelectedToolRuntime(ctx context.Context, toolIDs []uint
 		}
 	}
 	return result, nil
+}
+
+// minimumMCPReservationNanousd returns the amount that must be held before an
+// LLM request can be allowed to invoke the selected MCP tools.  It deliberately
+// uses the same resolved runtime as execution, so inactive tools, unavailable
+// servers, invalid endpoints, and unavailable credentials cannot inflate (or
+// bypass) the preauthorization decision.
+//
+// Each allowed call may choose whichever selected tool has the highest
+// configured price. The maximum positive unit price times the maximum number
+// of executable calls is therefore a safe bound without adding the prices of
+// mutually alternative tools. Attachment processors consume the same remaining
+// tool-call budget as ordinary follow-up tool calls, so
+// resolveMaxToolCallsPerRun is the complete run-level bound.
+func (s *Service) minimumMCPReservationNanousd(
+	ctx context.Context,
+	toolIDs []uint,
+) (int64, error) {
+	amount, _, err := s.resolveMCPBillingAuthorization(ctx, toolIDs)
+	return amount, err
+}
+
+func (s *Service) resolveMCPBillingAuthorization(ctx context.Context, toolIDs []uint) (int64, map[uint]int64, error) {
+	prices := make(map[uint]int64)
+	if len(toolIDs) == 0 {
+		return 0, prices, nil
+	}
+	runtime, err := s.resolveSelectedToolRuntime(ctx, toolIDs)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	maximumPrice := int64(0)
+	for _, binding := range runtime.mcpBindings {
+		prices[binding.ToolID] = binding.PriceNanousd
+		if binding.PriceNanousd > maximumPrice {
+			maximumPrice = binding.PriceNanousd
+		}
+	}
+	if maximumPrice <= 0 {
+		return 0, prices, nil
+	}
+
+	maximumCalls := s.resolveMaxToolCallsPerRun()
+	if maximumCalls <= 0 {
+		return 0, prices, nil
+	}
+	maxInt64 := int64(^uint64(0) >> 1)
+	if maximumPrice > maxInt64/int64(maximumCalls) {
+		return 0, nil, fmt.Errorf("MCP tool reservation amount exceeds supported limit")
+	}
+	return maximumPrice * int64(maximumCalls), prices, nil
+}
+
+// withAuthorizedMCPPrices restricts a freshly resolved runtime to the exact
+// tool IDs and prices seen during billing authorization. A non-nil empty map is
+// intentional: it records that no selected tool was executable at that point.
+func (r selectedToolRuntime) withAuthorizedMCPPrices(prices map[uint]int64) selectedToolRuntime {
+	if prices == nil {
+		return r
+	}
+	result := selectedToolRuntime{
+		definitions: make([]llm.ToolDefinition, 0, len(r.definitions)),
+		nameMap:     make(map[string]string),
+		mcpBindings: make(map[string]mcpToolCallBinding),
+		schemas:     make(map[string]json.RawMessage),
+	}
+	for _, definition := range r.definitions {
+		binding, ok := r.mcpBindings[definition.Name]
+		if !ok {
+			continue
+		}
+		price, authorized := prices[binding.ToolID]
+		if !authorized {
+			continue
+		}
+		binding.PriceNanousd = price
+		result.definitions = append(result.definitions, definition)
+		result.mcpBindings[definition.Name] = binding
+		if value, ok := r.nameMap[definition.Name]; ok {
+			result.nameMap[definition.Name] = value
+		}
+		if value, ok := r.schemas[definition.Name]; ok {
+			result.schemas[definition.Name] = value
+		}
+	}
+	if r.attachmentProcessor != nil {
+		if _, authorized := prices[r.attachmentProcessor.toolID]; authorized {
+			processor := *r.attachmentProcessor
+			result.attachmentProcessor = &processor
+		}
+	}
+	return result
 }
 
 func (r *selectedToolRuntime) bindAttachmentProcessor(processor selectedAttachmentProcessor) error {

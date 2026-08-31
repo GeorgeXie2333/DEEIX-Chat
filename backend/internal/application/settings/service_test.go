@@ -7,6 +7,7 @@ import (
 
 	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
 )
 
 type testSettingsRepo struct {
@@ -16,6 +17,15 @@ type testSettingsRepo struct {
 type testVectorStore struct {
 	available bool
 	err       error
+}
+
+type testNativeToolCatalog struct {
+	definitions []nativetool.Definition
+	err         error
+}
+
+func (s testNativeToolCatalog) ListNativeToolDefinitions(context.Context) ([]nativetool.Definition, error) {
+	return s.definitions, s.err
 }
 
 func (s testVectorStore) VectorStoreAvailable(context.Context) (bool, error) {
@@ -297,6 +307,32 @@ func TestValidateNativeToolPricingSettings(t *testing.T) {
 	}
 	if err := validatePatchItem(PatchItem{Namespace: "billing", Key: "native_tool_pricing_json", Value: `{"xaiWebSearch":"bad"}`}); err == nil {
 		t.Fatal("expected non-number native tool price to fail")
+	}
+}
+
+func TestBatchUpdateValidatesNativeToolPricingAgainstDynamicCatalog(t *testing.T) {
+	repo := &testSettingsRepo{byNamespace: map[string][]domainsettings.SystemSetting{}}
+	service := NewService(repo, "test-data-encryption-key")
+	service.SetNativeToolCatalogProvider(testNativeToolCatalog{definitions: []nativetool.Definition{
+		{
+			Protocol:       "xai_responses",
+			Provider:       "Custom",
+			Type:           "custom_search",
+			Key:            "custom.search",
+			Label:          "Custom Search",
+			BillingUnit:    "call",
+			PriceNanousd:   1_000,
+			Billable:       true,
+			DefaultEnabled: true,
+		},
+	}})
+
+	if _, err := service.BatchUpdate(context.Background(), []PatchItem{{
+		Namespace: "billing",
+		Key:       "native_tool_pricing_json",
+		Value:     `{"custom.search":{"priceNanousd":2000,"unit":"call","priceLabel":"","billable":true}}`,
+	}}); err != nil {
+		t.Fatalf("expected dynamic native tool pricing to pass, got %v", err)
 	}
 }
 

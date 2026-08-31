@@ -209,7 +209,7 @@ func (s *Service) buildOpenWebUIImportCandidates(rows []repository.OpenWebUIUser
 		}
 		candidates = append(candidates, openWebUIImportCandidate{
 			sourceKey:         sourceKey,
-			email:             email,
+			email:             lowerEmail,
 			lowerEmail:        lowerEmail,
 			displayName:       userapp.NormalizeGeneratedDisplayName(row.DisplayName),
 			balanceNanousd:    openWebUICreditToNanousd(row.Balance, multiplier),

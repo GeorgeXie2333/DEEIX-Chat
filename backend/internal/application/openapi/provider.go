@@ -42,7 +42,11 @@ func (p *LLMRawChatProvider) CompleteChat(ctx context.Context, route llm.RouteCo
 		}
 		return chatResultFromGenerateOutput(output, route.UpstreamModel, requestUsesLegacyFunctionCalling(body)), nil
 	}
-	output, err := p.client.GenerateRawChatCompletion(ctx, route, body)
+	passthroughBody, err := inlinePassthroughChatCompletionImages(ctx, body, p.imageResolver)
+	if err != nil {
+		return RawChatCompletionResult{}, err
+	}
+	output, err := p.client.GenerateRawChatCompletion(ctx, route, passthroughBody)
 	if err != nil {
 		return RawChatCompletionResult{}, err
 	}
@@ -101,7 +105,11 @@ func (p *LLMRawChatProvider) StreamChat(
 		}
 		return chatResultFromGenerateOutput(output, route.UpstreamModel, requestUsesLegacyFunctionCalling(body)), nil
 	}
-	output, err := p.client.GenerateRawChatCompletionStream(ctx, route, body, func(event llm.RawChatCompletionStreamEvent) error {
+	passthroughBody, err := inlinePassthroughChatCompletionImages(ctx, body, p.imageResolver)
+	if err != nil {
+		return RawChatCompletionResult{}, err
+	}
+	output, err := p.client.GenerateRawChatCompletionStream(ctx, route, passthroughBody, func(event llm.RawChatCompletionStreamEvent) error {
 		if onEvent == nil {
 			return nil
 		}
@@ -133,10 +141,11 @@ func chatResultFromGenerateOutput(output *llm.GenerateOutput, model string, lega
 	toolCalls := normalizeOpenAIOutputToolCalls(output.ToolCalls)
 	body := chatCompletionBody(output.ResponseID, model, output.Text, toolCalls, output.Usage, legacyFunctionCall)
 	result := RawChatCompletionResult{
-		Body:       body,
-		Usage:      output.Usage,
-		ResponseID: output.ResponseID,
-		ToolCalls:  toolCalls,
+		Body:                body,
+		Usage:               output.Usage,
+		ResponseID:          output.ResponseID,
+		ToolCalls:           toolCalls,
+		ServerSideToolUsage: cloneServerSideToolUsage(output.ServerSideToolUsage),
 	}
 	if output.Reasoning != nil {
 		result.ReasoningText = firstNonEmpty(output.Reasoning.Summary, output.Reasoning.Text)
@@ -272,12 +281,29 @@ func rawResultFromLLMOutput(output *llm.RawChatCompletionOutput) RawChatCompleti
 		result.Usage = output.Result.Usage
 		result.ResponseID = output.Result.ResponseID
 		result.ToolCalls = normalizeOpenAIOutputToolCalls(output.Result.ToolCalls)
+		result.ServerSideToolUsage = cloneServerSideToolUsage(output.Result.ServerSideToolUsage)
 		if output.Result.Reasoning != nil {
 			result.ReasoningText = firstNonEmpty(
 				output.Result.Reasoning.Summary,
 				output.Result.Reasoning.Text,
 			)
 		}
+	}
+	return result
+}
+
+func cloneServerSideToolUsage(source map[string]int64) map[string]int64 {
+	if len(source) == 0 {
+		return nil
+	}
+	result := make(map[string]int64, len(source))
+	for key, count := range source {
+		if normalized := strings.TrimSpace(key); normalized != "" && count > 0 {
+			result[normalized] = count
+		}
+	}
+	if len(result) == 0 {
+		return nil
 	}
 	return result
 }

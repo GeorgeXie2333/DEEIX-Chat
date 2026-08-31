@@ -178,6 +178,38 @@ func TestFilterModelOptionsAppliesLockedCapabilityDefaultOptions(t *testing.T) {
 	}
 }
 
+func TestFilterModelOptionsRemovesLockedOptionWithoutDefault(t *testing.T) {
+	filtered := filterModelOptions(map[string]interface{}{
+		"temperature":  0.4,
+		"service_tier": "priority",
+		"reasoning": map[string]interface{}{
+			"effort":  "high",
+			"summary": "auto",
+		},
+	}, llm.AdapterOpenAIResponses, modelOptionPolicyConfig{
+		Mode:             modelOptionPolicyAllowlist,
+		AllowedPathsJSON: config.DefaultModelOptionAllowedPathsJSON(),
+		DeniedPathsJSON:  config.DefaultModelOptionDeniedPathsJSON(),
+		ModelCapabilitiesJSON: `{
+			"lockedOptionPaths": ["service_tier", "reasoning.effort"]
+		}`,
+	})
+
+	if _, ok := filtered["service_tier"]; ok {
+		t.Fatalf("expected locked top-level option without default to be removed, got %#v", filtered)
+	}
+	reasoning, ok := filtered["reasoning"].(map[string]interface{})
+	if !ok || reasoning["summary"] != "auto" {
+		t.Fatalf("expected unlocked sibling to remain, got %#v", filtered)
+	}
+	if _, ok := reasoning["effort"]; ok {
+		t.Fatalf("expected locked nested option without default to be removed, got %#v", filtered)
+	}
+	if filtered["temperature"] != 0.4 {
+		t.Fatalf("expected unrelated option to remain, got %#v", filtered)
+	}
+}
+
 func TestFilterModelOptionsOnlyInjectsDefaultToolsFromDefaultOptions(t *testing.T) {
 	allowedOnly := filterModelOptions(nil, llm.AdapterOpenAIResponses, modelOptionPolicyConfig{
 		Mode:                  modelOptionPolicyAllowlist,

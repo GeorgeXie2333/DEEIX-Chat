@@ -740,6 +740,44 @@ func TestGenerateGeminiInteractionPostsInteractionsRequest(t *testing.T) {
 	}
 }
 
+func TestParseGeminiInteractionOutputParsesVideoDurationMetadata(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want int64
+	}{
+		{
+			name: "duration string",
+			body: `{"steps":[{"type":"model_output","content":[{"type":"video","uri":"https://example.com/duration.mp4","duration":"7s"}]}]}`,
+			want: 7,
+		},
+		{
+			name: "duration seconds",
+			body: `{"steps":[{"type":"model_output","content":[{"type":"video","uri":"https://example.com/duration-seconds.mp4","duration_seconds":8}]}]}`,
+			want: 8,
+		},
+		{
+			name: "metadata duration",
+			body: `{"steps":[{"type":"model_output","content":[{"type":"video","uri":"https://example.com/metadata.mp4","metadata":{"duration":"9s"}}]}]}`,
+			want: 9,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			output, err := parseGeminiInteractionOutput([]byte(tt.body))
+			if err != nil {
+				t.Fatalf("parse Gemini interaction output: %v", err)
+			}
+			if len(output.GeneratedVideos) != 1 {
+				t.Fatalf("expected one generated video, got %#v", output.GeneratedVideos)
+			}
+			if got := output.GeneratedVideos[0].DurationSeconds; got != tt.want {
+				t.Fatalf("expected duration %d seconds, got %d", tt.want, got)
+			}
+		})
+	}
+}
+
 func TestGenerateGeminiInteractionStreamPostsStreamRequest(t *testing.T) {
 	var capturedPayload map[string]interface{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

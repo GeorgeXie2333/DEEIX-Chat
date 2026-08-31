@@ -3,6 +3,7 @@ package cache
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"strconv"
@@ -91,12 +92,54 @@ func (s *fakeRedisLimiterServer) handleConn(conn net.Conn) {
 		case "ping":
 			_, _ = conn.Write([]byte("+PONG\r\n"))
 		case "evalsha", "eval":
-			allowed, minuteExceeded, dailyExceeded := s.applyFreeModelScript(args)
-			_, _ = conn.Write([]byte(respIntArray(allowed, minuteExceeded, dailyExceeded)))
+			if scriptKeyCount(args) == 1 {
+				_, _ = conn.Write([]byte(fmt.Sprintf(":%d\r\n", s.applySlidingWindowScript(args))))
+			} else {
+				allowed, minuteExceeded, dailyExceeded := s.applyFreeModelScript(args)
+				_, _ = conn.Write([]byte(respIntArray(allowed, minuteExceeded, dailyExceeded)))
+			}
 		default:
 			_, _ = conn.Write([]byte("+OK\r\n"))
 		}
 	}
+}
+
+func scriptKeyCount(args []string) int {
+	if len(args) < 3 {
+		return 0
+	}
+	count, _ := strconv.Atoi(args[2])
+	return count
+}
+
+func (s *fakeRedisLimiterServer) applySlidingWindowScript(args []string) int {
+	if len(args) < 9 || scriptKeyCount(args) != 1 {
+		return 0
+	}
+	key := args[3]
+	argStart := 4
+	nowMillis := parseInt64(args[argStart])
+	windowMillis := parseInt64(args[argStart+1])
+	limit := int(parseInt64(args[argStart+2]))
+	member := args[argStart+4]
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	windowStart := nowMillis - windowMillis
+	if s.minutes[key] == nil {
+		s.minutes[key] = make(map[string]int64)
+	}
+	for existingMember, score := range s.minutes[key] {
+		if score <= windowStart {
+			delete(s.minutes[key], existingMember)
+		}
+	}
+	allowed := len(s.minutes[key]) < limit
+	s.minutes[key][member] = nowMillis
+	if allowed {
+		return 1
+	}
+	return 0
 }
 
 func (s *fakeRedisLimiterServer) applyFreeModelScript(args []string) (int, int, int) {
@@ -270,4 +313,52 @@ func TestAllowFreeModelUsageRequiresBothWindowsBeforeIncrementing(t *testing.T) 
 		t.Fatalf("minute window changed after daily denial: got %d want 1", got)
 	}
 	server.mu.Unlock()
+}
+
+func TestAllowSlidingWindowIsAtomicAcrossConcurrentRequests(t *testing.T) {
+	server := newFakeRedisLimiterServer(t)
+	client := redis.NewClient(&redis.Options{Addr: server.addr()})
+	t.Cleanup(func() {
+		_ = client.Close()
+	})
+	limiter := NewRateLimiter(client)
+	const requestCount = 64
+	const limit = 10
+
+	results := make(chan bool, requestCount)
+	var wg sync.WaitGroup
+	for index := 0; index < requestCount; index++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			allowed, err := limiter.AllowSlidingWindow(context.Background(), "preauth:ip", limit, time.Minute, 2*time.Minute)
+			if err != nil {
+				t.Errorf("AllowSlidingWindow() error = %v", err)
+				return
+			}
+			results <- allowed
+		}()
+	}
+	wg.Wait()
+	close(results)
+
+	allowedCount := 0
+	for allowed := range results {
+		if allowed {
+			allowedCount++
+		}
+	}
+	if allowedCount != limit {
+		t.Fatalf("allowed concurrent requests = %d, want exactly %d", allowedCount, limit)
+	}
+}
+
+func TestParseFreeModelRateLimitResultRejectsMalformedReply(t *testing.T) {
+	allowed, minuteExceeded, dailyExceeded, err := parseFreeModelRateLimitResult("malformed")
+	if err == nil {
+		t.Fatal("expected malformed Redis reply to fail closed")
+	}
+	if allowed || minuteExceeded || dailyExceeded {
+		t.Fatalf("expected malformed reply to deny without a fabricated limit result, got allowed=%v minute=%v daily=%v", allowed, minuteExceeded, dailyExceeded)
+	}
 }

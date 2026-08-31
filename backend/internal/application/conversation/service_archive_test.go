@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -174,6 +175,26 @@ func TestExportConversationArchiveSanitizesTraceAndAttachmentMetadata(t *testing
 
 	if _, err := svc.ExportConversationArchive(context.Background(), 8, "conv_source"); !errors.Is(err, ErrConversationNotFound) {
 		t.Fatalf("expected owner check failure, got %v", err)
+	}
+}
+
+func TestListAllArchiveMessagesRejectsOverLimitPageBeforeAppending(t *testing.T) {
+	for _, count := range []int{maxConversationArchiveMessages + 1, maxConversationArchiveMessages + 500} {
+		t.Run(strconv.Itoa(count), func(t *testing.T) {
+			messages := make([]model.Message, count)
+			for index := range messages {
+				messages[index].ConversationID = 10
+			}
+			service := &Service{repo: &archiveRepoFake{messages: messages}}
+
+			items, err := service.listAllArchiveMessages(context.Background(), 10)
+			if !errors.Is(err, ErrConversationArchiveTooLarge) {
+				t.Fatalf("listAllArchiveMessages() error = %v, want ErrConversationArchiveTooLarge", err)
+			}
+			if items != nil {
+				t.Fatalf("listAllArchiveMessages() items = %d, want nil on overflow", len(items))
+			}
+		})
 	}
 }
 

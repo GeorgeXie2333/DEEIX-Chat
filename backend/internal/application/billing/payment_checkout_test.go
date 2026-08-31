@@ -98,3 +98,15 @@ func TestCreateEPayCheckoutMapsOrderAtApplicationBoundary(t *testing.T) {
 		t.Fatalf("unexpected payment product: %#v", provider.input)
 	}
 }
+
+func TestDescribePaymentProductUsesTopUpSubtotalBeforeStripeFee(t *testing.T) {
+	product := DescribePaymentProduct(&domainbilling.PaymentOrder{
+		OrderType:      domainbilling.PaymentOrderTypeTopUp,
+		PayCurrency:    "USD",
+		PayAmountCents: 10_300,
+		FeeAmountCents: 300,
+	}, nil)
+	if product.Description != "充值 USD 100.00 至按量余额" {
+		t.Fatalf("top-up product description = %q, want subtotal description", product.Description)
+	}
+}

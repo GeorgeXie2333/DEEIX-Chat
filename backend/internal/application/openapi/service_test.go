@@ -14,6 +14,7 @@ import (
 	appchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
 	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	domainopenapi "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/openapi"
+	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 )
@@ -23,6 +24,7 @@ func TestCreateAPIKeyStoresOnlyHashAndAuthenticatesPlaintext(t *testing.T) {
 	service := NewService(Dependencies{
 		KeyRepo:           repo,
 		TwoFactor:         twoFactorStub{enabled: true},
+		UserStatus:        &userStatusStub{status: domainuser.StatusActive},
 		DataEncryptionKey: "test-secret",
 		Now:               fixedNow,
 	})
@@ -73,6 +75,7 @@ func TestRegenerateAPIKeyReplacesPreviousHash(t *testing.T) {
 	service := NewService(Dependencies{
 		KeyRepo:           repo,
 		TwoFactor:         twoFactorStub{enabled: true},
+		UserStatus:        &userStatusStub{status: domainuser.StatusActive},
 		DataEncryptionKey: "test-secret",
 		Now:               fixedNow,
 	})
@@ -100,6 +103,39 @@ func TestRegenerateAPIKeyReplacesPreviousHash(t *testing.T) {
 	}
 }
 
+func TestCreateAPIKeyMapsAtomicCreateConflictToAlreadyExists(t *testing.T) {
+	repo := newKeyRepoStub()
+	repo.createErr = repository.ErrConflict
+	service := NewService(Dependencies{
+		KeyRepo:           repo,
+		TwoFactor:         twoFactorStub{enabled: true},
+		DataEncryptionKey: "test-secret",
+		Now:               fixedNow,
+	})
+
+	if _, err := service.CreateAPIKey(context.Background(), 42); !errors.Is(err, ErrAPIKeyAlreadyExists) {
+		t.Fatalf("expected atomic create conflict to report existing key, got %v", err)
+	}
+}
+
+func TestRegenerateAPIKeyReturnsConflictWhenSnapshotChanges(t *testing.T) {
+	repo := newKeyRepoStub()
+	service := NewService(Dependencies{
+		KeyRepo:           repo,
+		TwoFactor:         twoFactorStub{enabled: true},
+		DataEncryptionKey: "test-secret",
+		Now:               fixedNow,
+	})
+	if _, err := service.CreateAPIKey(context.Background(), 42); err != nil {
+		t.Fatalf("create initial key: %v", err)
+	}
+	repo.replaceErr = repository.ErrConflict
+
+	if view, err := service.RegenerateAPIKey(context.Background(), 42); !errors.Is(err, ErrAPIKeyConflict) || view != nil {
+		t.Fatalf("expected stale regeneration snapshot to return no plaintext and ErrAPIKeyConflict, view=%#v err=%v", view, err)
+	}
+}
+
 func TestCreateAndRegenerateAPIKeyRequireTwoFactor(t *testing.T) {
 	service := NewService(Dependencies{
 		KeyRepo:           newKeyRepoStub(),
@@ -121,6 +157,7 @@ func TestGetAPIKeyHidesPlaintextWhenTwoFactorDisabled(t *testing.T) {
 	enabledService := NewService(Dependencies{
 		KeyRepo:           repo,
 		TwoFactor:         twoFactorStub{enabled: true},
+		UserStatus:        &userStatusStub{status: domainuser.StatusActive},
 		DataEncryptionKey: "test-secret",
 		Now:               fixedNow,
 	})
@@ -132,6 +169,7 @@ func TestGetAPIKeyHidesPlaintextWhenTwoFactorDisabled(t *testing.T) {
 	disabledService := NewService(Dependencies{
 		KeyRepo:           repo,
 		TwoFactor:         twoFactorStub{enabled: false},
+		UserStatus:        &userStatusStub{status: domainuser.StatusActive},
 		DataEncryptionKey: "test-secret",
 		Now:               fixedNow,
 	})
@@ -196,6 +234,7 @@ func TestPrepareChatCompletionAllowsPublicChatProtocolsWithoutPreferredProtocol(
 		Settings:          settingsStub{"model_allowlist": "chat-anthropic", "rate_limit_rpm": "60"},
 		Channel:           channel,
 		ChatProvider:      &chatProviderStub{},
+		ModelOptionFilter: passthroughModelOptionFilter{},
 		DataEncryptionKey: "test-secret",
 		Now:               fixedNow,
 	})
@@ -349,6 +388,7 @@ func TestPrepareChatCompletionNormalizesMaxTokensByResolvedRoute(t *testing.T) {
 				Settings:          settingsStub{"model_allowlist": "chat-openai", "rate_limit_rpm": "60"},
 				Channel:           channel,
 				ChatProvider:      &chatProviderStub{},
+				ModelOptionFilter: passthroughModelOptionFilter{},
 				DataEncryptionKey: "test-secret",
 				Now:               fixedNow,
 			})
@@ -457,6 +497,7 @@ func TestPrepareChatCompletionDropsOfficialOpenAIReasoningEffortWhenToolsPresent
 				Settings:          settingsStub{"model_allowlist": "chat-openai", "rate_limit_rpm": "60"},
 				Channel:           channel,
 				ChatProvider:      &chatProviderStub{},
+				ModelOptionFilter: passthroughModelOptionFilter{},
 				DataEncryptionKey: "test-secret",
 				Now:               fixedNow,
 			})
@@ -686,14 +727,395 @@ func TestBuildGenerateInputFromChatCompletionNormalizesLegacyFunctions(t *testin
 	}
 }
 
+func TestAuthenticateAPIKeyRejectsInactiveUser(t *testing.T) {
+	repo := newKeyRepoStub()
+	status := &userStatusStub{status: domainuser.StatusActive}
+	service := NewService(Dependencies{
+		KeyRepo:           repo,
+		TwoFactor:         twoFactorStub{enabled: true},
+		UserStatus:        status,
+		DataEncryptionKey: "test-secret",
+		Now:               fixedNow,
+	})
+	created, err := service.CreateAPIKey(context.Background(), 42)
+	if err != nil {
+		t.Fatalf("CreateAPIKey returned error: %v", err)
+	}
+	status.status = domainuser.StatusSuspended
+	if _, err = service.AuthenticateAPIKey(context.Background(), created.APIKey); !errors.Is(err, ErrInvalidAPIKey) {
+		t.Fatalf("expected suspended user key to be rejected, got %v", err)
+	}
+	status.status = domainuser.StatusActive
+	status.err = errors.New("user repository unavailable")
+	if _, err = service.AuthenticateAPIKey(context.Background(), created.APIKey); !errors.Is(err, status.err) {
+		t.Fatalf("expected user repository failure to remain an internal error, got %v", err)
+	}
+}
+
+func TestFilterPreparedChatRequestKeepsClientFunctionsAndAppliesProviderOptionPolicy(t *testing.T) {
+	filter := modelOptionFilterStub{filtered: map[string]interface{}{
+		"temperature": 0.2,
+	}}
+	request := map[string]interface{}{
+		"model":               "upstream-model",
+		"messages":            []interface{}{map[string]interface{}{"role": "user", "content": "hello"}},
+		"temperature":         0.8,
+		"web_search":          true,
+		"tool_choice":         map[string]interface{}{"type": "function", "function": map[string]interface{}{"name": "lookup"}},
+		"parallel_tool_calls": false,
+		"tools": []interface{}{
+			map[string]interface{}{
+				"type":     "function",
+				"function": map[string]interface{}{"name": "lookup", "parameters": map[string]interface{}{"type": "object"}},
+			},
+			map[string]interface{}{"type": "web_search_preview"},
+		},
+	}
+	route := &appchannel.ResolvedRoute{Protocol: llm.AdapterOpenAIResponses, ModelCapabilitiesJSON: `{}`}
+	prepared := filterPreparedChatRequest(request, route, filter)
+
+	if prepared["web_search"] != nil {
+		t.Fatalf("expected disallowed provider option to be removed, got %#v", prepared)
+	}
+	if prepared["temperature"] != 0.2 {
+		t.Fatalf("expected filtered option value, got %#v", prepared["temperature"])
+	}
+	tools, ok := prepared["tools"].([]interface{})
+	if !ok || len(tools) != 1 {
+		t.Fatalf("expected only the client function tool to remain, got %#v", prepared["tools"])
+	}
+	if choice := asMap(prepared["tool_choice"]); getStringFromNestedMap(choice, "function", "name") != "lookup" {
+		t.Fatalf("expected client function tool_choice to remain, got %#v", prepared["tool_choice"])
+	}
+	if parallel, ok := prepared["parallel_tool_calls"].(bool); !ok || parallel {
+		t.Fatalf("expected parallel_tool_calls=false to remain, got %#v", prepared["parallel_tool_calls"])
+	}
+}
+
+func TestRecordBillingUsesAuthorizationSnapshotAndServerToolUsage(t *testing.T) {
+	billing := &billingStub{}
+	authorization := &domainbilling.UsageAuthorization{
+		Mode:        "usage",
+		Reservation: &domainbilling.UsageBalanceReservation{UserID: 42, RefNo: "req_1"},
+	}
+	service := NewService(Dependencies{Billing: billing, Now: fixedNow})
+	prepared := &PreparedChatCompletion{
+		key:               &domainopenapi.UserAPIKey{UserID: 42},
+		authorization:     authorization,
+		startedAt:         fixedNow(),
+		platformModelName: "chat-openai",
+		route:             &appchannel.ResolvedRoute{Protocol: llm.AdapterOpenAIResponses},
+	}
+	toolUsage := map[string]int64{"web_search": 2}
+	if err := service.recordBilling(context.Background(), prepared, llm.Usage{InputTokens: 3, OutputTokens: 4}, toolUsage); err != nil {
+		t.Fatalf("recordBilling returned error: %v", err)
+	}
+	if billing.pricingInput == nil || billing.pricingInput.Authorization != authorization {
+		t.Fatalf("expected original authorization snapshot, got %#v", billing.pricingInput)
+	}
+	if billing.pricingInput.ServerSideToolUsage["web_search"] != 2 {
+		t.Fatalf("expected server-side tool usage to reach billing, got %#v", billing.pricingInput.ServerSideToolUsage)
+	}
+	if !billing.pricingInput.BillingAt.Equal(fixedNow()) {
+		t.Fatalf("expected request start time for billing, got %v", billing.pricingInput.BillingAt)
+	}
+}
+
+func TestCompleteChatCompletionRetainsReservationForUnpricedFallbackInputs(t *testing.T) {
+	tests := []struct {
+		name               string
+		request            map[string]interface{}
+		wantReconciliation bool
+	}{
+		{
+			name: "image input",
+			request: map[string]interface{}{
+				"messages": []interface{}{map[string]interface{}{
+					"role": "user",
+					"content": []interface{}{map[string]interface{}{
+						"type":      "image_url",
+						"image_url": "https://images.example.test/cat.png",
+					}},
+				}},
+			},
+			wantReconciliation: true,
+		},
+		{
+			name: "tool definitions",
+			request: map[string]interface{}{
+				"messages": []interface{}{map[string]interface{}{"role": "user", "content": "hello"}},
+				"tools": []interface{}{map[string]interface{}{
+					"type": "function",
+					"function": map[string]interface{}{
+						"name":        "lookup",
+						"description": "expensive schema omitted by text fallback",
+					},
+				}},
+			},
+			wantReconciliation: true,
+		},
+		{
+			name: "plain text",
+			request: map[string]interface{}{
+				"messages": []interface{}{map[string]interface{}{"role": "user", "content": "hello"}},
+			},
+			wantReconciliation: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			billing := &billingStub{}
+			service := NewService(Dependencies{
+				Billing: billing,
+				ChatProvider: &chatProviderStub{complete: RawChatCompletionResult{Body: map[string]interface{}{
+					"choices": []interface{}{map[string]interface{}{
+						"message": map[string]interface{}{"content": "answer"},
+					}},
+				}}},
+				Now: fixedNow,
+			})
+
+			body, err := service.CompleteChatCompletion(context.Background(), preparedOpenAPIUsageTestRequest(test.request))
+			if err != nil {
+				t.Fatalf("CompleteChatCompletion returned error: %v", err)
+			}
+			if usage := asMap(body["usage"]); len(usage) == 0 {
+				t.Fatalf("expected compatible fallback usage response, got %#v", body)
+			}
+			if billing.reconciled != test.wantReconciliation {
+				t.Fatalf("reconciliation = %v, want %v", billing.reconciled, test.wantReconciliation)
+			}
+			if test.wantReconciliation {
+				if billing.recorded != nil {
+					t.Fatalf("expected no fallback ledger for unpriced input, got %#v", billing.recorded)
+				}
+				if billing.reconciliationFailureCode != "open_api_usage_missing_for_non_text_input" {
+					t.Fatalf("unexpected reconciliation failure code %q", billing.reconciliationFailureCode)
+				}
+				return
+			}
+			if billing.recorded == nil || billing.recorded.InputTokens <= 0 {
+				t.Fatalf("expected text-only fallback to settle usage, got %#v", billing.recorded)
+			}
+		})
+	}
+}
+
+func TestStreamChatCompletionRetainsReservationForUnpricedFallbackInputs(t *testing.T) {
+	tests := []struct {
+		name               string
+		request            map[string]interface{}
+		wantReconciliation bool
+	}{
+		{
+			name: "image input",
+			request: map[string]interface{}{
+				"messages": []interface{}{map[string]interface{}{
+					"role": "user",
+					"content": []interface{}{map[string]interface{}{
+						"type":      "input_image",
+						"image_url": "https://images.example.test/cat.png",
+					}},
+				}},
+			},
+			wantReconciliation: true,
+		},
+		{
+			name: "legacy functions",
+			request: map[string]interface{}{
+				"messages": []interface{}{map[string]interface{}{"role": "user", "content": "hello"}},
+				"functions": []interface{}{map[string]interface{}{
+					"name":        "lookup",
+					"description": "expensive schema omitted by text fallback",
+				}},
+			},
+			wantReconciliation: true,
+		},
+		{
+			name: "plain text",
+			request: map[string]interface{}{
+				"messages": []interface{}{map[string]interface{}{"role": "user", "content": "hello"}},
+			},
+			wantReconciliation: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			billing := &billingStub{}
+			service := NewService(Dependencies{
+				Billing: billing,
+				ChatProvider: &chatProviderStub{streamEvents: []RawChatStreamEvent{{
+					Body: map[string]interface{}{
+						"choices": []interface{}{map[string]interface{}{
+							"delta": map[string]interface{}{"content": "answer"},
+						}},
+					},
+				}}},
+				Now: fixedNow,
+			})
+			emitted := make([]map[string]interface{}, 0)
+			err := service.StreamChatCompletion(context.Background(), preparedOpenAPIUsageTestRequest(test.request), func(chunk map[string]interface{}) error {
+				emitted = append(emitted, chunk)
+				return nil
+			})
+			if err != nil {
+				t.Fatalf("StreamChatCompletion returned error: %v", err)
+			}
+			if len(emitted) < 2 {
+				t.Fatalf("expected content and compatible usage chunks, got %#v", emitted)
+			}
+			if billing.reconciled != test.wantReconciliation {
+				t.Fatalf("reconciliation = %v, want %v", billing.reconciled, test.wantReconciliation)
+			}
+			if test.wantReconciliation {
+				if billing.recorded != nil {
+					t.Fatalf("expected no fallback ledger for unpriced input, got %#v", billing.recorded)
+				}
+				return
+			}
+			if billing.recorded == nil || billing.recorded.InputTokens <= 0 {
+				t.Fatalf("expected text-only fallback to settle usage, got %#v", billing.recorded)
+			}
+		})
+	}
+}
+
+func preparedOpenAPIUsageTestRequest(request map[string]interface{}) *PreparedChatCompletion {
+	return &PreparedChatCompletion{
+		key:               &domainopenapi.UserAPIKey{UserID: 42, Status: domainopenapi.APIKeyStatusActive},
+		request:           request,
+		authorization:     &domainbilling.UsageAuthorization{Mode: "usage", Reservation: &domainbilling.UsageBalanceReservation{UserID: 42, RefNo: "req_1"}},
+		startedAt:         fixedNow(),
+		platformModelName: "chat-openai",
+		publicModelID:     "upstream-model",
+		route:             &appchannel.ResolvedRoute{Protocol: llm.AdapterOpenAIChatCompletions},
+	}
+}
+
+func TestCompleteChatCompletionReconcilesOnlyAcceptedUpstreamErrors(t *testing.T) {
+	tests := []struct {
+		name               string
+		providerErr        error
+		wantReconciliation bool
+		wantRelease        bool
+	}{
+		{name: "accepted", providerErr: llm.MarkRequestAccepted(errors.New("response lost")), wantReconciliation: true},
+		{name: "not dispatched", providerErr: errors.New("dial failed"), wantRelease: true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			billing := &billingStub{}
+			service := NewService(Dependencies{
+				Billing:      billing,
+				ChatProvider: &chatProviderStub{completeErr: test.providerErr},
+				Now:          fixedNow,
+			})
+			_, err := service.CompleteChatCompletion(t.Context(), preparedOpenAPIUsageTestRequest(map[string]interface{}{
+				"messages": []interface{}{map[string]interface{}{"role": "user", "content": "hello"}},
+			}))
+			if !errors.Is(err, test.providerErr) {
+				t.Fatalf("CompleteChatCompletion error = %v, want %v", err, test.providerErr)
+			}
+			if billing.reconciled != test.wantReconciliation || billing.released != test.wantRelease {
+				t.Fatalf("billing state: reconciled=%v released=%v", billing.reconciled, billing.released)
+			}
+			if test.wantReconciliation && billing.reconciliationFailureCode != "open_api_upstream_failed_after_acceptance" {
+				t.Fatalf("unexpected reconciliation code %q", billing.reconciliationFailureCode)
+			}
+		})
+	}
+}
+
+func TestStreamChatCompletionReconcilesAcceptedErrorBeforeFirstEvent(t *testing.T) {
+	billing := &billingStub{}
+	providerErr := llm.MarkRequestAccepted(errors.New("stream response lost"))
+	service := NewService(Dependencies{
+		Billing:      billing,
+		ChatProvider: &chatProviderStub{streamErr: providerErr},
+		Now:          fixedNow,
+	})
+	err := service.StreamChatCompletion(t.Context(), preparedOpenAPIUsageTestRequest(map[string]interface{}{
+		"messages": []interface{}{map[string]interface{}{"role": "user", "content": "hello"}},
+	}), func(map[string]interface{}) error { return nil })
+	if !errors.Is(err, providerErr) {
+		t.Fatalf("StreamChatCompletion error = %v, want %v", err, providerErr)
+	}
+	if !billing.reconciled || billing.released {
+		t.Fatalf("expected accepted stream error to reconcile without release: reconciled=%v released=%v", billing.reconciled, billing.released)
+	}
+	if billing.reconciliationFailureCode != "open_api_stream_failed_after_acceptance" {
+		t.Fatalf("unexpected reconciliation code %q", billing.reconciliationFailureCode)
+	}
+}
+
+func TestStreamChatCompletionMarksReconciliationAfterDownstreamWriteFailure(t *testing.T) {
+	billing := &billingStub{}
+	service := NewService(Dependencies{
+		Billing: billing,
+		ChatProvider: &chatProviderStub{streamEvents: []RawChatStreamEvent{{
+			Body: map[string]interface{}{
+				"choices": []interface{}{map[string]interface{}{
+					"delta": map[string]interface{}{"content": "partial"},
+				}},
+			},
+		}},
+		},
+		Now: fixedNow,
+	})
+	prepared := &PreparedChatCompletion{
+		key:               &domainopenapi.UserAPIKey{UserID: 42},
+		authorization:     &domainbilling.UsageAuthorization{Mode: "usage", Reservation: &domainbilling.UsageBalanceReservation{UserID: 42, RefNo: "req_1"}},
+		platformModelName: "chat-openai",
+		publicModelID:     "upstream-model",
+		route:             &appchannel.ResolvedRoute{},
+	}
+	writeErr := errors.New("client disconnected")
+	err := service.StreamChatCompletion(context.Background(), prepared, func(map[string]interface{}) error { return writeErr })
+	if !errors.Is(err, writeErr) {
+		t.Fatalf("expected downstream write error, got %v", err)
+	}
+	if billing.released {
+		t.Fatal("expected reservation not to be released after upstream output")
+	}
+	if !billing.reconciled {
+		t.Fatal("expected reservation to be marked for reconciliation")
+	}
+}
+
+func TestEnforcePreAuthRateLimitCountsRequestsBeforeKeyLookup(t *testing.T) {
+	limiter := &rateLimiterStub{allowed: false}
+	service := NewService(Dependencies{RateLimiter: limiter})
+	if err := service.EnforcePreAuthRateLimit(context.Background(), "203.0.113.10"); !errors.Is(err, ErrRateLimited) {
+		t.Fatalf("expected pre-auth rate limit error, got %v", err)
+	}
+	if limiter.calls != 1 || !strings.Contains(limiter.key, "203.0.113.10") {
+		t.Fatalf("expected IP bucket to be consumed, got calls=%d key=%q", limiter.calls, limiter.key)
+	}
+}
+
+func TestParseDataURLImagePartRejectsDecodedPayloadOverLimit(t *testing.T) {
+	_, err := parseDataURLImagePartWithLimit("data:image/png;base64,c291cmNl", 5)
+	if !errors.Is(err, ErrInvalidRequest) {
+		t.Fatalf("expected oversized data URL to be rejected, got %v", err)
+	}
+	part, err := parseDataURLImagePartWithLimit("data:image/png;base64,c291cmNl", 6)
+	if err != nil || string(part.Data) != "source" {
+		t.Fatalf("expected exact decoded-size boundary to remain valid, part=%#v err=%v", part, err)
+	}
+}
+
 func fixedNow() time.Time {
 	return time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
 }
 
 type keyRepoStub struct {
-	nextID uint
-	byUser map[uint]*domainopenapi.UserAPIKey
-	byHash map[string]*domainopenapi.UserAPIKey
+	nextID     uint
+	byUser     map[uint]*domainopenapi.UserAPIKey
+	byHash     map[string]*domainopenapi.UserAPIKey
+	createErr  error
+	replaceErr error
 }
 
 func newKeyRepoStub() *keyRepoStub {
@@ -722,15 +1144,42 @@ func (r *keyRepoStub) GetActiveByHash(_ context.Context, hash string) (*domainop
 	return &cp, nil
 }
 
-func (r *keyRepoStub) ReplaceForUser(_ context.Context, item *domainopenapi.UserAPIKey) (*domainopenapi.UserAPIKey, error) {
-	if current := r.byUser[item.UserID]; current != nil {
-		delete(r.byHash, current.KeyHash)
+func (r *keyRepoStub) CreateForUser(_ context.Context, item *domainopenapi.UserAPIKey) (*domainopenapi.UserAPIKey, error) {
+	if r.createErr != nil {
+		return nil, r.createErr
+	}
+	if item == nil || item.UserID == 0 {
+		return nil, repository.ErrInvalidInput
+	}
+	if r.byUser[item.UserID] != nil {
+		return nil, repository.ErrConflict
 	}
 	cp := *item
 	if cp.ID == 0 {
 		cp.ID = r.nextID
 		r.nextID++
 	}
+	r.byUser[cp.UserID] = &cp
+	r.byHash[cp.KeyHash] = &cp
+	out := cp
+	return &out, nil
+}
+
+func (r *keyRepoStub) ReplaceForUserIfCurrent(_ context.Context, item *domainopenapi.UserAPIKey, expected *domainopenapi.UserAPIKey) (*domainopenapi.UserAPIKey, error) {
+	if r.replaceErr != nil {
+		return nil, r.replaceErr
+	}
+	if item == nil || expected == nil || item.UserID == 0 || item.UserID != expected.UserID {
+		return nil, repository.ErrInvalidInput
+	}
+	current := r.byUser[item.UserID]
+	if current == nil || current.KeyHash != expected.KeyHash || current.Status != expected.Status {
+		return nil, repository.ErrConflict
+	}
+	delete(r.byHash, current.KeyHash)
+	cp := *item
+	cp.ID = current.ID
+	cp.CreatedAt = current.CreatedAt
 	r.byUser[cp.UserID] = &cp
 	r.byHash[cp.KeyHash] = &cp
 	out := cp
@@ -760,6 +1209,45 @@ func (r *keyRepoStub) TouchLastUsedAt(_ context.Context, id uint, at time.Time) 
 
 type twoFactorStub struct {
 	enabled bool
+}
+
+type userStatusStub struct {
+	status string
+	err    error
+}
+
+func (s *userStatusStub) GetByID(_ context.Context, userID uint) (*domainuser.User, error) {
+	if s.err != nil {
+		return nil, s.err
+	}
+	return &domainuser.User{ID: userID, Status: s.status}, nil
+}
+
+type passthroughModelOptionFilter struct{}
+
+func (passthroughModelOptionFilter) FilterModelOptionsForRoute(options map[string]interface{}, _ string, _ string) map[string]interface{} {
+	return cloneMap(options)
+}
+
+type modelOptionFilterStub struct {
+	filtered map[string]interface{}
+}
+
+func (s modelOptionFilterStub) FilterModelOptionsForRoute(map[string]interface{}, string, string) map[string]interface{} {
+	return cloneMap(s.filtered)
+}
+
+type rateLimiterStub struct {
+	allowed bool
+	err     error
+	calls   int
+	key     string
+}
+
+func (s *rateLimiterStub) AllowSlidingWindow(_ context.Context, key string, _ int, _ time.Duration, _ time.Duration) (bool, error) {
+	s.calls++
+	s.key = key
+	return s.allowed, s.err
 }
 
 func (s twoFactorStub) IsTwoFactorEnabled(context.Context, uint) (bool, error) {
@@ -867,12 +1355,14 @@ func (*capturingChannelStub) MarkRouteFailure(context.Context, *appchannel.Resol
 
 type chatProviderStub struct {
 	complete     RawChatCompletionResult
+	completeErr  error
 	streamEvents []RawChatStreamEvent
 	streamResult RawChatCompletionResult
+	streamErr    error
 }
 
 func (p *chatProviderStub) CompleteChat(context.Context, llm.RouteConfig, map[string]interface{}) (RawChatCompletionResult, error) {
-	return p.complete, nil
+	return p.complete, p.completeErr
 }
 
 func (p *chatProviderStub) StreamChat(_ context.Context, _ llm.RouteConfig, _ map[string]interface{}, onEvent func(RawChatStreamEvent) error) (RawChatCompletionResult, error) {
@@ -881,11 +1371,15 @@ func (p *chatProviderStub) StreamChat(_ context.Context, _ llm.RouteConfig, _ ma
 			return RawChatCompletionResult{}, err
 		}
 	}
-	return p.streamResult, nil
+	return p.streamResult, p.streamErr
 }
 
 type billingStub struct {
-	recorded *domainbilling.UsageLedger
+	recorded                  *domainbilling.UsageLedger
+	pricingInput              *appbilling.UsagePricingInput
+	released                  bool
+	reconciled                bool
+	reconciliationFailureCode string
 }
 
 func (b *billingStub) AuthorizeUsage(context.Context, uint, string, string) (*domainbilling.UsageAuthorization, error) {
@@ -896,6 +1390,7 @@ func (b *billingStub) AuthorizeUsage(context.Context, uint, string, string) (*do
 }
 
 func (b *billingStub) ReleaseUsageAuthorization(context.Context, *domainbilling.UsageAuthorization) error {
+	b.released = true
 	return nil
 }
 
@@ -903,11 +1398,14 @@ func (b *billingStub) RenewUsageAuthorization(context.Context, *domainbilling.Us
 	return nil
 }
 
-func (b *billingStub) MarkUsageAuthorizationForReconciliation(context.Context, *domainbilling.UsageAuthorization, string) error {
+func (b *billingStub) MarkUsageAuthorizationForReconciliation(_ context.Context, _ *domainbilling.UsageAuthorization, failureCode string) error {
+	b.reconciled = true
+	b.reconciliationFailureCode = failureCode
 	return nil
 }
 
 func (b *billingStub) BuildUsageLedger(_ context.Context, input appbilling.UsagePricingInput) (*domainbilling.UsageLedger, error) {
+	b.pricingInput = &input
 	return &domainbilling.UsageLedger{
 		UserID:            input.UserID,
 		PlatformModelName: input.PlatformModelName,

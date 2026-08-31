@@ -445,8 +445,16 @@ func TestSendMessageBillingDurationSeconds(t *testing.T) {
 		DurationSeconds:  6,
 		UpstreamProtocol: llm.AdapterXAIVideo,
 		Billable:         true,
+	}); got != 6 {
+		t.Fatalf("expected billable post-provider video failure to retain duration, got %d", got)
+	}
+	if got := sendMessageBillingDurationSeconds(&SendMessageResult{
+		AssistantMessage: model.Message{ContentType: "video", Status: "error"},
+		DurationSeconds:  6,
+		UpstreamProtocol: llm.AdapterXAIVideo,
+		Billable:         false,
 	}); got != 0 {
-		t.Fatalf("expected failed video duration to remain zero, got %d", got)
+		t.Fatalf("expected non-billable video failure to remain zero, got %d", got)
 	}
 }
 
@@ -459,6 +467,14 @@ func TestMediaDurationSecondsFromOptions(t *testing.T) {
 	}
 	if got := mediaDurationSecondsFromOptions(map[string]interface{}{"duration": "bad"}); got != 0 {
 		t.Fatalf("expected invalid duration to be ignored, got %d", got)
+	}
+	if got := mediaDurationSecondsFromOptions(map[string]interface{}{"seconds": "12"}); got != 12 {
+		t.Fatalf("expected OpenAI video seconds to be parsed, got %d", got)
+	}
+	if got := mediaDurationSecondsFromOptions(map[string]interface{}{
+		"response_format": map[string]interface{}{"duration": "7s"},
+	}); got != 7 {
+		t.Fatalf("expected Gemini response_format duration to be parsed, got %d", got)
 	}
 	if got := mediaDurationSecondsFromOptions(map[string]interface{}{
 		"generation_config": map[string]interface{}{
@@ -481,14 +497,19 @@ func TestWithDefaultMediaVideoDurationInjectsOnlySupportedProtocol(t *testing.T)
 	if got := withDefaultMediaVideoDuration(nil, llm.AdapterGeminiInteractions); got != nil {
 		t.Fatalf("unsupported duration parameter was injected: %#v", got)
 	}
+	openAIOptions := withDefaultMediaVideoDuration(nil, llm.AdapterOpenAIVideoGenerations)
+	if got := mediaDurationSecondsFromOptions(openAIOptions); got != 4 {
+		t.Fatalf("expected OpenAI video default duration, got %d", got)
+	}
 }
 
 func TestResolveGeneratedVideoDurationsSumsEveryArtifact(t *testing.T) {
 	durations, total := resolveGeneratedVideoDurations([]llm.GeneratedVideo{
 		{DurationSeconds: 4},
+		{Seconds: "8"},
 		{},
 	}, 6)
-	if total != 10 || len(durations) != 2 || durations[0] != 4 || durations[1] != 6 {
+	if total != 18 || len(durations) != 3 || durations[0] != 4 || durations[1] != 8 || durations[2] != 6 {
 		t.Fatalf("unexpected generated video durations: %#v total=%d", durations, total)
 	}
 }

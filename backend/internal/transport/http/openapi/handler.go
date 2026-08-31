@@ -16,6 +16,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const defaultOpenAPIRequestMaxBytes int64 = 32 * 1024 * 1024
+
 // Handler 处理开放 API 相关 HTTP 请求。
 type Handler struct {
 	service *appopenapi.Service
@@ -55,6 +57,10 @@ func (h *Handler) CreateAPIKey(c *gin.Context) {
 		response.Error(c, http.StatusConflict, "api key already exists")
 		return
 	}
+	if errors.Is(err, appopenapi.ErrAPIKeyConflict) {
+		response.ErrorWithCode(c, http.StatusConflict, "openapi.api_key_conflict", "api key changed concurrently; refresh and retry")
+		return
+	}
 	if errors.Is(err, appopenapi.ErrTwoFactorRequired) {
 		response.Error(c, http.StatusForbidden, "two factor authentication is required")
 		return
@@ -69,8 +75,16 @@ func (h *Handler) CreateAPIKey(c *gin.Context) {
 // RegenerateAPIKey 重新生成当前用户 API Key。
 func (h *Handler) RegenerateAPIKey(c *gin.Context) {
 	view, err := h.service.RegenerateAPIKey(c.Request.Context(), middleware.MustUserID(c))
+	if errors.Is(err, appopenapi.ErrAPIKeyAlreadyExists) {
+		response.Error(c, http.StatusConflict, "api key already exists")
+		return
+	}
 	if errors.Is(err, appopenapi.ErrTwoFactorRequired) {
 		response.Error(c, http.StatusForbidden, "two factor authentication is required")
+		return
+	}
+	if errors.Is(err, appopenapi.ErrAPIKeyConflict) {
+		response.ErrorWithCode(c, http.StatusConflict, "openapi.api_key_conflict", "api key changed concurrently; refresh and retry")
 		return
 	}
 	if err != nil {
@@ -215,6 +229,14 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 }
 
 func (h *Handler) authenticateCompatible(c *gin.Context) (*domainopenapi.UserAPIKey, bool) {
+	if h == nil || h.service == nil {
+		writeOpenAIError(c, appopenapi.ErrInvalidAPIKey)
+		return nil, false
+	}
+	if err := h.service.EnforcePreAuthRateLimit(c.Request.Context(), c.ClientIP()); err != nil {
+		writeOpenAIError(c, err)
+		return nil, false
+	}
 	token := bearerToken(c.GetHeader("Authorization"))
 	key, err := h.service.AuthenticateAPIKey(c.Request.Context(), token)
 	if err != nil {
@@ -237,9 +259,17 @@ func bearerToken(header string) string {
 }
 
 func decodeRequestBody(c *gin.Context) (map[string]interface{}, error) {
+	return decodeRequestBodyWithLimit(c, defaultOpenAPIRequestMaxBytes)
+}
+
+func decodeRequestBodyWithLimit(c *gin.Context, maxBytes int64) (map[string]interface{}, error) {
 	if c.Request.Body == nil {
 		return nil, appopenapi.ErrInvalidRequest
 	}
+	if maxBytes <= 0 {
+		maxBytes = defaultOpenAPIRequestMaxBytes
+	}
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBytes)
 	decoder := json.NewDecoder(c.Request.Body)
 	decoder.UseNumber()
 	var body map[string]interface{}

@@ -16,7 +16,12 @@ import (
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
 )
 
-const defaultOpenAPIImageMaxBytes int64 = 20 * 1024 * 1024
+const (
+	defaultOpenAPIImageMaxBytes int64 = 20 * 1024 * 1024
+	// Keep every OpenAPI request within the same byte budget as a single upload.
+	defaultOpenAPIImageAggregateMaxBytes = defaultOpenAPIImageMaxBytes
+	defaultOpenAPIImageMaxCount          = 10
+)
 
 var allowedOpenAPIImageMIMEs = map[string]struct{}{
 	"image/gif":  {},
@@ -39,37 +44,54 @@ func (f chatImageResolverFunc) ResolveChatImage(ctx context.Context, rawURL stri
 // upstream protocols that require inline image bytes.
 type HTTPChatImageResolver struct {
 	client   *http.Client
-	policy   security.OutboundPolicy
 	maxBytes int64
 }
 
-// NewHTTPChatImageResolver creates a safe resolver for OpenAI-compatible image_url inputs.
-func NewHTTPChatImageResolver(policy security.OutboundPolicy, maxBytes int64) *HTTPChatImageResolver {
+// NewHTTPChatImageResolver creates a safe resolver for untrusted
+// OpenAI-compatible image_url inputs. These URLs are always fetched with a
+// strict public-network policy: the application-wide SSRF feature flag and
+// private-network allowlists must never relax this boundary.
+func NewHTTPChatImageResolver(maxBytes int64) *HTTPChatImageResolver {
 	if maxBytes <= 0 {
 		maxBytes = defaultOpenAPIImageMaxBytes
 	}
+	policy := security.NewStrictOutboundPolicy(true)
 	return &HTTPChatImageResolver{
-		client:   security.NewOutboundHTTPClient(policy, 60*time.Second),
-		policy:   policy,
+		client:   newHTTPChatImageClient(policy),
 		maxBytes: maxBytes,
 	}
 }
 
+func newHTTPChatImageClient(policy security.OutboundPolicy) *http.Client {
+	client := security.NewOutboundHTTPClient(policy, 60*time.Second)
+	client.CheckRedirect = func(req *http.Request, _ []*http.Request) error {
+		if err := validateOpenAPIImageURL(req.URL, policy); err != nil {
+			return fmt.Errorf("unsafe image_url redirect: %w", err)
+		}
+		return nil
+	}
+	return client
+}
+
 func (r *HTTPChatImageResolver) ResolveChatImage(ctx context.Context, rawURL string) (llm.ContentPart, error) {
+	return r.resolveChatImageWithLimit(ctx, rawURL, 0)
+}
+
+// resolveChatImageWithLimit applies a request-scoped aggregate image limit in
+// addition to the resolver's per-image limit.
+func (r *HTTPChatImageResolver) resolveChatImageWithLimit(ctx context.Context, rawURL string, requestLimit int64) (llm.ContentPart, error) {
+	policy := security.NewStrictOutboundPolicy(true)
 	imageURL := strings.TrimSpace(rawURL)
 	parsed, err := url.Parse(imageURL)
-	if err != nil || parsed == nil || parsed.Scheme == "" || parsed.Host == "" {
+	if err != nil || parsed == nil {
 		return llm.ContentPart{}, fmt.Errorf("%w: invalid image_url", ErrInvalidRequest)
 	}
-	if parsed.User != nil || !strings.EqualFold(parsed.Scheme, "https") {
-		return llm.ContentPart{}, fmt.Errorf("%w: image_url must be https", ErrInvalidRequest)
-	}
-	if err := security.ValidateOutboundHTTPURL(imageURL, r.policy); err != nil {
+	if err := validateOpenAPIImageURL(parsed, policy); err != nil {
 		return llm.ContentPart{}, fmt.Errorf("%w: unsafe image_url", ErrInvalidRequest)
 	}
 	client := r.client
 	if client == nil {
-		client = security.NewOutboundHTTPClient(r.policy, 60*time.Second)
+		client = newHTTPChatImageClient(policy)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, imageURL, nil)
 	if err != nil {
@@ -88,6 +110,9 @@ func (r *HTTPChatImageResolver) ResolveChatImage(ctx context.Context, rawURL str
 	if limit <= 0 {
 		limit = defaultOpenAPIImageMaxBytes
 	}
+	if requestLimit > 0 && requestLimit < limit {
+		limit = requestLimit
+	}
 	data, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
 	if err != nil {
 		return llm.ContentPart{}, err
@@ -103,6 +128,95 @@ func (r *HTTPChatImageResolver) ResolveChatImage(ctx context.Context, rawURL str
 		return llm.ContentPart{}, fmt.Errorf("%w: image_url content is not a supported image", ErrInvalidRequest)
 	}
 	return llm.ContentPart{Kind: llm.ContentPartImage, MimeType: mimeType, Data: data}, nil
+}
+
+func validateOpenAPIImageURL(parsed *url.URL, policy security.OutboundPolicy) error {
+	if parsed == nil || parsed.Scheme == "" || parsed.Host == "" {
+		return fmt.Errorf("invalid image URL")
+	}
+	if parsed.User != nil || !strings.EqualFold(parsed.Scheme, "https") {
+		return fmt.Errorf("image URL must use HTTPS without user info")
+	}
+	return security.ValidateOutboundHTTPURL(parsed.String(), policy)
+}
+
+// inlinePassthroughChatCompletionImages applies the same untrusted-image
+// boundary to protocols that otherwise forward the OpenAI-compatible request
+// body unchanged. Remote URLs are fetched through the protected resolver and
+// replaced with data URLs, so the upstream never performs a second, less
+// controlled fetch from an attacker-selected location.
+func inlinePassthroughChatCompletionImages(ctx context.Context, request map[string]interface{}, resolver chatImageResolver) (map[string]interface{}, error) {
+	messages, ok := request["messages"].([]interface{})
+	if !ok || len(messages) == 0 {
+		return request, nil
+	}
+	budget := newChatImageBudget(defaultOpenAPIImageMaxCount, defaultOpenAPIImageAggregateMaxBytes)
+	nextMessages := append([]interface{}(nil), messages...)
+	requestChanged := false
+	for messageIndex, rawMessage := range messages {
+		message, ok := rawMessage.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		parts, ok := message["content"].([]interface{})
+		if !ok {
+			continue
+		}
+		nextParts := append([]interface{}(nil), parts...)
+		messageChanged := false
+		role := strings.TrimSpace(stringValue(message["role"]))
+		for partIndex, rawPart := range parts {
+			part, ok := rawPart.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			partType := strings.ToLower(strings.TrimSpace(stringValue(part["type"])))
+			if partType != "image_url" && partType != "input_image" {
+				continue
+			}
+			if role != "user" {
+				return nil, fmt.Errorf("%w: images are only supported in user messages", ErrInvalidRequest)
+			}
+			imageURL := chatImageURLString(part["image_url"])
+			if imageURL == "" {
+				imageURL = stringValue(part["image_url"])
+			}
+			if imageURL == "" {
+				imageURL = stringValue(part["url"])
+			}
+			imagePart, err := parseChatImagePartWithBudget(ctx, imageURL, resolver, budget)
+			if err != nil {
+				return nil, err
+			}
+			dataURL := "data:" + imagePart.MimeType + ";base64," + base64.StdEncoding.EncodeToString(imagePart.Data)
+			nextPart := cloneMap(part)
+			if rawImageURL, exists := part["image_url"]; exists {
+				if imageURLObject, ok := rawImageURL.(map[string]interface{}); ok {
+					nextImageURL := cloneMap(imageURLObject)
+					nextImageURL["url"] = dataURL
+					nextPart["image_url"] = nextImageURL
+				} else {
+					nextPart["image_url"] = dataURL
+				}
+			} else {
+				nextPart["url"] = dataURL
+			}
+			nextParts[partIndex] = nextPart
+			messageChanged = true
+		}
+		if messageChanged {
+			nextMessage := cloneMap(message)
+			nextMessage["content"] = nextParts
+			nextMessages[messageIndex] = nextMessage
+			requestChanged = true
+		}
+	}
+	if !requestChanged {
+		return request, nil
+	}
+	nextRequest := cloneMap(request)
+	nextRequest["messages"] = nextMessages
+	return nextRequest, nil
 }
 
 func buildGenerateInputFromChatCompletion(ctx context.Context, request map[string]interface{}, resolver chatImageResolver) (llm.GenerateInput, error) {
@@ -139,6 +253,10 @@ func normalizeChatMaxTokens(options map[string]interface{}) {
 }
 
 func parseChatCompletionMessages(ctx context.Context, raw interface{}, resolver chatImageResolver) ([]llm.Message, error) {
+	return parseChatCompletionMessagesWithImageBudget(ctx, raw, resolver, newChatImageBudget(defaultOpenAPIImageMaxCount, defaultOpenAPIImageAggregateMaxBytes))
+}
+
+func parseChatCompletionMessagesWithImageBudget(ctx context.Context, raw interface{}, resolver chatImageResolver, imageBudget *chatImageBudget) ([]llm.Message, error) {
 	items, ok := raw.([]interface{})
 	if !ok || len(items) == 0 {
 		return nil, fmt.Errorf("%w: messages must be a non-empty array", ErrInvalidRequest)
@@ -173,7 +291,7 @@ func parseChatCompletionMessages(ctx context.Context, raw interface{}, resolver 
 		case string:
 			message.Content = typed
 		case []interface{}:
-			parts, err := parseChatCompletionContentParts(ctx, role, typed, resolver)
+			parts, err := parseChatCompletionContentPartsWithImageBudget(ctx, role, typed, resolver, imageBudget)
 			if err != nil {
 				return nil, err
 			}
@@ -478,6 +596,10 @@ func chatToolContentString(raw interface{}) string {
 }
 
 func parseChatCompletionContentParts(ctx context.Context, role string, rawParts []interface{}, resolver chatImageResolver) ([]llm.ContentPart, error) {
+	return parseChatCompletionContentPartsWithImageBudget(ctx, role, rawParts, resolver, newChatImageBudget(defaultOpenAPIImageMaxCount, defaultOpenAPIImageAggregateMaxBytes))
+}
+
+func parseChatCompletionContentPartsWithImageBudget(ctx context.Context, role string, rawParts []interface{}, resolver chatImageResolver, imageBudget *chatImageBudget) ([]llm.ContentPart, error) {
 	parts := make([]llm.ContentPart, 0, len(rawParts))
 	for _, rawPart := range rawParts {
 		part, ok := rawPart.(map[string]interface{})
@@ -502,7 +624,7 @@ func parseChatCompletionContentParts(ctx context.Context, role string, rawParts 
 			if imageURL == "" {
 				imageURL = stringValue(part["url"])
 			}
-			imagePart, err := parseChatImagePart(ctx, imageURL, resolver)
+			imagePart, err := parseChatImagePartWithBudget(ctx, imageURL, resolver, imageBudget)
 			if err != nil {
 				return nil, err
 			}
@@ -526,20 +648,102 @@ func chatImageURLString(raw interface{}) string {
 }
 
 func parseChatImagePart(ctx context.Context, rawURL string, resolver chatImageResolver) (llm.ContentPart, error) {
+	return parseChatImagePartWithBudget(ctx, rawURL, resolver, newChatImageBudget(defaultOpenAPIImageMaxCount, defaultOpenAPIImageAggregateMaxBytes))
+}
+
+type chatImageResolverWithLimit interface {
+	resolveChatImageWithLimit(ctx context.Context, rawURL string, maxBytes int64) (llm.ContentPart, error)
+}
+
+type chatImageBudget struct {
+	remainingCount int
+	remainingBytes int64
+}
+
+func newChatImageBudget(maxCount int, maxBytes int64) *chatImageBudget {
+	return &chatImageBudget{remainingCount: maxCount, remainingBytes: maxBytes}
+}
+
+func (b *chatImageBudget) reserveImage() error {
+	if b == nil {
+		return nil
+	}
+	if b.remainingCount <= 0 {
+		return fmt.Errorf("%w: too many images in one request", ErrInvalidRequest)
+	}
+	if b.remainingBytes <= 0 {
+		return fmt.Errorf("%w: total image input is too large", ErrInvalidRequest)
+	}
+	b.remainingCount--
+	return nil
+}
+
+func (b *chatImageBudget) consumeImageBytes(size int64) error {
+	if b == nil {
+		return nil
+	}
+	if size < 0 || size > b.remainingBytes {
+		return fmt.Errorf("%w: total image input is too large", ErrInvalidRequest)
+	}
+	b.remainingBytes -= size
+	return nil
+}
+
+func (b *chatImageBudget) availableBytes() int64 {
+	if b == nil {
+		return defaultOpenAPIImageMaxBytes
+	}
+	return b.remainingBytes
+}
+
+func parseChatImagePartWithBudget(ctx context.Context, rawURL string, resolver chatImageResolver, imageBudget *chatImageBudget) (llm.ContentPart, error) {
 	value := strings.TrimSpace(rawURL)
 	if value == "" {
 		return llm.ContentPart{}, fmt.Errorf("%w: image_url is required", ErrInvalidRequest)
 	}
+	if err := imageBudget.reserveImage(); err != nil {
+		return llm.ContentPart{}, err
+	}
+	remainingBytes := imageBudget.availableBytes()
 	if strings.HasPrefix(strings.ToLower(value), "data:") {
-		return parseDataURLImagePart(value)
+		part, err := parseDataURLImagePartWithLimit(value, remainingBytes)
+		if err != nil {
+			return llm.ContentPart{}, err
+		}
+		if err := imageBudget.consumeImageBytes(int64(len(part.Data))); err != nil {
+			return llm.ContentPart{}, err
+		}
+		return part, nil
 	}
 	if resolver == nil {
 		return llm.ContentPart{}, fmt.Errorf("%w: remote image_url resolver is unavailable", ErrInvalidRequest)
 	}
-	return resolver.ResolveChatImage(ctx, value)
+	var (
+		part llm.ContentPart
+		err  error
+	)
+	if limitedResolver, ok := resolver.(chatImageResolverWithLimit); ok && imageBudget != nil {
+		part, err = limitedResolver.resolveChatImageWithLimit(ctx, value, remainingBytes)
+	} else {
+		part, err = resolver.ResolveChatImage(ctx, value)
+	}
+	if err != nil {
+		return llm.ContentPart{}, err
+	}
+	if err := imageBudget.consumeImageBytes(int64(len(part.Data))); err != nil {
+		return llm.ContentPart{}, err
+	}
+	return part, nil
 }
 
 func parseDataURLImagePart(value string) (llm.ContentPart, error) {
+	return parseDataURLImagePartWithLimit(value, defaultOpenAPIImageMaxBytes)
+}
+
+func parseDataURLImagePartWithLimit(value string, maxBytes int64) (llm.ContentPart, error) {
+	if maxBytes <= 0 {
+		maxBytes = defaultOpenAPIImageMaxBytes
+	}
 	header, encoded, ok := strings.Cut(value, ",")
 	if !ok {
 		return llm.ContentPart{}, fmt.Errorf("%w: invalid image data URL", ErrInvalidRequest)
@@ -553,9 +757,16 @@ func parseDataURLImagePart(value string) (llm.ContentPart, error) {
 	if mimeType == "" {
 		return llm.ContentPart{}, fmt.Errorf("%w: unsupported image MIME", ErrInvalidRequest)
 	}
-	data, err := base64.StdEncoding.DecodeString(strings.TrimSpace(encoded))
+	encoded = strings.TrimSpace(encoded)
+	// DecodedLen is an upper bound for padded standard base64 and can exceed
+	// the exact decoded size by two bytes. Keep that small allowance here and
+	// enforce the precise limit immediately after decoding.
+	if int64(base64.StdEncoding.DecodedLen(len(encoded))) > maxBytes+2 {
+		return llm.ContentPart{}, fmt.Errorf("%w: image data URL too large", ErrInvalidRequest)
+	}
+	data, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
-		if raw, rawErr := base64.RawStdEncoding.DecodeString(strings.TrimSpace(encoded)); rawErr == nil {
+		if raw, rawErr := base64.RawStdEncoding.DecodeString(encoded); rawErr == nil {
 			data = raw
 		} else {
 			return llm.ContentPart{}, err
@@ -563,6 +774,9 @@ func parseDataURLImagePart(value string) (llm.ContentPart, error) {
 	}
 	if len(data) == 0 {
 		return llm.ContentPart{}, fmt.Errorf("%w: image data URL is empty", ErrInvalidRequest)
+	}
+	if int64(len(data)) > maxBytes {
+		return llm.ContentPart{}, fmt.Errorf("%w: image data URL too large", ErrInvalidRequest)
 	}
 	return llm.ContentPart{Kind: llm.ContentPartImage, MimeType: mimeType, Data: data}, nil
 }

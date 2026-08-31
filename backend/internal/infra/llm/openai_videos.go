@@ -19,6 +19,7 @@ const (
 	openAIVideoDefaultSize          = "1280x720"
 	openAIVideoDefaultSeconds       = "4"
 	openAIVideoPollInterval         = 2 * time.Second
+	openAIVideoDefaultJobTimeout    = 30 * time.Minute
 	openAIMaxGeneratedVideoBodySize = 512 * 1024 * 1024
 )
 
@@ -77,10 +78,10 @@ func (c *Client) generateOpenAIVideoGeneration(
 	}
 
 	requestCtx, cancel := context.WithTimeout(ctx, resolveReadTimeout(route.ReadTimeoutMS))
-	defer cancel()
 
 	req, err := http.NewRequestWithContext(requestCtx, http.MethodPost, requestURL, bytes.NewReader(body))
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 	req.Header.Set("Content-Type", contentType)
@@ -88,11 +89,12 @@ func (c *Client) generateOpenAIVideoGeneration(
 
 	resp, err := c.doRouteGenerationRequest(route, req)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
-	defer resp.Body.Close() //nolint:errcheck
-
 	responseBody, err := readUpstreamBody(resp.Body)
+	_ = resp.Body.Close()
+	cancel()
 	if err != nil {
 		return nil, err
 	}
@@ -110,11 +112,13 @@ func (c *Client) generateOpenAIVideoGeneration(
 		return nil, err
 	}
 
-	job, err = c.pollOpenAIVideoJob(requestCtx, route, job, onEvent)
+	jobCtx, jobCancel := context.WithTimeout(ctx, resolveOpenAIVideoJobTimeout(route.ReadTimeoutMS))
+	defer jobCancel()
+	job, err = c.pollOpenAIVideoJob(jobCtx, route, job, onEvent)
 	if err != nil {
 		return nil, err
 	}
-	data, mimeType, err := c.downloadOpenAIVideoContent(requestCtx, route, job.ID)
+	data, mimeType, err := c.downloadOpenAIVideoContent(jobCtx, route, job.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -122,14 +126,23 @@ func (c *Client) generateOpenAIVideoGeneration(
 	return &GenerateOutput{
 		ResponseID: job.ID,
 		GeneratedVideos: []GeneratedVideo{{
-			ID:       job.ID,
-			Data:     data,
-			MIMEType: mimeType,
-			Size:     job.Size,
-			Seconds:  job.Seconds,
+			ID:              job.ID,
+			Data:            data,
+			MIMEType:        mimeType,
+			Size:            job.Size,
+			Seconds:         job.Seconds,
+			DurationSeconds: generatedMediaDurationSeconds(job.Seconds),
 		}},
 		RawJSON: job.RawJSON,
 	}, nil
+}
+
+func resolveOpenAIVideoJobTimeout(readTimeoutMS int) time.Duration {
+	perRequestTimeout := resolveReadTimeout(readTimeoutMS)
+	if perRequestTimeout > openAIVideoDefaultJobTimeout {
+		return perRequestTimeout
+	}
+	return openAIVideoDefaultJobTimeout
 }
 
 func buildOpenAIVideoGenerationMultipartRequest(model string, input GenerateInput) ([]byte, string, []byte, error) {
@@ -265,7 +278,9 @@ func (c *Client) retrieveOpenAIVideoJob(ctx context.Context, route RouteConfig, 
 	if requestURL == "" {
 		return openAIVideoJob{}, fmt.Errorf("invalid base url")
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
+	requestCtx, cancel := context.WithTimeout(ctx, resolveReadTimeout(route.ReadTimeoutMS))
+	defer cancel()
+	req, err := http.NewRequestWithContext(requestCtx, http.MethodGet, requestURL, nil)
 	if err != nil {
 		return openAIVideoJob{}, err
 	}
@@ -291,7 +306,9 @@ func (c *Client) downloadOpenAIVideoContent(ctx context.Context, route RouteConf
 		return nil, "", fmt.Errorf("invalid base url")
 	}
 	requestURL := baseURL + "/content"
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
+	requestCtx, cancel := context.WithTimeout(ctx, resolveReadTimeout(route.ReadTimeoutMS))
+	defer cancel()
+	req, err := http.NewRequestWithContext(requestCtx, http.MethodGet, requestURL, nil)
 	if err != nil {
 		return nil, "", err
 	}

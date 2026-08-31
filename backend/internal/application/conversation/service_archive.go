@@ -253,14 +253,14 @@ func (s *Service) listAllArchiveMessages(ctx context.Context, conversationID uin
 		if err != nil {
 			return nil, err
 		}
+		if len(result)+len(items) > maxConversationArchiveMessages {
+			return nil, ErrConversationArchiveTooLarge
+		}
 		result = append(result, items...)
 		if len(items) == 0 || int64(len(result)) >= total {
 			break
 		}
 		offset += len(items)
-		if len(result) > maxConversationArchiveMessages {
-			return nil, ErrConversationArchiveTooLarge
-		}
 	}
 	return result, nil
 }

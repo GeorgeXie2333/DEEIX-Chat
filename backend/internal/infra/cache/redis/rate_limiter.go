@@ -3,7 +3,6 @@ package cache
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -51,6 +50,23 @@ end
 return {1, 0, 0}
 `)
 
+var slidingWindowRateLimitScript = redis.NewScript(`
+local now = tonumber(ARGV[1])
+local window_ms = tonumber(ARGV[2])
+local limit = tonumber(ARGV[3])
+local ttl_ms = tonumber(ARGV[4])
+
+redis.call('ZREMRANGEBYSCORE', KEYS[1], '0', tostring(now - window_ms))
+local count = tonumber(redis.call('ZCARD', KEYS[1])) or 0
+redis.call('ZADD', KEYS[1], now, ARGV[5])
+redis.call('PEXPIRE', KEYS[1], ttl_ms)
+
+if count < limit then
+  return 1
+end
+return 0
+`)
+
 var rateLimitMemberSequence uint64
 
 // rateLimiter 提供基于 Redis 的 HTTP 限流存储能力。
@@ -80,18 +96,21 @@ func (r *rateLimiter) AllowSlidingWindow(ctx context.Context, key string, limit 
 
 	nowNanos := time.Now().UnixNano()
 	now := nowNanos / int64(time.Millisecond)
-	windowStart := now - window.Milliseconds()
-	member := strconv.FormatInt(nowNanos, 10)
-
-	pipe := r.client.Pipeline()
-	pipe.ZRemRangeByScore(ctx, key, "0", fmt.Sprintf("%d", windowStart))
-	countCmd := pipe.ZCard(ctx, key)
-	pipe.ZAdd(ctx, key, &redis.Z{Score: float64(now), Member: member})
-	pipe.Expire(ctx, key, ttl)
-	if _, err := pipe.Exec(ctx); err != nil {
+	member := fmt.Sprintf("%d:%d", nowNanos, atomic.AddUint64(&rateLimitMemberSequence, 1))
+	allowed, err := slidingWindowRateLimitScript.Run(
+		ctx,
+		r.client,
+		[]string{key},
+		now,
+		window.Milliseconds(),
+		limit,
+		ttl.Milliseconds(),
+		member,
+	).Int()
+	if err != nil {
 		return true, err
 	}
-	return countCmd.Val() < int64(limit), nil
+	return allowed == 1, nil
 }
 
 // AllowFixedWindow 使用计数器实现固定窗口限流。
@@ -152,11 +171,15 @@ func (r *rateLimiter) AllowFreeModelUsage(ctx context.Context, userID uint, requ
 		member,
 	).Result()
 	if err != nil {
-		return true, false, false, err
+		return false, false, false, err
 	}
+	return parseFreeModelRateLimitResult(raw)
+}
+
+func parseFreeModelRateLimitResult(raw interface{}) (bool, bool, bool, error) {
 	values, ok := raw.([]interface{})
 	if !ok || len(values) < 3 {
-		return true, false, false, nil
+		return false, false, false, fmt.Errorf("invalid free model rate limit response")
 	}
 	allowed := redisScriptInt(values[0]) == 1
 	minuteExceeded := redisScriptInt(values[1]) == 1

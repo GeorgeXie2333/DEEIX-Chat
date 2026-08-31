@@ -71,11 +71,13 @@ func (h *Handler) StreamTemporaryChatMessage(c *gin.Context) {
 		UserID:            input.UserID,
 		PlatformModelName: input.Model,
 		ClientRunID:       input.ClientRunID,
+		SelectedToolIDs:   append([]uint(nil), input.SelectedToolIDs...),
 	}
 	authorization, err := h.authorizeUsage(c, billingInput)
 	if err != nil {
 		return
 	}
+	input.UsageAuthorization = authorization
 	stopAuthorizationRenewal := h.startUsageAuthorizationRenewal(authorization)
 	defer stopAuthorizationRenewal()
 

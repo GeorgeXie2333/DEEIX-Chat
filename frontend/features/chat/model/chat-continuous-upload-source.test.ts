@@ -34,6 +34,19 @@ test("chat composer keeps upload entry points available while queueing messages"
   assert.doesNotMatch(areaSource, /useChatWindowFileDrop|dragUploadTitle|UploadCloud/);
 });
 
+test("temporary chat does not expose or accept file uploads", () => {
+  assert.match(inputSource, /disabled=\{temporaryMode\}/);
+  assert.match(inputSource, /if \(!temporaryMode && files\.length > 0\)/);
+  assert.match(inputSource, /\{!temporaryMode \? \(/);
+  assert.match(areaSource, /attachments: temporaryMode \? EMPTY_LIST : attachments/);
+});
+
+test("chat attachment uploads propagate cancellation and release controllers", () => {
+  assert.match(hookSource, /signal: controller\.signal/);
+  assert.match(hookSource, /if \(controller\.signal\.aborted \|\| !mountedRef\.current\)/);
+  assert.match(hookSource, /uploadControllersRef\.current\.delete\(controller\)/);
+});
+
 test("chat tools popover stops pointer and click events before the composer addon", () => {
   const triggerIndex = inputSource.indexOf('id="chat-tools-menu-trigger"');
   const popoverEndIndex = inputSource.indexOf("</PopoverContent>", triggerIndex);

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	domainopenapi "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/openapi"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
 	"gorm.io/gorm"
@@ -28,6 +29,9 @@ func translateError(err error) error {
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return repository.ErrNotFound
+	}
+	if dberror.IsUniqueConstraint(err) {
+		return repository.ErrConflict
 	}
 	return err
 }
@@ -52,28 +56,45 @@ func (r *Repo) GetActiveByHash(ctx context.Context, hash string) (*domainopenapi
 	return toDomain(item), nil
 }
 
-// ReplaceForUser 创建或替换用户唯一 API Key。
-func (r *Repo) ReplaceForUser(ctx context.Context, item *domainopenapi.UserAPIKey) (*domainopenapi.UserAPIKey, error) {
+// CreateForUser 原子创建用户唯一 API Key，并返回本次写入的数据库记录。
+func (r *Repo) CreateForUser(ctx context.Context, item *domainopenapi.UserAPIKey) (*domainopenapi.UserAPIKey, error) {
 	if item == nil {
 		return nil, repository.ErrInvalidInput
 	}
 	dbItem := toModel(item)
-	if err := r.db.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns: []clause.Column{{Name: "user_id"}},
-			DoUpdates: clause.AssignmentColumns([]string{
-				"key_hash",
-				"key_prefix",
-				"key_plaintext_encrypted",
-				"status",
-				"last_used_at",
-				"updated_at",
-			}),
-		}).
-		Create(&dbItem).Error; err != nil {
+	if err := r.db.WithContext(ctx).Clauses(clause.Returning{}).Create(&dbItem).Error; err != nil {
 		return nil, translateError(err)
 	}
-	return r.GetByUserID(ctx, item.UserID)
+	return toDomain(dbItem), nil
+}
+
+// ReplaceForUserIfCurrent atomically replaces a key only if the caller's
+// snapshot is still current. RETURNING avoids a second read that could observe
+// another regeneration and pair its metadata with this call's plaintext.
+func (r *Repo) ReplaceForUserIfCurrent(ctx context.Context, item *domainopenapi.UserAPIKey, expected *domainopenapi.UserAPIKey) (*domainopenapi.UserAPIKey, error) {
+	if item == nil || expected == nil || item.UserID == 0 || expected.UserID != item.UserID || expected.KeyHash == "" || expected.Status == "" {
+		return nil, repository.ErrInvalidInput
+	}
+	dbItem := toModel(item)
+	result := r.db.WithContext(ctx).
+		Model(&dbItem).
+		Clauses(clause.Returning{}).
+		Where("user_id = ? AND key_hash = ? AND status = ?", item.UserID, expected.KeyHash, expected.Status).
+		Updates(map[string]interface{}{
+			"key_hash":                item.KeyHash,
+			"key_prefix":              item.KeyPrefix,
+			"key_plaintext_encrypted": item.KeyPlaintextEncrypted,
+			"status":                  item.Status,
+			"last_used_at":            item.LastUsedAt,
+			"updated_at":              item.UpdatedAt,
+		})
+	if result.Error != nil {
+		return nil, translateError(result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return nil, repository.ErrConflict
+	}
+	return toDomain(dbItem), nil
 }
 
 // RevokeForUser 停用用户 API Key。

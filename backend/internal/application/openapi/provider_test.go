@@ -2,6 +2,7 @@ package openapi
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -9,8 +10,10 @@ import (
 )
 
 type chatClientStub struct {
-	generate       func(context.Context, llm.RouteConfig, llm.GenerateInput) (*llm.GenerateOutput, error)
-	generateStream func(context.Context, llm.RouteConfig, llm.GenerateInput, func(llm.GenerateStreamEvent) error) (*llm.GenerateOutput, error)
+	generate          func(context.Context, llm.RouteConfig, llm.GenerateInput) (*llm.GenerateOutput, error)
+	generateStream    func(context.Context, llm.RouteConfig, llm.GenerateInput, func(llm.GenerateStreamEvent) error) (*llm.GenerateOutput, error)
+	generateRaw       func(context.Context, llm.RouteConfig, map[string]interface{}) (*llm.RawChatCompletionOutput, error)
+	generateRawStream func(context.Context, llm.RouteConfig, map[string]interface{}, func(llm.RawChatCompletionStreamEvent) error) (*llm.RawChatCompletionOutput, error)
 }
 
 func (s chatClientStub) Generate(ctx context.Context, route llm.RouteConfig, input llm.GenerateInput) (*llm.GenerateOutput, error) {
@@ -21,12 +24,75 @@ func (s chatClientStub) GenerateStream(ctx context.Context, route llm.RouteConfi
 	return s.generateStream(ctx, route, input, onEvent)
 }
 
-func (s chatClientStub) GenerateRawChatCompletion(context.Context, llm.RouteConfig, map[string]interface{}) (*llm.RawChatCompletionOutput, error) {
+func (s chatClientStub) GenerateRawChatCompletion(ctx context.Context, route llm.RouteConfig, body map[string]interface{}) (*llm.RawChatCompletionOutput, error) {
+	if s.generateRaw != nil {
+		return s.generateRaw(ctx, route, body)
+	}
 	return nil, nil
 }
 
-func (s chatClientStub) GenerateRawChatCompletionStream(context.Context, llm.RouteConfig, map[string]interface{}, func(llm.RawChatCompletionStreamEvent) error) (*llm.RawChatCompletionOutput, error) {
+func (s chatClientStub) GenerateRawChatCompletionStream(ctx context.Context, route llm.RouteConfig, body map[string]interface{}, onEvent func(llm.RawChatCompletionStreamEvent) error) (*llm.RawChatCompletionOutput, error) {
+	if s.generateRawStream != nil {
+		return s.generateRawStream(ctx, route, body, onEvent)
+	}
 	return nil, nil
+}
+
+func TestLLMRawChatProviderInlinesProtectedImagesBeforePassthrough(t *testing.T) {
+	rawCalled := false
+	provider := NewLLMRawChatProviderWithImageResolver(chatClientStub{
+		generateRaw: func(_ context.Context, _ llm.RouteConfig, body map[string]interface{}) (*llm.RawChatCompletionOutput, error) {
+			rawCalled = true
+			messages := body["messages"].([]interface{})
+			parts := messages[0].(map[string]interface{})["content"].([]interface{})
+			imageURL := parts[0].(map[string]interface{})["image_url"].(map[string]interface{})
+			if imageURL["detail"] != "high" || imageURL["url"] != "data:image/png;base64,aW1hZ2U=" {
+				t.Fatalf("unexpected inlined image payload: %#v", imageURL)
+			}
+			return &llm.RawChatCompletionOutput{}, nil
+		},
+	}, chatImageResolverFunc(func(_ context.Context, rawURL string) (llm.ContentPart, error) {
+		if rawURL != "https://cdn.example.test/image.png" {
+			t.Fatalf("unexpected image URL %q", rawURL)
+		}
+		return llm.ContentPart{Kind: llm.ContentPartImage, MimeType: "image/png", Data: []byte("image")}, nil
+	}))
+
+	_, err := provider.CompleteChat(t.Context(), llm.RouteConfig{Protocol: llm.AdapterOpenAIChatCompletions}, map[string]interface{}{
+		"messages": []interface{}{map[string]interface{}{
+			"role": "user",
+			"content": []interface{}{map[string]interface{}{
+				"type":      "image_url",
+				"image_url": map[string]interface{}{"url": "https://cdn.example.test/image.png", "detail": "high"},
+			}},
+		}},
+	})
+	if err != nil {
+		t.Fatalf("CompleteChat returned error: %v", err)
+	}
+	if !rawCalled {
+		t.Fatal("expected passthrough client to be called")
+	}
+}
+
+func TestLLMRawChatProviderRejectsUnsafePassthroughImageBeforeUpstream(t *testing.T) {
+	rawCalled := false
+	provider := NewLLMRawChatProviderWithImageResolver(chatClientStub{
+		generateRaw: func(context.Context, llm.RouteConfig, map[string]interface{}) (*llm.RawChatCompletionOutput, error) {
+			rawCalled = true
+			return nil, nil
+		},
+	}, NewHTTPChatImageResolver(1024))
+
+	_, err := provider.CompleteChat(t.Context(), llm.RouteConfig{Protocol: llm.AdapterOpenAIChatCompletions}, map[string]interface{}{
+		"messages": []interface{}{userImageMessage("https://127.0.0.1/image.png")},
+	})
+	if !errors.Is(err, ErrInvalidRequest) {
+		t.Fatalf("expected unsafe passthrough image to be rejected, got %v", err)
+	}
+	if rawCalled {
+		t.Fatal("unsafe image reached passthrough upstream")
+	}
 }
 
 func TestLLMRawChatProviderConvertsAnthropicMessagesToChatCompletion(t *testing.T) {
@@ -73,8 +139,12 @@ func TestChatResultFromGenerateOutputIncludesToolCalls(t *testing.T) {
 			ArgumentsJSON: `{"city":"Paris"}`,
 			Status:        "requested",
 		}},
-		Usage: llm.Usage{InputTokens: 4, OutputTokens: 1},
+		Usage:               llm.Usage{InputTokens: 4, OutputTokens: 1},
+		ServerSideToolUsage: map[string]int64{"web_search": 2},
 	}, "claude-upstream", false)
+	if result.ServerSideToolUsage["web_search"] != 2 {
+		t.Fatalf("expected server-side tool usage to be preserved, got %#v", result.ServerSideToolUsage)
+	}
 
 	choices := result.Body["choices"].([]interface{})
 	choice := choices[0].(map[string]interface{})

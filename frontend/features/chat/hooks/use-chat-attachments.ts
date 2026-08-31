@@ -3,16 +3,15 @@
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import { toast } from "sonner";
-
-import { resolveUploadPolicyRejection } from "@/features/chat/utils/attachments";
-import { captureScreenshotFile } from "@/features/chat/utils/browser-media";
-import { resolveMaxFilesPerMessage } from "@/features/chat/utils/chat-runtime";
 import {
   releaseUploadBatch,
   reserveUploadBatch,
   type UploadReservationState,
 } from "@/features/chat/model/upload-reservations";
 import type { PendingAttachment } from "@/features/chat/types/chat-runtime";
+import { resolveUploadPolicyRejection } from "@/features/chat/utils/attachments";
+import { captureScreenshotFile } from "@/features/chat/utils/browser-media";
+import { resolveMaxFilesPerMessage } from "@/features/chat/utils/chat-runtime";
 import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import {
   getChatFilePolicy,
@@ -283,20 +282,24 @@ export function useChatAttachments({
           return;
         }
 
-        const results = await Promise.allSettled(
-          acceptedFiles.map((file) =>
-            uploadFile(token, file, {
-              purpose: "conversation_attachment",
-            }),
-          ),
-        );
+        const results = await runSettledItemsWithConcurrency({
+          items: acceptedFiles,
+          signal: controller.signal,
+          runItem: (file) => uploadFile(token, file, {
+            purpose: "conversation_attachment",
+            signal: controller.signal,
+          }),
+        });
+        if (controller.signal.aborted || !mountedRef.current) {
+          return;
+        }
         const reusedCount = results.filter((result) => result.status === "fulfilled" && result.value.reused).length;
 
-        const uploaded = results.flatMap((result, index) => {
+        const uploaded = results.flatMap((result) => {
           if (result.status !== "fulfilled") {
             return [];
           }
-          const sourceFile = acceptedFiles[index];
+          const sourceFile = result.item;
           const previewURL = sourceFile.type.startsWith("image/") ? URL.createObjectURL(sourceFile) : undefined;
           return [
             {
@@ -361,13 +364,16 @@ export function useChatAttachments({
           toast.error(t("uploadFailed"), { description });
         }
       } finally {
+        uploadControllersRef.current.delete(controller);
         const nextUploadingByKey = releaseUploadBatch(
           uploadingByKeyRef.current,
           targetConversationKey,
           placeholders.map((item) => item.tempID),
         );
         uploadingByKeyRef.current = nextUploadingByKey;
-        setUploadingByKey(nextUploadingByKey);
+        if (mountedRef.current) {
+          setUploadingByKey(nextUploadingByKey);
+        }
         if (
           currentConversationKeyRef.current !== targetConversationKey &&
           (nextUploadingByKey[targetConversationKey]?.length ?? 0) === 0

@@ -30,7 +30,7 @@ Comi AI is an open-source, deployable AI platform for individuals, teams, and en
 
 The system is designed around simple deployment, efficient static delivery, and a low runtime resource footprint: lightweight without feeling limited, restrained without losing capability, and open without becoming disorderly.
 
-![Comi AI workspace](./frontend/public/DEEIX-Chat.jpg)
+![Comi AI workspace](./docs/assets/screenshots/DEEIX-Chat.jpg)
 
 ## Features
 
@@ -48,14 +48,14 @@ The system is designed around simple deployment, efficient static delivery, and 
 | Deployment and operations | Single-runtime frontend/API serving, Docker deployment, SQLite or PostgreSQL, in-memory cache or Redis, S3-compatible storage, Swagger, structured logs, version endpoint, GeoIP, and OpenTelemetry. |
 
 <p align="center">
-  <img src="./frontend/public/DEEIX-Chat-Image.png" alt="Comi AI image generation" width="49.45%" />
-  <img src="./frontend/public/DEEIX-Chat-Dark.png" alt="Comi AI dark mode" width="49.45%" />
+  <img src="./docs/assets/screenshots/DEEIX-Chat-Image.png" alt="Comi AI image generation" width="49.45%" />
+  <img src="./docs/assets/screenshots/DEEIX-Chat-Dark.png" alt="Comi AI dark mode" width="49.45%" />
 </p>
 
 <p align="center">
-  <img src="./frontend/public/DEEIX-Chat-Usage.png" alt="Comi AI usage and billing" width="32.3%" />
-  <img src="./frontend/public/DEEIX-Chat-Artifacts.png" alt="Comi AI artifacts" width="32.3%" />
-  <img src="./frontend/public/DEEIX-Chat-Html.png" alt="Comi AI HTML rendering" width="32.3%" />
+  <img src="./docs/assets/screenshots/DEEIX-Chat-Usage.png" alt="Comi AI usage and billing" width="32.3%" />
+  <img src="./docs/assets/screenshots/DEEIX-Chat-Artifacts.png" alt="Comi AI artifacts" width="32.3%" />
+  <img src="./docs/assets/screenshots/DEEIX-Chat-Html.png" alt="Comi AI HTML rendering" width="32.3%" />
 </p>
 
 ## Architecture and Tech Stack

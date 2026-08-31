@@ -268,6 +268,11 @@ type UsageBalanceReservation struct {
 type UsageAuthorization struct {
 	Mode        string
 	Reservation *UsageBalanceReservation
+	// MCPToolPriceNanousdByID freezes the executable MCP selection and per-call
+	// prices at authorization time. Conversation execution reuses this snapshot
+	// so a concurrent runtime-settings or catalog change cannot introduce an
+	// unreserved paid tool.
+	MCPToolPriceNanousdByID map[uint]int64
 }
 
 // ModelPricing 表示平台模型名对应的统一计费单价。

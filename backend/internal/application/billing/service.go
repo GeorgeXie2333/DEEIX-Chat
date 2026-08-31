@@ -1262,6 +1262,22 @@ func (s *Service) RecordUsageWithAuthorization(ctx context.Context, usage *domai
 
 // AuthorizeUsage 固定请求开始时的计费模式，并为付费调用原子预留预算。
 func (s *Service) AuthorizeUsage(ctx context.Context, userID uint, platformModelName string, refNo string) (*domainbilling.UsageAuthorization, error) {
+	return s.AuthorizeUsageWithMinimumReservation(ctx, userID, platformModelName, refNo, 0)
+}
+
+// AuthorizeUsageWithMinimumReservation 固定请求开始时的计费模式，并要求预算预留至少覆盖
+// minimumReservationNanousd。该下限用于同一次运行中附带的、独立于模型 token 单价的上游成本
+// （例如 MCP 工具调用）。即使模型本身免费，只要存在这类额外成本，也必须在调用前完成预留。
+func (s *Service) AuthorizeUsageWithMinimumReservation(
+	ctx context.Context,
+	userID uint,
+	platformModelName string,
+	refNo string,
+	minimumReservationNanousd int64,
+) (*domainbilling.UsageAuthorization, error) {
+	if minimumReservationNanousd < 0 {
+		return nil, repository.ErrInvalidInput
+	}
 	mode, err := s.repo.GetBillingMode(ctx)
 	if err != nil {
 		return nil, err
@@ -1280,7 +1296,10 @@ func (s *Service) AuthorizeUsage(ctx context.Context, userID uint, platformModel
 		if err = s.enforceFreeModelRateLimit(ctx, userID, modelName, time.Now()); err != nil {
 			return nil, err
 		}
-		return authorization, nil
+		// 免费模型仅在没有额外可计费上游成本时走无 reservation 快径。
+		if minimumReservationNanousd <= 0 {
+			return authorization, nil
+		}
 	}
 	if mode != "usage" && mode != "period" {
 		return authorization, nil
@@ -1288,7 +1307,7 @@ func (s *Service) AuthorizeUsage(ctx context.Context, userID uint, platformModel
 	if pricing == nil {
 		return nil, ErrModelPricingRequired
 	}
-	if normalizePricingMode(pricing.PricingMode) == domainbilling.PricingModeDuration {
+	if !pricing.IsFree && normalizePricingMode(pricing.PricingMode) == domainbilling.PricingModeDuration {
 		if s.modelPricingCatalog == nil {
 			return nil, ErrModelPricingRequired
 		}
@@ -1303,6 +1322,9 @@ func (s *Service) AuthorizeUsage(ctx context.Context, userID uint, platformModel
 	reservationNanousd, err := s.repo.GetBillingPrepaidAmountNanousd(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if reservationNanousd < minimumReservationNanousd {
+		reservationNanousd = minimumReservationNanousd
 	}
 	request := domainbilling.UsageBalanceReservationRequest{
 		UserID:           userID,
@@ -1379,7 +1401,10 @@ func (s *Service) enforceFreeModelRateLimit(ctx context.Context, userID uint, pl
 		return nil
 	}
 	allowed, minuteExceeded, dailyExceeded, err := s.freeModelRateLimiter.AllowFreeModelUsage(ctx, userID, limit.RequestsPerMinute, limit.DailyRequests, now)
-	if err != nil || allowed {
+	if err != nil {
+		return err
+	}
+	if allowed {
 		return nil
 	}
 	if dailyExceeded {

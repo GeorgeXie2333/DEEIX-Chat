@@ -7,6 +7,7 @@ import (
 
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
 	appcm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/contentmoderation"
+	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
 	"github.com/google/uuid"
@@ -29,6 +30,7 @@ type TemporaryChatInput struct {
 	Model                   string
 	Options                 map[string]interface{}
 	SelectedToolIDs         []uint
+	UsageAuthorization      *domainbilling.UsageAuthorization
 	SkillIDs                []uint
 	KnowledgeBaseIDs        []string
 	HTMLVisualPromptEnabled bool
@@ -96,6 +98,9 @@ func (s *Service) StreamTemporaryChat(
 	toolRuntime, err := s.resolveSelectedToolRuntime(ctx, input.SelectedToolIDs)
 	if err != nil {
 		return nil, err
+	}
+	if input.UsageAuthorization != nil {
+		toolRuntime = toolRuntime.withAuthorizedMCPPrices(input.UsageAuthorization.MCPToolPriceNanousdByID)
 	}
 	// Attachment processors require persisted file objects and are therefore not
 	// exposed in a text-only temporary request.

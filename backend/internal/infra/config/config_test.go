@@ -373,6 +373,21 @@ func TestNormalizeModelOptionAllowedPathsJSONKeepsCustomPolicy(t *testing.T) {
 	}
 }
 
+func TestNormalizeModelOptionAllowedPathsJSONKeepsCustomVideoPolicies(t *testing.T) {
+	tests := []string{
+		`{"openai_video_generations":["seconds"]}`,
+		`{"openai_video_generations":[]}`,
+		`{"xai_video":["duration"]}`,
+	}
+	for _, custom := range tests {
+		t.Run(custom, func(t *testing.T) {
+			if got := NormalizeModelOptionAllowedPathsJSON(custom); got != custom {
+				t.Fatalf("expected custom video allowlist unchanged, got %s", got)
+			}
+		})
+	}
+}
+
 func TestNormalizeModelOptionAllowedPathsJSONUpgradesLegacyGeminiInteractionsDuration(t *testing.T) {
 	legacy := legacyGeminiInteractionsAllowedPaths()
 	rawLegacy, err := json.Marshal(map[string][]string{"gemini_interactions": legacy})

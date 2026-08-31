@@ -24,6 +24,32 @@ type rejectedMessageRepositoryStub struct {
 	branchCreateCalls int
 }
 
+type retryPromptRepositoryStub struct {
+	repository.ConversationRepository
+	user      model.Message
+	assistant model.Message
+}
+
+func (r *retryPromptRepositoryStub) GetConversationByUser(_ context.Context, conversationID uint, userID uint) (*model.Conversation, error) {
+	return &model.Conversation{ID: conversationID, UserID: userID, PublicID: "conversation"}, nil
+}
+
+func (r *retryPromptRepositoryStub) GetMessageByPublicID(_ context.Context, _ uint, _ uint, publicID string) (*model.Message, error) {
+	if publicID == r.assistant.PublicID {
+		item := r.assistant
+		return &item, nil
+	}
+	return nil, repository.ErrNotFound
+}
+
+func (r *retryPromptRepositoryStub) GetMessageByID(_ context.Context, _ uint, messageID uint) (*model.Message, error) {
+	if messageID == r.user.ID {
+		item := r.user
+		return &item, nil
+	}
+	return nil, repository.ErrNotFound
+}
+
 func (r *rejectedMessageRepositoryStub) GetConversationByUser(_ context.Context, conversationID uint, userID uint) (*model.Conversation, error) {
 	if r.conversation.ID != conversationID || r.conversation.UserID != userID {
 		return nil, repository.ErrNotFound
@@ -225,5 +251,91 @@ func TestCreateRejectedAssistantRetryReusesExistingUserMessage(t *testing.T) {
 	}
 	if pair.assistant.SourceMessageID == nil || *pair.assistant.SourceMessageID != sourceAssistantID {
 		t.Fatal("retry assistant does not reference the failed source assistant")
+	}
+}
+
+func TestPrepareValidatedMessageSendBranchChecksReusedPrompt(t *testing.T) {
+	userMessage := model.Message{
+		ID:             21,
+		ConversationID: 7,
+		UserID:         9,
+		PublicID:       "msg_user",
+		Role:           "user",
+		Content:        "stored blocked prompt",
+		Status:         "success",
+	}
+	parentID := userMessage.ID
+	repo := &retryPromptRepositoryStub{
+		user: userMessage,
+		assistant: model.Message{
+			ID:              22,
+			ConversationID:  7,
+			UserID:          9,
+			PublicID:        "msg_assistant",
+			ParentMessageID: &parentID,
+			Role:            "assistant",
+			Status:          "success",
+		},
+	}
+	service := &Service{
+		cfg:    config.NewRuntime(config.Config{PromptSensitiveWords: "blocked", MaxMessageFiles: 10}),
+		repo:   repo,
+		logger: zap.NewNop(),
+	}
+	input := SendMessageInput{
+		UserID:                9,
+		ConversationID:        7,
+		Content:               "safe placeholder",
+		SourceMessagePublicID: "msg_assistant",
+		BranchReason:          "retry",
+	}
+
+	_, err := service.prepareValidatedMessageSendBranch(context.Background(), &input)
+	if !errors.Is(err, ErrSensitivePromptBlocked) {
+		t.Fatalf("expected reused sensitive prompt to be blocked, got %v", err)
+	}
+	if input.Content != userMessage.Content {
+		t.Fatalf("expected retry preparation to replace content before validation, got %q", input.Content)
+	}
+}
+
+func TestPersistRejectedMessageSendChecksReusedPrompt(t *testing.T) {
+	userMessage := model.Message{
+		ID:             31,
+		ConversationID: 7,
+		UserID:         9,
+		PublicID:       "msg_user_rejected",
+		Role:           "user",
+		Content:        "stored blocked prompt",
+		Status:         "success",
+	}
+	parentID := userMessage.ID
+	repo := &retryPromptRepositoryStub{
+		user: userMessage,
+		assistant: model.Message{
+			ID:              32,
+			ConversationID:  7,
+			UserID:          9,
+			PublicID:        "msg_assistant_rejected",
+			ParentMessageID: &parentID,
+			Role:            "assistant",
+			Status:          "success",
+		},
+	}
+	service := &Service{
+		cfg:    config.NewRuntime(config.Config{PromptSensitiveWords: "blocked", MaxMessageFiles: 10}),
+		repo:   repo,
+		logger: zap.NewNop(),
+	}
+
+	err := service.persistRejectedMessageSend(context.Background(), SendMessageInput{
+		UserID:                9,
+		ConversationID:        7,
+		Content:               "safe placeholder",
+		SourceMessagePublicID: "msg_assistant_rejected",
+		BranchReason:          "retry",
+	}, "usage_rejected", "usage rejected")
+	if !errors.Is(err, ErrSensitivePromptBlocked) {
+		t.Fatalf("expected rejected retry to validate effective prompt, got %v", err)
 	}
 }

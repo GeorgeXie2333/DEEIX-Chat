@@ -244,7 +244,8 @@ func parseModelOptionPathRules(raw string) (map[string][]string, bool) {
 
 func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 	changed := false
-	if matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules) {
+	legacyBuiltInPolicy := matchesLegacyBuiltInPolicyWithoutGeminiInteractions(rules)
+	if legacyBuiltInPolicy {
 		rules["gemini_interactions"] = defaultGeminiInteractionsAllowedPaths()
 		changed = true
 	}
@@ -297,6 +298,12 @@ func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 		},
 	}
 	for _, upgrade := range upgrades {
+		// The video policy has no historical anchors. Only the complete built-in
+		// policy may be upgraded implicitly; otherwise an administrator's partial
+		// or empty video allowlist must remain authoritative.
+		if upgrade.protocol == "openai_video_generations" && !legacyBuiltInPolicy {
+			continue
+		}
 		paths, ok := rules[upgrade.protocol]
 		if !ok {
 			continue
@@ -319,18 +326,20 @@ func upgradeLegacyModelOptionAllowedPaths(rules map[string][]string) bool {
 			changed = true
 		}
 	}
-	if _, ok := rules["openai_video_generations"]; !ok {
-		if _, hasImageGeneration := rules["openai_image_generations"]; hasImageGeneration {
-			if _, hasImageEdits := rules["openai_image_edits"]; hasImageEdits {
-				rules["openai_video_generations"] = []string{"seconds", "size"}
-				changed = true
+	if legacyBuiltInPolicy {
+		if _, ok := rules["openai_video_generations"]; !ok {
+			if _, hasImageGeneration := rules["openai_image_generations"]; hasImageGeneration {
+				if _, hasImageEdits := rules["openai_image_edits"]; hasImageEdits {
+					rules["openai_video_generations"] = []string{"seconds", "size"}
+					changed = true
+				}
 			}
 		}
-	}
-	if _, ok := rules["xai_video_extensions"]; !ok {
-		if _, hasXAIVideo := rules["xai_video"]; hasXAIVideo {
-			rules["xai_video_extensions"] = []string{"duration"}
-			changed = true
+		if _, ok := rules["xai_video_extensions"]; !ok {
+			if _, hasXAIVideo := rules["xai_video"]; hasXAIVideo {
+				rules["xai_video_extensions"] = []string{"duration"}
+				changed = true
+			}
 		}
 	}
 	return changed

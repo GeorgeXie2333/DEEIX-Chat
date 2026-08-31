@@ -20,6 +20,7 @@ import (
 	appchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
 	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
 	domainopenapi "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/openapi"
+	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/secretbox"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
@@ -33,6 +34,7 @@ const (
 	openAPISettingModelAllowlist             = "model_allowlist"
 	openAPISettingRateLimitRPM               = "rate_limit_rpm"
 	openAPIUsageAuthorizationRenewalInterval = 30 * time.Minute
+	openAPIPreAuthRateLimitRPM               = 300
 )
 
 var (
@@ -40,6 +42,8 @@ var (
 	ErrInvalidAPIKey = errors.New("invalid api key")
 	// ErrAPIKeyAlreadyExists 表示用户已有可用 API Key。
 	ErrAPIKeyAlreadyExists = errors.New("api key already exists")
+	// ErrAPIKeyConflict 表示并发操作已更改用户 API Key，调用方应刷新后重试。
+	ErrAPIKeyConflict = errors.New("api key changed concurrently")
 	// ErrTwoFactorRequired 表示用户必须先开启 2FA 才能创建、重新生成或导出 API Key。
 	ErrTwoFactorRequired = errors.New("two factor authentication is required")
 	// ErrModelNotAllowed 表示模型未在开放 API 白名单中。
@@ -59,6 +63,8 @@ type Dependencies struct {
 	ChatProvider      rawChatProvider
 	RateLimiter       rateLimiter
 	TwoFactor         twoFactorChecker
+	UserStatus        userStatusChecker
+	ModelOptionFilter modelOptionFilter
 	DataEncryptionKey string
 	Now               func() time.Time
 }
@@ -97,6 +103,14 @@ type twoFactorChecker interface {
 	IsTwoFactorEnabled(ctx context.Context, userID uint) (bool, error)
 }
 
+type userStatusChecker interface {
+	GetByID(ctx context.Context, userID uint) (*domainuser.User, error)
+}
+
+type modelOptionFilter interface {
+	FilterModelOptionsForRoute(options map[string]interface{}, protocol string, modelCapabilitiesJSON string) map[string]interface{}
+}
+
 // Service 封装 API Key、白名单、限流、兼容推理和计费流程。
 type Service struct {
 	keyRepo           repository.OpenAPIKeyRepository
@@ -106,6 +120,8 @@ type Service struct {
 	chatProvider      rawChatProvider
 	rateLimiter       rateLimiter
 	twoFactor         twoFactorChecker
+	userStatus        userStatusChecker
+	modelOptionFilter modelOptionFilter
 	dataEncryptionKey string
 	now               func() time.Time
 }
@@ -124,6 +140,8 @@ func NewService(deps Dependencies) *Service {
 		chatProvider:      deps.ChatProvider,
 		rateLimiter:       deps.RateLimiter,
 		twoFactor:         deps.TwoFactor,
+		userStatus:        deps.UserStatus,
+		modelOptionFilter: deps.ModelOptionFilter,
 		dataEncryptionKey: strings.TrimSpace(deps.DataEncryptionKey),
 		now:               now,
 	}
@@ -167,11 +185,12 @@ type OpenAIModel struct {
 
 // RawChatCompletionResult 表示原始 Chat Completions 调用结果。
 type RawChatCompletionResult struct {
-	Body          map[string]interface{}
-	Usage         llm.Usage
-	ReasoningText string
-	ResponseID    string
-	ToolCalls     []llm.ToolCall
+	Body                map[string]interface{}
+	Usage               llm.Usage
+	ReasoningText       string
+	ResponseID          string
+	ToolCalls           []llm.ToolCall
+	ServerSideToolUsage map[string]int64
 }
 
 // RawChatStreamEvent 表示原始 Chat Completions 流式片段。
@@ -229,12 +248,20 @@ func (s *Service) CreateAPIKey(ctx context.Context, userID uint) (*APIKeyView, e
 	if err := s.requireTwoFactor(ctx, userID); err != nil {
 		return nil, err
 	}
-	if current, err := s.keyRepo.GetByUserID(ctx, userID); err == nil && current.Status == domainopenapi.APIKeyStatusActive {
-		return nil, ErrAPIKeyAlreadyExists
-	} else if err != nil && !errors.Is(err, repository.ErrNotFound) {
+	current, err := s.keyRepo.GetByUserID(ctx, userID)
+	if errors.Is(err, repository.ErrNotFound) {
+		return s.createAPIKey(ctx, userID)
+	}
+	if err != nil {
 		return nil, err
 	}
-	return s.replaceAPIKey(ctx, userID)
+	if current == nil {
+		return nil, ErrAPIKeyConflict
+	}
+	if current.Status == domainopenapi.APIKeyStatusActive {
+		return nil, ErrAPIKeyAlreadyExists
+	}
+	return s.replaceAPIKey(ctx, userID, current)
 }
 
 // RegenerateAPIKey 重新生成用户唯一 API Key。
@@ -245,7 +272,17 @@ func (s *Service) RegenerateAPIKey(ctx context.Context, userID uint) (*APIKeyVie
 	if err := s.requireTwoFactor(ctx, userID); err != nil {
 		return nil, err
 	}
-	return s.replaceAPIKey(ctx, userID)
+	current, err := s.keyRepo.GetByUserID(ctx, userID)
+	if errors.Is(err, repository.ErrNotFound) {
+		return s.createAPIKey(ctx, userID)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if current == nil {
+		return nil, ErrAPIKeyConflict
+	}
+	return s.replaceAPIKey(ctx, userID, current)
 }
 
 // RevokeAPIKey 停用用户 API Key。
@@ -282,10 +319,50 @@ func (s *Service) AuthenticateAPIKey(ctx context.Context, plaintext string) (*do
 	if item.Status != domainopenapi.APIKeyStatusActive {
 		return nil, ErrInvalidAPIKey
 	}
+	if s.userStatus == nil {
+		return nil, ErrInvalidAPIKey
+	}
+	userItem, err := s.userStatus.GetByID(ctx, item.UserID)
+	if errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrInvalidAPIKey
+	}
+	if err != nil {
+		return nil, err
+	}
+	if userItem == nil || userItem.Status != domainuser.StatusActive {
+		return nil, ErrInvalidAPIKey
+	}
 	now := s.now()
 	_ = s.keyRepo.TouchLastUsedAt(ctx, item.ID, now)
 	item.LastUsedAt = &now
 	return item, nil
+}
+
+// EnforcePreAuthRateLimit protects API-key lookup itself from invalid-token
+// floods. It intentionally runs before AuthenticateAPIKey and is independent
+// of the per-key RPM setting.
+func (s *Service) EnforcePreAuthRateLimit(ctx context.Context, clientIP string) error {
+	if s == nil || s.rateLimiter == nil {
+		return nil
+	}
+	ip := strings.TrimSpace(clientIP)
+	if ip == "" {
+		ip = "unknown"
+	}
+	allowed, err := s.rateLimiter.AllowSlidingWindow(
+		ctx,
+		"ratelimit:openapi:preauth:ip:"+ip,
+		openAPIPreAuthRateLimitRPM,
+		time.Minute,
+		2*time.Minute,
+	)
+	if err != nil {
+		return err
+	}
+	if !allowed {
+		return ErrRateLimited
+	}
+	return nil
 }
 
 // EnforceRateLimit 对开放 API 按 key 维度执行 RPM 限流。
@@ -411,6 +488,9 @@ func (s *Service) PrepareChatCompletion(
 	if !isPublicChatProtocol(route.Protocol) {
 		return nil, ErrModelNotAllowed
 	}
+	if s.modelOptionFilter == nil {
+		return nil, ErrModelNotAllowed
+	}
 
 	platformModelName := strings.TrimSpace(route.PlatformModelName)
 	if platformModelName == "" {
@@ -428,6 +508,7 @@ func (s *Service) PrepareChatCompletion(
 	preparedRequest := cloneMap(request)
 	normalizePreparedChatMaxTokens(preparedRequest, route)
 	normalizePreparedChatReasoningEffort(preparedRequest, route)
+	preparedRequest = filterPreparedChatRequest(preparedRequest, route, s.modelOptionFilter)
 
 	return &PreparedChatCompletion{
 		key:               key,
@@ -459,6 +540,108 @@ func normalizePreparedChatMaxTokens(request map[string]interface{}, route *appch
 	case llm.AdapterGoogleGenerateContent:
 		normalizeMaxTokenTarget(request, "max_output_tokens", "max_completion_tokens", "max_tokens")
 	}
+}
+
+func filterPreparedChatRequest(request map[string]interface{}, route *appchannel.ResolvedRoute, filter modelOptionFilter) map[string]interface{} {
+	prepared := make(map[string]interface{})
+	for _, key := range []string{"model", "messages", "stream", "functions", "function_call"} {
+		if value, ok := request[key]; ok {
+			prepared[key] = value
+		}
+	}
+
+	options := cloneMap(request)
+	for _, key := range []string{"model", "messages", "stream", "functions", "function_call"} {
+		delete(options, key)
+	}
+	filtered := filter.FilterModelOptionsForRoute(options, route.Protocol, route.ModelCapabilitiesJSON)
+	for key, value := range filtered {
+		if key != "tools" {
+			prepared[key] = value
+		}
+	}
+
+	clientTools := clientFunctionToolPayloads(request["tools"])
+	tools := append([]interface{}{}, clientTools...)
+	for _, tool := range providerNativeToolPayloads(filtered["tools"]) {
+		tools = append(tools, tool)
+	}
+	if len(tools) > 0 {
+		prepared["tools"] = tools
+	}
+	if choice, ok := clientFunctionToolChoice(request["tool_choice"], clientTools); ok {
+		prepared["tool_choice"] = choice
+	}
+	if len(clientTools) > 0 {
+		if parallel, ok := request["parallel_tool_calls"].(bool); ok {
+			prepared["parallel_tool_calls"] = parallel
+		}
+	}
+	return prepared
+}
+
+func clientFunctionToolPayloads(raw interface{}) []interface{} {
+	items := providerNativeToolPayloads(raw)
+	result := make([]interface{}, 0, len(items))
+	for _, item := range items {
+		if !strings.EqualFold(strings.TrimSpace(stringValue(item["type"])), "function") {
+			continue
+		}
+		if function, ok := item["function"].(map[string]interface{}); !ok || len(function) == 0 {
+			continue
+		}
+		result = append(result, item)
+	}
+	return result
+}
+
+func providerNativeToolPayloads(raw interface{}) []map[string]interface{} {
+	result := make([]map[string]interface{}, 0)
+	switch items := raw.(type) {
+	case []interface{}:
+		for _, rawItem := range items {
+			if item, ok := rawItem.(map[string]interface{}); ok {
+				result = append(result, item)
+			}
+		}
+	case []map[string]interface{}:
+		result = append(result, items...)
+	}
+	return result
+}
+
+func clientFunctionToolChoice(raw interface{}, tools []interface{}) (interface{}, bool) {
+	if len(tools) == 0 || raw == nil {
+		return nil, false
+	}
+	if value, ok := raw.(string); ok {
+		switch strings.ToLower(strings.TrimSpace(value)) {
+		case "auto", "none", "required", "any":
+			return raw, true
+		default:
+			return nil, false
+		}
+	}
+	choice, ok := raw.(map[string]interface{})
+	if !ok || !strings.EqualFold(strings.TrimSpace(stringValue(choice["type"])), "function") {
+		return nil, false
+	}
+	function, _ := choice["function"].(map[string]interface{})
+	name := strings.TrimSpace(stringValue(function["name"]))
+	if name == "" {
+		name = strings.TrimSpace(stringValue(choice["name"]))
+	}
+	if name == "" {
+		return nil, false
+	}
+	for _, rawTool := range tools {
+		tool, _ := rawTool.(map[string]interface{})
+		toolFunction, _ := tool["function"].(map[string]interface{})
+		if strings.TrimSpace(stringValue(toolFunction["name"])) == name {
+			return raw, true
+		}
+	}
+	return nil, false
 }
 
 func normalizePreparedChatReasoningEffort(request map[string]interface{}, route *appchannel.ResolvedRoute) {
@@ -519,6 +702,9 @@ func (s *Service) CompleteChatCompletion(ctx context.Context, prepared *Prepared
 	result, err := s.chatProvider.CompleteChat(ctx, prepared.routeConfig, prepared.request)
 	if err != nil {
 		s.markRouteFailure(ctx, prepared, err)
+		if llm.RequestWasAccepted(err) {
+			return nil, s.markAuthorizationForReconciliation(prepared, "open_api_upstream_failed_after_acceptance", err)
+		}
 		s.releaseReservation(ctx, prepared, "open api upstream call failed")
 		return nil, err
 	}
@@ -531,11 +717,18 @@ func (s *Service) CompleteChatCompletion(ctx context.Context, prepared *Prepared
 		addReasoningContentToCompletionBody(body, result.ReasoningText)
 	}
 	usage := result.Usage
-	if usage == (llm.Usage{}) {
+	hasProviderUsage := usage != (llm.Usage{})
+	if !hasProviderUsage {
 		usage = fallbackUsage(prepared.request, answerText, result.ReasoningText)
 	}
 	ensureUsageInBody(body, usage)
-	if err := s.recordBilling(ctx, prepared, usage); err != nil {
+	if !hasProviderUsage && requiresAuthoritativeProviderUsage(prepared.request) {
+		if err := s.retainAuthorizationForReconciliation(prepared, "open_api_usage_missing_for_non_text_input"); err != nil {
+			return nil, err
+		}
+		return body, nil
+	}
+	if err := s.recordBilling(ctx, prepared, usage, result.ServerSideToolUsage); err != nil {
 		return nil, err
 	}
 	return body, nil
@@ -552,13 +745,23 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 	var reasoningText strings.Builder
 	var usage llm.Usage
 	usageSent := false
+	observedUpstream := false
+	var downstreamErr error
+	emitChunk := func(chunk map[string]interface{}) error {
+		err := emit(chunk)
+		if err != nil {
+			downstreamErr = err
+		}
+		return err
+	}
 
 	emitReasoning := func(content string) error {
 		chunk := makeStreamReasoningChunk(prepared.publicModelID, content)
-		return emit(chunk)
+		return emitChunk(chunk)
 	}
 
 	result, err := s.chatProvider.StreamChat(ctx, prepared.routeConfig, prepared.request, func(event RawChatStreamEvent) error {
+		observedUpstream = true
 		if event.Usage != (llm.Usage{}) {
 			usage = event.Usage
 			usageSent = true
@@ -580,31 +783,47 @@ func (s *Service) StreamChatCompletion(ctx context.Context, prepared *PreparedCh
 		if streamChunkHasContent(chunk) {
 			outputText.WriteString(streamContentDelta(chunk))
 		}
-		return emit(chunk)
+		return emitChunk(chunk)
 	})
 	if err != nil {
-		s.markRouteFailure(ctx, prepared, err)
+		if downstreamErr == nil {
+			s.markRouteFailure(ctx, prepared, err)
+		}
+		if observedUpstream {
+			return s.markAuthorizationForReconciliation(prepared, "open_api_stream_interrupted_after_output", err)
+		}
+		if llm.RequestWasAccepted(err) {
+			return s.markAuthorizationForReconciliation(prepared, "open_api_stream_failed_after_acceptance", err)
+		}
 		s.releaseReservation(ctx, prepared, "open api upstream stream failed")
 		return err
 	}
 	s.markRouteSuccess(ctx, prepared)
-	if llm.NormalizeAdapter(prepared.routeConfig.Protocol) != llm.AdapterOpenAIChatCompletions && len(result.ToolCalls) > 0 {
-		if err := emit(chatStreamToolFinishChunk(prepared.publicModelID, result.ResponseID)); err != nil {
+
+	hasProviderUsage := usage != (llm.Usage{})
+	if !hasProviderUsage {
+		usage = result.Usage
+		hasProviderUsage = usage != (llm.Usage{})
+	}
+	if !hasProviderUsage {
+		usage = fallbackUsage(prepared.request, outputText.String(), reasoningText.String())
+	}
+	if !hasProviderUsage && requiresAuthoritativeProviderUsage(prepared.request) {
+		if err := s.retainAuthorizationForReconciliation(prepared, "open_api_usage_missing_for_non_text_input"); err != nil {
+			return err
+		}
+	} else {
+		if err := s.recordBilling(ctx, prepared, usage, result.ServerSideToolUsage); err != nil {
 			return err
 		}
 	}
-
-	if usage == (llm.Usage{}) {
-		usage = result.Usage
-	}
-	if usage == (llm.Usage{}) {
-		usage = fallbackUsage(prepared.request, outputText.String(), reasoningText.String())
-	}
-	if err := s.recordBilling(ctx, prepared, usage); err != nil {
-		return err
+	if llm.NormalizeAdapter(prepared.routeConfig.Protocol) != llm.AdapterOpenAIChatCompletions && len(result.ToolCalls) > 0 {
+		if err := emitChunk(chatStreamToolFinishChunk(prepared.publicModelID, result.ResponseID)); err != nil {
+			return err
+		}
 	}
 	if !usageSent {
-		return emit(makeStreamUsageChunk(prepared.publicModelID, usage))
+		return emitChunk(makeStreamUsageChunk(prepared.publicModelID, usage))
 	}
 	return nil
 }
@@ -646,14 +865,44 @@ func (s *Service) resolvePublicModelRoute(
 	return nil, ErrModelNotAllowed
 }
 
-func (s *Service) replaceAPIKey(ctx context.Context, userID uint) (*APIKeyView, error) {
-	plaintext, err := generateAPIKey()
+func (s *Service) createAPIKey(ctx context.Context, userID uint) (*APIKeyView, error) {
+	plaintext, item, err := s.newAPIKeyRecord(userID)
 	if err != nil {
 		return nil, err
 	}
-	encrypted, err := s.encryptAPIKeyPlaintext(plaintext)
+	stored, err := s.keyRepo.CreateForUser(ctx, item)
+	if errors.Is(err, repository.ErrConflict) {
+		return nil, ErrAPIKeyAlreadyExists
+	}
 	if err != nil {
 		return nil, err
+	}
+	return apiKeyViewForStoredPlaintext(stored, item, plaintext)
+}
+
+func (s *Service) replaceAPIKey(ctx context.Context, userID uint, current *domainopenapi.UserAPIKey) (*APIKeyView, error) {
+	plaintext, item, err := s.newAPIKeyRecord(userID)
+	if err != nil {
+		return nil, err
+	}
+	stored, err := s.keyRepo.ReplaceForUserIfCurrent(ctx, item, current)
+	if errors.Is(err, repository.ErrConflict) {
+		return nil, ErrAPIKeyConflict
+	}
+	if err != nil {
+		return nil, err
+	}
+	return apiKeyViewForStoredPlaintext(stored, item, plaintext)
+}
+
+func (s *Service) newAPIKeyRecord(userID uint) (string, *domainopenapi.UserAPIKey, error) {
+	plaintext, err := generateAPIKey()
+	if err != nil {
+		return "", nil, err
+	}
+	encrypted, err := s.encryptAPIKeyPlaintext(plaintext)
+	if err != nil {
+		return "", nil, err
 	}
 	now := s.now()
 	item := &domainopenapi.UserAPIKey{
@@ -665,9 +914,12 @@ func (s *Service) replaceAPIKey(ctx context.Context, userID uint) (*APIKeyView, 
 		CreatedAt:             now,
 		UpdatedAt:             now,
 	}
-	stored, err := s.keyRepo.ReplaceForUser(ctx, item)
-	if err != nil {
-		return nil, err
+	return plaintext, item, nil
+}
+
+func apiKeyViewForStoredPlaintext(stored *domainopenapi.UserAPIKey, expected *domainopenapi.UserAPIKey, plaintext string) (*APIKeyView, error) {
+	if stored == nil || expected == nil || stored.UserID != expected.UserID || stored.Status != domainopenapi.APIKeyStatusActive || stored.KeyHash != expected.KeyHash {
+		return nil, ErrAPIKeyConflict
 	}
 	return toAPIKeyView(stored, plaintext, false, true), nil
 }
@@ -858,40 +1110,50 @@ func (s *Service) startUsageAuthorizationRenewal(prepared *PreparedChatCompletio
 }
 
 func (s *Service) markAuthorizationForReconciliation(prepared *PreparedChatCompletion, failureCode string, cause error) error {
-	if s == nil || s.billing == nil || prepared == nil || prepared.authorization == nil || prepared.authorization.Reservation == nil {
-		return cause
-	}
-	reconcileCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := s.billing.MarkUsageAuthorizationForReconciliation(reconcileCtx, prepared.authorization, failureCode); err != nil {
-		return errors.Join(cause, fmt.Errorf("mark open api usage reconciliation: %w", err))
+	if err := s.retainAuthorizationForReconciliation(prepared, failureCode); err != nil {
+		return errors.Join(cause, err)
 	}
 	return cause
 }
 
-func (s *Service) recordBilling(ctx context.Context, prepared *PreparedChatCompletion, usage llm.Usage) error {
+func (s *Service) retainAuthorizationForReconciliation(prepared *PreparedChatCompletion, failureCode string) error {
+	if s == nil || s.billing == nil || prepared == nil || prepared.authorization == nil || prepared.authorization.Reservation == nil {
+		return nil
+	}
+	reconcileCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := s.billing.MarkUsageAuthorizationForReconciliation(reconcileCtx, prepared.authorization, failureCode); err != nil {
+		return fmt.Errorf("mark open api usage reconciliation: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) recordBilling(ctx context.Context, prepared *PreparedChatCompletion, usage llm.Usage, serverSideToolUsage map[string]int64) error {
 	if s == nil || s.billing == nil || prepared == nil {
 		return nil
 	}
 	ledger, err := s.billing.BuildUsageLedger(ctx, appbilling.UsagePricingInput{
-		UserID:             prepared.key.UserID,
-		ConversationID:     0,
-		PlatformModelName:  prepared.platformModelName,
-		RoutedBindingCode:  prepared.route.BindingCode,
-		ProviderProtocol:   prepared.route.Protocol,
-		UpstreamName:       prepared.route.UpstreamName,
-		UpstreamModelName:  prepared.route.UpstreamModel,
-		InputTokens:        usage.InputTokens,
-		CacheReadTokens:    usage.CacheReadTokens,
-		CacheWriteTokens:   usage.CacheWriteTokens,
-		CacheWrite5mTokens: usage.CacheWrite5mTokens,
-		CacheWrite1hTokens: usage.CacheWrite1hTokens,
-		OutputTokens:       usage.OutputTokens,
-		ReasoningTokens:    usage.ReasoningTokens,
-		CallCount:          1,
-		LatencyMS:          int64(s.now().Sub(prepared.startedAt) / time.Millisecond),
-		UsageSpeed:         usage.Speed,
-		UsageServiceTier:   usage.ServiceTier,
+		Authorization:       prepared.authorization,
+		UserID:              prepared.key.UserID,
+		ConversationID:      0,
+		PlatformModelName:   prepared.platformModelName,
+		RoutedBindingCode:   prepared.route.BindingCode,
+		ProviderProtocol:    prepared.route.Protocol,
+		UpstreamName:        prepared.route.UpstreamName,
+		UpstreamModelName:   prepared.route.UpstreamModel,
+		InputTokens:         usage.InputTokens,
+		CacheReadTokens:     usage.CacheReadTokens,
+		CacheWriteTokens:    usage.CacheWriteTokens,
+		CacheWrite5mTokens:  usage.CacheWrite5mTokens,
+		CacheWrite1hTokens:  usage.CacheWrite1hTokens,
+		OutputTokens:        usage.OutputTokens,
+		ReasoningTokens:     usage.ReasoningTokens,
+		CallCount:           1,
+		LatencyMS:           int64(s.now().Sub(prepared.startedAt) / time.Millisecond),
+		UsageSpeed:          usage.Speed,
+		UsageServiceTier:    usage.ServiceTier,
+		ServerSideToolUsage: serverSideToolUsage,
+		BillingAt:           prepared.startedAt,
 	})
 	if err != nil {
 		return s.markAuthorizationForReconciliation(prepared, "open_api_build_usage_failed", err)
@@ -1008,6 +1270,75 @@ func fallbackUsage(request map[string]interface{}, outputText string, reasoningT
 
 func estimateRequestTokens(request map[string]interface{}) int64 {
 	return estimateAnyTokens(request["messages"])
+}
+
+// requiresAuthoritativeProviderUsage identifies request inputs whose upstream
+// token accounting is not represented by the text-only fallback estimator.
+// When a compatible provider omits usage, settling from that estimate would
+// underbill the request, so the pre-authorization is retained for
+// reconciliation instead.
+func requiresAuthoritativeProviderUsage(request map[string]interface{}) bool {
+	for _, field := range []string{"tools", "functions", "tool_choice", "function_call"} {
+		if hasNonEmptyOpenAPIInput(request[field]) {
+			return true
+		}
+	}
+	messages, ok := request["messages"].([]interface{})
+	if !ok {
+		return false
+	}
+	for _, rawMessage := range messages {
+		message, ok := rawMessage.(map[string]interface{})
+		if !ok {
+			// A successfully processed request could not normally reach this
+			// branch, but retaining the authorization is safer than estimating
+			// an unrecognized shape.
+			return true
+		}
+		if hasNonEmptyOpenAPIInput(message["tool_calls"]) || hasNonEmptyOpenAPIInput(message["function_call"]) {
+			return true
+		}
+		role := strings.ToLower(strings.TrimSpace(stringValue(message["role"])))
+		if role == "tool" || role == "function" {
+			return true
+		}
+		parts, ok := message["content"].([]interface{})
+		if !ok {
+			continue
+		}
+		for _, rawPart := range parts {
+			part, ok := rawPart.(map[string]interface{})
+			if !ok {
+				return true
+			}
+			switch strings.ToLower(strings.TrimSpace(stringValue(part["type"]))) {
+			case "text", "input_text":
+				continue
+			default:
+				// This includes image_url and input_image, as well as any
+				// future multimodal part the local fallback cannot price.
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func hasNonEmptyOpenAPIInput(raw interface{}) bool {
+	switch value := raw.(type) {
+	case nil:
+		return false
+	case string:
+		return strings.TrimSpace(value) != ""
+	case []interface{}:
+		return len(value) > 0
+	case []map[string]interface{}:
+		return len(value) > 0
+	case map[string]interface{}:
+		return len(value) > 0
+	default:
+		return true
+	}
 }
 
 func estimateAnyTokens(value interface{}) int64 {

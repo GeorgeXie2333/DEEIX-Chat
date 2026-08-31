@@ -143,6 +143,95 @@ func TestAuthorizeUsageRejectsLegacyDurationPricingForNonVideoModel(t *testing.T
 	}
 }
 
+func TestAuthorizeUsageWithMinimumReservationPreauthorizesFreeModelExtraCost(t *testing.T) {
+	repo := &billingRepositoryStub{
+		mode:           "usage",
+		prepaidNanousd: 100,
+		pricing: &domainbilling.ModelPricing{
+			PlatformModelName: "free-model",
+			Currency:          "USD",
+			IsFree:            true,
+		},
+	}
+	service := NewService(repo)
+
+	authorization, err := service.AuthorizeUsageWithMinimumReservation(t.Context(), 1, "free-model", "run_free_mcp", 500)
+	if err != nil {
+		t.Fatalf("AuthorizeUsageWithMinimumReservation() error = %v", err)
+	}
+	if authorization == nil || authorization.Reservation == nil {
+		t.Fatalf("authorization = %#v, want an active reservation", authorization)
+	}
+	if repo.reservationRequest == nil || repo.reservationRequest.RequestedNanousd != 500 {
+		t.Fatalf("reservation request = %#v, want minimum MCP cost of 500", repo.reservationRequest)
+	}
+}
+
+func TestAuthorizeUsageWithMinimumReservationKeepsFreeModelFastPathWithoutExtraCost(t *testing.T) {
+	repo := &billingRepositoryStub{
+		mode: "usage",
+		pricing: &domainbilling.ModelPricing{
+			PlatformModelName: "free-model",
+			Currency:          "USD",
+			IsFree:            true,
+		},
+	}
+	service := NewService(repo)
+
+	authorization, err := service.AuthorizeUsageWithMinimumReservation(t.Context(), 1, "free-model", "run_free_no_mcp", 0)
+	if err != nil {
+		t.Fatalf("AuthorizeUsageWithMinimumReservation() error = %v", err)
+	}
+	if authorization == nil || authorization.Reservation != nil || repo.reservationRequest != nil {
+		t.Fatalf("free model without extra cost must not reserve: authorization=%#v request=%#v", authorization, repo.reservationRequest)
+	}
+}
+
+func TestAuthorizeUsageWithMinimumReservationKeepsSelfModeUnreserved(t *testing.T) {
+	repo := &billingRepositoryStub{
+		mode: "self",
+		pricing: &domainbilling.ModelPricing{
+			PlatformModelName: "free-model",
+			Currency:          "USD",
+			IsFree:            true,
+		},
+	}
+	service := NewService(repo)
+
+	authorization, err := service.AuthorizeUsageWithMinimumReservation(t.Context(), 1, "free-model", "run_self_mcp", 500)
+	if err != nil {
+		t.Fatalf("AuthorizeUsageWithMinimumReservation() error = %v", err)
+	}
+	if authorization == nil || authorization.Mode != "self" || authorization.Reservation != nil || repo.reservationRequest != nil {
+		t.Fatalf("self mode must not reserve: authorization=%#v request=%#v", authorization, repo.reservationRequest)
+	}
+}
+
+func TestAuthorizeUsageKeepsExistingPaidModelReservationBehavior(t *testing.T) {
+	repo := &billingRepositoryStub{
+		mode:           "usage",
+		prepaidNanousd: 275,
+		pricing: &domainbilling.ModelPricing{
+			PlatformModelName:       "paid-model",
+			Currency:                "USD",
+			InputNanousdPerMTokens:  1,
+			OutputNanousdPerMTokens: 1,
+		},
+	}
+	service := NewService(repo)
+
+	authorization, err := service.AuthorizeUsage(t.Context(), 1, "paid-model", "run_paid_model")
+	if err != nil {
+		t.Fatalf("AuthorizeUsage() error = %v", err)
+	}
+	if authorization == nil || authorization.Reservation == nil {
+		t.Fatalf("authorization = %#v, want reservation", authorization)
+	}
+	if repo.reservationRequest == nil || repo.reservationRequest.RequestedNanousd != 275 {
+		t.Fatalf("reservation request = %#v, want existing prepaid amount", repo.reservationRequest)
+	}
+}
+
 func TestUpdatePlanRejectsUnknownPermissionGroup(t *testing.T) {
 	repo := &billingRepositoryStub{
 		plans: []domainbilling.Plan{{ID: 1, Code: "pro", Name: "Pro"}},

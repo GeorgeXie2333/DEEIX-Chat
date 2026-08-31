@@ -101,6 +101,38 @@ func TestImportOpenWebUIUsersGeneratesPasswordByDefault(t *testing.T) {
 	}
 }
 
+func TestImportOpenWebUIUsersPersistsLowercaseEmail(t *testing.T) {
+	users := newOpenWebUIImportUserServiceFake()
+	service := NewService(users, auditServiceFake{})
+	service.SetOpenWebUIUserSource(openWebUIUserSourceFake{
+		rows: []repository.OpenWebUIUserRow{
+			{
+				PublicID:    "openwebui-user-1",
+				Username:    "openwebui-user-1",
+				DisplayName: "Ada Lovelace",
+				Email:       "Ada@Example.COM",
+			},
+		},
+	})
+
+	if _, err := service.ImportOpenWebUIUsers(
+		context.Background(),
+		"req_1",
+		1,
+		OpenWebUIImportInput{DSN: "test.db", CreditMultiplier: 1},
+		"127.0.0.1",
+		"test",
+	); err != nil {
+		t.Fatalf("ImportOpenWebUIUsers() error = %v", err)
+	}
+	if len(users.importedRecords) != 1 {
+		t.Fatalf("expected 1 imported record, got %d", len(users.importedRecords))
+	}
+	if got := users.importedRecords[0].User.Email; got != "ada@example.com" {
+		t.Fatalf("imported email = %q, want lowercase email", got)
+	}
+}
+
 func TestImportOpenWebUIUsersFallsBackForUnavailableAndInvalidPasswords(t *testing.T) {
 	users := newOpenWebUIImportUserServiceFake()
 	service := NewService(users, auditServiceFake{})

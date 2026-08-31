@@ -14,6 +14,13 @@ test("sync-pwa-assets includes public logo files in the service worker cache key
   assert.match(scriptSource, /appShellAssetHashes/u);
 });
 
+test("sync-pwa-assets copies hashed files and compares the cache-key manifest", () => {
+  assert.match(scriptSource, /const manifestContent = \[/u);
+  assert.match(scriptSource, /export const pwaAssetCacheKey/u);
+  assert.match(scriptSource, /if \(!isCurrent\)/u);
+  assert.match(scriptSource, /copyFileSync\(sourceFile, join\(generatedDir, targetName\)\)/u);
+});
+
 test("Dockerfile makes app shell logos available before frontend postinstall runs", () => {
   const pnpmInstallIndex = dockerfileSource.indexOf("pnpm install --frozen-lockfile");
 

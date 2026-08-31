@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestOpenAIVideoGenerationCreatesPollsAndDownloads(t *testing.T) {
@@ -97,8 +98,60 @@ func TestOpenAIVideoGenerationCreatesPollsAndDownloads(t *testing.T) {
 		t.Fatalf("unexpected video output: %#v", output)
 	}
 	video := output.GeneratedVideos[0]
-	if video.ID != "video_1" || video.MIMEType != "video/mp4" || string(video.Data) != string(sampleMP4Bytes()) {
+	if video.ID != "video_1" || video.MIMEType != "video/mp4" || string(video.Data) != string(sampleMP4Bytes()) || video.DurationSeconds != 12 {
 		t.Fatalf("unexpected generated video: %#v", video)
+	}
+}
+
+func TestOpenAIVideoPollingUsesPerRequestTimeout(t *testing.T) {
+	var pollCount int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/videos":
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"id":      "video_1",
+				"status":  "queued",
+				"seconds": "4",
+			})
+		case "/v1/videos/video_1":
+			pollCount++
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"id":      "video_1",
+				"status":  "completed",
+				"seconds": "4",
+			})
+		case "/v1/videos/video_1/content":
+			w.Header().Set("Content-Type", "video/mp4")
+			_, _ = w.Write(sampleMP4Bytes())
+		default:
+			t.Fatalf("unexpected request path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	output, err := newTestClient().Generate(context.Background(), RouteConfig{
+		Protocol:      AdapterOpenAIVideoGenerations,
+		BaseURL:       server.URL,
+		APIKey:        "test-key",
+		UpstreamModel: "sora-2",
+		ReadTimeoutMS: 100,
+	}, GenerateInput{
+		Messages: []Message{{Role: "user", Content: "make a short shot"}},
+	})
+	if err != nil {
+		t.Fatalf("Generate returned error: %v", err)
+	}
+	if pollCount != 1 || output == nil || len(output.GeneratedVideos) != 1 {
+		t.Fatalf("expected lifecycle to outlive per-request timeout, polls=%d output=%#v", pollCount, output)
+	}
+}
+
+func TestResolveOpenAIVideoJobTimeoutIsBoundedAndLongerThanDefaultReadTimeout(t *testing.T) {
+	if got := resolveOpenAIVideoJobTimeout(100); got != openAIVideoDefaultJobTimeout {
+		t.Fatalf("expected default asynchronous job timeout, got %s", got)
+	}
+	if got := resolveOpenAIVideoJobTimeout(int((45 * time.Minute) / time.Millisecond)); got != 45*time.Minute {
+		t.Fatalf("expected explicit longer timeout to be preserved, got %s", got)
 	}
 }
 

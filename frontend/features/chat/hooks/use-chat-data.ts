@@ -405,6 +405,21 @@ export function useChatData(
               ),
             }));
           },
+          onTextSnapshot: (content) => {
+            if (isResumeInactive()) {
+              return;
+            }
+            setResumingActivityLabel("");
+            resumedTextByRun[pendingRunID] = content;
+            updateResumeState((prev) => ({
+              ...prev,
+              messages: prev.messages.map((message) =>
+                message.runID === pendingRunID && message.role === "assistant" && message.status === "pending"
+                  ? { ...message, content, contentType: "text" }
+                  : message,
+              ),
+            }));
+          },
           onDelta: (delta) => {
             if (isResumeInactive()) {
               return;

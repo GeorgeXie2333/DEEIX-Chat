@@ -44,6 +44,23 @@ type modelOptionPolicyConfig struct {
 	NativeToolAllowedTypesJSON string
 }
 
+// FilterModelOptionsForRoute exposes the same model-option and provider-native
+// tool boundary used by conversation requests to other application entrypoints
+// such as the OpenAI-compatible API.
+func (s *Service) FilterModelOptionsForRoute(options map[string]interface{}, protocol string, modelCapabilitiesJSON string) map[string]interface{} {
+	if s == nil || s.cfg == nil {
+		return nil
+	}
+	cfg := s.cfg.Snapshot()
+	return filterModelOptions(options, protocol, modelOptionPolicyConfig{
+		Mode:                       cfg.ModelOptionPolicyMode,
+		AllowedPathsJSON:           cfg.ModelOptionAllowedPaths,
+		DeniedPathsJSON:            cfg.ModelOptionDeniedPaths,
+		ModelCapabilitiesJSON:      modelCapabilitiesJSON,
+		NativeToolAllowedTypesJSON: config.DefaultNativeToolAllowedTypesJSON(),
+	})
+}
+
 func filterModelOptions(options map[string]interface{}, protocol string, cfg modelOptionPolicyConfig) map[string]interface{} {
 	mode := strings.TrimSpace(cfg.Mode)
 	if mode == "" {
@@ -140,6 +157,12 @@ func mergeModelOptionDefaults(defaults map[string]interface{}, options map[strin
 	for _, path := range lockedPaths {
 		if value, ok := readModelOptionPath(defaults, path); ok {
 			writeModelOptionPath(merged, path, cloneModelOptionValue(value))
+		} else {
+			// A locked path is server-controlled even when the administrator did
+			// not provide a default. In that case omission is the only safe
+			// server-selected value; retaining the caller value would bypass the
+			// lock declaration.
+			deleteModelOptionPath(merged, path)
 		}
 	}
 	if len(merged) == 0 {

@@ -108,6 +108,19 @@ export function resolveChatSubmitDecision(
   };
   const requestedType = requestedResponseType(options);
 
+  // A video attachment represents an extension request, not a regular chat
+  // attachment. Keep this decision ahead of the image/video-generation
+  // routing below so an MP4 cannot accidentally be sent to a chat endpoint.
+  if (videoAttachmentCount > 0) {
+    if (attachmentCount !== 1 || mp4AttachmentCount !== 1) {
+      return buildDecision("video_extension", "video_extension_requires_single_mp4", baseDecision);
+    }
+    if (!supportsVideoExtension) {
+      return buildDecision("video_extension", "video_extension_unsupported", baseDecision);
+    }
+    return buildDecision("video_extension", null, baseDecision);
+  }
+
   if (supportsVideoGeneration && nonImageAttachmentCount > 0 && (imageAttachmentCount > 0 || !supportsChat)) {
     return buildDecision("video_generation", "video_generation_rejects_non_image_attachments", baseDecision);
   }

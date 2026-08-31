@@ -499,6 +499,7 @@ func fallbackMessage(status int, code string) string {
 
 var fallbackMessages = map[string]string{
 	CodeRequestInvalidQuery:                             "invalid query parameter",
+	"openapi.api_key_conflict":                          "api key changed concurrently; refresh and retry",
 	"auth.admin_required":                               "admin permission required",
 	"auth.superadmin_required":                          "superadmin permission required",
 	"auth.password_reset_required":                      "password reset required",

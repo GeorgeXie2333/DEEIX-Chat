@@ -15,6 +15,7 @@ import (
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/promptfilter"
 	extractport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/extract"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
 	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
 )
 
@@ -25,6 +26,7 @@ type Service struct {
 	authSafety        authSafetyService
 	vectorStore       vectorStoreAvailabilityService
 	auditWriter       auditWriter
+	nativeToolCatalog nativeToolCatalogProvider
 }
 
 type authSafetyService interface {
@@ -37,6 +39,10 @@ type vectorStoreAvailabilityService interface {
 
 type auditWriter interface {
 	Write(ctx context.Context, requestID string, actorUserID uint, action string, resource string, resourceID string, ip string, userAgent string, detail interface{})
+}
+
+type nativeToolCatalogProvider interface {
+	ListNativeToolDefinitions(ctx context.Context) ([]nativetool.Definition, error)
 }
 
 // NewService 创建服务。
@@ -55,6 +61,14 @@ func (s *Service) SetVectorStoreAvailabilityService(service vectorStoreAvailabil
 // SetAuditWriter 注入系统设置审计写入器。
 func (s *Service) SetAuditWriter(writer auditWriter) {
 	s.auditWriter = writer
+}
+
+// SetNativeToolCatalogProvider 注入当前平台原生工具目录，用于校验动态定价项。
+func (s *Service) SetNativeToolCatalogProvider(provider nativeToolCatalogProvider) {
+	if s == nil {
+		return
+	}
+	s.nativeToolCatalog = provider
 }
 
 // AuditInput 描述系统设置审计写入。
@@ -368,7 +382,7 @@ func (s *Service) BatchUpdate(ctx context.Context, patches []PatchItem) (map[str
 		if !validNamespaces[p.Namespace] {
 			return nil, fmt.Errorf("%w: invalid namespace: %s", ErrInvalidSetting, p.Namespace)
 		}
-		if err := validatePatchItem(p); err != nil {
+		if err := s.validatePatchItem(ctx, p); err != nil {
 			return nil, fmt.Errorf("%w: %v", ErrInvalidSetting, err)
 		}
 	}
@@ -411,6 +425,36 @@ func (s *Service) groupByNamespace(items []domainsettings.SystemSetting) map[str
 		result[item.Namespace] = append(result[item.Namespace], s.settingResponse(item))
 	}
 	return result
+}
+
+func (s *Service) validatePatchItem(ctx context.Context, item PatchItem) error {
+	if item.Namespace != "billing" || item.Key != "native_tool_pricing_json" {
+		return validatePatchItem(item)
+	}
+	key := item.Namespace + ":" + item.Key
+	if _, ok := validSettingKeys[key]; !ok {
+		return fmt.Errorf("invalid setting key: %s", key)
+	}
+	if item.Clear && !isSensitiveSetting(item.Namespace, item.Key) {
+		return fmt.Errorf("clear is only supported for sensitive setting: %s", key)
+	}
+	if item.Clear {
+		return nil
+	}
+	value := strings.TrimSpace(item.Value)
+	if err := validateStringMax(value, 4000, key); err != nil {
+		return err
+	}
+	definitions := nativetool.Definitions()
+	if s != nil && s.nativeToolCatalog != nil {
+		var err error
+		definitions, err = s.nativeToolCatalog.ListNativeToolDefinitions(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	_, err := appbilling.ParseNativeToolPricingOverridesJSONForDefinitions(value, definitions)
+	return err
 }
 
 func validatePatchItem(item PatchItem) error {

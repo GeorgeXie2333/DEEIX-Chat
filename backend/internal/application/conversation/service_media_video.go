@@ -86,6 +86,11 @@ func (s *Service) StreamMediaVideo(ctx context.Context, input MediaVideoInput) (
 	if strings.TrimSpace(input.Prompt) == "" {
 		return nil, ErrMediaVideoPromptRequired
 	}
+	// The retry branch may have replaced the transport-validated prompt with a
+	// stored message. Recheck the effective prompt in the application layer.
+	if err = s.ValidatePromptSensitiveWords(input.Prompt); err != nil {
+		return nil, err
+	}
 	taskType := normalizeMediaVideoTaskType(input.TaskType)
 	routeTaskType := channel.TaskTypeVideoGeneration
 	if taskType == MediaVideoTaskExtension {
@@ -305,7 +310,9 @@ func (s *Service) StreamMediaVideo(ctx context.Context, input MediaVideoInput) (
 	if llm.NormalizeAdapter(route.Protocol) == llm.AdapterGeminiInteractions {
 		filteredOptions = withGeminiInteractionResponseType(filteredOptions, "video")
 	}
-	if llm.NormalizeAdapter(route.Protocol) == llm.AdapterXAIVideoExtensions {
+	if llm.NormalizeAdapter(route.Protocol) == llm.AdapterOpenAIVideoGenerations {
+		filteredOptions = sanitizeOpenAIVideoGenerationOptions(route.UpstreamModel, filteredOptions)
+	} else if llm.NormalizeAdapter(route.Protocol) == llm.AdapterXAIVideoExtensions {
 		llm.SanitizeXAIVideoExtensionOptions(filteredOptions)
 	} else if llm.NormalizeAdapter(route.Protocol) == llm.AdapterXAIVideo {
 		llm.SanitizeXAIVideoOptions(filteredOptions)
@@ -322,7 +329,10 @@ func (s *Service) StreamMediaVideo(ctx context.Context, input MediaVideoInput) (
 			StartedAt:        startedAt,
 			DurationSeconds:  durationSeconds,
 			Failure:          failure,
-			Billable:         false,
+			// This helper is only used after the provider call completed
+			// successfully. Artifact download, validation, upload, or persistence
+			// failures must therefore retain the upstream usage reservation.
+			Billable: true,
 		})
 		applyMediaRunUsage(run, result)
 		return result
@@ -346,7 +356,17 @@ func (s *Service) StreamMediaVideo(ctx context.Context, input MediaVideoInput) (
 		generateInput.Messages = []llm.Message{{Role: "user", Parts: parts}}
 	}
 
-	output, err := s.llmClient.Generate(ctx, routeConfig, generateInput)
+	var output *llm.GenerateOutput
+	if llm.NormalizeAdapter(route.Protocol) == llm.AdapterOpenAIVideoGenerations {
+		output, err = s.llmClient.GenerateStream(ctx, routeConfig, generateInput, func(event llm.GenerateStreamEvent) error {
+			if event.GeneratedVideoStatus != nil {
+				return emitMediaVideoStatus(input.OnEvent, event.GeneratedVideoStatus)
+			}
+			return nil
+		})
+	} else {
+		output, err = s.llmClient.Generate(ctx, routeConfig, generateInput)
+	}
 	if err != nil {
 		if s.isCanceledMediaGeneration(ctx, runID, err) {
 			retErr = ErrMessageGenerationCanceled
@@ -640,6 +660,13 @@ func (s *Service) readGeneratedVideo(ctx context.Context, video llm.GeneratedVid
 	mimeType := strings.TrimSpace(video.MIMEType)
 	if mimeType == "" {
 		mimeType = "video/mp4"
+	}
+	if len(video.Data) > 0 {
+		validated, detectedMIME, validationErr := validateGeneratedVideoBytes(video.Data, mimeType)
+		if validationErr != nil {
+			return nil, mimeType, newGeneratedMediaArtifactError("video", "validation", validationErr)
+		}
+		return validated, detectedMIME, nil
 	}
 	if b64 := strings.TrimSpace(video.B64JSON); b64 != "" {
 		data, err := base64.StdEncoding.DecodeString(stripBase64DataURLPrefix(b64))

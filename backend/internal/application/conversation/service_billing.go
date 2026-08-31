@@ -33,7 +33,11 @@ type SendMessageBillingInput struct {
 	PlatformModelName string
 	ConversationModel string
 	ClientRunID       string
-	Result            *SendMessageResult
+	// SelectedToolIDs is the exact MCP selection that the send path resolves.
+	// The backend execution boundary consumes this selection directly, so any
+	// project defaults must be materialized into it by the request builder.
+	SelectedToolIDs []uint
+	Result          *SendMessageResult
 }
 
 // SendMessageAuditInput 描述一次消息发送对应的审计上下文。
@@ -74,10 +78,27 @@ func (s *Service) UpdateMessageBilling(ctx context.Context, messageID uint, usag
 
 // AuthorizeSendMessageUsage 在模型调用前固定计费策略并预留可用预算。
 func (s *Service) AuthorizeSendMessageUsage(ctx context.Context, input SendMessageBillingInput) (*domainbilling.UsageAuthorization, error) {
-	if s.billingSvc == nil {
-		return &domainbilling.UsageAuthorization{Mode: "self"}, nil
+	minimumMCPReservation, mcpPriceSnapshot, err := s.resolveMCPBillingAuthorization(ctx, input.SelectedToolIDs)
+	if err != nil {
+		return nil, err
 	}
-	return s.billingSvc.AuthorizeUsage(ctx, input.UserID, sendMessageBillingPlatformModelName(input), strings.TrimSpace(input.ClientRunID))
+	if s.billingSvc == nil {
+		return &domainbilling.UsageAuthorization{Mode: "self", MCPToolPriceNanousdByID: mcpPriceSnapshot}, nil
+	}
+	authorization, err := s.billingSvc.AuthorizeUsageWithMinimumReservation(
+		ctx,
+		input.UserID,
+		sendMessageBillingPlatformModelName(input),
+		strings.TrimSpace(input.ClientRunID),
+		minimumMCPReservation,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if authorization != nil {
+		authorization.MCPToolPriceNanousdByID = mcpPriceSnapshot
+	}
+	return authorization, nil
 }
 
 // PersistMessageUsageRejection 将需要进入对话历史的终态业务拒绝持久化。
@@ -375,7 +396,6 @@ func sendMessageBillingCacheWriteTokens(result *SendMessageResult) int64 {
 func sendMessageResultIsVideoGeneration(result *SendMessageResult) bool {
 	return result != nil &&
 		result.Billable &&
-		strings.EqualFold(strings.TrimSpace(result.AssistantMessage.Status), "success") &&
 		strings.EqualFold(strings.TrimSpace(result.AssistantMessage.ContentType), "video") &&
 		llm.IsVideoGenerationAdapter(result.UpstreamProtocol)
 }
